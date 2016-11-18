@@ -5,6 +5,7 @@
     "Logux",
     "docdash",
     "JSDoc",
-    "js"
+    "js",
+    "LocalStore"
   ]
 }
