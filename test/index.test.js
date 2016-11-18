@@ -1,5 +1,6 @@
+var LocalStore = require('../local-store')
 var index = require('../')
 
-it('is empty', function () {
-  expect(index).toEqual({ })
+it('has LocalStore', function () {
+  expect(index.LocalStore).toBe(LocalStore)
 })
