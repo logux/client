@@ -22,8 +22,8 @@ function isQuotaExceeded (e) {
  * `localStorage` store for Logux log. It is based on `MemoryStore`
  * and serialize log to `localStorage` on every change.
  *
- * @param {string} [prefix="logux"] Prefix for `localStorage` key to run
- *                                  multiple Logux instances on same web page.
+ * @param {string} prefix="logux" Prefix for `localStorage` key to run
+ *                                multiple Logux instances on same web page.
  *
  * @class
  * @extends Store
@@ -33,8 +33,6 @@ function isQuotaExceeded (e) {
  * const log = new Log({ store: new LocalStore(), timer }
  */
 function LocalStore (prefix) {
-  if (typeof prefix === 'undefined') prefix = 'logux'
-
   /**
    * `localStorage` key name.
    * @type {string}
