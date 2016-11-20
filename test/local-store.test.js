@@ -16,7 +16,7 @@ afterEach(function () {
 })
 
 it('adds events', function () {
-  var store = new LocalStore()
+  var store = new LocalStore('logux')
   store.add([{ type: 'b' }, { created: [1], added: 1 }])
   store.add([{ type: 'a' }, { created: [0], added: 2 }])
   expect(store.memory.created).toEqual([
@@ -30,14 +30,14 @@ it('adds events', function () {
 })
 
 it('uses localStorage', function () {
-  var store1 = new LocalStore()
+  var store1 = new LocalStore('logux')
   store1.add([{ type: 'b' }, { created: [1], added: 1 }])
   store1.add([{ type: 'a' }, { created: [0], added: 2 }])
 
   store1.add([{ type: 'c' }, { created: [2], added: 3 }])
   store1.remove([2])
 
-  var store2 = new LocalStore()
+  var store2 = new LocalStore('logux')
   expect(store2.memory.created).toEqual([
     [{ type: 'b' }, { created: [1], added: 1 }],
     [{ type: 'a' }, { created: [0], added: 2 }]
@@ -56,21 +56,13 @@ it('uses prefix', function () {
   expect(localStorage.key(1)).toEqual('appLogVersion')
 })
 
-it('has default prefix', function () {
-  var store = new LocalStore()
-  store.add([{ type: 'b' }, { created: [1], added: 1 }])
-  expect(localStorage.length).toBe(2)
-  expect(localStorage.key(0)).toEqual('loguxLog')
-  expect(localStorage.key(1)).toEqual('loguxLogVersion')
-})
-
 it('checks log format version', function () {
-  var store1 = new LocalStore()
+  var store1 = new LocalStore('logux')
   store1.add([{ type: 'b' }, { created: [1], added: 1 }])
   store1.add([{ type: 'a' }, { created: [0], added: 2 }])
   localStorage.setItem('loguxLogVersion', 'test')
 
-  var store2 = new LocalStore()
+  var store2 = new LocalStore('logux')
   expect(store2.memory.created).toEqual([])
 
   expect(console.error).toBeCalledWith(
@@ -81,7 +73,7 @@ it('works on broken JSON in localStorage', function () {
   localStorage.setItem('loguxLog', '[')
   localStorage.setItem('loguxLogVersion', '0')
 
-  var store = new LocalStore()
+  var store = new LocalStore('logux')
   expect(store.memory.created).toEqual([])
 
   expect(localStorage.length).toBe(0)
@@ -92,7 +84,7 @@ it('works on broken JSON in localStorage', function () {
 it('works without localStorage support', function () {
   global.localStorage = undefined
 
-  var store = new LocalStore()
+  var store = new LocalStore('logux')
   store.add([{ type: 'b' }, { created: [1], added: 1 }])
   store.add([{ type: 'a' }, { created: [0], added: 2 }])
   expect(store.memory.created.length).toBe(2)
