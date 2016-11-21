@@ -2,7 +2,7 @@ var BrowserConnection = require('logux-sync/browser-connection')
 var createTimer = require('logux-core/create-timer')
 var ClientSync = require('logux-sync/client-sync')
 var Reconnect = require('logux-sync/reconnect')
-var shortUUID = require('short-uuid')
+var shortid = require('shortid')
 var Log = require('logux-core/log')
 
 var isQuotaExceeded = require('./is-quota-exceeded')
@@ -67,8 +67,7 @@ function Client (options) {
     this.options.prefix = 'logux'
   }
   if (typeof this.options.nodeId === 'undefined') {
-    var shortId = shortUUID()
-    this.options.nodeId = shortId.fromUUID(shortId.uuid())
+    this.options.nodeId = shortid.generate()
   }
 
   var timer = this.options.timer || createTimer(this.options.nodeId)
