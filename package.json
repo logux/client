@@ -28,7 +28,6 @@
     "mock-local-storage": "^1.0.2",
     "pre-commit": "^1.1.3",
     "rimraf": "^2.5.4",
-    "uglifyjs": "^2.4.10",
     "webpack": "^2.1.0-beta.27",
     "webpack-bundle-analyzer": "^1.5.3",
     "yaspeller": "^3.0.0"
@@ -42,7 +41,7 @@
     "docs": "jsdoc --configure .jsdocrc *.js",
     "test": "jest --coverage && npm run lint && npm run spellcheck",
     "pack": "webpack client.js all.js",
-    "compress": "uglifyjs all.js -o all.js && gzip -9 -f all.js",
+    "compress": "gzip -9 -f all.js",
     "show": "ls -lh *.gz | awk '{print \"Size:\", $5\"B\"}'",
     "size": "npm run pack && npm run compress && npm run show && rm *.gz"
   },
