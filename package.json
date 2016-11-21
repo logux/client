@@ -1,7 +1,7 @@
 {
   "name": "logux-client",
   "version": "0.0.0",
-  "description": "Base Logux client for web browser",
+  "description": "Low-level Logux client for web browser",
   "keywords": [
     "logux",
     "client"
@@ -12,7 +12,7 @@
   "dependencies": {
     "logux-core": "logux/logux-core",
     "logux-sync": "logux/logux-sync",
-    "short-uuid": "^2.1.0"
+    "short-uuid": "^2.1.1"
   },
   "devDependencies": {
     "docdash": "^0.4.0",
@@ -43,7 +43,10 @@
       "global": {
         "statements": 100
       }
-    }
+    },
+    "setupFiles": [
+      "test/crypto.setup.js"
+    ]
   },
   "eslintConfig": {
     "extends": "eslint-config-logux"
