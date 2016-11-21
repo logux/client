@@ -6,6 +6,10 @@
     "docdash",
     "JSDoc",
     "js",
-    "LocalStore"
+    "LocalStore",
+    "SemVer",
+    "UUID",
+    "subprotocol",
+    "ClientSync"
   ]
 }
