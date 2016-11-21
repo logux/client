@@ -30,7 +30,7 @@ it('throws on missed subprotocol', function () {
 
 it('generates node ID if it is missed', function () {
   var client = new Client({ subprotocol: '1.0.0', url: 'wss://localhost:1337' })
-  expect(client.options.nodeId).toMatch(/\d\w+/)
+  expect(client.options.nodeId).toMatch(/[\d\w]+/)
 })
 
 it('uses custom node ID', function () {
