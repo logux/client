@@ -107,12 +107,10 @@ function Client (options) {
   })
 
   var app = this
-  this.unbind = []
-
-  this.unbind.push(this.sync.on('synced', function () {
+  this.sync.on('synced', function () {
     app.saveToLS('Synced', app.sync.synced)
     app.saveToLS('OtherSynced', app.sync.otherSynced)
-  }))
+  })
 }
 
 Client.prototype = {
