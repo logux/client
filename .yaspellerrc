@@ -16,6 +16,7 @@
     "webpack",
     "Browserify",
     "Gon",
-    "npm"
+    "npm",
+    "KB"
   ]
 }

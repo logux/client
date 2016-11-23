@@ -3,7 +3,7 @@
 Logux is a client-server communication protocol. It synchronizes events
 between clients and server logs.
 
-This library allows to put a events (like “actions” in Redux)
+This 6 KB library allows to put a events (like “actions” in Redux)
 to local log and synchronize them with [Logux server]
 and then to all other online clients.
 
