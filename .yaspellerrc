@@ -6,10 +6,16 @@
     "docdash",
     "JSDoc",
     "js",
+    "JS",
     "LocalStore",
     "SemVer",
     "UUID",
     "subprotocol",
-    "ClientSync"
+    "ClientSync",
+    "Redux",
+    "webpack",
+    "Browserify",
+    "Gon",
+    "npm"
   ]
 }
