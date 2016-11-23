@@ -4,10 +4,11 @@ Logux is a client-server communication protocol. It synchronizes events
 between clients and server logs.
 
 This library allows to put a events (like “actions” in Redux)
-to local log and synchronize them with [Logux server].
+to local log and synchronize them with [Logux server]
+and then to all other online clients.
 
-This is low-level client API. Redux-like API will be soon, which will be better
-for most of developers.
+This is low-level client API. Redux-like API will be soon.
+It will be better for most of developers.
 
 [Logux server]: https://github.com/logux/logux-server
 
@@ -21,7 +22,7 @@ for most of developers.
 ### Add Logux to Project
 
 This project use npm package manager. So your need webpack or Browserify
-to build single JS bundle for browser.
+to build single JS bundle for browsers.
 
 Install Logux Client:
 
@@ -31,13 +32,13 @@ npm install --save logux-client
 
 ### Add Credentials to Client
 
-You should use right token to authenticate current user in Logux server.
+You should use secret token to authenticate current user in Logux server.
 
 We suggest to add special `token` column to users table and fill it
 with random strings.
 
 When user will ask `index.html` from your app, HTTP server could add
-`<meta>` with token. Also server could add `<meta>` with Logux server URL.
+`<meta>` tags with token and Logux server URL.
 
 ```html
 <meta name="token" content="<%= user.token %>" />
@@ -50,7 +51,8 @@ It is not the only way. You could also use cookies or tools like [Gon].
 
 ### Create Logux Client
 
-When your JS will executed, you should create a Logux instance:
+Create Logux Client instance in client-side JS, `onready` event is good time
+for it.
 
 ```js
 var Client = require('logux-client/client')
@@ -68,8 +70,8 @@ logux.sync.connection.connect()
 
 ### Process Events
 
-Add callbacks when new events will come to log (from server, other clients
-or local JS):
+Add callbacks when new events will come to client log
+(from server, other clients or local `logux.log.add` call):
 
 ```js
 logux.log.on('event', function (event, meta) {
@@ -84,9 +86,11 @@ logux.log.on('event', function (event, meta) {
 
 Read [`logux-core`] docs for `logux.log` API.
 
+[`logux-core`]: https://github.com/logux/logux-core
+
 ### Create a Events
 
-When you need to send information to server create a event:
+When you need to send information to server, just add event to log:
 
 ```js
 submit.addEventListener('click', function () {
@@ -100,7 +104,7 @@ submit.addEventListener('click', function () {
 
 ### Show Connection State
 
-Notify user, when connection was lost and you data will not be saved:
+Notify user, when connection was lost:
 
 ```js
 var favicon = document.querySelector('link[rel~="icon"]')
@@ -117,8 +121,7 @@ logux.sync.on('state', function () {
 })
 ```
 
-If user didn’t has connection to send latest data to server,
-notify about it on page leaving:
+Notify user on page leaving, that some data was not synchronized yet:
 
 ```js
 window.onbeforeunload = function (e) {
