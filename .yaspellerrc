@@ -17,6 +17,7 @@
     "Browserify",
     "Gon",
     "npm",
-    "KB"
+    "KB",
+    "Versioning"
   ]
 }
