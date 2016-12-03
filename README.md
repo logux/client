@@ -3,12 +3,12 @@
 Logux is a client-server communication protocol. It synchronizes events
 between clients and server logs.
 
-This 6 KB library allows to put a events (like “actions” in Redux)
-to local log and synchronize them with [Logux server]
-and then to all other online clients.
+This 6 KB library allows you to put events (which look similar to Redux “actions”)
+to a local log and synchronize them with [Logux server] and thus with every
+other client being online.
 
-This is low-level client API. Redux-like API will be soon.
-It will be better for most of developers.
+This is a low-level client API. Redux-like API, which is supposed to be more suitable
+for most of developers, is coming soon.
 
 [Logux server]: https://github.com/logux/logux-server
 
@@ -17,12 +17,13 @@ It will be better for most of developers.
        alt="Sponsored by Evil Martians" width="236" height="54">
 </a>
 
+
 ## Getting Started
 
-### Add Logux to Project
+### Add Logux to your Project
 
-This project use npm package manager. So your need webpack or Browserify
-to build single JS bundle for browsers.
+This project uses npm package manager. So you will need WebPack or Browserify
+to build a JS bundle for browsers.
 
 Install Logux Client:
 
@@ -30,29 +31,32 @@ Install Logux Client:
 npm install --save logux-client
 ```
 
-### Add Credentials to Client
 
-You should use secret token to authenticate current user in Logux server.
+### Add Credentials to the Client
 
-We suggest to add special `token` column to users table and fill it
-with random strings.
+You should use a secret token for authentication at the Logux server.
 
-When user will ask `index.html` from your app, HTTP server could add
-`<meta>` tags with token and Logux server URL.
+We suggest adding a special `token` column to the users table of your
+application and filling it with auto-generated random strings.
+
+When the user requests `index.html` from your app, HTTP server would add
+`<meta>` tags with a token and Logux server URL.
 
 ```html
 <meta name="token" content="<%= user.token %>" />
 <meta name="server" content="wss://example.com:1337" />
 ```
 
-It is not the only way. You could also use cookies or tools like [Gon].
+However, it is not the only possible way for communication.
+You could also use cookies or tools like [Gon].
 
 [Gon]: https://github.com/gazay/gon
 
+
 ### Create Logux Client
 
-Create Logux Client instance in client-side JS, `onready` event is good time
-for it.
+Create Logux Client instance in your client-side JS;
+`onready` event handler seems to be a good place for this:
 
 ```js
 var Client = require('logux-client/client')
@@ -68,9 +72,10 @@ var logux = new Client({
 logux.sync.connection.connect()
 ```
 
+
 ### Process Events
 
-Add callbacks when new events will come to client log
+Add callbacks for new events coming to the client log
 (from server, other clients or local `logux.log.add` call):
 
 ```js
@@ -88,9 +93,10 @@ Read [`logux-core`] docs for `logux.log` API.
 
 [`logux-core`]: https://github.com/logux/logux-core
 
-### Create a Events
 
-When you need to send information to server, just add event to log:
+### Emit Events
+
+When you need to send information to server, just add an event to log:
 
 ```js
 submit.addEventListener('click', function () {
@@ -102,9 +108,10 @@ submit.addEventListener('click', function () {
 }, false)
 ```
 
+
 ### Show Connection State
 
-Notify user, when connection was lost:
+Notify user if connection was lost:
 
 ```js
 var favicon = document.querySelector('link[rel~="icon"]')
@@ -121,7 +128,7 @@ logux.sync.on('state', function () {
 })
 ```
 
-Notify user on page leaving, that some data was not synchronized yet:
+Notify user on page leaving, if some data is not synchronized yet:
 
 ```js
 window.onbeforeunload = function (e) {
