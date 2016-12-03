@@ -22,7 +22,7 @@ for most of developers, is coming soon.
 
 ### Add Logux to your Project
 
-This project uses npm package manager. So you will need WebPack or Browserify
+This project uses npm package manager. So you will need Webpack or Browserify
 to build a JS bundle for browsers.
 
 Install Logux Client:
