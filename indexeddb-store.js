@@ -15,11 +15,12 @@
 function IndexedDBStore () {
   this.setUp = false
   this.db = undefined
+  this.dbName = undefined
 }
 
 IndexedDBStore.prototype = {
 
-  init: function init () {
+  init: function init (dbName = 'logux_db') {
     var store = this
     return new Promise(function (resolve, reject) {
       if (store.setUp) {
@@ -30,7 +31,7 @@ IndexedDBStore.prototype = {
                         window.webkitIndexedDB ||
                         window.msIndexedDB
 
-        var openRequest = indexedDB.open('logux_db', 1)
+        var openRequest = indexedDB.open(dbName, 1)
 
         openRequest.onupgradeneeded = function (e) {
           var thisDb = e.target.result
@@ -56,6 +57,7 @@ IndexedDBStore.prototype = {
           }
 
           store.setUp = true
+          store.dbName = dbName
           resolve(store)
         }
       }

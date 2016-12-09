@@ -26,6 +26,15 @@ function checkCreated (someStore, created) {
   })
 }
 
+it('can be created store with custom db name', function () {
+  var store2 = new IndexedDBStore()
+  return store2.init('customName').then(function () {
+    store2.db.close()
+    fakeIndexedDB.deleteDatabase('customName')
+    return expect(store2.dbName).toEqual('customName')
+  })
+})
+
 it('is empty in the beginning', function () {
   return checkCreated(store, [])
 })
