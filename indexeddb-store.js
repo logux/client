@@ -20,7 +20,8 @@ function IndexedDBStore () {
 
 IndexedDBStore.prototype = {
 
-  init: function init (dbName = 'logux_db') {
+  init: function init (dbName) {
+    dbName = dbName || 'loguxLog'
     var store = this
     return new Promise(function (resolve, reject) {
       if (store.setUp) {
@@ -64,7 +65,8 @@ IndexedDBStore.prototype = {
     })
   },
 
-  get: function get (order, pageSize = 20) {
+  get: function get (order, pageSize) {
+    pageSize = pageSize || 20
     return this.init().then(function (store) {
       var t = store.db.transaction(['entries'], 'readonly')
       return new Promise(function (resolve) {

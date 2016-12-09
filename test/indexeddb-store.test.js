@@ -16,7 +16,7 @@ beforeEach(function () {
 
 afterEach(function () {
   testDB.close()
-  fakeIndexedDB.deleteDatabase('logux_db')
+  fakeIndexedDB.deleteDatabase('loguxLog')
 })
 
 function checkCreated (someStore, created) {
