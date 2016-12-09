@@ -50,10 +50,10 @@ IndexedDBStore.prototype = {
         openRequest.onsuccess = function (e) {
           store.db = e.target.result
 
-          store.db.onerror = function (event) {
+          store.db.onerror = function (err) {
             // Generic error handler for all errors targeted at this database's
             // requests!
-            reject(`Database error: ${event.target.errorCode}`)
+            reject(err)
           }
 
           store.setUp = true
