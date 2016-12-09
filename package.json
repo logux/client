@@ -21,6 +21,7 @@
     "eslint-config-standard": "^6.2.1",
     "eslint-plugin-promise": "^3.4.0",
     "eslint-plugin-standard": "^2.0.1",
+    "fake-indexeddb": "^1.0.8",
     "jest": "^17.0.3",
     "jsdoc": "^3.4.3",
     "json-loader": "^0.5.4",
