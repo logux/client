@@ -134,14 +134,6 @@ it('returns current events state', function () {
   return Promise.all([promise1, promise2])
 })
 
-it('searches event properly', function () {
-  var entry = [{ type: 'test' }, { created: [1], added: 1 }]
-  store.add(entry)
-  return store.search([1]).then(function (res) {
-    return expect(entry).toEqual(res)
-  })
-})
-
 it('initialized db resolved without reopening', function () {
   return store.init().then(function (sameStore) {
     return expect(sameStore.db).toEqual(store.db)

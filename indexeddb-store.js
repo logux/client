@@ -137,21 +137,6 @@ IndexedDBStore.prototype = {
     })
   },
 
-  search: function search (time) {
-    return this.init().then(function (store) {
-      var t = store.db.transaction(['entries'], 'readonly')
-      return new Promise(function (resolve) {
-        var req = t.objectStore('entries').index('created').get(time)
-        req.onsuccess = function () {
-          var entry = req.result.data
-          entry.type = req.result.type
-          var meta = { created: req.result.created, added: req.result.added }
-          resolve([entry, meta])
-        }
-      })
-    })
-  },
-
   remove: function remove (time) {
     return this.init().then(function (store) {
       var t = store.db.transaction(['entries'], 'readwrite')
