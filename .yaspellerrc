@@ -18,6 +18,9 @@
     "Gon",
     "npm",
     "KB",
-    "Versioning"
+    "Versioning",
+    "IndexedDB",
+    "IndexedDBStore",
+    "indexeddb"
   ]
 }
