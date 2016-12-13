@@ -1,5 +1,5 @@
 /**
- * Simple events store based in IndexedDB.
+ * Simple events store based on IndexedDB.
  *
  * @example
  * import { IndexedDBStore } from 'logux-core'
