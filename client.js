@@ -12,7 +12,7 @@ var LocalStore = require('./local-store')
  * Low-level browser API for Logux.
  *
  * @param {object} options Client options.
- * @param {string} options.url The server URL.
+ * @param {string} options.url Server URL.
  * @param {string} options.subprotocol Client subprotocol version
  *                                     in SemVer format.
  * @param {any} [options.credentials] Client credentials for authentication.
@@ -22,16 +22,16 @@ var LocalStore = require('./local-store')
  * @param {string|number} [options.nodeId] Unique client ID.
  *                                         Compacted UUID, by default.
  * @param {number} [options.timeout=20000] Timeout in milliseconds
- *                                         to disconnect connection.
+ *                                         to break connection.
  * @param {number} [options.ping=10000] Milliseconds since last message to test
  *                                      connection by sending ping.
  * @param {function} [options.timer] Timer to use in log. Will be default
  *                                   timer with server `nodeId`, by default.
  * @param {Store} [options.store] Store to save log. Will be `LocaleStore`,
  *                                by default.
- * @param {number} [options.minDelay=1000] Minimum delay between reconnecting.
- * @param {number} [options.maxDelay=5000] Maximum delay between reconnecting.
- * @param {number} [options.attempts=Infinity] Maximum reconnecting attempts.
+ * @param {number} [options.minDelay=1000] Minimum delay between reconnections.
+ * @param {number} [options.maxDelay=5000] Maximum delay between reconnections.
+ * @param {number} [options.attempts=Infinity] Maximum reconnection attempts.
  *
  * @example
  * token = document.querySelector('meta[name=token]')
