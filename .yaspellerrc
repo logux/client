@@ -21,6 +21,8 @@
     "Versioning",
     "IndexedDB",
     "IndexedDBStore",
-    "indexeddb"
+    "indexeddb",
+    "reconnections",
+    "reconnection"
   ]
 }
