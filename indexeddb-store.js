@@ -37,16 +37,16 @@ IndexedDBStore.prototype = {
 
         openRequest.onupgradeneeded = function (e) {
           var thisDb = e.target.result
-          var entriesOS
+          var logOS
           var extraOS
 
-          // Create entries OS
-          if (!thisDb.objectStoreNames.contains('entries')) {
-            entriesOS = thisDb.createObjectStore('entries',
+          // Create log OS
+          if (!thisDb.objectStoreNames.contains('log')) {
+            logOS = thisDb.createObjectStore('log',
               { keyPath: 'added', autoIncrement: true })
-            entriesOS.createIndex('id', 'id', { unique: true })
-            entriesOS.createIndex('time', 'time', { unique: false })
-            entriesOS.createIndex('created', 'created', { unique: true })
+            logOS.createIndex('id', 'id', { unique: true })
+            logOS.createIndex('time', 'time', { unique: false })
+            logOS.createIndex('created', 'created', { unique: true })
           }
           // Create extra OS
           if (!thisDb.objectStoreNames.contains('extra')) {
@@ -80,18 +80,18 @@ IndexedDBStore.prototype = {
   get: function get (order, pageSize) {
     pageSize = pageSize || 20
     return this.init().then(function (store) {
-      var t = store.db.transaction(['entries'], 'readonly')
+      var t = store.db.transaction(['log'], 'readonly')
       return new Promise(function (resolve) {
-        var entries = []
+        var log = []
         var cnt = 0
 
         var cursorCall
         var meta = {}
         if (order === 'created') {
-          var ind = t.objectStore('entries').index('created')
+          var ind = t.objectStore('log').index('created')
           cursorCall = ind.openCursor(null, 'prev')
         } else {
-          cursorCall = t.objectStore('entries').openCursor(null, 'prev')
+          cursorCall = t.objectStore('log').openCursor(null, 'prev')
         }
         cursorCall.onsuccess = function (event) {
           var cursor = event.target.result
@@ -101,16 +101,16 @@ IndexedDBStore.prototype = {
             meta.time = cursor.value.time
             meta.added = cursor.value.added
 
-            entries.push([cursor.value.action, meta])
+            log.push([cursor.value.action, meta])
 
             cnt += 1
             if (cnt === pageSize) {
-              resolve({ entries: entries })
+              resolve({ entries: log })
             } else {
               cursor.continue()
             }
           } else {
-            resolve({ entries: entries })
+            resolve({ entries: log })
           }
         }
       })
@@ -129,10 +129,10 @@ IndexedDBStore.prototype = {
         objToAdd.added = meta.added
       }
 
-      var t = store.db.transaction(['entries'], 'readwrite')
+      var t = store.db.transaction(['log'], 'readwrite')
       var dt = Date.now()
       return new Promise(function (resolve) {
-        var req = t.objectStore('entries').add(objToAdd)
+        var req = t.objectStore('log').add(objToAdd)
         req.onsuccess = function (event) {
           resolve(event.target.result)
         }
@@ -146,14 +146,14 @@ IndexedDBStore.prototype = {
 
   remove: function remove (id) {
     return this.init().then(function (store) {
-      var t = store.db.transaction(['entries'], 'readwrite')
+      var t = store.db.transaction(['log'], 'readwrite')
       return new Promise(function (resolve) {
-        var req = t.objectStore('entries').index('id').get(id)
+        var req = t.objectStore('log').index('id').get(id)
         req.onsuccess = function () {
           if (!req.result) {
             resolve(false)
           } else {
-            var del = t.objectStore('entries').delete(req.result.added)
+            var del = t.objectStore('log').delete(req.result.added)
             del.onsuccess = function () {
               resolve(true)
             }
