@@ -14,6 +14,7 @@
  */
 function IndexedDBStore () {
   this.setUp = false
+  this.systemDb = undefined
   this.db = undefined
   this.dbName = undefined
 }
@@ -42,9 +43,9 @@ IndexedDBStore.prototype = {
           if (!thisDb.objectStoreNames.contains('entries')) {
             objectStore = thisDb.createObjectStore('entries',
               { keyPath: 'added', autoIncrement: true })
-            objectStore.createIndex('type', 'type', { unique: false })
+            objectStore.createIndex('id', 'id', { unique: true })
+            objectStore.createIndex('time', 'time', { unique: false })
             objectStore.createIndex('created', 'created', { unique: true })
-            objectStore.createIndex('data', 'data', { unique: false })
           }
         }
 
@@ -75,7 +76,6 @@ IndexedDBStore.prototype = {
 
         var cursorCall
         var meta = {}
-        var entry = {}
         if (order === 'created') {
           var ind = t.objectStore('entries').index('created')
           cursorCall = ind.openCursor(null, 'prev')
@@ -86,13 +86,11 @@ IndexedDBStore.prototype = {
           var cursor = event.target.result
           if (cursor) {
             meta = {}
-            entry = {}
-            meta.created = cursor.value.created
+            meta.id = cursor.value.id
+            meta.time = cursor.value.time
             meta.added = cursor.value.added
-            entry = cursor.value.data
-            entry.type = cursor.value.type
 
-            entries.push([entry, meta])
+            entries.push([cursor.value.action, meta])
 
             cnt += 1
             if (cnt === pageSize) {
@@ -108,40 +106,38 @@ IndexedDBStore.prototype = {
     })
   },
 
-  add: function add (entry) {
+  add: function add (action, meta) {
     return this.init().then(function (store) {
       var objToAdd = {
-        type: entry[0].type,
-        created: entry[1].created,
-        data: {}
+        action: action,
+        id: meta.id,
+        time: meta.time,
+        created: `${meta.time}\t${meta.id.slice(1).join('\t')}`
       }
-      if (entry[1].added) {
-        objToAdd.added = entry[1].added
-      }
-      for (var key in entry[0]) {
-        if (key !== 'type') {
-          objToAdd.data[key] = entry[0][key]
-        }
+      if (meta.added) {
+        objToAdd.added = meta.added
       }
 
       var t = store.db.transaction(['entries'], 'readwrite')
+      var dt = Date.now()
       return new Promise(function (resolve) {
         var req = t.objectStore('entries').add(objToAdd)
         req.onsuccess = function (event) {
-          resolve(event.target.result === objToAdd.added)
+          resolve(event.target.result)
         }
-        req.onerror = function () {
+        req.onerror = function (err) {
+          t.abort()
           resolve(false)
         }
       })
     })
   },
 
-  remove: function remove (time) {
+  remove: function remove (id) {
     return this.init().then(function (store) {
       var t = store.db.transaction(['entries'], 'readwrite')
       return new Promise(function (resolve) {
-        var req = t.objectStore('entries').index('created').get(time)
+        var req = t.objectStore('entries').index('id').get(id)
         req.onsuccess = function () {
           if (!req.result) {
             resolve(false)
