@@ -2279,9 +2279,9 @@ log-update@^1.0.2:
     ansi-escapes "^1.0.0"
     cli-cursor "^1.0.2"
 
-logux-core@^0.1.0:
+logux-core@logux/logux-core:
   version "0.1.0"
-  resolved "https://registry.yarnpkg.com/logux-core/-/logux-core-0.1.0.tgz#1b7663de250170c4e7a13536275af61f93fe54c6"
+  resolved "https://codeload.github.com/logux/logux-core/tar.gz/ea40566825100c079d7e97dd0fffe1a5a82c0c8f"
   dependencies:
     nanoevents "^0.3.0"
 
