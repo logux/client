@@ -15,42 +15,89 @@ afterEach(function () {
   localStorage.itemInsertionCallback = null
 })
 
+function check (store, type, entries) {
+  return store.get(type).then(function (page) {
+    expect(page.entries).toEqual(entries)
+    expect(page.next).toBeUndefined()
+  })
+}
+
+it('has synced values set to 0', function () {
+  var store = new LocalStore('logux')
+  return store.getLastSynced().then(function (synced) {
+    expect(synced).toEqual({ sent: 0, received: 0 })
+  })
+})
+
+it('updates latest sent value', function () {
+  var store = new LocalStore('logux')
+  return store.setLastSynced({ sent: 1 }).then(function () {
+    return store.getLastSynced()
+  }).then(function (synced) {
+    expect(synced).toEqual({ sent: 1, received: 0 })
+  })
+})
+
+it('updates both synced values', function () {
+  var store = new LocalStore('logux')
+  var value = { received: 1, sent: 2 }
+  return store.setLastSynced(value).then(function () {
+    return store.getLastSynced()
+  }).then(function (synced) {
+    expect(synced).toEqual(value)
+  })
+})
+
 it('adds events', function () {
   var store = new LocalStore('logux')
-  store.add([{ type: 'b' }, { created: [1], added: 1 }])
-  store.add([{ type: 'a' }, { created: [0], added: 2 }])
-  expect(store.memory.created).toEqual([
-    [{ type: 'b' }, { created: [1], added: 1 }],
-    [{ type: 'a' }, { created: [0], added: 2 }]
+  store.add({ a: 1 }, { id: [1], time: 1, added: 1 })
+  store.add({ a: 2 }, { id: [0], time: 2, added: 2 })
+  return check(store.memory, 'created', [
+    [{ a: 2 }, { id: [0], time: 2, added: 2 }],
+    [{ a: 1 }, { id: [1], time: 1, added: 1 }]
   ])
-  expect(store.memory.added).toEqual([
-    [{ type: 'a' }, { created: [0], added: 2 }],
-    [{ type: 'b' }, { created: [1], added: 1 }]
-  ])
+})
+
+it('gets events', function () {
+  var store = new LocalStore('logux')
+  store.add({ a: 1 }, { id: [1], time: 1, added: 1 })
+  return store.get().then(function (data) {
+    expect(data).toEqual({
+      entries: [[{ a: 1 }, { id: [1], time: 1, added: 1 }]]
+    })
+  })
+})
+
+it('gets last added', function () {
+  var store = new LocalStore('logux')
+  store.getLastAdded().then(function (added) {
+    expect(added).toBe(added)
+    return store.add({ type: 'a' }, { id: [1] })
+  }).then(function () {
+    return store.getLastAdded()
+  }).then(function (added) {
+    expect(added).toBe(1)
+  })
 })
 
 it('uses localStorage', function () {
   var store1 = new LocalStore('logux')
-  store1.add([{ type: 'b' }, { created: [1], added: 1 }])
-  store1.add([{ type: 'a' }, { created: [0], added: 2 }])
+  store1.add({ a: 1 }, { id: [1], time: 1 })
+  store1.add({ a: 2 }, { id: [0], time: 2 })
 
-  store1.add([{ type: 'c' }, { created: [2], added: 3 }])
+  store1.add({ a: 3 }, { id: [2], time: 3 })
   store1.remove([2])
 
   var store2 = new LocalStore('logux')
-  expect(store2.memory.created).toEqual([
-    [{ type: 'b' }, { created: [1], added: 1 }],
-    [{ type: 'a' }, { created: [0], added: 2 }]
-  ])
-  expect(store2.memory.added).toEqual([
-    [{ type: 'a' }, { created: [0], added: 2 }],
-    [{ type: 'b' }, { created: [1], added: 1 }]
+  return check(store2.memory, 'created', [
+    [{ a: 2 }, { id: [0], time: 2, added: 2 }],
+    [{ a: 1 }, { id: [1], time: 1, added: 1 }]
   ])
 })
 
 it('uses prefix', function () {
   var store = new LocalStore('app')
-  store.add([{ type: 'b' }, { created: [1], added: 1 }])
+  store.add({ a: 1 }, { id: [1], time: 1 })
   expect(localStorage.length).toBe(2)
   expect(localStorage.key(0)).toEqual('appLog')
   expect(localStorage.key(1)).toEqual('appLogVersion')
@@ -58,8 +105,8 @@ it('uses prefix', function () {
 
 it('checks log format version', function () {
   var store1 = new LocalStore('logux')
-  store1.add([{ type: 'b' }, { created: [1], added: 1 }])
-  store1.add([{ type: 'a' }, { created: [0], added: 2 }])
+  store1.add({ a: 1 }, { id: [1], time: 1 })
+  store1.add({ a: 2 }, { id: [0], time: 2 })
   localStorage.setItem('loguxLogVersion', 'test')
 
   var store2 = new LocalStore('logux')
@@ -85,8 +132,8 @@ it('works without localStorage support', function () {
   global.localStorage = undefined
 
   var store = new LocalStore('logux')
-  store.add([{ type: 'b' }, { created: [1], added: 1 }])
-  store.add([{ type: 'a' }, { created: [0], added: 2 }])
+  store.add({ a: 1 }, { id: [1], time: 1 })
+  store.add({ a: 2 }, { id: [0], time: 2 })
   expect(store.memory.created.length).toBe(2)
 
   expect(console.error).toBeCalledWith(
@@ -101,7 +148,7 @@ it('shows warning on quota limit', function () {
   }
 
   var store = new LocalStore()
-  store.add([{ type: 'b' }, { created: [1], added: 1 }])
+  store.add({ a: 1 }, { id: [1], time: 1 })
 
   expect(store.memory.created.length).toBe(1)
   expect(console.error).toBeCalled()
@@ -116,7 +163,7 @@ it('shows warning on Mozilla quota limit', function () {
   }
 
   var store = new LocalStore()
-  store.add([{ type: 'b' }, { created: [1], added: 1 }])
+  store.add({ a: 1 }, { id: [1], time: 1 })
 
   expect(store.memory.created.length).toBe(1)
   expect(console.error).toBeCalled()
@@ -129,6 +176,6 @@ it('throws other errors during localStorage write', function () {
 
   var store = new LocalStore()
   expect(function () {
-    store.add([{ type: 'b' }, { created: [1], added: 1 }])
+    store.add({ a: 1 }, { id: [1], time: 1 })
   }).toThrowError('Test')
 })
