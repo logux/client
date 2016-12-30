@@ -14,7 +14,6 @@
  */
 function IndexedDBStore () {
   this.setUp = false
-  this.systemDb = undefined
   this.db = undefined
   this.dbName = undefined
 }
@@ -34,18 +33,25 @@ IndexedDBStore.prototype = {
                         window.msIndexedDB
 
         var openRequest = indexedDB.open(dbName, 1)
+        var fillExtra = false
 
         openRequest.onupgradeneeded = function (e) {
           var thisDb = e.target.result
-          var objectStore
+          var entriesOS
+          var extraOS
 
           // Create entries OS
           if (!thisDb.objectStoreNames.contains('entries')) {
-            objectStore = thisDb.createObjectStore('entries',
+            entriesOS = thisDb.createObjectStore('entries',
               { keyPath: 'added', autoIncrement: true })
-            objectStore.createIndex('id', 'id', { unique: true })
-            objectStore.createIndex('time', 'time', { unique: false })
-            objectStore.createIndex('created', 'created', { unique: true })
+            entriesOS.createIndex('id', 'id', { unique: true })
+            entriesOS.createIndex('time', 'time', { unique: false })
+            entriesOS.createIndex('created', 'created', { unique: true })
+          }
+          // Create extra OS
+          if (!thisDb.objectStoreNames.contains('extra')) {
+            extraOS = thisDb.createObjectStore('extra', { keyPath: 'key' })
+            fillExtra = true
           }
         }
 
@@ -60,6 +66,11 @@ IndexedDBStore.prototype = {
 
           store.setUp = true
           store.dbName = dbName
+          if (fillExtra) {
+            var t = store.db.transaction(['extra'], 'readwrite')
+            var os = t.objectStore('extra')
+            os.add({ key: 'lastSynced', sent: 0, received: 0 })
+          }
           resolve(store)
         }
       }
@@ -146,6 +157,58 @@ IndexedDBStore.prototype = {
             del.onsuccess = function () {
               resolve(true)
             }
+          }
+        }
+      })
+    })
+  },
+
+  getLastAdded: function getLastAdded () {
+    return this.get('added', 1).then(function (page) {
+      if (page.entries.length === 1) {
+        return Promise.resolve(page.entries[0][1].added)
+      } else {
+        return Promise.resolve(0)
+      }
+    })
+  },
+
+  getLastSynced: function getLastSynced () {
+    return this.init().then(function (store) {
+      var t = store.db.transaction(['extra'])
+      return new Promise(function (resolve) {
+        var req = t.objectStore('extra').get('lastSynced')
+        req.onsuccess = function (event) {
+          resolve({
+            sent: req.result.sent,
+            received: req.result.received
+          })
+        }
+        req.onerror = function () {
+          resolve(false)
+        }
+      })
+    })
+  },
+
+  setLastSynced: function setLastSynced (values) {
+    return this.init().then(function (store) {
+      var t = store.db.transaction(['extra'], 'readwrite')
+      var os = t.objectStore('extra')
+      return new Promise(function (resolve) {
+        var req = os.get('lastSynced')
+        req.onsuccess = function () {
+          res = req.result
+          if (typeof values.sent !== 'undefined') {
+            res.sent = values.sent
+          }
+          if (typeof values.received !== 'undefined') {
+            res.received = values.received
+          }
+
+          updateReq = os.put(res)
+          updateReq.onsuccess = function () {
+            resolve()
           }
         }
       })
