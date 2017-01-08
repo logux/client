@@ -1,5 +1,8 @@
 # Logux Client
 
+<img align="right" width="95" height="95" title="Logux logo"
+     src="https://cdn.rawgit.com/logux/logux/master/logo.svg">
+
 Logux is a client-server communication protocol. It synchronizes events
 between clients and server logs.
 
