@@ -70,6 +70,17 @@ function Client (options) {
     this.options.nodeId = shortid.generate()
   }
 
+  if (/^ws:\/\//.test(this.options.url) &&
+    !/^ws:\/\/localhost/.test(this.options.url) &&
+    !/^ws:\/\/127\.0\.0\.1/.test(this.options.url) &&
+    !/^ws:\/\/ip6-localhost/.test(this.options.url) &&
+    !/^ws:\/\/::1/.test(this.options.url) &&
+    !/^ws:\/\/[^/\s:]+\.dev(\/|:|$)/.test(this.options.url)) {
+    if (console && console.warn) {
+      console.warn('Use ws:// instead wss:// in production domain.')
+    }
+  }
+
   var timer = this.options.timer || createTimer(this.options.nodeId)
   var store = this.options.store || new LocalStore(this.options.prefix)
 

@@ -5,7 +5,13 @@ require('mock-local-storage')
 var Client = require('../client')
 
 var originStorage = localStorage
+var originWarn = console.warn
+beforeEach(function () {
+  console.warn = jest.fn()
+})
+
 afterEach(function () {
+  console.warn = originWarn
   global.localStorage = originStorage
   localStorage.clear()
   localStorage.itemInsertionCallback = null
@@ -26,6 +32,66 @@ it('throws on missed subprotocol', function () {
   expect(function () {
     new Client({ url: 'wss://localhost:1337' })
   }).toThrowError(/subprotocol/)
+})
+
+it('not forces to use wss:// instead of ws:// in production', function () {
+  new Client({
+    subprotocol: '1.0.0',
+    url: 'wss://test.com'
+  })
+
+  expect(console.warn).not.toBeCalledWith(
+    'Use ws:// instead wss:// in production domain.')
+})
+
+it('forces to use wss:// instead of ws:// in production domain', function () {
+  new Client({
+    subprotocol: '1.0.0',
+    url: 'ws://test.com'
+  })
+
+  expect(console.warn).toBeCalledWith(
+    'Use ws:// instead wss:// in production domain.')
+})
+
+it('don\'t need wss:// in localhost', function () {
+  new Client({
+    subprotocol: '1.0.0',
+    url: 'ws://localhost:1337'
+  })
+
+  expect(console.warn).not.toBeCalledWith(
+    'Use ws:// instead wss:// in production domain.')
+})
+
+it('don\'t need wss:// in 127.0.0.1', function () {
+  new Client({
+    subprotocol: '1.0.0',
+    url: 'ws://127.0.0.1'
+  })
+
+  expect(console.warn).not.toBeCalledWith(
+    'Use ws:// instead wss:// in production domain.')
+})
+
+it('don\'t need wss:// in ::1', function () {
+  new Client({
+    subprotocol: '1.0.0',
+    url: 'ws://::1'
+  })
+
+  expect(console.warn).not.toBeCalledWith(
+    'Use ws:// instead wss:// in production domain.')
+})
+
+it('don\'t need wss:// in .dev zone', function () {
+  new Client({
+    subprotocol: '1.0.0',
+    url: 'ws://test.dev'
+  })
+
+  expect(console.warn).not.toBeCalledWith(
+    'Use ws:// instead wss:// in production domain.')
 })
 
 it('generates node ID if it is missed', function () {
