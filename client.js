@@ -32,6 +32,8 @@ var LocalStore = require('./local-store')
  * @param {number} [options.minDelay=1000] Minimum delay between reconnections.
  * @param {number} [options.maxDelay=5000] Maximum delay between reconnections.
  * @param {number} [options.attempts=Infinity] Maximum reconnection attempts.
+ * @param {bool} [options.allowUnsecure=false] Flag for show warning in case
+ *                                         using ws:// in production domain.
  *
  * @example
  * token = document.querySelector('meta[name=token]')
@@ -70,7 +72,8 @@ function Client (options) {
     this.options.nodeId = shortid.generate()
   }
 
-  if (/^ws:\/\//.test(this.options.url) &&
+  if (!this.options.allowUnsecure &&
+    /^ws:\/\//.test(this.options.url) &&
     !/^ws:\/\/localhost/.test(this.options.url) &&
     !/^ws:\/\/127\.0\.0\.1/.test(this.options.url) &&
     !/^ws:\/\/ip6-localhost/.test(this.options.url) &&

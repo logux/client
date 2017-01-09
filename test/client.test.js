@@ -54,6 +54,17 @@ it('forces to use wss:// instead of ws:// in production domain', function () {
     'Use ws:// instead wss:// in production domain.')
 })
 
+it('don\'t show warning with enabled \'allowUnsecure\' option', function () {
+  new Client({
+    subprotocol: '1.0.0',
+    url: 'ws://test.com',
+    allowUnsecure: true
+  })
+
+  expect(console.warn).not.toBeCalledWith(
+    'Use ws:// instead wss:// in production domain.')
+})
+
 it('don\'t need wss:// in localhost', function () {
   new Client({
     subprotocol: '1.0.0',
