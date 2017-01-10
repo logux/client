@@ -6,10 +6,6 @@ var Client = require('../client')
 
 var originStorage = localStorage
 var originWarn = console.warn
-beforeEach(function () {
-  console.warn = jest.fn()
-})
-
 afterEach(function () {
   console.warn = originWarn
   global.localStorage = originStorage
@@ -35,6 +31,8 @@ it('throws on missed subprotocol', function () {
 })
 
 it('not warns on WSS', function () {
+  console.warn = jest.fn()
+
   new Client({
     subprotocol: '1.0.0',
     url: 'wss://test.com'
@@ -44,6 +42,8 @@ it('not warns on WSS', function () {
 })
 
 it('forces to use WSS in production domain', function () {
+  console.warn = jest.fn()
+
   new Client({
     subprotocol: '1.0.0',
     url: 'ws://test.com'
@@ -56,6 +56,8 @@ it('forces to use WSS in production domain', function () {
 })
 
 it('ignores WS with allowDangerousProtocol', function () {
+  console.warn = jest.fn()
+
   new Client({
     allowDangerousProtocol: true,
     subprotocol: '1.0.0',
@@ -66,6 +68,8 @@ it('ignores WS with allowDangerousProtocol', function () {
 })
 
 it('ignores WS in development', function () {
+  console.warn = jest.fn()
+
   new Client({
     subprotocol: '1.0.0',
     url: 'ws://localhost:1337'
