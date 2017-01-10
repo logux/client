@@ -1,4 +1,3 @@
-var createTestIdGenerator = require('logux-core').createTestIdGenerator
 var MemoryStore = require('logux-core').MemoryStore
 require('mock-local-storage')
 
@@ -94,15 +93,6 @@ it('uses node ID in ID generator', function () {
   expect(typeof id[0]).toEqual('number')
   expect(id[1]).toEqual(client.options.nodeId)
   expect(id[2]).toBe(0)
-})
-
-it('uses custom ID generator', function () {
-  var client = new Client({
-    subprotocol: '1.0.0',
-    idGenerator: createTestIdGenerator(),
-    url: 'wss://localhost:1337'
-  })
-  expect(client.log.generateId()).toEqual([1, 'test', 0])
 })
 
 it('uses custom store', function () {

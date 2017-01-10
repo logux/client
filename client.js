@@ -1,5 +1,4 @@
 var BrowserConnection = require('logux-sync/browser-connection')
-var createIdGenerator = require('logux-core/create-id-generator')
 var ClientSync = require('logux-sync/client-sync')
 var Reconnect = require('logux-sync/reconnect')
 var shortid = require('shortid')
@@ -26,9 +25,6 @@ var LocalStore = require('./local-store')
  *                                         to break connection.
  * @param {number} [options.ping=10000] Milliseconds since last message to test
  *                                      connection by sending ping.
- * @param {function} [options.idGenerator] ID generator to use in log.
- *                                         Will be default generator with
- *                                         server `nodeId`, by default.
  * @param {Store} [options.store] Store to save log. Will be `LocaleStore`,
  *                                by default.
  * @param {number} [options.minDelay=1000] Minimum delay between reconnections.
@@ -83,7 +79,6 @@ function Client (options) {
     }
   }
 
-  var timer = this.options.timer || createTimer(this.options.nodeId)
   var store = this.options.store || new LocalStore(this.options.prefix)
 
   /**
@@ -93,7 +88,7 @@ function Client (options) {
    * @example
    * app.log.keep(customKeeper)
    */
-  this.log = new Log({ store: store, idGenerator: idGenerator })
+  this.log = new Log({ store: store, nodeId: this.options.nodeId })
 
   var ws = new BrowserConnection(this.options.url)
   var connection = new Reconnect(ws, {
