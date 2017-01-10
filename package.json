@@ -16,7 +16,7 @@
   },
   "devDependencies": {
     "docdash": "^0.4.0",
-    "eslint": "^3.13.0",
+    "eslint": "^3.13.1",
     "eslint-config-logux": "^4.0.0",
     "eslint-config-standard": "^6.2.1",
     "eslint-plugin-es5": "^1.0.1",
@@ -26,7 +26,7 @@
     "jest": "^18.1.0",
     "jsdoc": "^3.4.3",
     "json-loader": "^0.5.4",
-    "lint-staged": "^3.2.5",
+    "lint-staged": "^3.2.6",
     "mock-local-storage": "^1.0.2",
     "pre-commit": "^1.2.2",
     "rimraf": "^2.5.4",
