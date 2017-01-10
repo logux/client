@@ -6,6 +6,7 @@ var shortid = require('shortid')
 var Log = require('logux-core/log')
 
 var isQuotaExceeded = require('./is-quota-exceeded')
+var isDevelopment = require('./is-development')
 var LocalStore = require('./local-store')
 
 /**
@@ -72,13 +73,8 @@ function Client (options) {
     this.options.nodeId = shortid.generate()
   }
 
-  if (!this.options.allowUnsecure &&
-    /^ws:\/\//.test(this.options.url) &&
-    !/^ws:\/\/localhost/.test(this.options.url) &&
-    !/^ws:\/\/127\.0\.0\.1/.test(this.options.url) &&
-    !/^ws:\/\/ip6-localhost/.test(this.options.url) &&
-    !/^ws:\/\/::1/.test(this.options.url) &&
-    !/^ws:\/\/[^/\s:]+\.dev(\/|:|$)/.test(this.options.url)) {
+  var url = this.options.url
+  if (!options.allowUnsecure && /^ws:\/\//.test(url) && !isDevelopment(url)) {
     if (console && console.warn) {
       console.warn('Use ws:// instead wss:// in production domain.')
     }
