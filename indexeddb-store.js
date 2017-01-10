@@ -23,7 +23,7 @@ IndexedDBStore.prototype = {
   init: function init (dbName) {
     dbName = dbName || 'loguxLog'
     var store = this
-    return new Promise(function (resolve, reject) {
+    return new Promise(function (resolve) {
       if (store.setUp) {
         resolve(store)
       } else {
@@ -38,7 +38,6 @@ IndexedDBStore.prototype = {
         openRequest.onupgradeneeded = function (e) {
           var thisDb = e.target.result
           var logOS
-          var extraOS
 
           // Create log OS
           if (!thisDb.objectStoreNames.contains('log')) {
@@ -50,19 +49,13 @@ IndexedDBStore.prototype = {
           }
           // Create extra OS
           if (!thisDb.objectStoreNames.contains('extra')) {
-            extraOS = thisDb.createObjectStore('extra', { keyPath: 'key' })
+            thisDb.createObjectStore('extra', { keyPath: 'key' })
             fillExtra = true
           }
         }
 
         openRequest.onsuccess = function (e) {
           store.db = e.target.result
-
-          store.db.onerror = function (err) {
-            // Generic error handler for all errors targeted at this database's
-            // requests!
-            reject(err)
-          }
 
           store.setUp = true
           store.dbName = dbName
@@ -130,15 +123,17 @@ IndexedDBStore.prototype = {
       }
 
       var t = store.db.transaction(['log'], 'readwrite')
-      var dt = Date.now()
+      var ind = t.objectStore('log').index('id')
       return new Promise(function (resolve) {
-        var req = t.objectStore('log').add(objToAdd)
-        req.onsuccess = function (event) {
-          resolve(event.target.result)
-        }
-        req.onerror = function (err) {
-          t.abort()
-          resolve(false)
+        ind.get(objToAdd.id).onsuccess = function (ev) {
+          if (ev.target.result) {
+            resolve(false)
+          } else {
+            var req = t.objectStore('log').add(objToAdd)
+            req.onsuccess = function (event) {
+              resolve(event.target.result)
+            }
+          }
         }
       })
     })
@@ -164,12 +159,19 @@ IndexedDBStore.prototype = {
   },
 
   getLastAdded: function getLastAdded () {
-    return this.get('added', 1).then(function (page) {
-      if (page.entries.length === 1) {
-        return Promise.resolve(page.entries[0][1].added)
-      } else {
-        return Promise.resolve(0)
-      }
+    return this.init().then(function (store) {
+      var t = store.db.transaction(['log'], 'readonly')
+      var cursorCall = t.objectStore('log').openCursor(null, 'prev')
+      return new Promise(function (resolve) {
+        cursorCall.onsuccess = function (event) {
+          var cursor = event.target.result
+          if (cursor) {
+            resolve(cursor.value.added)
+          } else {
+            resolve(0)
+          }
+        }
+      })
     })
   },
 
@@ -178,14 +180,11 @@ IndexedDBStore.prototype = {
       var t = store.db.transaction(['extra'])
       return new Promise(function (resolve) {
         var req = t.objectStore('extra').get('lastSynced')
-        req.onsuccess = function (event) {
+        req.onsuccess = function () {
           resolve({
             sent: req.result.sent,
             received: req.result.received
           })
-        }
-        req.onerror = function () {
-          resolve(false)
         }
       })
     })
@@ -198,7 +197,7 @@ IndexedDBStore.prototype = {
       return new Promise(function (resolve) {
         var req = os.get('lastSynced')
         req.onsuccess = function () {
-          res = req.result
+          var res = req.result
           if (typeof values.sent !== 'undefined') {
             res.sent = values.sent
           }
@@ -206,7 +205,7 @@ IndexedDBStore.prototype = {
             res.received = values.received
           }
 
-          updateReq = os.put(res)
+          var updateReq = os.put(res)
           updateReq.onsuccess = function () {
             resolve()
           }

@@ -19,17 +19,17 @@ afterEach(function () {
   fakeIndexedDB.deleteDatabase('loguxLog')
 })
 
-function check (store, type, entries) {
-  return store.get(type).then(function (page) {
+function check (someStore, type, entries) {
+  return someStore.get(type).then(function (page) {
     expect(page.entries).toEqual(entries)
     expect(page.next).toBeUndefined()
   })
 }
 
-function checkBoth (store, entries) {
+function checkBoth (someStore, entries) {
   return Promise.all([
-    check(store, 'created', entries),
-    check(store, 'added', entries)
+    check(someStore, 'created', entries),
+    check(someStore, 'added', entries)
   ])
 }
 
@@ -56,7 +56,7 @@ it('updates latest sent value', function () {
   return store.setLastSynced({ sent: 1 }).then(function () {
     return store.getLastSynced()
   }).then(function (synced) {
-    expect(synced).toEqual({ sent: 1, received: 0 })
+    return expect(synced).toEqual({ sent: 1, received: 0 })
   })
 })
 
@@ -65,7 +65,7 @@ it('updates both synced values', function () {
   return store.setLastSynced(value).then(function () {
     return store.getLastSynced()
   }).then(function (synced) {
-    expect(synced).toEqual(value)
+    return expect(synced).toEqual(value)
   })
 })
 
@@ -158,13 +158,13 @@ it('returns current entries state', function () {
 })
 
 it('returns latest added', function () {
-  store.getLastAdded().then(function (added) {
-    expect(added).toBe(added)
+  return store.getLastAdded().then(function (added) {
+    expect(added).toBe(0)
     return store.add({ type: 'a' }, { id: [1] })
   }).then(function () {
     return store.getLastAdded()
   }).then(function (added) {
-    expect(added).toBe(1)
+    return expect(added).toBe(1)
   })
 })
 
@@ -184,4 +184,3 @@ it('get returns page by size', function () {
     return expect(res.entries.length).toEqual(4)
   })
 })
-
