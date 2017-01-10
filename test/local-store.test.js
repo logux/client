@@ -4,10 +4,6 @@ var LocalStore = require('../local-store')
 
 var originError = console.error
 var originStorage = localStorage
-beforeEach(function () {
-  console.error = jest.fn()
-})
-
 afterEach(function () {
   console.error = originError
   global.localStorage = originStorage
@@ -57,6 +53,8 @@ it('uses prefix', function () {
 })
 
 it('checks log format version', function () {
+  console.error = jest.fn()
+
   var store1 = new LocalStore('logux')
   store1.add([{ type: 'b' }, { created: [1], added: 1 }])
   store1.add([{ type: 'a' }, { created: [0], added: 2 }])
@@ -70,6 +68,8 @@ it('checks log format version', function () {
 })
 
 it('works on broken JSON in localStorage', function () {
+  console.error = jest.fn()
+
   localStorage.setItem('loguxLog', '[')
   localStorage.setItem('loguxLogVersion', '0')
 
@@ -82,6 +82,7 @@ it('works on broken JSON in localStorage', function () {
 })
 
 it('works without localStorage support', function () {
+  console.error = jest.fn()
   global.localStorage = undefined
 
   var store = new LocalStore('logux')
@@ -94,6 +95,8 @@ it('works without localStorage support', function () {
 })
 
 it('shows warning on quota limit', function () {
+  console.error = jest.fn()
+
   localStorage.itemInsertionCallback = function () {
     var err = new Error('Mock localStorage quota exceeded')
     err.code = DOMException.QUOTA_EXCEEDED_ERR
@@ -108,6 +111,8 @@ it('shows warning on quota limit', function () {
 })
 
 it('shows warning on Mozilla quota limit', function () {
+  console.error = jest.fn()
+
   localStorage.itemInsertionCallback = function () {
     var err = new Error('Mock localStorage quota exceeded')
     err.name = 'NS_ERROR_DOM_QUOTA_REACHED'
