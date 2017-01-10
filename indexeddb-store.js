@@ -116,7 +116,7 @@ IndexedDBStore.prototype = {
         action: action,
         id: meta.id,
         time: meta.time,
-        created: `${meta.time}\t${meta.id.slice(1).join('\t')}`
+        created: (meta.time + '\t' + meta.id.slice(1).join('\t'))
       }
       if (meta.added) {
         objToAdd.added = meta.added
