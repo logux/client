@@ -34,17 +34,16 @@ it('throws on missed subprotocol', function () {
   }).toThrowError(/subprotocol/)
 })
 
-it('not forces to use wss:// instead of ws:// in production', function () {
+it('not warns on WSS', function () {
   new Client({
     subprotocol: '1.0.0',
     url: 'wss://test.com'
   })
 
-  expect(console.warn).not.toBeCalledWith(
-    'Use ws:// instead wss:// in production domain.')
+  expect(console.warn).not.toBeCalled()
 })
 
-it('forces to use wss:// instead of ws:// in production domain', function () {
+it('forces to use WSS in production domain', function () {
   new Client({
     subprotocol: '1.0.0',
     url: 'ws://test.com'
@@ -54,55 +53,23 @@ it('forces to use wss:// instead of ws:// in production domain', function () {
     'Use ws:// instead wss:// in production domain.')
 })
 
-it('don\'t show warning with enabled \'allowUnsecure\' option', function () {
+it('ignores WS with allowUnsecure', function () {
   new Client({
     subprotocol: '1.0.0',
     url: 'ws://test.com',
     allowUnsecure: true
   })
 
-  expect(console.warn).not.toBeCalledWith(
-    'Use ws:// instead wss:// in production domain.')
+  expect(console.warn).not.toBeCalled()
 })
 
-it('don\'t need wss:// in localhost', function () {
+it('ignores WS in development', function () {
   new Client({
     subprotocol: '1.0.0',
     url: 'ws://localhost:1337'
   })
 
-  expect(console.warn).not.toBeCalledWith(
-    'Use ws:// instead wss:// in production domain.')
-})
-
-it('don\'t need wss:// in 127.0.0.1', function () {
-  new Client({
-    subprotocol: '1.0.0',
-    url: 'ws://127.0.0.1'
-  })
-
-  expect(console.warn).not.toBeCalledWith(
-    'Use ws:// instead wss:// in production domain.')
-})
-
-it('don\'t need wss:// in ::1', function () {
-  new Client({
-    subprotocol: '1.0.0',
-    url: 'ws://::1'
-  })
-
-  expect(console.warn).not.toBeCalledWith(
-    'Use ws:// instead wss:// in production domain.')
-})
-
-it('don\'t need wss:// in .dev zone', function () {
-  new Client({
-    subprotocol: '1.0.0',
-    url: 'ws://test.dev'
-  })
-
-  expect(console.warn).not.toBeCalledWith(
-    'Use ws:// instead wss:// in production domain.')
+  expect(console.warn).not.toBeCalled()
 })
 
 it('generates node ID if it is missed', function () {
