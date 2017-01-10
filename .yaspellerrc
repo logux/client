@@ -23,6 +23,7 @@
     "IndexedDBStore",
     "indexeddb",
     "reconnections",
-    "reconnection"
+    "reconnection",
+    "ws"
   ]
 }
