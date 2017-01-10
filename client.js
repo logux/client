@@ -33,8 +33,8 @@ var LocalStore = require('./local-store')
  * @param {number} [options.minDelay=1000] Minimum delay between reconnections.
  * @param {number} [options.maxDelay=5000] Maximum delay between reconnections.
  * @param {number} [options.attempts=Infinity] Maximum reconnection attempts.
- * @param {bool} [options.allowUnsecure=false] Flag for show warning in case
- *                                         using ws:// in production domain.
+ * @param {bool} [options.allowDangerousProtocol=false] Hide warning in case
+ *                                                      using ws: in production.
  *
  * @example
  * token = document.querySelector('meta[name=token]')
@@ -73,10 +73,12 @@ function Client (options) {
     this.options.nodeId = shortid.generate()
   }
 
-  var url = this.options.url
-  if (!options.allowUnsecure && /^ws:\/\//.test(url) && !isDevelopment(url)) {
-    if (console && console.warn) {
-      console.warn('Use ws:// instead wss:// in production domain.')
+  if (/^ws:\/\//.test(this.options.url) && !isDevelopment(this.options.url)) {
+    if (!options.allowDangerousProtocol && console && console.warn) {
+      console.warn(
+        'Without SSL, old proxies can block WebSockets. ' +
+        'Use WSS connection for Logux or set allowDangerousProtocol option.'
+      )
     }
   }
 

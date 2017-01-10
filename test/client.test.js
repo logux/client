@@ -50,14 +50,16 @@ it('forces to use WSS in production domain', function () {
   })
 
   expect(console.warn).toBeCalledWith(
-    'Use ws:// instead wss:// in production domain.')
+    'Without SSL, old proxies can block WebSockets. ' +
+    'Use WSS connection for Logux or set allowDangerousProtocol option.'
+  )
 })
 
-it('ignores WS with allowUnsecure', function () {
+it('ignores WS with allowDangerousProtocol', function () {
   new Client({
+    allowDangerousProtocol: true,
     subprotocol: '1.0.0',
-    url: 'ws://test.com',
-    allowUnsecure: true
+    url: 'ws://test.com'
   })
 
   expect(console.warn).not.toBeCalled()
