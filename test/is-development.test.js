@@ -27,10 +27,6 @@ it('detects .local domains as development', function () {
   detects('a.b1.local')
 })
 
-it('detects link-local IP4 as development', function () {
-  detects('169.254.12.35')
-})
-
 it('detects production domains', function () {
   expect(isDevelopment('ws://example.com')).toBeFalsy()
   expect(isDevelopment('wss://example.com/path')).toBeFalsy()
