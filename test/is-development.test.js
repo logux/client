@@ -10,6 +10,7 @@ function detects (base) {
 it('detects localhost', function () {
   detects('localhost')
   detects('127.0.0.1')
+  detects('127.255.127.1')
 })
 
 it('detects IP6 localhost', function () {
