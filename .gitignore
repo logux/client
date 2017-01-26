@@ -7,6 +7,4 @@ yarn-error.log
 
 coverage/
 docs/
-
-*.gz
-bundle-report.html
+bundle/
