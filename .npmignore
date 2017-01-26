@@ -15,6 +15,5 @@ docs/
 .jsdocrc
 .yaspellerrc
 
-*.gz
-bundle-report.html
+bundle/
 webpack.config.js
