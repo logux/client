@@ -1,4 +1,3 @@
-var createTestTimer = require('logux-core').createTestTimer
 var MemoryStore = require('logux-core').MemoryStore
 require('mock-local-storage')
 
@@ -92,21 +91,12 @@ it('uses custom node ID', function () {
   expect(client.options.nodeId).toEqual('client')
 })
 
-it('uses node ID in timer', function () {
+it('uses node ID in ID generator', function () {
   var client = new Client({ subprotocol: '1.0.0', url: 'wss://localhost:1337' })
-  var time = client.log.timer()
-  expect(typeof time[0]).toEqual('number')
-  expect(time[1]).toEqual(client.options.nodeId)
-  expect(time[2]).toBe(0)
-})
-
-it('uses custom timer', function () {
-  var client = new Client({
-    subprotocol: '1.0.0',
-    timer: createTestTimer(),
-    url: 'wss://localhost:1337'
-  })
-  expect(client.log.timer()).toEqual([1])
+  var id = client.log.generateId()
+  expect(typeof id[0]).toEqual('number')
+  expect(id[1]).toEqual(client.options.nodeId)
+  expect(id[2]).toBe(0)
 })
 
 it('uses custom store', function () {

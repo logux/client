@@ -23,7 +23,7 @@ IndexedDBStore.prototype = {
   init: function init (dbName) {
     dbName = dbName || 'loguxLog'
     var store = this
-    return new Promise(function (resolve, reject) {
+    return new Promise(function (resolve) {
       if (store.setUp) {
         resolve(store)
       } else {
@@ -33,32 +33,37 @@ IndexedDBStore.prototype = {
                         window.msIndexedDB
 
         var openRequest = indexedDB.open(dbName, 1)
+        var fillExtra = false
 
         openRequest.onupgradeneeded = function (e) {
           var thisDb = e.target.result
-          var objectStore
+          var logOS
 
-          // Create entries OS
-          if (!thisDb.objectStoreNames.contains('entries')) {
-            objectStore = thisDb.createObjectStore('entries',
+          // Create log OS
+          if (!thisDb.objectStoreNames.contains('log')) {
+            logOS = thisDb.createObjectStore('log',
               { keyPath: 'added', autoIncrement: true })
-            objectStore.createIndex('type', 'type', { unique: false })
-            objectStore.createIndex('created', 'created', { unique: true })
-            objectStore.createIndex('data', 'data', { unique: false })
+            logOS.createIndex('id', 'id', { unique: true })
+            logOS.createIndex('time', 'time', { unique: false })
+            logOS.createIndex('created', 'created', { unique: true })
+          }
+          // Create extra OS
+          if (!thisDb.objectStoreNames.contains('extra')) {
+            thisDb.createObjectStore('extra', { keyPath: 'key' })
+            fillExtra = true
           }
         }
 
         openRequest.onsuccess = function (e) {
           store.db = e.target.result
 
-          store.db.onerror = function (err) {
-            // Generic error handler for all errors targeted at this database's
-            // requests!
-            reject(err)
-          }
-
           store.setUp = true
           store.dbName = dbName
+          if (fillExtra) {
+            var t = store.db.transaction(['extra'], 'readwrite')
+            var os = t.objectStore('extra')
+            os.add({ key: 'lastSynced', sent: 0, received: 0 })
+          }
           resolve(store)
         }
       }
@@ -68,88 +73,141 @@ IndexedDBStore.prototype = {
   get: function get (order, pageSize) {
     pageSize = pageSize || 20
     return this.init().then(function (store) {
-      var t = store.db.transaction(['entries'], 'readonly')
+      var t = store.db.transaction(['log'], 'readonly')
       return new Promise(function (resolve) {
-        var entries = []
+        var log = []
         var cnt = 0
 
         var cursorCall
         var meta = {}
-        var entry = {}
         if (order === 'created') {
-          var ind = t.objectStore('entries').index('created')
+          var ind = t.objectStore('log').index('created')
           cursorCall = ind.openCursor(null, 'prev')
         } else {
-          cursorCall = t.objectStore('entries').openCursor(null, 'prev')
+          cursorCall = t.objectStore('log').openCursor(null, 'prev')
         }
         cursorCall.onsuccess = function (event) {
           var cursor = event.target.result
           if (cursor) {
             meta = {}
-            entry = {}
-            meta.created = cursor.value.created
+            meta.id = cursor.value.id
+            meta.time = cursor.value.time
             meta.added = cursor.value.added
-            entry = cursor.value.data
-            entry.type = cursor.value.type
 
-            entries.push([entry, meta])
+            log.push([cursor.value.action, meta])
 
             cnt += 1
             if (cnt === pageSize) {
-              resolve({ entries: entries })
+              resolve({ entries: log })
             } else {
               cursor.continue()
             }
           } else {
-            resolve({ entries: entries })
+            resolve({ entries: log })
           }
         }
       })
     })
   },
 
-  add: function add (entry) {
+  add: function add (action, meta) {
     return this.init().then(function (store) {
       var objToAdd = {
-        type: entry[0].type,
-        created: entry[1].created,
-        data: {}
+        action: action,
+        id: meta.id,
+        time: meta.time,
+        created: (meta.time + '\t' + meta.id.slice(1).join('\t'))
       }
-      if (entry[1].added) {
-        objToAdd.added = entry[1].added
-      }
-      for (var key in entry[0]) {
-        if (key !== 'type') {
-          objToAdd.data[key] = entry[0][key]
-        }
+      if (meta.added) {
+        objToAdd.added = meta.added
       }
 
-      var t = store.db.transaction(['entries'], 'readwrite')
+      var t = store.db.transaction(['log'], 'readwrite')
+      var ind = t.objectStore('log').index('id')
       return new Promise(function (resolve) {
-        var req = t.objectStore('entries').add(objToAdd)
-        req.onsuccess = function (event) {
-          resolve(event.target.result === objToAdd.added)
-        }
-        req.onerror = function () {
-          resolve(false)
+        ind.get(objToAdd.id).onsuccess = function (ev) {
+          if (ev.target.result) {
+            resolve(false)
+          } else {
+            var req = t.objectStore('log').add(objToAdd)
+            req.onsuccess = function (event) {
+              resolve(event.target.result)
+            }
+          }
         }
       })
     })
   },
 
-  remove: function remove (time) {
+  remove: function remove (id) {
     return this.init().then(function (store) {
-      var t = store.db.transaction(['entries'], 'readwrite')
+      var t = store.db.transaction(['log'], 'readwrite')
       return new Promise(function (resolve) {
-        var req = t.objectStore('entries').index('created').get(time)
+        var req = t.objectStore('log').index('id').get(id)
         req.onsuccess = function () {
           if (!req.result) {
             resolve(false)
           } else {
-            var del = t.objectStore('entries').delete(req.result.added)
+            var del = t.objectStore('log').delete(req.result.added)
             del.onsuccess = function () {
               resolve(true)
             }
+          }
+        }
+      })
+    })
+  },
+
+  getLastAdded: function getLastAdded () {
+    return this.init().then(function (store) {
+      var t = store.db.transaction(['log'], 'readonly')
+      var cursorCall = t.objectStore('log').openCursor(null, 'prev')
+      return new Promise(function (resolve) {
+        cursorCall.onsuccess = function (event) {
+          var cursor = event.target.result
+          if (cursor) {
+            resolve(cursor.value.added)
+          } else {
+            resolve(0)
+          }
+        }
+      })
+    })
+  },
+
+  getLastSynced: function getLastSynced () {
+    return this.init().then(function (store) {
+      var t = store.db.transaction(['extra'])
+      return new Promise(function (resolve) {
+        var req = t.objectStore('extra').get('lastSynced')
+        req.onsuccess = function () {
+          resolve({
+            sent: req.result.sent,
+            received: req.result.received
+          })
+        }
+      })
+    })
+  },
+
+  setLastSynced: function setLastSynced (values) {
+    return this.init().then(function (store) {
+      var t = store.db.transaction(['extra'], 'readwrite')
+      var os = t.objectStore('extra')
+      return new Promise(function (resolve) {
+        var req = os.get('lastSynced')
+        req.onsuccess = function () {
+          var res = req.result
+          if (typeof values.sent !== 'undefined') {
+            res.sent = values.sent
+          }
+          if (typeof values.received !== 'undefined') {
+            res.received = values.received
+          }
+
+          var updateReq = os.put(res)
+          updateReq.onsuccess = function () {
+            resolve()
           }
         }
       })

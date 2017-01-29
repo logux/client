@@ -44,6 +44,10 @@ function LocalStore (prefix) {
 
 LocalStore.prototype = {
 
+  get: function get () {
+    return this.memory.get.apply(this.memory, arguments)
+  },
+
   add: function add () {
     var promise = this.memory.add.apply(this.memory, arguments)
     this.serialize()
@@ -53,6 +57,16 @@ LocalStore.prototype = {
   remove: function remove () {
     this.memory.remove.apply(this.memory, arguments)
     this.serialize()
+  },
+
+  getLastSynced: function getLastSynced () {
+    return this.memory.getLastSynced.apply(this.memory, arguments)
+  },
+
+  setLastSynced: function setLastSynced () {
+    var promise = this.memory.setLastSynced.apply(this.memory, arguments)
+    this.serialize()
+    return promise
   },
 
   serialize: function serialize () {
