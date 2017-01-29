@@ -27,7 +27,7 @@ function LocalStore (prefix) {
    * `localStorage` key name.
    * @type {string}
    */
-  this.key = prefix + 'Log'
+  this.key = prefix
 
   this.memory = new MemoryStore()
 
@@ -39,14 +39,10 @@ function LocalStore (prefix) {
   }
 
   this.checkLocalStorage()
-  this.deserialize()
+  this.load()
 }
 
 LocalStore.prototype = {
-
-  get: function get () {
-    return this.memory.get.apply(this.memory, arguments)
-  },
 
   add: function add () {
     var promise = this.memory.add.apply(this.memory, arguments)
@@ -57,10 +53,6 @@ LocalStore.prototype = {
   remove: function remove () {
     this.memory.remove.apply(this.memory, arguments)
     this.serialize()
-  },
-
-  getLastSynced: function getLastSynced () {
-    return this.memory.getLastSynced.apply(this.memory, arguments)
   },
 
   setLastSynced: function setLastSynced () {
@@ -74,6 +66,8 @@ LocalStore.prototype = {
     try {
       localStorage.setItem(this.key, string)
       localStorage.setItem(this.key + 'Version', VERSION)
+      localStorage.setItem(this.key + 'LastSent', this.memory.lastSent)
+      localStorage.setItem(this.key + 'LastReceived', this.memory.lastReceived)
     } catch (e) {
       if (isQuotaExceeded(e)) {
         warn('Logux log become bigger than localStorage quota. ' +
@@ -85,7 +79,7 @@ LocalStore.prototype = {
     }
   },
 
-  deserialize: function deserialize () {
+  load: function load () {
     var version = localStorage.getItem(this.key + 'Version')
     if (!version) return
 
@@ -103,20 +97,29 @@ LocalStore.prototype = {
       warn('Logux log in localStorage is broken. Log was cleaned.')
       localStorage.removeItem(this.key)
       localStorage.removeItem(this.key + 'Version')
+      localStorage.removeItem(this.key + 'LastSent')
+      localStorage.removeItem(this.key + 'LastReceived')
       return
     }
+
+    this.memory.lastSent = parseInt(
+      localStorage.getItem(this.key + 'LastSent'))
+    this.memory.lastReceived = parseInt(
+      localStorage.getItem(this.key + 'LastReceived'))
 
     this.memory.created = created
     this.memory.added = created.slice(0).sort(function (a, b) {
       return b[1].added - a[1].added
     })
+    if (this.memory.added.length > 0) {
+      this.memory.lastAdded = this.memory.added[0][1].added
+    }
   },
 
   checkLocalStorage: function checkLocalStorage () {
     if (!global.localStorage) {
       warn('Logux didn’t find localStorage. Memory-only store was used.')
-      this.serialize = function () { }
-      this.deserialize = function () { }
+      this.serialize = this.load = function () { }
     }
   }
 

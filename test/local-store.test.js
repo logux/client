@@ -25,22 +25,20 @@ it('has synced values set to 0', function () {
   })
 })
 
-it('updates latest sent value', function () {
+it('stores synced values', function () {
   var store = new LocalStore('logux')
   return store.setLastSynced({ sent: 1 }).then(function () {
     return store.getLastSynced()
   }).then(function (synced) {
     expect(synced).toEqual({ sent: 1, received: 0 })
-  })
-})
-
-it('updates both synced values', function () {
-  var store = new LocalStore('logux')
-  var value = { received: 1, sent: 2 }
-  return store.setLastSynced(value).then(function () {
+    return store.setLastSynced({ sent: 2, received: 1 })
+  }).then(function () {
     return store.getLastSynced()
   }).then(function (synced) {
-    expect(synced).toEqual(value)
+    expect(synced).toEqual({ sent: 2, received: 1 })
+    return (new LocalStore('logux')).getLastSynced()
+  }).then(function (synced) {
+    expect(synced).toEqual({ sent: 2, received: 1 })
   })
 })
 
@@ -66,13 +64,19 @@ it('gets events', function () {
 
 it('gets last added', function () {
   var store = new LocalStore('logux')
-  store.getLastAdded().then(function (added) {
-    expect(added).toBe(added)
-    return store.add({ type: 'a' }, { id: [1] })
+  return store.getLastAdded().then(function (added) {
+    expect(added).toBe(0)
+    return Promise.all([
+      store.add({ type: 'a' }, { id: [1] }),
+      store.add({ type: 'b' }, { id: [2] })
+    ])
   }).then(function () {
     return store.getLastAdded()
   }).then(function (added) {
-    expect(added).toBe(1)
+    expect(added).toBe(2)
+    return (new LocalStore('logux')).getLastAdded()
+  }).then(function (added) {
+    expect(added).toBe(2)
   })
 })
 
@@ -94,9 +98,11 @@ it('uses localStorage', function () {
 it('uses prefix', function () {
   var store = new LocalStore('app')
   store.add({ a: 1 }, { id: [1], time: 1 })
-  expect(localStorage.length).toBe(2)
-  expect(localStorage.key(0)).toEqual('appLog')
-  expect(localStorage.key(1)).toEqual('appLogVersion')
+  expect(localStorage.length).toBe(4)
+  expect(localStorage.key(0)).toEqual('app')
+  expect(localStorage.key(1)).toEqual('appVersion')
+  expect(localStorage.key(2)).toEqual('appLastSent')
+  expect(localStorage.key(3)).toEqual('appLastReceived')
 })
 
 it('checks log format version', function () {
@@ -105,7 +111,7 @@ it('checks log format version', function () {
   var store1 = new LocalStore('logux')
   store1.add({ a: 1 }, { id: [1], time: 1 })
   store1.add({ a: 2 }, { id: [0], time: 2 })
-  localStorage.setItem('loguxLogVersion', 'test')
+  localStorage.setItem('loguxVersion', 'test')
 
   var store2 = new LocalStore('logux')
   expect(store2.memory.created).toEqual([])
@@ -117,8 +123,8 @@ it('checks log format version', function () {
 it('works on broken JSON in localStorage', function () {
   console.error = jest.fn()
 
-  localStorage.setItem('loguxLog', '[')
-  localStorage.setItem('loguxLogVersion', '0')
+  localStorage.setItem('logux', '[')
+  localStorage.setItem('loguxVersion', '0')
 
   var store = new LocalStore('logux')
   expect(store.memory.created).toEqual([])
