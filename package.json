@@ -10,7 +10,7 @@
   "license": "MIT",
   "repository": "logux/logux-client",
   "dependencies": {
-    "logux-core": "^0.1.0",
+    "logux-core": "logux/logux-core",
     "logux-sync": "^0.1.2",
     "shortid": "^2.2.6"
   },
