@@ -2,7 +2,7 @@ var MemoryStore = require('logux-core/memory-store')
 
 var isQuotaExceeded = require('./is-quota-exceeded')
 
-var VERSION = '0'
+var VERSION = '1'
 
 function warn (message) {
   if (console && console.error) console.error(message)
@@ -12,8 +12,8 @@ function warn (message) {
  * `localStorage` store for Logux log. It is based on `MemoryStore`
  * and serialize log to `localStorage` on every change.
  *
- * @param {string} prefix="logux" Prefix for `localStorage` key to run
- *                                multiple Logux instances on same web page.
+ * @param {string} [prefix="logux"] Prefix for `localStorage` key to run
+ *                                  multiple Logux instances on same web page.
  *
  * @class
  * @extends Store

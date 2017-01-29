@@ -124,7 +124,7 @@ it('works on broken JSON in localStorage', function () {
   console.error = jest.fn()
 
   localStorage.setItem('logux', '[')
-  localStorage.setItem('loguxVersion', '0')
+  localStorage.setItem('loguxVersion', '1')
 
   var store = new LocalStore('logux')
   expect(store.memory.created).toEqual([])
