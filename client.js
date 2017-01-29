@@ -4,7 +4,6 @@ var Reconnect = require('logux-sync/reconnect')
 var shortid = require('shortid')
 var Log = require('logux-core/log')
 
-var isQuotaExceeded = require('./is-quota-exceeded')
 var isDevelopment = require('./is-development')
 var LocalStore = require('./local-store')
 
@@ -105,41 +104,11 @@ function Client (options) {
    * if (client.sync.state === 'synchronized')
    */
   this.sync = new ClientSync(this.options.nodeId, this.log, connection, {
-    otherSynced: this.loadFromLS('OtherSynced'),
     credentials: this.options.credentials,
     subprotocol: this.options.subprotocol,
     timeout: this.options.timeout,
-    synced: this.loadFromLS('Synced'),
     ping: this.options.ping
   })
-
-  var app = this
-  this.sync.on('synced', function () {
-    app.saveToLS('Synced', app.sync.synced)
-    app.saveToLS('OtherSynced', app.sync.otherSynced)
-  })
-}
-
-Client.prototype = {
-
-  loadFromLS: function loadFromLS (field) {
-    if (global.localStorage) {
-      var value = parseInt(localStorage.getItem(this.options.prefix + field))
-      return isNaN(value) ? undefined : value
-    } else {
-      return undefined
-    }
-  },
-
-  saveToLS: function saveToLS (field, value) {
-    if (global.localStorage) {
-      try {
-        localStorage.setItem(this.options.prefix + field, value)
-      } catch (e) {
-        if (!isQuotaExceeded(e)) throw e
-      }
-    }
-  }
 }
 
 module.exports = Client

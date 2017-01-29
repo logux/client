@@ -115,22 +115,6 @@ it('uses default synced', function () {
   expect(client.sync.otherSynced).toBe(0)
 })
 
-it('stores synced from LocalStorage', function () {
-  localStorage.setItem('loguxSynced', 100)
-  localStorage.setItem('loguxOtherSynced', 200)
-
-  var client = new Client({ subprotocol: '1.0.0', url: 'wss://localhost:1337' })
-  expect(client.log.store.key).toEqual('loguxLog')
-  expect(client.sync.synced).toBe(100)
-  expect(client.sync.otherSynced).toBe(200)
-
-  client.sync.setSynced(101)
-  expect(localStorage.getItem('loguxSynced')).toEqual('101')
-
-  client.sync.setOtherSynced(201)
-  expect(localStorage.getItem('loguxOtherSynced')).toEqual('201')
-})
-
 it('uses custom prefix', function () {
   localStorage.setItem('appSynced', 1)
   localStorage.setItem('appOtherSynced', 2)
@@ -139,10 +123,7 @@ it('uses custom prefix', function () {
     prefix: 'app',
     url: 'wss://localhost:1337'
   })
-
-  expect(client.log.store.key).toEqual('appLog')
-  expect(client.sync.synced).toBe(1)
-  expect(client.sync.otherSynced).toBe(2)
+  expect(client.log.store.key).toEqual('app')
 })
 
 it('works without localStorage', function () {
@@ -168,21 +149,6 @@ it('works on localStorage limit error', function () {
     url: 'wss://localhost:1337'
   })
   client.sync.setSynced(1)
-})
-
-it('throws other errors from localStorage', function () {
-  localStorage.itemInsertionCallback = function () {
-    throw new Error('Test')
-  }
-  var client = new Client({
-    subprotocol: '1.0.0',
-    store: new MemoryStore(),
-    url: 'wss://localhost:1337'
-  })
-
-  expect(function () {
-    client.sync.setSynced(1)
-  }).toThrowError('Test')
 })
 
 it('sends options to connection', function () {
