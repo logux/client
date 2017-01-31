@@ -1,11 +1,12 @@
 var BrowserConnection = require('logux-sync/browser-connection')
+var MemoryStore = require('logux-core/memory-store')
 var ClientSync = require('logux-sync/client-sync')
 var Reconnect = require('logux-sync/reconnect')
 var shortid = require('shortid')
 var Log = require('logux-core/log')
 
 var isDevelopment = require('./is-development')
-var LocalStore = require('./local-store')
+var IndexedStore = require('./indexed-store')
 
 /**
  * Low-level browser API for Logux.
@@ -15,7 +16,7 @@ var LocalStore = require('./local-store')
  * @param {string} options.subprotocol Client subprotocol version
  *                                     in SemVer format.
  * @param {any} [options.credentials] Client credentials for authentication.
- * @param {string} [options.prefix="logux"] Prefix for `localStorage` key
+ * @param {string} [options.prefix="logux"] Prefix for `IndexedDB` database
  *                                          to run multiple Logux instances
  *                                          on same web page.
  * @param {string|number} [options.nodeId] Unique client ID.
@@ -24,7 +25,7 @@ var LocalStore = require('./local-store')
  *                                         to break connection.
  * @param {number} [options.ping=10000] Milliseconds since last message to test
  *                                      connection by sending ping.
- * @param {Store} [options.store] Store to save log. Will be `LocaleStore`,
+ * @param {Store} [options.store] Store to save log. Will be `IndexedStore`,
  *                                by default.
  * @param {number} [options.minDelay=1000] Minimum delay between reconnections.
  * @param {number} [options.maxDelay=5000] Maximum delay between reconnections.
@@ -70,7 +71,7 @@ function Client (options) {
   }
 
   if (/^ws:\/\//.test(this.options.url) && !isDevelopment(this.options.url)) {
-    if (!options.allowDangerousProtocol && console && console.warn) {
+    if (!options.allowDangerousProtocol) {
       console.warn(
         'Without SSL, old proxies can block WebSockets. ' +
         'Use WSS connection for Logux or set allowDangerousProtocol option.'
@@ -78,7 +79,14 @@ function Client (options) {
     }
   }
 
-  var store = this.options.store || new LocalStore(this.options.prefix)
+  var store = this.options.store
+  if (!store) {
+    if (global.indexedDB) {
+      store = new IndexedStore(this.options.prefix)
+    } else {
+      store = new MemoryStore()
+    }
+  }
 
   /**
    * Client events log.
