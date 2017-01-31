@@ -27,7 +27,10 @@ it('has synced values set to 0', function () {
 
 it('stores synced values', function () {
   var store = new LocalStore('logux')
-  return store.setLastSynced({ sent: 1 }).then(function () {
+  return store.getLastSynced().then(function (synced) {
+    expect(synced).toEqual({ sent: 0, received: 0 })
+    return store.setLastSynced({ sent: 1 })
+  }).then(function () {
     return store.getLastSynced()
   }).then(function (synced) {
     expect(synced).toEqual({ sent: 1, received: 0 })
