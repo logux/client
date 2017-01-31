@@ -19,9 +19,7 @@
     "npm",
     "KB",
     "Versioning",
-    "IndexedDB",
-    "IndexedDBStore",
-    "indexeddb",
+    "IndexedStore",
     "reconnections",
     "reconnection",
     "ws"
