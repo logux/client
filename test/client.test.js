@@ -1,15 +1,13 @@
+var fakeIndexedDB = require('fake-indexeddb')
 var MemoryStore = require('logux-core').MemoryStore
-require('mock-local-storage')
 
 var Client = require('../client')
 
-var originStorage = localStorage
 var originWarn = console.warn
+var originIndexedDB = global.indexedDB
 afterEach(function () {
   console.warn = originWarn
-  global.localStorage = originStorage
-  localStorage.clear()
-  localStorage.itemInsertionCallback = null
+  global.indexedDB = originIndexedDB
 })
 
 it('saves options', function () {
@@ -116,39 +114,13 @@ it('uses default synced', function () {
 })
 
 it('uses custom prefix', function () {
-  localStorage.setItem('appSynced', 1)
-  localStorage.setItem('appOtherSynced', 2)
+  global.indexedDB = fakeIndexedDB
   var client = new Client({
     subprotocol: '1.0.0',
     prefix: 'app',
     url: 'wss://localhost:1337'
   })
-  expect(client.log.store.key).toEqual('app')
-})
-
-it('works without localStorage', function () {
-  global.localStorage = undefined
-  var client = new Client({
-    subprotocol: '1.0.0',
-    store: new MemoryStore(),
-    url: 'wss://localhost:1337'
-  })
-  expect(client.sync.synced).toBe(0)
-})
-
-it('works on localStorage limit error', function () {
-  localStorage.itemInsertionCallback = function () {
-    var err = new Error('Mock localStorage quota exceeded')
-    err.code = DOMException.QUOTA_EXCEEDED_ERR
-    throw err
-  }
-
-  var client = new Client({
-    subprotocol: '1.0.0',
-    store: new MemoryStore(),
-    url: 'wss://localhost:1337'
-  })
-  client.sync.setSynced(1)
+  expect(client.log.store.name).toEqual('app')
 })
 
 it('sends options to connection', function () {
