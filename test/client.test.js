@@ -107,12 +107,6 @@ it('uses custom store', function () {
   expect(client.log.store).toBe(store)
 })
 
-it('uses default synced', function () {
-  var client = new Client({ subprotocol: '1.0.0', url: 'wss://localhost:1337' })
-  expect(client.sync.synced).toBe(0)
-  expect(client.sync.otherSynced).toBe(0)
-})
-
 it('uses custom prefix', function () {
   global.indexedDB = fakeIndexedDB
   var client = new Client({
