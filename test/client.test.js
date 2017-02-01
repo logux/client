@@ -1,14 +1,39 @@
 var fakeIndexedDB = require('fake-indexeddb')
 var MemoryStore = require('logux-core').MemoryStore
+var ClientSync = require('logux-sync').ClientSync
+var TestPair = require('logux-sync').TestPair
 
 var Client = require('../client')
 
-var originWarn = console.warn
+var originError = console.error
 var originIndexedDB = global.indexedDB
 afterEach(function () {
-  console.warn = originWarn
+  console.error = originError
   global.indexedDB = originIndexedDB
 })
+
+function createDialog (opts, credentials) {
+  var client = new Client(opts)
+
+  var pair = new TestPair()
+  client.sync = new ClientSync(
+    client.options.nodeId,
+    client.log,
+    pair.left,
+    client.sync.options
+  )
+
+  return client.sync.connection.connect().then(function () {
+    return pair.wait('right')
+  }).then(function () {
+    pair.right.send(['connected', client.sync.localProtocol, 'server', [0, 0], {
+      credentials: credentials
+    }])
+    return pair.wait()
+  }).then(function () {
+    return client
+  })
+}
 
 it('saves options', function () {
   var client = new Client({ subprotocol: '1.0.0', url: 'wss://localhost:1337' })
@@ -28,51 +53,53 @@ it('throws on missed subprotocol', function () {
 })
 
 it('not warns on WSS', function () {
-  console.warn = jest.fn()
-
-  new Client({
+  console.error = jest.fn()
+  return createDialog({
     subprotocol: '1.0.0',
     url: 'wss://test.com'
+  }).then(function (client) {
+    expect(client.sync.connected).toBeTruthy()
+    expect(console.error).not.toBeCalledWith()
   })
-
-  expect(console.warn).not.toBeCalled()
 })
 
 it('forces to use WSS in production domain', function () {
-  console.warn = jest.fn()
-
-  new Client({
+  console.error = jest.fn()
+  return createDialog({
     subprotocol: '1.0.0',
     url: 'ws://test.com'
+  }).then(function (client) {
+    expect(client.sync.connected).toBeFalsy()
+    expect(console.error).toBeCalledWith(
+      'Without SSL, old proxies can block WebSockets. ' +
+      'Use WSS connection for Logux or set allowDangerousProtocol option.'
+    )
   })
-
-  expect(console.warn).toBeCalledWith(
-    'Without SSL, old proxies can block WebSockets. ' +
-    'Use WSS connection for Logux or set allowDangerousProtocol option.'
-  )
 })
 
 it('ignores WS with allowDangerousProtocol', function () {
-  console.warn = jest.fn()
-
-  new Client({
+  console.error = jest.fn()
+  return createDialog({
     allowDangerousProtocol: true,
     subprotocol: '1.0.0',
     url: 'ws://test.com'
+  }).then(function (client) {
+    expect(client.sync.connected).toBeTruthy()
+    expect(console.error).not.toBeCalledWith()
   })
-
-  expect(console.warn).not.toBeCalled()
 })
 
 it('ignores WS in development', function () {
-  console.warn = jest.fn()
-
-  new Client({
+  console.error = jest.fn()
+  return createDialog({
     subprotocol: '1.0.0',
-    url: 'ws://localhost:1337'
+    url: 'ws://test.com'
+  }, {
+    env: 'development'
+  }).then(function (client) {
+    expect(client.sync.connected).toBeTruthy()
+    expect(console.error).not.toBeCalledWith()
   })
-
-  expect(console.warn).not.toBeCalled()
 })
 
 it('generates node ID if it is missed', function () {

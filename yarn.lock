@@ -2416,7 +2416,7 @@ logux-core@logux/logux-core:
 
 logux-sync@logux/logux-sync:
   version "0.1.2"
-  resolved "https://codeload.github.com/logux/logux-sync/tar.gz/3d0a4ad0c6815a7ec9e55724c904fe280d8da4b7"
+  resolved "https://codeload.github.com/logux/logux-sync/tar.gz/6dbe85679b24801f4af33821b3fe58252bfebe90"
   dependencies:
     nanoevents "^0.3.0"
     object-assign "^4.1.1"
@@ -3197,8 +3197,8 @@ rx-lite@^3.1.2:
   resolved "https://registry.yarnpkg.com/rx-lite/-/rx-lite-3.1.2.tgz#19ce502ca572665f3b647b10939f97fd1615f102"
 
 rxjs@^5.0.0-beta.11:
-  version "5.0.3"
-  resolved "https://registry.yarnpkg.com/rxjs/-/rxjs-5.0.3.tgz#fc8bdf464ebf938812748e4196788f392fef9754"
+  version "5.1.0"
+  resolved "https://registry.yarnpkg.com/rxjs/-/rxjs-5.1.0.tgz#0aa9018b7f440b505fa42bd742b6738be550e720"
   dependencies:
     symbol-observable "^1.0.1"
 
