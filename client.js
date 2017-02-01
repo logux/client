@@ -73,7 +73,7 @@ function Client (options) {
 
   var userId = this.options.userId
   if (userId) {
-    userId += '\t'
+    userId += ':'
   } else {
     userId = ''
   }
