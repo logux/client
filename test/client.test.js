@@ -122,14 +122,14 @@ it('uses user ID in node ID', function () {
     userId: 10,
     url: 'wss://localhost:1337'
   })
-  expect(client1.options.nodeId).toMatch(/^10\t/)
+  expect(client1.options.nodeId).toMatch(/^10:/)
 
   var client2 = new Client({
     subprotocol: '1.0.0',
     userId: false,
     url: 'wss://localhost:1337'
   })
-  expect(client2.options.nodeId).not.toMatch(/\t/)
+  expect(client2.options.nodeId).not.toMatch(/:/)
 })
 
 it('uses node ID in ID generator', function () {
