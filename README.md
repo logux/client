@@ -83,7 +83,7 @@ Add callbacks for new events coming to the client log
 
 ```js
 logux.log.on('event', function (event, meta) {
-  if (event.type === 'changeName') {
+  if (event.type === 'CHANGE_NAME') {
     var user = document.querySelector('.user[data-id=' + event.user + ']')
     if (user) {
       document.querySelector(' .user__name').innerText = event.name
@@ -104,7 +104,7 @@ When you need to send information to server, just add an event to log:
 ```js
 submit.addEventListener('click', function () {
   logux.log.add({
-    type: 'changeName',
+    type: 'CHANGE_NAME',
     user: userId.value,
     name: name.value
   })
