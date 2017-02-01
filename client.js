@@ -5,7 +5,6 @@ var Reconnect = require('logux-sync/reconnect')
 var shortid = require('shortid')
 var Log = require('logux-core/log')
 
-var isDevelopment = require('./is-development')
 var IndexedStore = require('./indexed-store')
 
 /**
@@ -70,12 +69,18 @@ function Client (options) {
     this.options.nodeId = shortid.generate()
   }
 
-  if (/^ws:\/\//.test(this.options.url) && !isDevelopment(this.options.url)) {
-    if (!options.allowDangerousProtocol) {
-      console.warn(
-        'Without SSL, old proxies can block WebSockets. ' +
-        'Use WSS connection for Logux or set allowDangerousProtocol option.'
-      )
+  var auth
+  if (/^ws:\/\//.test(this.options.url) && !options.allowDangerousProtocol) {
+    auth = function (cred) {
+      if (typeof cred === 'object' && cred.env === 'development') {
+        return Promise.resolve(true)
+      } else {
+        console.error(
+          'Without SSL, old proxies can block WebSockets. ' +
+          'Use WSS connection for Logux or set allowDangerousProtocol option.'
+        )
+        return Promise.resolve(false)
+      }
     }
   }
 
@@ -115,7 +120,8 @@ function Client (options) {
     credentials: this.options.credentials,
     subprotocol: this.options.subprotocol,
     timeout: this.options.timeout,
-    ping: this.options.ping
+    ping: this.options.ping,
+    auth: auth
   })
 }
 
