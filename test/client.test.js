@@ -29,7 +29,7 @@ function createDialog (opts, credentials) {
     pair.right.send(['connected', client.sync.localProtocol, 'server', [0, 0], {
       credentials: credentials
     }])
-    return pair.wait()
+    return pair.wait('left')
   }).then(function () {
     return client
   })
