@@ -27,7 +27,6 @@
     "jsdoc": "^3.4.3",
     "json-loader": "^0.5.4",
     "lint-staged": "^3.3.0",
-    "mock-local-storage": "^1.0.2",
     "pre-commit": "^1.2.2",
     "rimraf": "^2.5.4",
     "webpack": "^2.2.1",
