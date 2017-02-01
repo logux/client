@@ -36,26 +36,37 @@ function createDialog (opts, credentials) {
 }
 
 it('saves options', function () {
-  var client = new Client({ subprotocol: '1.0.0', url: 'wss://localhost:1337' })
+  var client = new Client({
+    subprotocol: '1.0.0',
+    userId: false,
+    url: 'wss://localhost:1337'
+  })
   expect(client.options.subprotocol).toEqual('1.0.0')
 })
 
 it('throws on missed URL', function () {
   expect(function () {
-    new Client({ subprotocol: '1.0.0' })
+    new Client({ userId: false, subprotocol: '1.0.0' })
   }).toThrowError(/url/)
 })
 
 it('throws on missed subprotocol', function () {
   expect(function () {
-    new Client({ url: 'wss://localhost:1337' })
+    new Client({ userId: false, url: 'wss://localhost:1337' })
   }).toThrowError(/subprotocol/)
+})
+
+it('throws on missed user ID', function () {
+  expect(function () {
+    new Client({ subprotocol: '1.0.0', url: 'wss://localhost:1337' })
+  }).toThrowError(/userId/)
 })
 
 it('not warns on WSS', function () {
   console.error = jest.fn()
   return createDialog({
     subprotocol: '1.0.0',
+    userId: false,
     url: 'wss://test.com'
   }).then(function (client) {
     expect(client.sync.connected).toBeTruthy()
@@ -67,6 +78,7 @@ it('forces to use WSS in production domain', function () {
   console.error = jest.fn()
   return createDialog({
     subprotocol: '1.0.0',
+    userId: false,
     url: 'ws://test.com'
   }).then(function (client) {
     expect(client.sync.connected).toBeFalsy()
@@ -82,6 +94,7 @@ it('ignores WS with allowDangerousProtocol', function () {
   return createDialog({
     allowDangerousProtocol: true,
     subprotocol: '1.0.0',
+    userId: false,
     url: 'ws://test.com'
   }).then(function (client) {
     expect(client.sync.connected).toBeTruthy()
@@ -93,6 +106,7 @@ it('ignores WS in development', function () {
   console.error = jest.fn()
   return createDialog({
     subprotocol: '1.0.0',
+    userId: false,
     url: 'ws://test.com'
   }, {
     env: 'development'
@@ -102,22 +116,28 @@ it('ignores WS in development', function () {
   })
 })
 
-it('generates node ID if it is missed', function () {
-  var client = new Client({ subprotocol: '1.0.0', url: 'wss://localhost:1337' })
-  expect(client.options.nodeId).toMatch(/[\d\w]+/)
-})
-
-it('uses custom node ID', function () {
-  var client = new Client({
+it('uses user ID in node ID', function () {
+  var client1 = new Client({
     subprotocol: '1.0.0',
-    nodeId: 'client',
+    userId: 10,
     url: 'wss://localhost:1337'
   })
-  expect(client.options.nodeId).toEqual('client')
+  expect(client1.options.nodeId).toMatch(/^10\t/)
+
+  var client2 = new Client({
+    subprotocol: '1.0.0',
+    userId: false,
+    url: 'wss://localhost:1337'
+  })
+  expect(client2.options.nodeId).not.toMatch(/\t/)
 })
 
 it('uses node ID in ID generator', function () {
-  var client = new Client({ subprotocol: '1.0.0', url: 'wss://localhost:1337' })
+  var client = new Client({
+    subprotocol: '1.0.0',
+    userId: false,
+    url: 'wss://localhost:1337'
+  })
   var id = client.log.generateId()
   expect(typeof id[0]).toEqual('number')
   expect(id[1]).toEqual(client.options.nodeId)
@@ -128,6 +148,7 @@ it('uses custom store', function () {
   var store = new MemoryStore()
   var client = new Client({
     subprotocol: '1.0.0',
+    userId: false,
     store: store,
     url: 'wss://localhost:1337'
   })
@@ -139,6 +160,7 @@ it('uses custom prefix', function () {
   var client = new Client({
     subprotocol: '1.0.0',
     prefix: 'app',
+    userId: false,
     url: 'wss://localhost:1337'
   })
   expect(client.log.store.name).toEqual('app')
@@ -150,6 +172,7 @@ it('sends options to connection', function () {
     minDelay: 100,
     maxDelay: 500,
     attempts: 5,
+    userId: false,
     url: 'wss://localhost:1337'
   })
   expect(client.sync.connection.options).toEqual({
@@ -165,6 +188,7 @@ it('sends options to sync', function () {
     subprotocol: '1.0.0',
     credentials: 'token',
     timeout: 2000,
+    userId: false,
     ping: 1000,
     url: 'wss://localhost:1337'
   })

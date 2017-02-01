@@ -46,6 +46,7 @@ When the user requests `index.html` from your app, HTTP server would add
 `<meta>` tags with a token and Logux server URL.
 
 ```html
+<meta name="user" content="<%= user.id %>" />
 <meta name="token" content="<%= user.token %>" />
 <meta name="server" content="wss://example.com:1337" />
 ```
@@ -64,12 +65,14 @@ Create Logux Client instance in your client-side JS;
 ```js
 var Client = require('logux-client/client')
 
-var server = document.querySelector('meta[name=server]')
+var user = document.querySelector('meta[name=user]')
 var token = document.querySelector('meta[name=token]')
+var server = document.querySelector('meta[name=server]')
 
 var logux = new Client({
   credentials: token.content,
   subprotocol: '1.0.0',
+  userId: user.content,
   url: server.content
 })
 logux.sync.connection.connect()
@@ -83,10 +86,10 @@ Add callbacks for new events coming to the client log
 
 ```js
 logux.log.on('event', function (event, meta) {
-  if (event.type === 'CHANGE_NAME') {
-    var user = document.querySelector('.user[data-id=' + event.user + ']')
+  if (event.type === 'CHANGE_TITLE') {
+    var user = document.querySelector('.article[data-id=' + event.article + ']')
     if (user) {
-      document.querySelector(' .user__name').innerText = event.name
+      document.querySelector('.article__title').innerText = event.title
     }
   }
 })
@@ -104,9 +107,9 @@ When you need to send information to server, just add an event to log:
 ```js
 submit.addEventListener('click', function () {
   logux.log.add({
-    type: 'CHANGE_NAME',
-    user: userId.value,
-    name: name.value
+    type: 'CHANGE_TITLE',
+    article: articleId.value,
+    title: titleField.value
   })
 }, false)
 ```

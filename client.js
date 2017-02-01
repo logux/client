@@ -14,6 +14,7 @@ var IndexedStore = require('./indexed-store')
  * @param {string} options.url Server URL.
  * @param {string} options.subprotocol Client subprotocol version
  *                                     in SemVer format.
+ * @param {number|string|false} options.userId User ID. Pass `false` on no user.
  * @param {any} [options.credentials] Client credentials for authentication.
  * @param {string} [options.prefix="logux"] Prefix for `IndexedDB` database
  *                                          to run multiple Logux instances
@@ -61,13 +62,22 @@ function Client (options) {
   if (typeof this.options.subprotocol === 'undefined') {
     throw new Error('Missed subprotocol option in Logux client')
   }
+  if (typeof this.options.userId === 'undefined') {
+    throw new Error('Missed userId option in Logux client. ' +
+                    'Pass false if you have no users.')
+  }
 
   if (typeof this.options.prefix === 'undefined') {
     this.options.prefix = 'logux'
   }
-  if (typeof this.options.nodeId === 'undefined') {
-    this.options.nodeId = shortid.generate()
+
+  var userId = this.options.userId
+  if (userId) {
+    userId += '\t'
+  } else {
+    userId = ''
   }
+  this.options.nodeId = userId + shortid.generate()
 
   var auth
   if (/^ws:\/\//.test(this.options.url) && !options.allowDangerousProtocol) {
