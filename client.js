@@ -82,15 +82,14 @@ function Client (options) {
   var auth
   if (/^ws:\/\//.test(this.options.url) && !options.allowDangerousProtocol) {
     auth = function (cred) {
-      if (typeof cred === 'object' && cred.env === 'development') {
-        return Promise.resolve(true)
+      if (typeof cred !== 'object' || cred.env !== 'development') {
+        console.error(
+          'Without SSL, old proxies can block WebSockets. ' +
+          'Use WSS connection for Logux or set allowDangerousProtocol option.'
+        )
+        return Promise.resolve(false)
       }
-
-      console.error(
-        'Without SSL, old proxies can block WebSockets. ' +
-        'Use WSS connection for Logux or set allowDangerousProtocol option.'
-      )
-      return Promise.resolve(false)
+      return Promise.resolve(true)
     }
   }
 
