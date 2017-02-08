@@ -84,13 +84,13 @@ function Client (options) {
     auth = function (cred) {
       if (typeof cred === 'object' && cred.env === 'development') {
         return Promise.resolve(true)
-      } else {
-        console.error(
-          'Without SSL, old proxies can block WebSockets. ' +
-          'Use WSS connection for Logux or set allowDangerousProtocol option.'
-        )
-        return Promise.resolve(false)
       }
+
+      console.error(
+        'Without SSL, old proxies can block WebSockets. ' +
+        'Use WSS connection for Logux or set allowDangerousProtocol option.'
+      )
+      return Promise.resolve(false)
     }
   }
 
