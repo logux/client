@@ -2,8 +2,8 @@ var BaseSync = require('logux-sync').BaseSync
 
 /**
  * Highlight tabs on sync object errors
- * @param {BaseSync} sync observed object
- * @param {BaseSync} sync.sync observed object
+ * @param {Sync} sync observed object
+ * @param {Sync} sync.sync observed object
  * @returns {Function} Unbind attention listener
  */
 function attention (sync) {
