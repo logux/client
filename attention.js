@@ -1,5 +1,3 @@
-var BaseSync = require('logux-sync').BaseSync
-
 /**
  * Highlight tabs on sync object errors
  * @param {Sync} sync observed object
@@ -11,13 +9,7 @@ function attention (sync) {
     throw new Error('Missed sync argument in Logux Status attention')
   }
 
-  if (!(sync instanceof BaseSync)) {
-    if (typeof sync.sync === 'undefined' || !(sync.sync instanceof BaseSync)) {
-      throw new Error('Wrong sync argument in Logux Status attention')
-    } else {
-      sync = sync.sync
-    }
-  }
+  sync = sync.sync ? sync.sync : sync
 
   var oldTitle = null
   var unbind = []

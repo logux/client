@@ -9,14 +9,21 @@ function createSync () {
   return new BaseSync('server', TestTime.getLog(), pair.left)
 }
 
-function createTest () {
+function createTest (useSyncProperty) {
   var sync = createSync()
-
   var pair = sync.connection.pair
+  var test
+
   pair.leftSync = sync
+
+  if (useSyncProperty) {
+    test = attention({sync: pair.leftSync})
+  } else {
+    test = attention(pair.leftSync)
+  }
   return pair.left.connect().then(function () {
     return {
-      test: attention(pair.leftSync),
+      test: test,
       pair: pair
     }
   })
@@ -28,40 +35,70 @@ function wait (ms) {
   })
 }
 
+Object.defineProperty(document, 'hidden', {
+  get: function () {
+    return false
+  }
+})
+
 it('throws an error on empty sync parameter', function () {
-  expect(attention).toThrow()
+  expect(attention).toThrow(/Missed sync argument/)
 })
 
-it('checks sync parameter as instance of BaseSync', function () {
-  function wrongSync () {
-    attention({})
-  }
+it('receives errors from sync parameter', function () {
+  return createTest().then(function (result) {
+    var pair = result.pair
+    document.title = 'title'
 
-  expect(wrongSync).toThrow()
+    pair.leftSync.catch(function () {
+    })
+
+    var error = new Error('test')
+    pair.left.emitter.emit('error', error)
+    expect(document.title).toBe('title*')
+  })
 })
 
-it('throws an error on wrong sync property', function () {
-  function wrongSync () {
-    attention({sync: {}})
-  }
+it('receives errors from sync property', function () {
+  return createTest(true).then(function (result) {
+    var pair = result.pair
+    document.title = 'title'
 
-  expect(wrongSync).toThrow()
-})
+    pair.leftSync.catch(function () {
+    })
 
-it('checks sync property as instance of BaseSync', function () {
-  function wrongSync () {
-    attention({sync: createSync()})
-  }
-
-  expect(wrongSync).not.toThrow()
+    var error = new Error('test')
+    pair.left.emitter.emit('error', error)
+    expect(document.title).toBe('title*')
+  })
 })
 
 it('returns unbind function', function () {
-  function createWithSyncProperty () {
-    attention(createSync())
-  }
+  var listener
 
-  expect(createWithSyncProperty).toBeInstanceOf(Function)
+  document.addEventListener = function (name, callback) {
+    expect(name).toEqual('visibilitychange')
+    listener = callback
+  }
+  document.removeEventListener = jest.fn()
+
+  return createTest().then(function (result) {
+    var test = result.test
+    var pair = result.pair
+
+    pair.leftSync.catch(function () {
+    })
+
+    var error = new Error('test')
+    pair.left.emitter.emit('error', error)
+
+    listener()
+    expect(test).toBeInstanceOf(Function)
+    test()
+    return wait(10)
+  }).then(function () {
+    expect(document.removeEventListener).toBeCalled()
+  })
 })
 
 it('allows to miss timeout error', function () {
@@ -73,10 +110,17 @@ it('allows to miss timeout error', function () {
     pair.leftSync.catch(function () {
     })
 
-    var error = new Error({type: 'timeout'})
+    function TimeoutErrorMock () {
+      this.type = 'timeout'
+    }
+
+    TimeoutErrorMock.prototype = Object.create(Error.prototype)
+    TimeoutErrorMock.prototype.constructor = TimeoutErrorMock
+
+    var error = new TimeoutErrorMock()
     pair.left.emitter.emit('error', error)
 
-    expect(document.title).toBe('title*')
+    expect(document.title).toBe('title')
   })
 })
 
@@ -102,11 +146,7 @@ it('sets old title when user open a tab', function () {
     pair.left.emitter.emit('error', error)
 
     expect(document.title).toBe('title*')
-    Object.defineProperty(document, 'hidden', {
-      get: function () {
-        return false
-      }
-    })
+
     listener()
     test()
     return wait(10)
