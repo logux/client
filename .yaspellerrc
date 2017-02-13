@@ -21,6 +21,7 @@
     "IndexedStore",
     "reconnections",
     "reconnection",
-    "ws"
+    "ws",
+    "UX"
   ]
 }
