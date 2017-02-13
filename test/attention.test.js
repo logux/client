@@ -5,13 +5,21 @@ var SyncError = require('logux-sync').SyncError
 
 var attention = require('../attention')
 
+var nextHidden
 Object.defineProperty(document, 'hidden', {
   get: function () {
-    return false
+    if (typeof nextHidden !== 'undefined') {
+      var value = nextHidden
+      nextHidden = undefined
+      return value
+    } else {
+      return true
+    }
   }
 })
 
 function createTest () {
+  document.title = 'title'
   var pair = new TestPair()
   pair.leftSync = new BaseSync('server', TestTime.getLog(), pair.left)
   pair.leftSync.catch(function () { })
@@ -29,24 +37,16 @@ afterEach(function () {
 
 it('receives errors from sync parameter', function () {
   return createTest().then(function (test) {
-    document.title = 'title'
     attention(test.leftSync)
-
-    var error = new Error('test')
-    test.left.emitter.emit('error', error)
-
+    test.left.emitter.emit('error', new Error('test'))
     expect(document.title).toBe('title*')
   })
 })
 
 it('receives errors from sync property', function () {
   return createTest().then(function (test) {
-    document.title = 'title'
     attention({ sync: test.leftSync })
-
-    var error = new Error('test')
-    test.left.emitter.emit('error', error)
-
+    test.left.emitter.emit('error', new Error('test'))
     expect(document.title).toBe('title*')
   })
 })
@@ -63,34 +63,47 @@ it('returns unbind function', function () {
 
 it('allows to miss timeout error', function () {
   return createTest().then(function (test) {
-    document.title = 'title'
     attention(test.leftSync)
-
-    var error = new SyncError(test.leftSync, 'timeout')
-    test.left.emitter.emit('error', error)
-
+    test.left.emitter.emit('error', new SyncError(test.leftSync, 'timeout'))
     expect(document.title).toBe('title')
   })
 })
 
 it('sets old title when user open a tab', function () {
   var listener
-
   document.addEventListener = function (name, callback) {
     expect(name).toEqual('visibilitychange')
     listener = callback
   }
-  document.removeEventListener = jest.fn()
 
   return createTest().then(function (test) {
-    document.title = 'title'
     attention(test.leftSync)
 
-    var error = new Error('test')
-    test.left.emitter.emit('error', error)
-
+    test.left.emitter.emit('error', new Error('test'))
     expect(document.title).toBe('title*')
+
+    nextHidden = false
     listener()
+    expect(document.title).toBe('title')
+  })
+})
+
+it('does not double title changes', function () {
+  return createTest().then(function (test) {
+    attention(test.leftSync)
+
+    test.leftSync.emitter.emit('error', new Error('test'))
+    test.leftSync.emitter.emit('error', new Error('test'))
+    expect(document.title).toBe('title*')
+  })
+})
+
+it('does not change title of visible tab', function () {
+  return createTest().then(function (test) {
+    attention(test.leftSync)
+
+    nextHidden = false
+    test.left.emitter.emit('error', new Error('test'))
     expect(document.title).toBe('title')
   })
 })

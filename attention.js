@@ -15,8 +15,6 @@ function attention (sync) {
   var originTitle = false
   var unbind = []
 
-  var doc = document
-
   function tabListener () {
     if (!doc.hidden && originTitle) {
       doc.title = originTitle
@@ -24,9 +22,11 @@ function attention (sync) {
     }
   }
 
+  var doc = document
+
   if (typeof doc !== 'undefined' && typeof doc.hidden !== 'undefined') {
     unbind.push(sync.on('error', function (error) {
-      if (error.type !== 'timeout' && !originTitle) {
+      if (error.type !== 'timeout' && !originTitle && doc.hidden) {
         originTitle = document.title
         document.title += '*'
       }
