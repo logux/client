@@ -1,39 +1,38 @@
 /**
- * Highlight tabs on sync object errors
- * @param {Sync} sync observed object
- * @param {Sync} sync.sync observed object
- * @returns {Function} Unbind attention listener
+ * Highlight tabs on synchronization errors.
+ *
+ * @param {Syncable|BaseSync} sync Observed Sync instance.
+ *
+ * @return {Function} Unbind attention listener.
+ *
+ * @example
+ * import attention from 'logux-status/attention'
+ * attention(client)
  */
 function attention (sync) {
-  if (typeof sync === 'undefined') {
-    throw new Error('Missed sync argument in Logux Status attention')
-  }
+  if (sync.sync) sync = sync.sync
 
-  sync = sync.sync ? sync.sync : sync
-
-  var oldTitle = null
+  var originTitle = false
   var unbind = []
 
+  var doc = document
+
   function tabListener () {
-    if (!document.hidden && oldTitle) {
-      document.title = oldTitle
-      oldTitle = null
+    if (!doc.hidden && originTitle) {
+      doc.title = originTitle
+      originTitle = false
     }
   }
 
-  if (typeof document !== 'undefined' &&
-    typeof document.hidden !== 'undefined') {
-    var errorCb = sync.on('error', function (error) {
-      if (!(error.type === 'timeout' || oldTitle)) {
-        oldTitle = document.title
+  if (typeof doc !== 'undefined' && typeof doc.hidden !== 'undefined') {
+    unbind.push(sync.on('error', function (error) {
+      if (error.type !== 'timeout' && !originTitle) {
+        originTitle = document.title
         document.title += '*'
       }
-    })
-
-    unbind.push(errorCb)
+    }))
 
     document.addEventListener('visibilitychange', tabListener, false)
-
     unbind.push(function () {
       document.removeEventListener('visibilitychange', tabListener, false)
     })
