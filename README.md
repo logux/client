@@ -7,13 +7,16 @@ Logux is a client-server communication protocol. It synchronizes events
 between clients and server logs.
 
 This 6 KB library allows you to put events (which look similar
-to Redux “actions”) to a local log and synchronize them with [Logux server]
+to Redux “actions”) to a local log and synchronize them with [Logux Server]
 and thus with every other client being online.
 
 This is a low-level client API. Redux-like API, which is supposed
 to be more suitable for most of developers, is coming soon.
 
-[Logux server]: https://github.com/logux/logux-server
+See also [Logux Status] for UX best practices.
+
+[Logux Server]: https://github.com/logux/logux-server
+[Logux Status]: https://github.com/logux/logux-status
 
 <a href="https://evilmartians.com/?utm_source=logux-client">
   <img src="https://evilmartians.com/badges/sponsored-by-evil-martians.svg"
