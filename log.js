@@ -15,23 +15,23 @@ function log (sync) {
   var unbind = []
 
   unbind.push(sync.on('connect', function () {
-    console.log('Sync: connect')
+    console.log('Logux Sync: connect')
   }))
 
   unbind.push(sync.on('state', function () {
-    console.log('Sync: state is ' + sync.state)
+    console.log('Logux Sync: state is ' + sync.state)
   }))
 
   unbind.push(sync.on('error', function (error) {
-    console.log('Sync: error ' + error.type)
+    console.log('Logux Sync: error ' + error.type)
   }))
 
   unbind.push(sync.on('clientError', function (error) {
-    console.log('Sync: clientError ' + error.type)
+    console.log('Logux Sync: clientError ' + error.type)
   }))
 
   unbind.push(sync.log.on('add', function (action) {
-    console.log('Sync Log: add action ' + action.type)
+    console.log('Logux Sync Log: add action ' + action.type)
   }))
 
   return function () {

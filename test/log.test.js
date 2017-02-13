@@ -28,8 +28,7 @@ it('receives events from sync parameter', function () {
   return createTest().then(function (test) {
     log(test.leftSync)
 
-    var error = new Error('test')
-    test.left.emitter.emit('error', error)
+    test.left.emitter.emit('error', new Error('test'))
 
     expect(console.log).toBeCalled()
   })
@@ -39,8 +38,7 @@ it('receives events from sync property', function () {
   return createTest().then(function (test) {
     log({ sync: test.leftSync })
 
-    var error = new Error('test')
-    test.left.emitter.emit('error', error)
+    test.left.emitter.emit('error', new Error('test'))
 
     expect(console.log).toBeCalled()
   })
@@ -70,8 +68,7 @@ it('receives clientError event', function () {
   return createTest().then(function (test) {
     log(test.leftSync)
 
-    var error = new SyncError(test.leftSync, 'test', 'type')
-    test.leftSync.sendError(error)
+    test.leftSync.sendError(new SyncError(test.leftSync, 'test', 'type'))
 
     expect(console.log).toBeCalled()
   })
@@ -90,8 +87,7 @@ it('returns unbind function', function () {
     var unbind = log(test.leftSync)
     unbind()
 
-    var error = new Error('test')
-    test.left.emitter.emit('error', error)
+    test.left.emitter.emit('error', new Error('test'))
 
     expect(console.log).not.toBeCalled()
   })
