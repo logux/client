@@ -64,6 +64,16 @@ it('receives state event', function () {
   })
 })
 
+it('receives error event', function () {
+  return createTest().then(function (test) {
+    log(test.leftSync)
+
+    test.left.emitter.emit('error', new Error('test'))
+
+    expect(console.log).toBeCalled()
+  })
+})
+
 it('receives clientError event', function () {
   return createTest().then(function (test) {
     log(test.leftSync)
@@ -74,10 +84,33 @@ it('receives clientError event', function () {
   })
 })
 
+it('error message depends on received type and remoteNodeId', function () {
+  return createTest().then(function (test) {
+    test.leftSync.remoteNodeId = 'remoteNodeId'
+    log(test.leftSync)
+
+    var error = new SyncError(test.leftSync, 'test', 'type', true)
+    test.left.emitter.emit('error', error)
+
+    expect(console.log).toBeCalled()
+  })
+})
+
+it('adds error description when type is known', function () {
+  return createTest().then(function (test) {
+    log(test.leftSync)
+
+    var error = new SyncError(test.leftSync, 'timeout', 'ms')
+    test.left.emitter.emit('error', error)
+
+    expect(console.log).toBeCalled()
+  })
+})
+
 it('receives log add event', function () {
   return createTest().then(function (test) {
     log(test.leftSync)
-    test.leftSync.log.add({type: 'test'})
+    test.leftSync.log.add({ type: 'test' })
     expect(console.log).toBeCalled()
   })
 })
