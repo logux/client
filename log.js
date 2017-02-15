@@ -61,7 +61,7 @@ function log (sync) {
   unbind.push(sync.log.on('clean', function (action, meta) {
     var message
     if (meta.id[1] === sync.localNodeId) {
-      message = action.type + ' was cleaned from Logux:'
+      message = action.type + ' action was cleaned from Logux:'
     } else {
       message = meta.id[1] + ' clean ' + action.type + ' action from Logux:'
     }
