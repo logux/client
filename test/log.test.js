@@ -135,6 +135,30 @@ it('shows add event with action from different node', function () {
   })
 })
 
+it('allows to disable some message types', function () {
+  return createTest().then(function (test) {
+    log(test.leftSync, {
+      connect: false,
+      state: false,
+      error: false,
+      clean: false,
+      add: false
+    })
+
+    test.leftSync.emitter.emit('connect')
+    test.leftSync.emitter.emit('state')
+
+    var error = new SyncError(test.leftSync, 'test', 'type', true)
+    test.leftSync.emitter.emit('error', error)
+    test.leftSync.emitter.emit('clientError', error)
+
+    return test.leftSync.log.add({ type: 'A' })
+  }).then(function () {
+    expect(console.error).not.toBeCalled()
+    expect(console.log).not.toBeCalled()
+  })
+})
+
 it('returns unbind function', function () {
   return createTest().then(function (test) {
     var unbind = log(test.leftSync)
