@@ -21,9 +21,7 @@ function confirm (sync, warning) {
       if (sync.state === 'wait' || sync.state === 'sending') {
         window.onbeforeunload = function (e) {
           if (typeof e === 'undefined') e = window.event
-          if (e) {
-            e.returnValue = warning
-          }
+          if (e) e.returnValue = warning
           return warning
         }
       }

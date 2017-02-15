@@ -13,18 +13,15 @@ function createTest () {
   })
 }
 
-var originOnbeforeunload = window.onbeforeunload
-
 beforeEach(function () {
   window.onbeforeunload = jest.fn()
 })
 
 afterEach(function () {
-  window.onbeforeunload = originOnbeforeunload
+  delete window.onbeforeunload
 })
 
-it('receives state event from sync parameter and ' +
-   'not all actions are synchronized', function () {
+it('confirms close', function () {
   return createTest().then(function (test) {
     confirm(test.leftSync, 'test warning')
 
@@ -41,8 +38,7 @@ it('receives state event from sync parameter and ' +
   })
 })
 
-it('receives state event from sync property and ' +
-   'not all actions are synchronized', function () {
+it('confirms close from sync property', function () {
   return createTest().then(function (test) {
     confirm({ sync: test.leftSync }, 'test warning')
 
@@ -50,15 +46,10 @@ it('receives state event from sync property and ' +
 
     expect(test.leftSync.state).toBe('wait')
     expect(window.onbeforeunload()).toEqual('test warning')
-
-    test.leftSync.setState('sending')
-
-    expect(test.leftSync.state).toBe('sending')
-    expect(window.onbeforeunload()).toEqual('test warning')
   })
 })
 
-it('allows to miss state event if all actions are synchronized', function () {
+it('does not confirm on synchronized state', function () {
   return createTest().then(function (test) {
     confirm(test.leftSync, 'test warning')
 
