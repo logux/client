@@ -13,12 +13,8 @@ function createTest () {
   })
 }
 
-beforeEach(function () {
-  window.onbeforeunload = jest.fn()
-})
-
 afterEach(function () {
-  delete window.onbeforeunload
+  window.onbeforeunload = null
 })
 
 it('confirms close', function () {
@@ -26,14 +22,10 @@ it('confirms close', function () {
     confirm(test.leftSync, 'test warning')
 
     test.leftSync.setState('wait')
-
-    expect(test.leftSync.state).toBe('wait')
     expect(window.onbeforeunload()).toEqual('test warning')
 
     test.leftSync.setState('sending')
-
     var e = 'test window.onbeforeunload event'
-    expect(test.leftSync.state).toBe('sending')
     expect(window.onbeforeunload(e)).toEqual('test warning')
   })
 })
@@ -41,22 +33,25 @@ it('confirms close', function () {
 it('confirms close from sync property', function () {
   return createTest().then(function (test) {
     confirm({ sync: test.leftSync }, 'test warning')
-
     test.leftSync.setState('wait')
-
-    expect(test.leftSync.state).toBe('wait')
     expect(window.onbeforeunload()).toEqual('test warning')
+  })
+})
+
+it('has default message', function () {
+  return createTest().then(function (test) {
+    confirm(test.leftSync)
+    test.leftSync.setState('wait')
+    expect(typeof window.onbeforeunload()).toEqual('string')
   })
 })
 
 it('does not confirm on synchronized state', function () {
   return createTest().then(function (test) {
     confirm(test.leftSync, 'test warning')
-
+    test.leftSync.setState('wait')
     test.leftSync.setState('synchronized')
-
-    expect(test.leftSync.state).toBe('synchronized')
-    expect(window.onbeforeunload()).toEqual(undefined)
+    expect(window.onbeforeunload).toBe(null)
   })
 })
 
@@ -64,10 +59,7 @@ it('returns unbind function', function () {
   return createTest().then(function (test) {
     var unbind = confirm(test.leftSync, 'test warning')
     unbind()
-
     test.leftSync.setState('wait')
-
-    expect(test.leftSync.state).toBe('wait')
-    expect(window.onbeforeunload()).toEqual(undefined)
+    expect(window.onbeforeunload).toBe(null)
   })
 })

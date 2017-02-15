@@ -17,14 +17,14 @@ function confirm (sync, warning) {
                        'Are you sure to leave?'
 
   return sync.on('state', function () {
-    if (typeof window.onbeforeunload !== 'undefined') {
-      if (sync.state === 'wait' || sync.state === 'sending') {
-        window.onbeforeunload = function (e) {
-          if (typeof e === 'undefined') e = window.event
-          if (e) e.returnValue = warning
-          return warning
-        }
+    if (sync.state === 'wait' || sync.state === 'sending') {
+      window.onbeforeunload = function (e) {
+        if (typeof e === 'undefined') e = window.event
+        if (e) e.returnValue = warning
+        return warning
       }
+    } else {
+      window.onbeforeunload = null
     }
   })
 }
