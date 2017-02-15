@@ -17,7 +17,7 @@
   "devDependencies": {
     "docdash": "^0.4.0",
     "eslint": "^3.15.0",
-    "eslint-config-logux": "^4.0.0",
+    "eslint-config-logux": "^5.0.1",
     "eslint-config-standard": "^6.2.1",
     "eslint-plugin-es5": "^1.0.1",
     "eslint-plugin-promise": "^3.4.1",
@@ -30,7 +30,7 @@
     "pre-commit": "^1.2.2",
     "rimraf": "^2.5.4",
     "webpack": "^2.2.1",
-    "webpack-bundle-analyzer": "^2.2.3",
+    "webpack-bundle-analyzer": "^2.3.0",
     "yaspeller": "^3.0.0"
   },
   "scripts": {
@@ -53,7 +53,7 @@
     }
   },
   "eslintConfig": {
-    "extends": "eslint-config-logux"
+    "extends": "eslint-config-logux/browser"
   },
   "lint-staged": {
     "*.md": "yaspeller",
