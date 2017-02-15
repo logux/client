@@ -23,7 +23,8 @@ afterEach(function () {
   window.onbeforeunload = originOnbeforeunload
 })
 
-it('receives state event from sync parameter and state is wait', function () {
+it('receives state event from sync parameter and ' +
+   'not all actions are synchronized', function () {
   return createTest().then(function (test) {
     confirm(test.leftSync, 'test warning')
 
@@ -31,10 +32,17 @@ it('receives state event from sync parameter and state is wait', function () {
 
     expect(test.leftSync.state).toBe('wait')
     expect(window.onbeforeunload()).toEqual('test warning')
+
+    test.leftSync.setState('sending')
+
+    var e = 'test window.onbeforeunload event'
+    expect(test.leftSync.state).toBe('sending')
+    expect(window.onbeforeunload(e)).toEqual('test warning')
   })
 })
 
-it('receives state event from sync property and state is wait', function () {
+it('receives state event from sync property and ' +
+   'not all actions are synchronized', function () {
   return createTest().then(function (test) {
     confirm({ sync: test.leftSync }, 'test warning')
 
@@ -42,10 +50,15 @@ it('receives state event from sync property and state is wait', function () {
 
     expect(test.leftSync.state).toBe('wait')
     expect(window.onbeforeunload()).toEqual('test warning')
+
+    test.leftSync.setState('sending')
+
+    expect(test.leftSync.state).toBe('sending')
+    expect(window.onbeforeunload()).toEqual('test warning')
   })
 })
 
-it('allows to miss state event is not wait', function () {
+it('allows to miss state event if all actions are synchronized', function () {
   return createTest().then(function (test) {
     confirm(test.leftSync, 'test warning')
 
