@@ -1,147 +1,147 @@
+var SyncError = require('logux-sync').SyncError
 var TestTime = require('logux-core').TestTime
 var BaseSync = require('logux-sync').BaseSync
 var TestPair = require('logux-sync').TestPair
-var SyncError = require('logux-sync').SyncError
 
 var log = require('../log')
 
 function createTest () {
   var pair = new TestPair()
-  pair.leftSync = new BaseSync('client', TestTime.getLog(), pair.left)
+  pair.leftSync = new BaseSync('test1', TestTime.getLog(), pair.left)
   pair.leftSync.catch(function () { })
   return pair.left.connect().then(function () {
     return pair
   })
 }
 
+var originError = console.error
 var originLog = console.log
 
 beforeEach(function () {
+  console.error = jest.fn()
   console.log = jest.fn()
 })
 
 afterEach(function () {
+  console.error = originError
   console.log = originLog
 })
 
-it('receives events from sync parameter', function () {
-  return createTest().then(function (test) {
-    log(test.leftSync)
-
-    test.left.emitter.emit('error', new Error('test'))
-
-    expect(console.log).toBeCalled()
-  })
-})
-
-it('receives events from sync property', function () {
+it('shows events from sync property', function () {
   return createTest().then(function (test) {
     log({ sync: test.leftSync })
-
     test.left.emitter.emit('error', new Error('test'))
-
-    expect(console.log).toBeCalled()
+    expect(console.error).toBeCalled()
   })
 })
 
-it('receives connect event', function () {
+it('shows connect event', function () {
+  return createTest().then(function (test) {
+    log(test.leftSync)
+    test.leftSync.remoteNodeId = 'server'
+    test.leftSync.emitter.emit('connect')
+    expect(console.log).toBeCalledWith('Logux test1 was connected to server')
+  })
+})
+
+it('shows connect event with URL', function () {
   return createTest().then(function (test) {
     log(test.leftSync)
 
+    test.leftSync.remoteNodeId = 'server'
+    test.leftSync.connection.url = 'ws://ya.ru'
     test.leftSync.emitter.emit('connect')
 
-    expect(console.log).toBeCalled()
+    expect(console.log)
+      .toBeCalledWith('Logux test1 was connected to server at ws://ya.ru')
   })
 })
 
-it('prints url from connection', function () {
+it('prints URL from connection.connection', function () {
   return createTest().then(function (test) {
-    test.leftSync.connection.url = 'url'
     log(test.leftSync)
 
+    test.leftSync.remoteNodeId = 'server'
+    test.leftSync.connection.connection = { url: 'ws://ya.ru' }
     test.leftSync.emitter.emit('connect')
 
-    expect(console.log).toBeCalled()
+    expect(console.log)
+      .toBeCalledWith('Logux test1 was connected to server at ws://ya.ru')
   })
 })
 
-it('prints url from connection.connection', function () {
-  return createTest().then(function (test) {
-    test.leftSync.connection.connection = { url: 'url' }
-    log(test.leftSync)
-
-    test.leftSync.emitter.emit('connect')
-
-    expect(console.log).toBeCalled()
-  })
-})
-
-it('receives state event', function () {
+it('shows state event', function () {
   return createTest().then(function (test) {
     log(test.leftSync)
 
     test.leftSync.emitter.emit('state')
 
-    expect(console.log).toBeCalled()
+    expect(console.log).toBeCalledWith('Logux change state to disconnected')
   })
 })
 
-it('receives error event', function () {
+it('shows error event', function () {
   return createTest().then(function (test) {
     log(test.leftSync)
-
-    test.left.emitter.emit('error', new Error('test'))
-
-    expect(console.log).toBeCalled()
+    test.left.emitter.emit('error', new SyncError(test.leftSync, 'test'))
+    expect(console.error).toBeCalledWith('Logux error: test')
   })
 })
 
-it('receives clientError event', function () {
-  return createTest().then(function (test) {
-    log(test.leftSync)
-
-    test.leftSync.sendError(new SyncError(test.leftSync, 'test', 'type'))
-
-    expect(console.log).toBeCalled()
-  })
-})
-
-it('error message depends on received type and remoteNodeId', function () {
+it('shows server error', function () {
   return createTest().then(function (test) {
     test.leftSync.remoteNodeId = 'remoteNodeId'
     log(test.leftSync)
 
     var error = new SyncError(test.leftSync, 'test', 'type', true)
-    test.left.emitter.emit('error', error)
+    test.leftSync.emitter.emit('clientError', error)
 
-    expect(console.log).toBeCalled()
+    expect(console.error).toBeCalledWith('Logux server sent error: test')
   })
 })
 
-it('receives log server add and clean event', function () {
+it('shows add and clean event', function () {
   return createTest().then(function (test) {
     log(test.leftSync)
-    test.leftSync.log.add({ type: 'A' })
-    expect(console.log).toBeCalled()
+    return test.leftSync.log.add({ type: 'A' }, { reasons: ['test'] })
+      .then(function () {
+        expect(console.log).toBeCalledWith(
+          'Action A was added to Logux',
+          { type: 'A' },
+          { id: [1, 'test1', 0], reasons: ['test'], time: 1, added: 1 }
+        )
+        return test.leftSync.log.removeReason('test')
+      }).then(function () {
+        expect(console.log).toHaveBeenLastCalledWith(
+          'Action A was cleaned from Logux',
+          { type: 'A' },
+          { id: [1, 'test1', 0], reasons: [], time: 1, added: 1 }
+        )
+      })
   })
 })
 
-it('receives log local add and clean event', function () {
+it('shows add event with action from different node', function () {
   return createTest().then(function (test) {
-    test.leftSync.localNodeId = 'test1'
+    test.leftSync.localNodeId = 'client'
     log(test.leftSync)
-    test.leftSync.log.add({ type: 'B' })
-    expect(console.log).toBeCalled()
+    return test.leftSync.log.add({ type: 'B' }, { reasons: ['test'] })
+  }).then(function () {
+    expect(console.log).toBeCalledWith(
+      'test1 added action B to Logux',
+      { type: 'B' },
+      { id: [1, 'test1', 0], reasons: ['test'], time: 1, added: 1 }
+    )
   })
 })
 
 it('returns unbind function', function () {
   return createTest().then(function (test) {
     var unbind = log(test.leftSync)
-    unbind()
 
+    unbind()
     test.left.emitter.emit('error', new Error('test'))
 
-    expect(console.log).not.toBeCalled()
+    expect(console.error).not.toBeCalled()
   })
 })
