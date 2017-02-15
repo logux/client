@@ -1,5 +1,5 @@
 /**
- * Logux confirm close tab if unsent actions in the logs synchronization.
+ * Logux confirm close tab if there are unsynchronized actions.
  *
  * @param {Syncable|BaseSync} sync Observed Sync instance.
  * @param {String} [warning=Not all data will be synchronize with the server
