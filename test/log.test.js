@@ -54,6 +54,28 @@ it('receives connect event', function () {
   })
 })
 
+it('prints url from connection', function () {
+  return createTest().then(function (test) {
+    test.leftSync.connection.url = 'url'
+    log(test.leftSync)
+
+    test.leftSync.emitter.emit('connect')
+
+    expect(console.log).toBeCalled()
+  })
+})
+
+it('prints url from connection.connection', function () {
+  return createTest().then(function (test) {
+    test.leftSync.connection.connection = { url: 'url' }
+    log(test.leftSync)
+
+    test.leftSync.emitter.emit('connect')
+
+    expect(console.log).toBeCalled()
+  })
+})
+
 it('receives state event', function () {
   return createTest().then(function (test) {
     log(test.leftSync)
@@ -96,21 +118,19 @@ it('error message depends on received type and remoteNodeId', function () {
   })
 })
 
-it('adds error description when type is known', function () {
+it('receives log server add and clean event', function () {
   return createTest().then(function (test) {
     log(test.leftSync)
-
-    var error = new SyncError(test.leftSync, 'timeout', 'ms')
-    test.left.emitter.emit('error', error)
-
+    test.leftSync.log.add({ type: 'A' })
     expect(console.log).toBeCalled()
   })
 })
 
-it('receives log add event', function () {
+it('receives log local add and clean event', function () {
   return createTest().then(function (test) {
+    test.leftSync.localNodeId = 'test1'
     log(test.leftSync)
-    test.leftSync.log.add({ type: 'test' })
+    test.leftSync.log.add({ type: 'B' })
     expect(console.log).toBeCalled()
   })
 })
