@@ -62,6 +62,7 @@ IndexedStore.prototype = {
       })
       log.createIndex('id', 'id', { unique: true })
       log.createIndex('created', 'created', { unique: true })
+      log.createIndex('reasons', 'reasons', { multiEntry: true })
 
       db.createObjectStore('extra', { keyPath: 'key' })
         .transaction.oncomplete = function () {
@@ -98,12 +99,21 @@ IndexedStore.prototype = {
     })
   },
 
+  has: function has (id) {
+    return this.init().then(function (store) {
+      return promisify(store.os('log').index('id').get(id))
+    }).then(function (result) {
+      return !!result
+    })
+  },
+
   add: function add (action, meta) {
     var entry = {
       id: meta.id,
       meta: meta,
       time: meta.time,
       action: action,
+      reasons: meta.reasons,
       created: meta.time + '\t' + meta.id.slice(1).join('\t')
     }
 

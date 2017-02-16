@@ -114,11 +114,11 @@ it('stores any metadata', function () {
   this.store = createStore()
   var test = this
   return this.store.add(
-    { type: 'a' },
+    { type: 'A' },
     { id: [1, 'a'], time: 1, test: 1 }
   ).then(function () {
     return check(test.store, [
-      [{ type: 'a' }, { added: 1, id: [1, 'a'], time: 1, test: 1 }]
+      [{ type: 'A' }, { added: 1, id: [1, 'a'], time: 1, test: 1 }]
     ])
   })
 })
@@ -165,8 +165,8 @@ it('ignores unknown entry', function () {
 it('returns last added', function () {
   this.store = createStore()
   var test = this
-  return this.store.add({ type: 'a' }, { id: [1], time: 1 }).then(function () {
-    return test.store.add({ type: 'b' }, { id: [2], time: 2 })
+  return this.store.add({ type: 'A' }, { id: [1], time: 1 }).then(function () {
+    return test.store.add({ type: 'B' }, { id: [2], time: 2 })
   }).then(function () {
     return test.store.getLastAdded()
   }).then(function (added) {
@@ -196,6 +196,19 @@ it('reloads page on database update', function () {
     })
   }).then(function () {
     expect(document.reload).toHaveBeenCalled()
+  })
+})
+
+it('checks that action ID is used in log', function () {
+  this.store = createStore()
+  var test = this
+  return this.store.add({ type: 'A' }, { id: [1], time: 1 }).then(function () {
+    return test.store.has([1])
+  }).then(function (result) {
+    expect(result).toBeTruthy()
+    return test.store.has([2])
+  }).then(function (result) {
+    expect(result).toBeFalsy()
   })
 })
 
