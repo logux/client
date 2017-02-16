@@ -86,11 +86,11 @@ IndexedStore.prototype = {
     return this.initing
   },
 
-  get: function get (order) {
+  get: function get (opts) {
     var request
     return this.init().then(function (store) {
       var log = store.os('log')
-      if (order === 'created') {
+      if (opts.order === 'created') {
         request = log.index('created').openCursor(null, 'prev')
       } else {
         request = log.openCursor(null, 'prev')
