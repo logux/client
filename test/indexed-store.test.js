@@ -1,6 +1,7 @@
 /* eslint-disable no-invalid-this */
 
 var fakeIndexedDB = require('fake-indexeddb')
+var TestTime = require('logux-core').TestTime
 
 var IndexedStore = require('../indexed-store')
 
@@ -39,10 +40,10 @@ function all (request, list) {
 
 function check (store, created, added) {
   if (!added) added = created
-  return all(store.get('created')).then(function (entries) {
+  return all(store.get({ order: 'created' })).then(function (entries) {
     expect(entries).toEqual(created)
   }).then(function () {
-    return all(store.get('added'))
+    return all(store.get({ order: 'added' }))
   }).then(function (entries) {
     expect(entries).toEqual(added)
   })
@@ -209,6 +210,22 @@ it('checks that action ID is used in log', function () {
     return test.store.has([2])
   }).then(function (result) {
     expect(result).toBeFalsy()
+  })
+})
+
+it('works with real log', function () {
+  this.store = createStore()
+  var log = TestTime.getLog({ store: this.store })
+  var entries = []
+  return Promise.all([
+    log.add({ type: 'A' }, { id: [2], reasons: ['test'] }),
+    log.add({ type: 'B' }, { id: [1], reasons: ['test'] })
+  ]).then(function () {
+    return log.each(function (action) {
+      entries.push(action)
+    })
+  }).then(function () {
+    expect(entries).toEqual([{ type: 'A' }, { type: 'B' }])
   })
 })
 
