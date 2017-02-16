@@ -35,38 +35,33 @@ it('shows events from sync property', function () {
   })
 })
 
-it('shows connect event', function () {
-  return createTest().then(function (test) {
-    log(test.leftSync)
-    test.leftSync.remoteNodeId = 'server'
-    test.leftSync.emitter.emit('connect')
-    expect(console.log).toBeCalledWith('Logux test1 was connected to server')
-  })
-})
-
-it('shows connect event with URL', function () {
+it('shows connecting state URL', function () {
   return createTest().then(function (test) {
     log(test.leftSync)
 
-    test.leftSync.remoteNodeId = 'server'
+    test.leftSync.connected = false
     test.leftSync.connection.url = 'ws://ya.ru'
-    test.leftSync.emitter.emit('connect')
+    test.leftSync.setState('connecting')
 
-    expect(console.log)
-      .toBeCalledWith('Logux test1 was connected to server at ws://ya.ru')
+    expect(console.log).toBeCalledWith('Logux change state to connecting. ' +
+      'test1 is connecting to ws://ya.ru.')
   })
 })
 
-it('prints URL from connection.connection', function () {
+it('shows server node ID', function () {
   return createTest().then(function (test) {
     log(test.leftSync)
 
     test.leftSync.remoteNodeId = 'server'
-    test.leftSync.connection.connection = { url: 'ws://ya.ru' }
-    test.leftSync.emitter.emit('connect')
+    test.leftSync.connected = true
+    test.leftSync.setState('synchronized')
 
-    expect(console.log)
-      .toBeCalledWith('Logux test1 was connected to server at ws://ya.ru')
+    expect(console.log).toBeCalledWith('Logux change state to synchronized. ' +
+      'Client was connected to server.')
+
+    test.leftSync.connected = false
+    test.leftSync.setState('wait')
+    expect(console.log).toHaveBeenLastCalledWith('Logux change state to wait')
   })
 })
 
@@ -74,6 +69,7 @@ it('shows state event', function () {
   return createTest().then(function (test) {
     log(test.leftSync)
 
+    test.leftSync.connected = false
     test.leftSync.emitter.emit('state')
 
     expect(console.log).toBeCalledWith('Logux change state to disconnected')
@@ -90,7 +86,6 @@ it('shows error event', function () {
 
 it('shows server error', function () {
   return createTest().then(function (test) {
-    test.leftSync.remoteNodeId = 'remoteNodeId'
     log(test.leftSync)
 
     var error = new SyncError(test.leftSync, 'test', 'type', true)
@@ -138,14 +133,12 @@ it('shows add event with action from different node', function () {
 it('allows to disable some message types', function () {
   return createTest().then(function (test) {
     log(test.leftSync, {
-      connect: false,
       state: false,
       error: false,
       clean: false,
       add: false
     })
 
-    test.leftSync.emitter.emit('connect')
     test.leftSync.emitter.emit('state')
 
     var error = new SyncError(test.leftSync, 'test', 'type', true)

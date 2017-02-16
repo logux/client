@@ -10,7 +10,6 @@ function showError (error) {
  *
  * @param {Syncable|BaseSync} sync Observed Sync instance.
  * @param {object} [messages] Disable specific message types.
- * @param {boolean} [messages.connect] Disable connect messages.
  * @param {boolean} [messages.state] Disable state messages.
  * @param {boolean} [messages.error] Disable error messages.
  * @param {boolean} [messages.add] Disable add messages.
@@ -27,27 +26,25 @@ function log (sync, messages) {
   if (!messages) messages = { }
 
   var unbind = []
-
-  if (messages.connect !== false) {
-    unbind.push(sync.on('connect', function () {
-      var url = false
-      var con = sync.connection
-      var message = 'Logux ' + sync.localNodeId +
-                    ' was connected to ' + sync.remoteNodeId
-
-      if (con.url) {
-        url = con.url
-      } else if (typeof con.connection !== 'undefined' && con.connection.url) {
-        url = con.connection.url
-      }
-      if (url) message += ' at ' + url
-      console.log(message)
-    }))
-  }
+  var prevConnected = false
 
   if (messages.state !== false) {
     unbind.push(sync.on('state', function () {
-      console.log('Logux change state to ' + sync.state)
+      var postfix = ''
+
+      if (sync.state === 'connecting' && sync.connection.url) {
+        postfix = '. ' + sync.localNodeId + ' is connecting to ' +
+                  sync.connection.url + '.'
+      }
+
+      if (sync.connected && !prevConnected) {
+        postfix = '. Client was connected to ' + sync.remoteNodeId + '.'
+        prevConnected = true
+      } else if (!sync.connected) {
+        prevConnected = false
+      }
+
+      console.log('Logux change state to ' + sync.state + postfix)
     }))
   }
 
