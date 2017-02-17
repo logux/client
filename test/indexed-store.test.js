@@ -189,6 +189,26 @@ it('checks that action ID is used in log', function () {
   })
 })
 
+it('changes meta', function () {
+  this.store = createStore()
+  var test = this
+  return test.store.add({ }, { id: [1], time: 1, a: 1 }).then(function () {
+    return test.store.changeMeta([1], { a: 2, b: 2 })
+  }).then(function (result) {
+    expect(result).toBeTruthy()
+    return check(test.store, [
+      [{ }, { id: [1], time: 1, added: 1, a: 2, b: 2 }]
+    ])
+  })
+})
+
+it('resolves to false on unknown ID in changeMeta', function () {
+  this.store = createStore()
+  return this.store.changeMeta([1], { a: 1 }).then(function (result) {
+    expect(result).toBeFalsy()
+  })
+})
+
 it('works with real log', function () {
   this.store = createStore()
   var log = TestTime.getLog({ store: this.store })
