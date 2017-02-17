@@ -5,22 +5,20 @@ var TestTime = require('logux-core').TestTime
 
 var IndexedStore = require('../indexed-store')
 
-var lastStore = 0
-function createStore () {
-  lastStore += 1
-  return new IndexedStore(lastStore)
-}
-
 var originIndexedDB = global.indexedDB
 beforeEach(function () {
   global.indexedDB = fakeIndexedDB
 })
 
+var store, other
+
 afterEach(function () {
   return Promise.all([
-    this.store ? this.store.destroy() : null,
-    this.other ? this.other.destroy() : null
+    store ? store.destroy() : null,
+    other ? other.destroy() : null
   ]).then(function () {
+    store = undefined
+    other = undefined
     global.indexedDB = originIndexedDB
     delete global.document.reload
   })
@@ -38,68 +36,73 @@ function all (request, list) {
   })
 }
 
-function check (store, created, added) {
+function check (indexed, created, added) {
   if (!added) added = created
-  return all(store.get({ order: 'created' })).then(function (entries) {
+  return all(indexed.get({ order: 'created' })).then(function (entries) {
     expect(entries).toEqual(created)
   }).then(function () {
-    return all(store.get({ order: 'added' }))
+    return all(indexed.get({ order: 'added' }))
   }).then(function (entries) {
     expect(entries).toEqual(added)
   })
 }
 
+it('use logux as default name', function () {
+  store = new IndexedStore()
+  return store.init().then(function () {
+    expect(store.db.name).toEqual('logux')
+    expect(store.name).toEqual('logux')
+  })
+})
+
 it('allows to change DB name', function () {
-  this.store = new IndexedStore('custom')
-  return this.store.init().then(function (store) {
+  store = new IndexedStore('custom')
+  return store.init().then(function () {
     expect(store.db.name).toEqual('custom')
     expect(store.name).toEqual('custom')
   })
 })
 
 it('is empty in the beginning', function () {
-  this.store = createStore()
-  var test = this
-  return check(this.store, []).then(function () {
-    return test.store.getLastAdded()
+  store = new IndexedStore()
+  return check(store, []).then(function () {
+    return store.getLastAdded()
   }).then(function (added) {
     expect(added).toEqual(0)
-    return test.store.getLastSynced()
+    return store.getLastSynced()
   }).then(function (synced) {
     expect(synced).toEqual({ sent: 0, received: 0 })
   })
 })
 
 it('updates last sent value', function () {
-  this.store = createStore()
-  var test = this
-  return this.store.setLastSynced({ sent: 1 }).then(function () {
-    return test.store.getLastSynced()
+  store = new IndexedStore()
+  return store.setLastSynced({ sent: 1 }).then(function () {
+    return store.getLastSynced()
   }).then(function (synced) {
     return expect(synced).toEqual({ sent: 1, received: 0 })
   }).then(function () {
-    return test.store.setLastSynced({ sent: 2, received: 1 })
+    return store.setLastSynced({ sent: 2, received: 1 })
   }).then(function () {
-    return test.store.getLastSynced()
+    return store.getLastSynced()
   }).then(function (synced) {
     return expect(synced).toEqual({ sent: 2, received: 1 })
   }).then(function () {
-    test.other = new IndexedStore(test.store.name)
-    return test.other.getLastSynced()
+    other = new IndexedStore(store.name)
+    return other.getLastSynced()
   }).then(function (synced) {
     return expect(synced).toEqual({ sent: 2, received: 1 })
   })
 })
 
 it('stores entries sorted', function () {
-  this.store = createStore()
-  var test = this
+  store = new IndexedStore()
   return Promise.all([
-    this.store.add({ type: '1' }, { id: [1, 'a'], time: 1 }),
-    this.store.add({ type: '2' }, { id: [1, 'c'], time: 2 }),
-    this.store.add({ type: '3' }, { id: [1, 'b'], time: 2 })
+    store.add({ type: '1' }, { id: [1, 'a'], time: 1 }),
+    store.add({ type: '2' }, { id: [1, 'c'], time: 2 }),
+    store.add({ type: '3' }, { id: [1, 'b'], time: 2 })
   ]).then(function () {
-    return check(test.store, [
+    return check(store, [
       [{ type: '2' }, { added: 2, id: [1, 'c'], time: 2 }],
       [{ type: '3' }, { added: 3, id: [1, 'b'], time: 2 }],
       [{ type: '1' }, { added: 1, id: [1, 'a'], time: 1 }]
@@ -112,45 +115,42 @@ it('stores entries sorted', function () {
 })
 
 it('stores any metadata', function () {
-  this.store = createStore()
-  var test = this
-  return this.store.add(
+  store = new IndexedStore()
+  return store.add(
     { type: 'A' },
     { id: [1, 'a'], time: 1, test: 1 }
   ).then(function () {
-    return check(test.store, [
+    return check(store, [
       [{ type: 'A' }, { added: 1, id: [1, 'a'], time: 1, test: 1 }]
     ])
   })
 })
 
 it('ignores entries with same ID', function () {
-  this.store = createStore()
-  var test = this
+  store = new IndexedStore()
   var id = [1, 'a', 1]
-  return this.store.add({ a: 1 }, { id: id, time: 1 }).then(function (meta) {
+  return store.add({ a: 1 }, { id: id, time: 1 }).then(function (meta) {
     expect(meta).toEqual({ id: id, time: 1, added: 1 })
-    return test.store.add({ a: 2 }, { id: id, time: 2 })
+    return store.add({ a: 2 }, { id: id, time: 2 })
   }).then(function (meta) {
     expect(meta).toBeFalsy()
-    return check(test.store, [
+    return check(store, [
       [{ a: 1 }, { id: id, time: 1, added: 1 }]
     ])
   })
 })
 
 it('returns last added', function () {
-  this.store = createStore()
-  var test = this
-  return this.store.add({ type: 'A' }, { id: [1], time: 1 }).then(function () {
-    return test.store.add({ type: 'B' }, { id: [2], time: 2 })
+  store = new IndexedStore()
+  return store.add({ type: 'A' }, { id: [1], time: 1 }).then(function () {
+    return store.add({ type: 'B' }, { id: [2], time: 2 })
   }).then(function () {
-    return test.store.getLastAdded()
+    return store.getLastAdded()
   }).then(function (added) {
     return expect(added).toBe(2)
   }).then(function () {
-    test.other = new IndexedStore(test.store.name)
-    return test.other.getLastAdded()
+    other = new IndexedStore(store.name)
+    return other.getLastAdded()
   }).then(function (added) {
     return expect(added).toBe(2)
   })
@@ -158,10 +158,9 @@ it('returns last added', function () {
 
 it('reloads page on database update', function () {
   document.reload = jest.fn()
-  this.store = createStore()
-  var test = this
-  return this.store.init().then(function () {
-    var opening = indexedDB.open(test.store.name, 1000)
+  store = new IndexedStore()
+  return store.init().then(function () {
+    var opening = indexedDB.open(store.name, 1000)
     return new Promise(function (resolve, reject) {
       opening.onsuccess = function (e) {
         e.target.result.close()
@@ -177,41 +176,39 @@ it('reloads page on database update', function () {
 })
 
 it('checks that action ID is used in log', function () {
-  this.store = createStore()
-  var test = this
-  return this.store.add({ type: 'A' }, { id: [1], time: 1 }).then(function () {
-    return test.store.has([1])
+  store = new IndexedStore()
+  return store.add({ type: 'A' }, { id: [1], time: 1 }).then(function () {
+    return store.has([1])
   }).then(function (result) {
     expect(result).toBeTruthy()
-    return test.store.has([2])
+    return store.has([2])
   }).then(function (result) {
     expect(result).toBeFalsy()
   })
 })
 
 it('changes meta', function () {
-  this.store = createStore()
-  var test = this
-  return test.store.add({ }, { id: [1], time: 1, a: 1 }).then(function () {
-    return test.store.changeMeta([1], { a: 2, b: 2 })
+  store = new IndexedStore()
+  return store.add({ }, { id: [1], time: 1, a: 1 }).then(function () {
+    return store.changeMeta([1], { a: 2, b: 2 })
   }).then(function (result) {
     expect(result).toBeTruthy()
-    return check(test.store, [
+    return check(store, [
       [{ }, { id: [1], time: 1, added: 1, a: 2, b: 2 }]
     ])
   })
 })
 
 it('resolves to false on unknown ID in changeMeta', function () {
-  this.store = createStore()
-  return this.store.changeMeta([1], { a: 1 }).then(function (result) {
+  store = new IndexedStore()
+  return store.changeMeta([1], { a: 1 }).then(function (result) {
     expect(result).toBeFalsy()
   })
 })
 
 it('works with real log', function () {
-  this.store = createStore()
-  var log = TestTime.getLog({ store: this.store })
+  store = new IndexedStore()
+  var log = TestTime.getLog({ store: store })
   var entries = []
   return Promise.all([
     log.add({ type: 'A' }, { id: [2], reasons: ['test'] }),
@@ -236,9 +233,9 @@ it('throws a errors', function () {
       return request
     }
   }
-  var store = new IndexedStore()
+  var broken = new IndexedStore()
   var throwed
-  return store.init().catch(function (e) {
+  return broken.init().catch(function (e) {
     throwed = e
   }).then(function () {
     expect(throwed).toBe(error)
