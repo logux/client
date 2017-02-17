@@ -62,7 +62,6 @@ IndexedStore.prototype = {
       })
       log.createIndex('id', 'id', { unique: true })
       log.createIndex('created', 'created', { unique: true })
-      log.createIndex('reasons', 'reasons', { multiEntry: true })
 
       db.createObjectStore('extra', { keyPath: 'key' })
         .transaction.oncomplete = function () {
@@ -113,7 +112,6 @@ IndexedStore.prototype = {
       meta: meta,
       time: meta.time,
       action: action,
-      reasons: meta.reasons,
       created: meta.time + '\t' + meta.id.slice(1).join('\t')
     }
 
@@ -126,6 +124,22 @@ IndexedStore.prototype = {
           return promisify(log.add(entry)).then(function (added) {
             meta.added = added
             return meta
+          })
+        }
+      })
+    })
+  },
+
+  changeMeta: function (id, diff) {
+    return this.init().then(function (store) {
+      var log = store.os('log', 'write')
+      return promisify(log.index('id').get(id)).then(function (entry) {
+        if (!entry) {
+          return false
+        } else {
+          for (var key in diff) entry.meta[key] = diff[key]
+          return promisify(log.put(entry)).then(function () {
+            return true
           })
         }
       })
