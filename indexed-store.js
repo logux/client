@@ -132,19 +132,6 @@ IndexedStore.prototype = {
     })
   },
 
-  remove: function remove (id) {
-    return this.init().then(function (store) {
-      var log = store.os('log', 'write')
-      return promisify(log.index('id').get(id)).then(function (entry) {
-        if (!entry) {
-          return false
-        } else {
-          return promisify(log.delete(entry.added))
-        }
-      })
-    })
-  },
-
   getLastAdded: function getLastAdded () {
     return this.init().then(function (store) {
       return promisify(store.os('log').openCursor(null, 'prev'))
