@@ -139,30 +139,6 @@ it('ignores entries with same ID', function () {
   })
 })
 
-it('removes entries', function () {
-  this.store = createStore()
-  var test = this
-  return Promise.all([
-    this.store.add({ type: '1' }, { id: [1], time: 1 }),
-    this.store.add({ type: '2' }, { id: [2], time: 2 }),
-    this.store.add({ type: '3' }, { id: [3], time: 3 })
-  ]).then(function () {
-    return test.store.remove([2])
-  }).then(function () {
-    return check(test.store, [
-      [{ type: '3' }, { id: [3], time: 3, added: 3 }],
-      [{ type: '1' }, { id: [1], time: 1, added: 1 }]
-    ])
-  })
-})
-
-it('ignores unknown entry', function () {
-  this.store = createStore()
-  return this.store.remove([2]).then(function (removed) {
-    expect(removed).toBeFalsy()
-  })
-})
-
 it('returns last added', function () {
   this.store = createStore()
   var test = this
