@@ -3,7 +3,7 @@
  *
  * @param {Syncable|BaseSync} sync Observed Sync instance.
  * @param {object} [links] Set favicon links.
- * @param {string} [links.default] Default favicon link.
+ * @param {string} [links.normal] Default favicon link.
  * @param {string} [links.offline] Offline favicon link.
  * @param {string} [links.error] Error favicon link.
  *
@@ -12,7 +12,7 @@
  * @example
  * import favicon from 'logux-status/favicon'
  * favicon(client, {
- *   default: '/favicon.ico',
+ *   normal: '/favicon.ico',
  *   offline: '/offline.ico',
  *   error: '/error.ico'
  * })
@@ -21,7 +21,7 @@ function favicon (sync, links) {
   if (sync.sync) sync = sync.sync
   links = links || {}
 
-  var normal = links.default
+  var normal = links.normal
   var offline = links.offline
   var error = links.error
 

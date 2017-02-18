@@ -40,7 +40,7 @@ it('changes favicon from sync property', function () {
 
 it('changes favicon on state event', function () {
   return createTest().then(function (test) {
-    favicon(test.leftSync, { default: '/default.ico', offline: '/offline.ico' })
+    favicon(test.leftSync, { normal: '/default.ico', offline: '/offline.ico' })
 
     test.leftSync.connected = false
     test.leftSync.setState('A')
