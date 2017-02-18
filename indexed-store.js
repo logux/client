@@ -1,12 +1,16 @@
 var VERSION = 1
 
+function rejectify (request, reject) {
+  request.onerror = function (e) {
+    reject(e.target.error)
+  }
+}
+
 function promisify (request) {
   return new Promise(function (resolve, reject) {
+    rejectify(request, reject)
     request.onsuccess = function (e) {
       resolve(e.target.result)
-    }
-    request.onerror = function (e) {
-      reject(e.target.error)
     }
   })
 }
@@ -62,6 +66,7 @@ IndexedStore.prototype = {
       })
       log.createIndex('id', 'id', { unique: true })
       log.createIndex('created', 'created', { unique: true })
+      log.createIndex('reasons', 'reasons', { multiEntry: true })
 
       db.createObjectStore('extra', { keyPath: 'key' })
         .transaction.oncomplete = function () {
@@ -128,6 +133,7 @@ IndexedStore.prototype = {
       meta: meta,
       time: meta.time,
       action: action,
+      reasons: meta.reasons,
       created: meta.time + '\t' + meta.id.slice(1).join('\t')
     }
 
@@ -146,7 +152,7 @@ IndexedStore.prototype = {
     })
   },
 
-  changeMeta: function (id, diff) {
+  changeMeta: function changeMeta (id, diff) {
     return this.init().then(function (store) {
       var log = store.os('log', 'write')
       return promisify(log.index('id').get(id)).then(function (entry) {
@@ -154,9 +160,54 @@ IndexedStore.prototype = {
           return false
         } else {
           for (var key in diff) entry.meta[key] = diff[key]
+          if (diff.reasons) entry.reasons = diff.reasons
           return promisify(log.put(entry)).then(function () {
             return true
           })
+        }
+      })
+    })
+  },
+
+  removeReason: function removeReason (reason, criteria, callback) {
+    return this.init().then(function (store) {
+      var log = store.os('log', 'write')
+      var request = log.index('reasons').openCursor(reason)
+      return new Promise(function (resolve, reject) {
+        rejectify(request, reject)
+        request.onsuccess = function (e) {
+          if (!e.target.result) {
+            resolve()
+            return
+          }
+
+          var entry = e.target.result.value
+          var c = criteria
+          if (typeof c.minAdded !== 'undefined' && entry.added < c.minAdded) {
+            e.target.result.continue()
+            return
+          }
+          if (typeof c.maxAdded !== 'undefined' && entry.added > c.maxAdded) {
+            e.target.result.continue()
+            return
+          }
+
+          var process
+          if (entry.reasons.length === 1) {
+            entry.meta.reasons = []
+            entry.meta.added = entry.added
+            callback(entry.action, entry.meta)
+            process = log.delete(entry.added)
+          } else {
+            entry.reasons.splice(entry.reasons.indexOf(reason), 1)
+            entry.meta.reasons = entry.reasons
+            process = log.put(entry)
+          }
+
+          rejectify(process, reject)
+          process.onsuccess = function () {
+            e.target.result.continue()
+          }
         }
       })
     })
