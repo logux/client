@@ -47,6 +47,8 @@ function check (indexed, created, added) {
   })
 }
 
+function nope () { }
+
 it('use logux as default name', function () {
   store = new IndexedStore()
   return store.init().then(function () {
@@ -265,5 +267,99 @@ it('throws a errors', function () {
     throwed = e
   }).then(function () {
     expect(throwed).toBe(error)
+  })
+})
+
+it('removes reasons and actions without reason', function () {
+  store = new IndexedStore()
+  var removed = []
+  return Promise.all([
+    store.add({ type: '1' }, { id: [1], time: 1, reasons: ['a'] }),
+    store.add({ type: '2' }, { id: [2], time: 2, reasons: ['a'] }),
+    store.add({ type: '3' }, { id: [3], time: 3, reasons: ['a', 'b'] }),
+    store.add({ type: '4' }, { id: [4], time: 4, reasons: ['b'] })
+  ]).then(function () {
+    return store.removeReason('a', { }, function (action, meta) {
+      removed.push([action, meta])
+    })
+  }).then(function () {
+    expect(removed).toEqual([
+      [{ type: '1' }, { added: 1, id: [1], time: 1, reasons: [] }],
+      [{ type: '2' }, { added: 2, id: [2], time: 2, reasons: [] }]
+    ])
+    return check(store, [
+      [{ type: '4' }, { added: 4, id: [4], time: 4, reasons: ['b'] }],
+      [{ type: '3' }, { added: 3, id: [3], time: 3, reasons: ['b'] }]
+    ])
+  })
+})
+
+it('removes reason with minimum added', function () {
+  store = new IndexedStore()
+  return Promise.all([
+    store.add({ type: '1' }, { id: [1], time: 1, reasons: ['a'] }),
+    store.add({ type: '2' }, { id: [2], time: 2, reasons: ['a'] }),
+    store.add({ type: '3' }, { id: [3], time: 3, reasons: ['a'] })
+  ]).then(function () {
+    return store.removeReason('a', { minAdded: 2 }, nope)
+  }).then(function () {
+    return check(store, [
+      [{ type: '1' }, { added: 1, id: [1], time: 1, reasons: ['a'] }]
+    ])
+  })
+})
+
+it('removes reason with maximum added', function () {
+  store = new IndexedStore()
+  return Promise.all([
+    store.add({ type: '1' }, { id: [1], time: 1, reasons: ['a'] }),
+    store.add({ type: '2' }, { id: [2], time: 2, reasons: ['a'] }),
+    store.add({ type: '3' }, { id: [3], time: 3, reasons: ['a'] })
+  ]).then(function () {
+    return store.removeReason('a', { maxAdded: 2 }, nope)
+  }).then(function () {
+    return check(store, [
+      [{ type: '3' }, { added: 3, id: [3], time: 3, reasons: ['a'] }]
+    ])
+  })
+})
+
+it('removes reason with minimum and maximum added', function () {
+  store = new IndexedStore()
+  return Promise.all([
+    store.add({ type: '1' }, { id: [1], time: 1, reasons: ['a'] }),
+    store.add({ type: '2' }, { id: [2], time: 2, reasons: ['a'] }),
+    store.add({ type: '3' }, { id: [3], time: 3, reasons: ['a'] })
+  ]).then(function () {
+    return store.removeReason('a', { maxAdded: 2, minAdded: 2 }, nope)
+  }).then(function () {
+    return check(store, [
+      [{ type: '3' }, { added: 3, id: [3], time: 3, reasons: ['a'] }],
+      [{ type: '1' }, { added: 1, id: [1], time: 1, reasons: ['a'] }]
+    ])
+  })
+})
+
+it('removes reason with zero at maximum added', function () {
+  store = new IndexedStore()
+  return store.add({ }, { id: [1], time: 1, reasons: ['a'] }).then(function () {
+    return store.removeReason('a', { maxAdded: 0 }, nope)
+  }).then(function () {
+    return check(store, [
+      [{ }, { added: 1, id: [1], time: 1, reasons: ['a'] }]
+    ])
+  })
+})
+
+it('updates reasons cache', function () {
+  store = new IndexedStore()
+  return store.add({ }, { id: [1], time: 1, reasons: ['a'] }).then(function () {
+    return store.changeMeta([1], { reasons: ['a', 'b', 'c'] })
+  }).then(function () {
+    return store.removeReason('b', { }, nope)
+  }).then(function () {
+    return check(store, [
+      [{ }, { added: 1, id: [1], time: 1, reasons: ['a', 'c'] }]
+    ])
   })
 })
