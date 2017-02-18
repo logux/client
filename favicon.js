@@ -1,5 +1,5 @@
 /**
- * Change favicon on Logux state
+ * Change favicon to show Logux synchronization status.
  *
  * @param {Syncable|BaseSync} sync Observed Sync instance.
  * @param {object} [links] Set favicon links.
