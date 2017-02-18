@@ -5,10 +5,17 @@ var TestPair = require('logux-sync').TestPair
 
 var favicon = require('../favicon')
 
-var fav = document.createElement('link')
-fav.rel = 'icon'
-fav.href = ''
-document.head.appendChild(fav)
+function getFavNode () {
+  return document.querySelector('link[rel~="icon"]')
+}
+
+function getFavHref () {
+  return getFavNode().href
+}
+
+function setFavHref (href) {
+  getFavNode().href = href
+}
 
 function createTest () {
   var pair = new TestPair()
@@ -20,28 +27,28 @@ function createTest () {
 }
 
 afterEach(function () {
-  fav.href = ''
+  setFavHref('')
 })
 
 it('changes favicon from sync property', function () {
   return createTest().then(function (test) {
     favicon({ sync: test.leftSync }, { error: '/error.ico' })
     test.left.emitter.emit('error', new Error('test'))
-    expect(fav.href).toBe('/error.ico')
+    expect(getFavHref()).toBe('/error.ico')
   })
 })
 
 it('changes favicon on state event', function () {
   return createTest().then(function (test) {
-    favicon(test.leftSync, { online: '/online.ico', offline: '/offline.ico' })
+    favicon(test.leftSync, { default: '/default.ico', offline: '/offline.ico' })
 
     test.leftSync.connected = false
     test.leftSync.setState('A')
-    expect(fav.href).toBe('/offline.ico')
+    expect(getFavHref()).toBe('/offline.ico')
 
     test.leftSync.connected = true
     test.leftSync.setState('B')
-    expect(fav.href).toBe('/online.ico')
+    expect(getFavHref()).toBe('/default.ico')
   })
 })
 
@@ -49,11 +56,11 @@ it('does not double favicon changes', function () {
   return createTest().then(function (test) {
     favicon(test.leftSync, { error: '/error.ico' })
     test.leftSync.emitter.emit('error', new Error('test'))
-    expect(fav.href).toBe('/error.ico')
+    expect(getFavHref()).toBe('/error.ico')
 
-    fav.href = ''
+    setFavHref('')
     test.leftSync.emitter.emit('error', new Error('test'))
-    expect(fav.href).toBe('')
+    expect(getFavHref()).toBe('')
   })
 })
 
@@ -61,7 +68,19 @@ it('allows to miss timeout error', function () {
   return createTest().then(function (test) {
     favicon(test.leftSync, { error: '/error.ico' })
     test.left.emitter.emit('error', new SyncError(test.leftSync, 'timeout'))
-    expect(fav.href).toBe('')
+    expect(getFavHref()).toBe('')
+  })
+})
+
+it('does not override error by offline', function () {
+  return createTest().then(function (test) {
+    favicon(test.leftSync, { offline: '/offline.ico', error: '/error.ico' })
+    test.leftSync.emitter.emit('error', new Error('test'))
+    expect(getFavHref()).toBe('/error.ico')
+
+    test.leftSync.connected = false
+    test.leftSync.setState('A')
+    expect(getFavHref()).toBe('/error.ico')
   })
 })
 
@@ -72,6 +91,6 @@ it('returns unbind function', function () {
     unbind()
     test.left.emitter.emit('error', new Error('test'))
 
-    expect(fav.href).not.toBe('/error.ico')
+    expect(getFavHref()).not.toBe('/error.ico')
   })
 })

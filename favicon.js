@@ -3,7 +3,7 @@
  *
  * @param {Syncable|BaseSync} sync Observed Sync instance.
  * @param {object} [links] Set favicon links.
- * @param {string} [links.online] Online favicon link.
+ * @param {string} [links.default] Default favicon link.
  * @param {string} [links.offline] Offline favicon link.
  * @param {string} [links.error] Error favicon link.
  *
@@ -12,7 +12,7 @@
  * @example
  * import favicon from 'logux-status/favicon'
  * favicon(client, {
- *   online: '/favicon.ico',
+ *   default: '/favicon.ico',
  *   offline: '/offline.ico',
  *   error: '/error.ico'
  * })
@@ -21,7 +21,7 @@ function favicon (sync, links) {
   if (sync.sync) sync = sync.sync
   links = links || {}
 
-  var online = links.online
+  var normal = links.default
   var offline = links.offline
   var error = links.error
 
@@ -33,21 +33,27 @@ function favicon (sync, links) {
   if (typeof doc !== 'undefined') {
     fav = doc.querySelector('link[rel~="icon"]')
 
-    if (fav) {
-      unbind.push(sync.on('state', function () {
-        if (sync.connected && online && prevFav !== online) {
-          fav.href = prevFav = online
-        } else if (!sync.connected && offline && prevFav !== offline) {
-          fav.href = prevFav = offline
-        }
-      }))
-
-      unbind.push(sync.on('error', function (err) {
-        if (err.type !== 'timeout' && error && prevFav !== error) {
-          fav.href = prevFav = error
-        }
-      }))
+    if (!fav) {
+      fav = document.createElement('link')
+      fav.rel = 'icon'
+      fav.href = ''
+      document.head.appendChild(fav)
     }
+
+    unbind.push(sync.on('state', function () {
+      if (sync.connected && normal && prevFav !== normal) {
+        fav.href = prevFav = normal
+      } else if (!sync.connected && offline &&
+                 prevFav !== offline && prevFav !== error) {
+        fav.href = prevFav = offline
+      }
+    }))
+
+    unbind.push(sync.on('error', function (err) {
+      if (err.type !== 'timeout' && error && prevFav !== error) {
+        fav.href = prevFav = error
+      }
+    }))
   }
 
   return function () {
