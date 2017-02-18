@@ -222,6 +222,32 @@ it('works with real log', function () {
   })
 })
 
+it('removes entries', function () {
+  store = new IndexedStore()
+  return Promise.all([
+    store.add({ type: '1' }, { id: [1, 'node', 0], time: 1 }),
+    store.add({ type: '2' }, { id: [2, 'node', 0], time: 2 }),
+    store.add({ type: '3' }, { id: [3, 'node', 0], time: 3 })
+  ]).then(function () {
+    return store.remove([2, 'node', 0])
+  }).then(function (entry) {
+    expect(entry).toEqual([
+      { type: '2' }, { id: [2, 'node', 0], time: 2, added: 2 }
+    ])
+    return check(store, [
+      [{ type: '3' }, { id: [3, 'node', 0], time: 3, added: 3 }],
+      [{ type: '1' }, { id: [1, 'node', 0], time: 1, added: 1 }]
+    ])
+  })
+})
+
+it('ignores unknown entry', function () {
+  store = new IndexedStore()
+  return store.remove([2]).then(function (removed) {
+    expect(removed).toBeFalsy()
+  })
+})
+
 it('throws a errors', function () {
   var error = new Error()
   global.indexedDB = {
