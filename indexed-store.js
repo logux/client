@@ -106,6 +106,22 @@ IndexedStore.prototype = {
     })
   },
 
+  remove: function remove (id) {
+    return this.init().then(function (store) {
+      var log = store.os('log', 'write')
+      return promisify(log.index('id').get(id)).then(function (entry) {
+        if (!entry) {
+          return false
+        } else {
+          return promisify(log.delete(entry.added)).then(function () {
+            entry.meta.added = entry.added
+            return [entry.action, entry.meta]
+          })
+        }
+      })
+    })
+  },
+
   add: function add (action, meta) {
     var entry = {
       id: meta.id,
