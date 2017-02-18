@@ -38,7 +38,7 @@
     "spellcheck": "yarn run cleandocs && yaspeller *.md docs/*.html",
     "cleandocs": "yarn run docs && rimraf docs/*.js.html",
     "clean": "rimraf docs/ coverage/ bundle-report.html",
-    "lint": "eslint *.js test/*.js",
+    "lint": "eslint *.js test/**/*.js",
     "docs": "jsdoc --configure .jsdocrc *.js",
     "test": "jest --coverage && yarn run lint && yarn run spellcheck",
     "prebundle": "webpack client.js bundle/index.js",
