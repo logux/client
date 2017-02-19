@@ -30,17 +30,12 @@ afterEach(function () {
   setFavHref('')
 })
 
-it('changes favicon from sync property', function () {
-  return createTest().then(function (test) {
-    favicon({ sync: test.leftSync }, { error: '/error.ico' })
-    test.left.emitter.emit('error', new Error('test'))
-    expect(getFavHref()).toBe('/error.ico')
-  })
-})
-
 it('changes favicon on state event', function () {
   return createTest().then(function (test) {
-    favicon(test.leftSync, { normal: '/default.ico', offline: '/offline.ico' })
+    favicon({ sync: test.leftSync }, {
+      offline: '/offline.ico',
+      normal: '/default.ico'
+    })
 
     test.leftSync.connected = false
     test.leftSync.setState('A')
@@ -54,7 +49,7 @@ it('changes favicon on state event', function () {
 
 it('does not double favicon changes', function () {
   return createTest().then(function (test) {
-    favicon(test.leftSync, { error: '/error.ico' })
+    favicon({ sync: test.leftSync }, { error: '/error.ico' })
     test.leftSync.emitter.emit('error', new Error('test'))
     expect(getFavHref()).toBe('/error.ico')
 
@@ -66,7 +61,7 @@ it('does not double favicon changes', function () {
 
 it('allows to miss timeout error', function () {
   return createTest().then(function (test) {
-    favicon(test.leftSync, { error: '/error.ico' })
+    favicon({ sync: test.leftSync }, { error: '/error.ico' })
     test.left.emitter.emit('error', new SyncError(test.leftSync, 'timeout'))
     expect(getFavHref()).toBe('')
   })
@@ -74,7 +69,10 @@ it('allows to miss timeout error', function () {
 
 it('does not override error by offline', function () {
   return createTest().then(function (test) {
-    favicon(test.leftSync, { offline: '/offline.ico', error: '/error.ico' })
+    favicon({ sync: test.leftSync }, {
+      offline: '/offline.ico',
+      error: '/error.ico'
+    })
     test.leftSync.emitter.emit('error', new Error('test'))
     expect(getFavHref()).toBe('/error.ico')
 
@@ -86,7 +84,7 @@ it('does not override error by offline', function () {
 
 it('returns unbind function', function () {
   return createTest().then(function (test) {
-    var unbind = favicon(test.leftSync, { error: '/error.ico' })
+    var unbind = favicon({ sync: test.leftSync }, { error: '/error.ico' })
 
     unbind()
     test.left.emitter.emit('error', new Error('test'))

@@ -27,17 +27,9 @@ afterEach(function () {
   console.log = originLog
 })
 
-it('shows events from sync property', function () {
-  return createTest().then(function (test) {
-    log({ sync: test.leftSync })
-    test.left.emitter.emit('error', new Error('test'))
-    expect(console.error).toBeCalled()
-  })
-})
-
 it('shows connecting state URL', function () {
   return createTest().then(function (test) {
-    log(test.leftSync)
+    log({ sync: test.leftSync })
 
     test.leftSync.connected = false
     test.leftSync.connection.url = 'ws://ya.ru'
@@ -50,7 +42,7 @@ it('shows connecting state URL', function () {
 
 it('shows server node ID', function () {
   return createTest().then(function (test) {
-    log(test.leftSync)
+    log({ sync: test.leftSync })
 
     test.leftSync.remoteNodeId = 'server'
     test.leftSync.connected = true
@@ -67,7 +59,7 @@ it('shows server node ID', function () {
 
 it('shows state event', function () {
   return createTest().then(function (test) {
-    log(test.leftSync)
+    log({ sync: test.leftSync })
 
     test.leftSync.connected = false
     test.leftSync.emitter.emit('state')
@@ -78,7 +70,7 @@ it('shows state event', function () {
 
 it('shows error event', function () {
   return createTest().then(function (test) {
-    log(test.leftSync)
+    log({ sync: test.leftSync })
     test.left.emitter.emit('error', new SyncError(test.leftSync, 'test'))
     expect(console.error).toBeCalledWith('Logux error: test')
   })
@@ -86,7 +78,7 @@ it('shows error event', function () {
 
 it('shows server error', function () {
   return createTest().then(function (test) {
-    log(test.leftSync)
+    log({ sync: test.leftSync })
 
     var error = new SyncError(test.leftSync, 'test', 'type', true)
     test.leftSync.emitter.emit('clientError', error)
@@ -97,7 +89,7 @@ it('shows server error', function () {
 
 it('shows add and clean event', function () {
   return createTest().then(function (test) {
-    log(test.leftSync)
+    log({ sync: test.leftSync })
     return test.leftSync.log.add({ type: 'A' }, { reasons: ['test'] })
       .then(function () {
         expect(console.log).toBeCalledWith(
@@ -119,7 +111,7 @@ it('shows add and clean event', function () {
 it('shows add event with action from different node', function () {
   return createTest().then(function (test) {
     test.leftSync.localNodeId = 'client'
-    log(test.leftSync)
+    log({ sync: test.leftSync })
     return test.leftSync.log.add({ type: 'B' }, { reasons: ['test'] })
   }).then(function () {
     expect(console.log).toBeCalledWith(
@@ -132,7 +124,7 @@ it('shows add event with action from different node', function () {
 
 it('allows to disable some message types', function () {
   return createTest().then(function (test) {
-    log(test.leftSync, {
+    log({ sync: test.leftSync }, {
       state: false,
       error: false,
       clean: false,
@@ -154,7 +146,7 @@ it('allows to disable some message types', function () {
 
 it('returns unbind function', function () {
   return createTest().then(function (test) {
-    var unbind = log(test.leftSync)
+    var unbind = log({ sync: test.leftSync })
 
     unbind()
     test.left.emitter.emit('error', new Error('test'))

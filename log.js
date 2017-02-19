@@ -8,7 +8,8 @@ function showError (error) {
 /**
  * Display Logux events in browser console.
  *
- * @param {Syncable|BaseSync} sync Observed Sync instance.
+ * @param {Syncable|Client} client Observed Client instance
+ *                                 or object with `sync` property.
  * @param {object} [messages] Disable specific message types.
  * @param {boolean} [messages.state] Disable state messages.
  * @param {boolean} [messages.error] Disable error messages.
@@ -21,9 +22,9 @@ function showError (error) {
  * import log from 'logux-status/log'
  * log(client, { add: false })
  */
-function log (sync, messages) {
-  if (sync.sync) sync = sync.sync
+function log (client, messages) {
   if (!messages) messages = { }
+  var sync = client.sync
 
   var unbind = []
   var prevConnected = false

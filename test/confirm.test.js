@@ -19,7 +19,7 @@ afterEach(function () {
 
 it('confirms close', function () {
   return createTest().then(function (test) {
-    confirm(test.leftSync, 'test warning')
+    confirm({ sync: test.leftSync }, 'test warning')
 
     test.leftSync.setState('wait')
     expect(window.onbeforeunload()).toEqual('test warning')
@@ -30,17 +30,9 @@ it('confirms close', function () {
   })
 })
 
-it('confirms close from sync property', function () {
-  return createTest().then(function (test) {
-    confirm({ sync: test.leftSync }, 'test warning')
-    test.leftSync.setState('wait')
-    expect(window.onbeforeunload()).toEqual('test warning')
-  })
-})
-
 it('has default message', function () {
   return createTest().then(function (test) {
-    confirm(test.leftSync)
+    confirm({ sync: test.leftSync })
     test.leftSync.setState('wait')
     expect(typeof window.onbeforeunload()).toEqual('string')
   })
@@ -48,7 +40,7 @@ it('has default message', function () {
 
 it('does not confirm on synchronized state', function () {
   return createTest().then(function (test) {
-    confirm(test.leftSync, 'test warning')
+    confirm({ sync: test.leftSync }, 'test warning')
     test.leftSync.setState('wait')
     test.leftSync.setState('synchronized')
     expect(window.onbeforeunload).toBe(null)
@@ -57,7 +49,7 @@ it('does not confirm on synchronized state', function () {
 
 it('returns unbind function', function () {
   return createTest().then(function (test) {
-    var unbind = confirm(test.leftSync, 'test warning')
+    var unbind = confirm({ sync: test.leftSync }, 'test warning')
     unbind()
     test.leftSync.setState('wait')
     expect(window.onbeforeunload).toBe(null)

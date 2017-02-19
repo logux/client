@@ -1,7 +1,8 @@
 /**
  * Show confirm popup, when user close tab with non-synchronized actions.
  *
- * @param {Syncable|BaseSync} sync Observed Sync instance.
+ * @param {Syncable|Client} client Observed Client instance
+ *                                 or object with `sync` property.
  * @param {String} [warning] The text of the warning.
  *
  * @return {Function} Unbind confirm listener.
@@ -10,8 +11,8 @@
  * import confirm from 'logux-status/confirm'
  * confirm(client, 'Post does not saved to server. Are you sure to leave?')
  */
-function confirm (sync, warning) {
-  if (sync.sync) sync = sync.sync
+function confirm (client, warning) {
+  var sync = client.sync
 
   warning = warning || 'Some data was not saved to server. ' +
                        'Are you sure to leave?'

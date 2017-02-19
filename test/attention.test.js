@@ -35,15 +35,7 @@ afterEach(function () {
   document.removeEventListener = originRemove
 })
 
-it('receives errors from sync parameter', function () {
-  return createTest().then(function (test) {
-    attention(test.leftSync)
-    test.left.emitter.emit('error', new Error('test'))
-    expect(document.title).toBe('title*')
-  })
-})
-
-it('receives errors from sync property', function () {
+it('receives errors', function () {
   return createTest().then(function (test) {
     attention({ sync: test.leftSync })
     test.left.emitter.emit('error', new Error('test'))
@@ -55,7 +47,7 @@ it('returns unbind function', function () {
   document.removeEventListener = jest.fn()
 
   return createTest().then(function (test) {
-    var unbind = attention(test.leftSync)
+    var unbind = attention({ sync: test.leftSync })
     unbind()
     expect(document.removeEventListener).toBeCalled()
   })
@@ -63,7 +55,7 @@ it('returns unbind function', function () {
 
 it('allows to miss timeout error', function () {
   return createTest().then(function (test) {
-    attention(test.leftSync)
+    attention({ sync: test.leftSync })
     test.left.emitter.emit('error', new SyncError(test.leftSync, 'timeout'))
     expect(document.title).toBe('title')
   })
@@ -77,7 +69,7 @@ it('sets old title when user open a tab', function () {
   }
 
   return createTest().then(function (test) {
-    attention(test.leftSync)
+    attention({ sync: test.leftSync })
 
     test.left.emitter.emit('error', new Error('test'))
     expect(document.title).toBe('title*')
@@ -90,7 +82,7 @@ it('sets old title when user open a tab', function () {
 
 it('does not double title changes', function () {
   return createTest().then(function (test) {
-    attention(test.leftSync)
+    attention({ sync: test.leftSync })
 
     test.leftSync.emitter.emit('error', new Error('test'))
     test.leftSync.emitter.emit('error', new Error('test'))
@@ -100,7 +92,7 @@ it('does not double title changes', function () {
 
 it('does not change title of visible tab', function () {
   return createTest().then(function (test) {
-    attention(test.leftSync)
+    attention({ sync: test.leftSync })
 
     nextHidden = false
     test.left.emitter.emit('error', new Error('test'))

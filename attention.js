@@ -1,7 +1,8 @@
 /**
  * Highlight tabs on synchronization errors.
  *
- * @param {Syncable|BaseSync} sync Observed Sync instance.
+ * @param {Syncable|Client} client Observed Client instance
+ *                                 or object with `sync` property.
  *
  * @return {Function} Unbind attention listener.
  *
@@ -9,8 +10,8 @@
  * import attention from 'logux-status/attention'
  * attention(client)
  */
-function attention (sync) {
-  if (sync.sync) sync = sync.sync
+function attention (client) {
+  var sync = client.sync
 
   var originTitle = false
   var unbind = []

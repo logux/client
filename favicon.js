@@ -1,7 +1,8 @@
 /**
  * Change favicon to show Logux synchronization status.
  *
- * @param {Syncable|BaseSync} sync Observed Sync instance.
+ * @param {Syncable|Client} client Observed Client instance
+ *                                 or object with `sync` property.
  * @param {object} [links] Set favicon links.
  * @param {string} [links.normal] Default favicon link.
  * @param {string} [links.offline] Offline favicon link.
@@ -17,9 +18,9 @@
  *   error: '/error.ico'
  * })
  */
-function favicon (sync, links) {
-  if (sync.sync) sync = sync.sync
+function favicon (client, links) {
   links = links || {}
+  var sync = client.sync
 
   var normal = links.normal
   var offline = links.offline
