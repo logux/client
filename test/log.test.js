@@ -196,7 +196,6 @@ it('shows add and clean event', function () {
       }).then(function () {
         expect(console.log).toHaveBeenLastCalledWith(
           'Logux: action A was cleaned',
-          '', '',
           { type: 'A' },
           { id: [1, 'test1', 0], reasons: [], time: 1, added: 1 }
         )
