@@ -81,13 +81,13 @@ function log (client, messages) {
   if (messages.add !== false) {
     unbind.push(sync.log.on('add', function (action, meta) {
       var message
-      var actionTypeString = stylePrefix + action.type + stylePrefix
+      var type = stylePrefix + action.type + stylePrefix
       var stylesCount = 1
       if (meta.id[1] === sync.localNodeId) {
-        message = 'action ' + actionTypeString + ' was added'
+        message = 'action ' + type + ' was added'
       } else {
         var metaString = stylePrefix + meta.id[1] + stylePrefix
-        message = metaString + ' added action ' + actionTypeString
+        message = 'action ' + type + ' was added by ' + metaString
         stylesCount++
       }
 
@@ -105,10 +105,10 @@ function log (client, messages) {
 
   if (messages.clean !== false) {
     unbind.push(sync.log.on('clean', function (action, meta) {
-      var actionTypeString = stylePrefix + action.type + stylePrefix
+      var type = stylePrefix + action.type + stylePrefix
       showMessage(
         'log',
-        'action ' + actionTypeString + ' was cleaned',
+        'action ' + type + ' was cleaned',
         boldStyle, '', action, meta
       )
     }))

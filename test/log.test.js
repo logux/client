@@ -240,7 +240,7 @@ it('shows add event with action and make action type bold', function () {
     return test.leftSync.log.add({ type: 'B' }, { reasons: ['test'] })
   }).then(function () {
     expect(console.log).toBeCalledWith(
-      '%cLogux:%c %ctest1%c added action %cB%c',
+      '%cLogux:%c action %cB%c was added by %ctest1%c',
       'color: #ffa200',
       '',
       'font-weight: bold',
