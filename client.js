@@ -133,29 +133,11 @@ function Client (options) {
     auth: auth
   })
 
-  var client = this
   this.sync.on('debug', function (type, stack) {
-    client.showDebug(type, stack)
-  })
-}
-
-Client.prototype = {
-  /**
-   * Display server error stacktrace in browser console.
-   *
-   * @param {string} type Debug message type, e.g. 'error'.
-   * @param {string} stack Runtime error stacktrace.
-   *
-   * @return {undefined}
-   *
-   * @example
-   * showDebug('error', 'Fake stacktrace\n')
-   */
-  showDebug: function showDebug (type, stack) {
     if (type === 'error') {
       console.error('Logux: server sent error\n', stack)
     }
-  }
+  })
 }
 
 module.exports = Client
