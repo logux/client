@@ -54,34 +54,33 @@ function Client (options) {
    * @example
    * console.log('Logux node ID is ' + app.options.nodeId)
    */
-  var client = this
-  client.options = options || { }
+  this.options = options || { }
 
-  if (typeof client.options.url === 'undefined') {
+  if (typeof this.options.url === 'undefined') {
     throw new Error('Missed url option in Logux client')
   }
-  if (typeof client.options.subprotocol === 'undefined') {
+  if (typeof this.options.subprotocol === 'undefined') {
     throw new Error('Missed subprotocol option in Logux client')
   }
-  if (typeof client.options.userId === 'undefined') {
-    throw new Error('Missed userId option in Logux client. ' +
+  if (typeof this.options.userId === 'undefined') {
+    throw new Error('Missed userId option in Logux this. ' +
                     'Pass false if you have no users.')
   }
 
-  if (typeof client.options.prefix === 'undefined') {
-    client.options.prefix = 'logux'
+  if (typeof this.options.prefix === 'undefined') {
+    this.options.prefix = 'logux'
   }
 
-  var userId = client.options.userId
+  var userId = this.options.userId
   if (userId) {
     userId += ':'
   } else {
     userId = ''
   }
-  client.options.nodeId = userId + shortid.generate()
+  this.options.nodeId = userId + shortid.generate()
 
   var auth
-  if (/^ws:\/\//.test(client.options.url) && !options.allowDangerousProtocol) {
+  if (/^ws:\/\//.test(this.options.url) && !options.allowDangerousProtocol) {
     auth = function (cred) {
       if (typeof cred !== 'object' || cred.env !== 'development') {
         console.error(
@@ -94,10 +93,10 @@ function Client (options) {
     }
   }
 
-  var store = client.options.store
+  var store = this.options.store
   if (!store) {
     if (global.indexedDB) {
-      store = new IndexedStore(client.options.prefix)
+      store = new IndexedStore(this.options.prefix)
     } else {
       store = new MemoryStore()
     }
@@ -110,13 +109,13 @@ function Client (options) {
    * @example
    * app.log.keep(customKeeper)
    */
-  client.log = new Log({ store: store, nodeId: client.options.nodeId })
+  this.log = new Log({ store: store, nodeId: this.options.nodeId })
 
-  var ws = new BrowserConnection(client.options.url)
+  var ws = new BrowserConnection(this.options.url)
   var connection = new Reconnect(ws, {
-    minDelay: client.options.minDelay,
-    maxDelay: client.options.maxDelay,
-    attempts: client.options.attempts
+    minDelay: this.options.minDelay,
+    maxDelay: this.options.maxDelay,
+    attempts: this.options.attempts
   })
 
   /**
@@ -124,17 +123,18 @@ function Client (options) {
    * @type {ClientSync}
    *
    * @example
-   * if (client.sync.state === 'synchronized')
+   * if (this.sync.state === 'synchronized')
    */
-  client.sync = new ClientSync(client.options.nodeId, client.log, connection, {
-    credentials: client.options.credentials,
-    subprotocol: client.options.subprotocol,
-    timeout: client.options.timeout,
-    ping: client.options.ping,
+  this.sync = new ClientSync(this.options.nodeId, this.log, connection, {
+    credentials: this.options.credentials,
+    subprotocol: this.options.subprotocol,
+    timeout: this.options.timeout,
+    ping: this.options.ping,
     auth: auth
   })
 
-  client.sync.on('debug', function (type, stack) {
+  var client = this
+  this.sync.on('debug', function (type, stack) {
     client.showDebug(type, stack)
   })
 }
