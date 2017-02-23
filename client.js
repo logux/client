@@ -132,6 +132,12 @@ function Client (options) {
     ping: this.options.ping,
     auth: auth
   })
+
+  this.sync.on('debug', function (type, stack) {
+    if (type === 'error') {
+      console.error('Error on Logux server:\n', stack)
+    }
+  })
 }
 
 module.exports = Client
