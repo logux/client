@@ -63,7 +63,7 @@ function Client (options) {
     throw new Error('Missed subprotocol option in Logux client')
   }
   if (typeof this.options.userId === 'undefined') {
-    throw new Error('Missed userId option in Logux this. ' +
+    throw new Error('Missed userId option in Logux client. ' +
                     'Pass false if you have no users.')
   }
 
