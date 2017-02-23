@@ -123,7 +123,7 @@ function Client (options) {
    * @type {ClientSync}
    *
    * @example
-   * if (this.sync.state === 'synchronized')
+   * if (client.sync.state === 'synchronized')
    */
   this.sync = new ClientSync(this.options.nodeId, this.log, connection, {
     credentials: this.options.credentials,

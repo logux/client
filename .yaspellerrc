@@ -22,7 +22,6 @@
     "reconnections",
     "reconnection",
     "ws",
-    "UX",
-    "stacktrace"
+    "UX"
   ]
 }
