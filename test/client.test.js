@@ -219,6 +219,6 @@ it('does not display server debug message if type is not error', function () {
     userId: false,
     url: 'wss://localhost:1337'
   })
-  client.sync.emitter.emit('debug', 'definitely_not_error', 'Fake stacktrace\n')
+  client.sync.emitter.emit('debug', 'notError', 'Fake stacktrace\n')
   expect(console.error).not.toHaveBeenCalled()
 })
