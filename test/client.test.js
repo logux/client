@@ -197,3 +197,28 @@ it('sends options to sync', function () {
   expect(client.sync.options.timeout).toEqual(2000)
   expect(client.sync.options.ping).toEqual(1000)
 })
+
+it('display server debug error stacktrace with prefix', function () {
+  console.error = jest.fn()
+  var client = new Client({
+    subprotocol: '1.0.0',
+    userId: false,
+    url: 'wss://localhost:1337'
+  })
+  client.sync.emitter.emit('debug', 'error', 'Fake stacktrace\n')
+  expect(console.error).toHaveBeenCalledWith(
+      'Error on Logux server:\n',
+      'Fake stacktrace\n'
+  )
+})
+
+it('does not display server debug message if type is not error', function () {
+  console.error = jest.fn()
+  var client = new Client({
+    subprotocol: '1.0.0',
+    userId: false,
+    url: 'wss://localhost:1337'
+  })
+  client.sync.emitter.emit('debug', 'definitely_not_error', 'Fake stacktrace\n')
+  expect(console.error).not.toHaveBeenCalled()
+})
