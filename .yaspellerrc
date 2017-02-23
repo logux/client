@@ -23,7 +23,6 @@
     "reconnection",
     "ws",
     "UX",
-    "displayDebugError",
     "stacktrace"
   ]
 }
