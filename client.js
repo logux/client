@@ -54,33 +54,34 @@ function Client (options) {
    * @example
    * console.log('Logux node ID is ' + app.options.nodeId)
    */
-  this.options = options || { }
+  var client = this
+  client.options = options || { }
 
-  if (typeof this.options.url === 'undefined') {
+  if (typeof client.options.url === 'undefined') {
     throw new Error('Missed url option in Logux client')
   }
-  if (typeof this.options.subprotocol === 'undefined') {
+  if (typeof client.options.subprotocol === 'undefined') {
     throw new Error('Missed subprotocol option in Logux client')
   }
-  if (typeof this.options.userId === 'undefined') {
+  if (typeof client.options.userId === 'undefined') {
     throw new Error('Missed userId option in Logux client. ' +
                     'Pass false if you have no users.')
   }
 
-  if (typeof this.options.prefix === 'undefined') {
-    this.options.prefix = 'logux'
+  if (typeof client.options.prefix === 'undefined') {
+    client.options.prefix = 'logux'
   }
 
-  var userId = this.options.userId
+  var userId = client.options.userId
   if (userId) {
     userId += ':'
   } else {
     userId = ''
   }
-  this.options.nodeId = userId + shortid.generate()
+  client.options.nodeId = userId + shortid.generate()
 
   var auth
-  if (/^ws:\/\//.test(this.options.url) && !options.allowDangerousProtocol) {
+  if (/^ws:\/\//.test(client.options.url) && !options.allowDangerousProtocol) {
     auth = function (cred) {
       if (typeof cred !== 'object' || cred.env !== 'development') {
         console.error(
@@ -93,10 +94,10 @@ function Client (options) {
     }
   }
 
-  var store = this.options.store
+  var store = client.options.store
   if (!store) {
     if (global.indexedDB) {
-      store = new IndexedStore(this.options.prefix)
+      store = new IndexedStore(client.options.prefix)
     } else {
       store = new MemoryStore()
     }
@@ -109,13 +110,13 @@ function Client (options) {
    * @example
    * app.log.keep(customKeeper)
    */
-  this.log = new Log({ store: store, nodeId: this.options.nodeId })
+  client.log = new Log({ store: store, nodeId: client.options.nodeId })
 
-  var ws = new BrowserConnection(this.options.url)
+  var ws = new BrowserConnection(client.options.url)
   var connection = new Reconnect(ws, {
-    minDelay: this.options.minDelay,
-    maxDelay: this.options.maxDelay,
-    attempts: this.options.attempts
+    minDelay: client.options.minDelay,
+    maxDelay: client.options.maxDelay,
+    attempts: client.options.attempts
   })
 
   /**
@@ -125,13 +126,35 @@ function Client (options) {
    * @example
    * if (client.sync.state === 'synchronized')
    */
-  this.sync = new ClientSync(this.options.nodeId, this.log, connection, {
-    credentials: this.options.credentials,
-    subprotocol: this.options.subprotocol,
-    timeout: this.options.timeout,
-    ping: this.options.ping,
+  client.sync = new ClientSync(client.options.nodeId, client.log, connection, {
+    credentials: client.options.credentials,
+    subprotocol: client.options.subprotocol,
+    timeout: client.options.timeout,
+    ping: client.options.ping,
     auth: auth
   })
+
+  client.sync.on('debug', function (type, stack) {
+    if (type === 'error') {
+      client.displayDebugError(stack)
+    }
+  })
+}
+
+Client.prototype = {
+  /**
+   * Display server error stacktrace in browser console.
+   *
+   * @param {string} stack Runtime error stacktrace.
+   *
+   * @return {undefined}
+   *
+   * @example
+   * displayDebugError('Fake stacktrace\n')
+   */
+  displayDebugError: function displayDebugError (stack) {
+    console.error('Logux: server sent error\n', stack)
+  }
 }
 
 module.exports = Client

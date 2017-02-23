@@ -22,6 +22,8 @@
     "reconnections",
     "reconnection",
     "ws",
-    "UX"
+    "UX",
+    "displayDebugError",
+    "stacktrace"
   ]
 }
