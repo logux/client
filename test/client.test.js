@@ -1,7 +1,5 @@
 var fakeIndexedDB = require('fake-indexeddb')
 var MemoryStore = require('logux-core').MemoryStore
-var TestTime = require('logux-core').TestTime
-var BaseSync = require('logux-sync').BaseSync
 var ClientSync = require('logux-sync').ClientSync
 var TestPair = require('logux-sync').TestPair
 
@@ -53,13 +51,10 @@ it('display server debug error stacktrace with prefix', function () {
     client.sync.options
   )
 
-  pair.rightSync = new BaseSync('test2', TestTime.getLog(), pair.right)
-
   return client.sync.connection.connect().then(function () {
     return pair.wait('right')
   }).then(function () {
-    pair.rightSync.sendDebug('error', 'Fake stacktrace\n')
-    return pair.wait('left')
+    client.sync.emitter.emit('debug', 'error', 'Fake stacktrace\n')
   }).then(function () {
     expect(true).toBeTruthy()
     // expect(console.error).toHaveBeenCalledWith()
