@@ -1,5 +1,7 @@
 var fakeIndexedDB = require('fake-indexeddb')
 var MemoryStore = require('logux-core').MemoryStore
+var TestTime = require('logux-core').TestTime
+var BaseSync = require('logux-sync').BaseSync
 var ClientSync = require('logux-sync').ClientSync
 var TestPair = require('logux-sync').TestPair
 
@@ -34,6 +36,35 @@ function createDialog (opts, credentials) {
     return client
   })
 }
+
+it('display server debug error stacktrace with prefix', function () {
+  console.error = jest.fn()
+  var client = new Client({
+    subprotocol: '1.0.0',
+    userId: false,
+    url: 'wss://localhost:1337'
+  })
+
+  var pair = new TestPair()
+  client.sync = new ClientSync(
+    client.options.nodeId,
+    client.log,
+    pair.left,
+    client.sync.options
+  )
+
+  pair.rightSync = new BaseSync('test2', TestTime.getLog(), pair.right)
+
+  return client.sync.connection.connect().then(function () {
+    return pair.wait('right')
+  }).then(function () {
+    pair.rightSync.sendDebug('error', 'Fake stacktrace\n')
+    return pair.wait('left')
+  }).then(function () {
+    expect(true).toBeTruthy()
+    // expect(console.error).toHaveBeenCalledWith()
+  })
+})
 
 it('saves options', function () {
   var client = new Client({

@@ -135,9 +135,8 @@ function Client (options) {
   })
 
   client.sync.on('debug', function (type, stack) {
-    if (type === 'error') {
-      client.displayDebugError(stack)
-    }
+    console.info('ekeke')
+    client.showDebug(type, stack)
   })
 }
 
@@ -145,15 +144,18 @@ Client.prototype = {
   /**
    * Display server error stacktrace in browser console.
    *
+   * @param {string} type Debug message type, e.g. 'error'.
    * @param {string} stack Runtime error stacktrace.
    *
    * @return {undefined}
    *
    * @example
-   * displayDebugError('Fake stacktrace\n')
+   * showDebug('error', 'Fake stacktrace\n')
    */
-  displayDebugError: function displayDebugError (stack) {
-    console.error('Logux: server sent error\n', stack)
+  showDebug: function showDebug (type, stack) {
+    if (type === 'error') {
+      console.error('Logux: server sent error\n', stack)
+    }
   }
 }
 
