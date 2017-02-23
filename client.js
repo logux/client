@@ -135,7 +135,7 @@ function Client (options) {
 
   this.sync.on('debug', function (type, stack) {
     if (type === 'error') {
-      console.error('Logux: server sent error\n', stack)
+      console.error('Error on Logux server:\n', stack)
     }
   })
 }
