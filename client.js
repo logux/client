@@ -135,7 +135,6 @@ function Client (options) {
   })
 
   client.sync.on('debug', function (type, stack) {
-    console.info('ekeke')
     client.showDebug(type, stack)
   })
 }
