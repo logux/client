@@ -25,9 +25,9 @@ function confirm (client, warning) {
 
   return sync.on('state', function () {
     if (sync.state === 'wait' || sync.state === 'sending') {
-      window.addEventListener('beforeunload', listen, false)
+      window.addEventListener('beforeunload', listen)
     } else {
-      window.removeEventListener('beforeunload', listen, false)
+      window.removeEventListener('beforeunload', listen)
     }
   })
 }
