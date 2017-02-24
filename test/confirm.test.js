@@ -13,8 +13,26 @@ function createTest () {
   })
 }
 
+var beforeunloader
+var originAdd = window.addEventListener
+var originRemove = window.removeEventListener
+
+beforeEach(function () {
+  delete window.event
+  beforeunloader = false
+
+  window.addEventListener = jest.fn(function (name, callback) {
+    expect(name).toEqual('beforeunload')
+    beforeunloader = callback
+  })
+  window.removeEventListener = jest.fn(function (name, callback) {
+    expect(name).toEqual('beforeunload')
+    if (beforeunloader === callback) beforeunloader = false
+  })
+})
 afterEach(function () {
-  window.onbeforeunload = null
+  window.addEventListener = originAdd
+  window.removeEventListener = originRemove
 })
 
 it('confirms close', function () {
@@ -22,11 +40,16 @@ it('confirms close', function () {
     confirm({ sync: test.leftSync }, 'test warning')
 
     test.leftSync.setState('wait')
-    expect(window.onbeforeunload()).toEqual('test warning')
+    expect(beforeunloader()).toEqual('test warning')
 
     test.leftSync.setState('sending')
-    var e = 'test window.onbeforeunload event'
-    expect(window.onbeforeunload(e)).toEqual('test warning')
+    var e = { }
+    beforeunloader(e)
+    expect(e.returnValue).toEqual('test warning')
+
+    window.event = { }
+    beforeunloader()
+    expect(window.event.returnValue).toEqual('test warning')
   })
 })
 
@@ -34,24 +57,24 @@ it('has default message', function () {
   return createTest().then(function (test) {
     confirm({ sync: test.leftSync })
     test.leftSync.setState('wait')
-    expect(typeof window.onbeforeunload()).toEqual('string')
+    expect(typeof beforeunloader()).toEqual('string')
   })
 })
 
 it('does not confirm on synchronized state', function () {
   return createTest().then(function (test) {
-    confirm({ sync: test.leftSync }, 'test warning')
+    confirm({ sync: test.leftSync })
     test.leftSync.setState('wait')
     test.leftSync.setState('synchronized')
-    expect(window.onbeforeunload).toBe(null)
+    expect(beforeunloader).toBeFalsy()
   })
 })
 
 it('returns unbind function', function () {
   return createTest().then(function (test) {
-    var unbind = confirm({ sync: test.leftSync }, 'test warning')
+    var unbind = confirm({ sync: test.leftSync })
     unbind()
     test.leftSync.setState('wait')
-    expect(window.onbeforeunload).toBe(null)
+    expect(beforeunloader).toBeFalsy()
   })
 })

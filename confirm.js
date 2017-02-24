@@ -17,15 +17,17 @@ function confirm (client, warning) {
   warning = warning || 'Some data was not saved to server. ' +
                        'Are you sure to leave?'
 
+  function listen (e) {
+    if (typeof e === 'undefined') e = window.event
+    if (e) e.returnValue = warning
+    return warning
+  }
+
   return sync.on('state', function () {
     if (sync.state === 'wait' || sync.state === 'sending') {
-      window.onbeforeunload = function (e) {
-        if (typeof e === 'undefined') e = window.event
-        if (e) e.returnValue = warning
-        return warning
-      }
+      window.addEventListener('beforeunload', listen, false)
     } else {
-      window.onbeforeunload = null
+      window.removeEventListener('beforeunload', listen, false)
     }
   })
 }
