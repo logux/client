@@ -760,8 +760,8 @@ create-hmac@^1.1.0, create-hmac@^1.1.2:
     inherits "^2.0.1"
 
 cross-spawn@^5.0.1:
-  version "5.0.1"
-  resolved "https://registry.yarnpkg.com/cross-spawn/-/cross-spawn-5.0.1.tgz#a3bbb302db2297cbea3c04edf36941f4613aa399"
+  version "5.1.0"
+  resolved "https://registry.yarnpkg.com/cross-spawn/-/cross-spawn-5.1.0.tgz#e8bd0efee58fcff6f8f94510a0a554bbfa235449"
   dependencies:
     lru-cache "^4.0.1"
     shebang-command "^1.2.0"
@@ -811,8 +811,8 @@ dashdash@^1.12.0:
     assert-plus "^1.0.0"
 
 date-fns@^1.27.2:
-  version "1.27.2"
-  resolved "https://registry.yarnpkg.com/date-fns/-/date-fns-1.27.2.tgz#ce82f420bc028356cc661fc55c0494a56a990c9c"
+  version "1.28.0"
+  resolved "https://registry.yarnpkg.com/date-fns/-/date-fns-1.28.0.tgz#3b12f54b66467807bb95e5930caf7bfb4170bc1a"
 
 date-now@^0.1.4:
   version "0.1.4"
@@ -1063,9 +1063,9 @@ escope@^3.6.0:
     esrecurse "^4.1.0"
     estraverse "^4.1.1"
 
-eslint-config-logux@^6.0.0:
-  version "6.0.0"
-  resolved "https://registry.yarnpkg.com/eslint-config-logux/-/eslint-config-logux-6.0.0.tgz#42ce3e498630dbd4ec405dbf3815684d145d229f"
+eslint-config-logux@^7.0.0:
+  version "7.0.0"
+  resolved "https://registry.yarnpkg.com/eslint-config-logux/-/eslint-config-logux-7.0.0.tgz#9df70b0bcc847719e4f7850611bb99a2c61d1cc2"
 
 eslint-config-standard@^6.2.1:
   version "6.2.1"
@@ -1326,8 +1326,8 @@ fileset@^2.0.2:
     minimatch "^3.0.3"
 
 filesize@^3.5.4:
-  version "3.5.4"
-  resolved "https://registry.yarnpkg.com/filesize/-/filesize-3.5.4.tgz#742fc7fb6aef4ee3878682600c22f840731e1fda"
+  version "3.5.5"
+  resolved "https://registry.yarnpkg.com/filesize/-/filesize-3.5.5.tgz#3c2a5c14463919a218434721472b63cc30748992"
 
 fill-range@^2.1.0:
   version "2.2.3"
@@ -1371,15 +1371,15 @@ flat-cache@^1.2.1:
     graceful-fs "^4.1.2"
     write "^0.2.1"
 
-for-in@^0.1.5:
-  version "0.1.6"
-  resolved "https://registry.yarnpkg.com/for-in/-/for-in-0.1.6.tgz#c9f96e89bfad18a545af5ec3ed352a1d9e5b4dc8"
+for-in@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/for-in/-/for-in-1.0.1.tgz#d6c3e3798ceaaa301047b109dedf1b1ae37a0efa"
 
 for-own@^0.1.4:
-  version "0.1.4"
-  resolved "https://registry.yarnpkg.com/for-own/-/for-own-0.1.4.tgz#0149b41a39088c7515f51ebe1c1386d45f935072"
+  version "0.1.5"
+  resolved "https://registry.yarnpkg.com/for-own/-/for-own-0.1.5.tgz#5265c681a4f294dabbf17c9509b6763aa84510ce"
   dependencies:
-    for-in "^0.1.5"
+    for-in "^1.0.1"
 
 forever-agent@~0.6.1:
   version "0.6.1"
@@ -1772,8 +1772,8 @@ is-glob@^2.0.0, is-glob@^2.0.1:
     is-extglob "^1.0.0"
 
 is-my-json-valid@^2.10.0, is-my-json-valid@^2.12.4:
-  version "2.15.0"
-  resolved "https://registry.yarnpkg.com/is-my-json-valid/-/is-my-json-valid-2.15.0.tgz#936edda3ca3c211fd98f3b2d3e08da43f7b2915b"
+  version "2.16.0"
+  resolved "https://registry.yarnpkg.com/is-my-json-valid/-/is-my-json-valid-2.16.0.tgz#f079dd9bfdae65ee2038aae8acbc86ab109e3693"
   dependencies:
     generate-function "^2.0.0"
     generate-object-property "^1.1.0"
@@ -2406,7 +2406,7 @@ logux-core@logux/logux-core:
 
 logux-sync@logux/logux-sync:
   version "0.1.2"
-  resolved "https://codeload.github.com/logux/logux-sync/tar.gz/ef4cb480890600fdddcc6cd263d1875f5a6076f2"
+  resolved "https://codeload.github.com/logux/logux-sync/tar.gz/7c006320ab93841169a467735c2d262bc5426159"
   dependencies:
     nanoevents "^0.3.0"
     object-assign "^4.1.1"
@@ -3137,8 +3137,10 @@ resolve@1.1.7:
   resolved "https://registry.yarnpkg.com/resolve/-/resolve-1.1.7.tgz#203114d82ad2c5ed9e8e0411b3932875e889e97b"
 
 resolve@^1.1.6, resolve@^1.2.0:
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/resolve/-/resolve-1.2.0.tgz#9589c3f2f6149d1417a40becc1663db6ec6bc26c"
+  version "1.3.2"
+  resolved "https://registry.yarnpkg.com/resolve/-/resolve-1.3.2.tgz#1f0442c9e0cbb8136e87b9305f932f46c7f28235"
+  dependencies:
+    path-parse "^1.0.5"
 
 restore-cursor@^1.0.1:
   version "1.0.1"
@@ -3153,9 +3155,9 @@ right-align@^0.1.1:
   dependencies:
     align-text "^0.1.1"
 
-rimraf@2, rimraf@^2.2.8, rimraf@^2.4.3, rimraf@^2.4.4, rimraf@^2.6.0:
-  version "2.6.0"
-  resolved "https://registry.yarnpkg.com/rimraf/-/rimraf-2.6.0.tgz#89b8a0fe432b9ff9ec9a925a00b6cdb3a91bbada"
+rimraf@2, rimraf@^2.2.8, rimraf@^2.4.3, rimraf@^2.4.4, rimraf@^2.6.1:
+  version "2.6.1"
+  resolved "https://registry.yarnpkg.com/rimraf/-/rimraf-2.6.1.tgz#c2338ec643df7a1b7fe5c54fa86f57428a55f33d"
   dependencies:
     glob "^7.0.5"
 
@@ -3598,8 +3600,8 @@ typedarray@^0.0.6:
   resolved "https://registry.yarnpkg.com/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
 
 uglify-js@^2.6, uglify-js@^2.7.5:
-  version "2.7.5"
-  resolved "https://registry.yarnpkg.com/uglify-js/-/uglify-js-2.7.5.tgz#4612c0c7baaee2ba7c487de4904ae122079f2ca8"
+  version "2.8.0"
+  resolved "https://registry.yarnpkg.com/uglify-js/-/uglify-js-2.8.0.tgz#5f3b01aee2dc56cc78aa8d8fb78613a179917917"
   dependencies:
     async "~0.2.6"
     source-map "~0.5.1"
