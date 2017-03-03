@@ -2424,6 +2424,7 @@ logux-sync@logux/logux-sync:
   resolved "https://codeload.github.com/logux/logux-sync/tar.gz/f01192d9086c88ed2b4f58857f8bb67875a9a487"
   dependencies:
     nanoevents "^0.3.0"
+    object-assign "^4.1.1"
 
 longest@^1.0.1:
   version "1.0.1"
@@ -2685,7 +2686,7 @@ oauth-sign@~0.8.1:
   version "0.8.2"
   resolved "https://registry.yarnpkg.com/oauth-sign/-/oauth-sign-0.8.2.tgz#46a6ab7f0aead8deae9ec0565780b7d4efeb9d43"
 
-object-assign@^4.0.1, object-assign@^4.1.0:
+object-assign@^4.0.1, object-assign@^4.1.0, object-assign@^4.1.1:
   version "4.1.1"
   resolved "https://registry.yarnpkg.com/object-assign/-/object-assign-4.1.1.tgz#2109adc7965887cfc05cbbd442cac8bfbb360863"
 

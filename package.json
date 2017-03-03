@@ -10,7 +10,6 @@
   "license": "MIT",
   "repository": "logux/logux-client",
   "dependencies": {
-    "eslint-plugin-node": "^4.1.0",
     "logux-core": "logux/logux-core",
     "logux-sync": "logux/logux-sync",
     "shortid": "^2.2.6"
@@ -22,6 +21,7 @@
     "eslint-config-standard": "^7.0.0",
     "eslint-plugin-es5": "^1.0.1",
     "eslint-plugin-jest": "^19.0.1",
+    "eslint-plugin-node": "^4.1.0",
     "eslint-plugin-promise": "^3.5.0",
     "eslint-plugin-standard": "^2.1.1",
     "fake-indexeddb": "^1.0.11",
