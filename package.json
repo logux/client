@@ -12,7 +12,7 @@
   "dependencies": {
     "logux-core": "logux/logux-core",
     "logux-sync": "logux/logux-sync",
-    "shortid": "^2.2.6"
+    "shortid": "^2.2.8"
   },
   "devDependencies": {
     "docdash": "^0.4.0",
@@ -33,7 +33,7 @@
     "rimraf": "^2.6.1",
     "webpack": "^2.2.1",
     "webpack-bundle-analyzer": "^2.3.0",
-    "yaspeller-ci": "^0.2.0"
+    "yaspeller-ci": "^0.3.0"
   },
   "scripts": {
     "lint-staged": "lint-staged",

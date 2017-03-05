@@ -2,7 +2,7 @@ var BrowserConnection = require('logux-sync/browser-connection')
 var MemoryStore = require('logux-core/memory-store')
 var ClientSync = require('logux-sync/client-sync')
 var Reconnect = require('logux-sync/reconnect')
-var shortid = require('shortid')
+var shortid = require('shortid/lib/build')
 var Log = require('logux-core/log')
 
 var IndexedStore = require('./indexed-store')
@@ -77,7 +77,7 @@ function Client (options) {
   } else {
     userId = ''
   }
-  this.options.nodeId = userId + shortid.generate()
+  this.options.nodeId = userId + shortid(0)
 
   var auth
   if (/^ws:\/\//.test(this.options.url) && !options.allowDangerousProtocol) {
