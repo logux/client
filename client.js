@@ -96,7 +96,7 @@ function Client (options) {
   var store = this.options.store
   if (!store) {
     if (global.indexedDB) {
-      store = new IndexedStore(this.options.prefix)
+      store = new IndexedStore(this.options.prefix + ':' + this.options.userId)
     } else {
       store = new MemoryStore()
     }

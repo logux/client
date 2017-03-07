@@ -155,15 +155,25 @@ it('uses custom store', function () {
   expect(client.log.store).toBe(store)
 })
 
+it('uses user ID in store name', function () {
+  global.indexedDB = fakeIndexedDB
+  var client = new Client({
+    subprotocol: '1.0.0',
+    userId: 10,
+    url: 'wss://localhost:1337'
+  })
+  expect(client.log.store.name).toEqual('logux:10')
+})
+
 it('uses custom prefix', function () {
   global.indexedDB = fakeIndexedDB
   var client = new Client({
     subprotocol: '1.0.0',
     prefix: 'app',
-    userId: false,
+    userId: 10,
     url: 'wss://localhost:1337'
   })
-  expect(client.log.store.name).toEqual('app')
+  expect(client.log.store.name).toEqual('app:10')
 })
 
 it('sends options to connection', function () {
