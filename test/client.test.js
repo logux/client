@@ -232,3 +232,29 @@ it('does not display server debug message if type is not error', function () {
   client.sync.emitter.emit('debug', 'notError', 'Fake stacktrace\n')
   expect(console.error).not.toHaveBeenCalled()
 })
+
+it('cleans everything', function () {
+  global.indexedDB = fakeIndexedDB
+  var client = new Client({
+    subprotocol: '1.0.0',
+    userId: false,
+    url: 'wss://localhost:1337'
+  })
+  client.sync.destroy = jest.fn()
+  client.log.store.clean = jest.fn(client.log.store.clean)
+  return client.clean().then(function () {
+    expect(client.sync.destroy).toHaveBeenCalled()
+    expect(client.log.store.clean).toHaveBeenCalled()
+  })
+})
+
+it('clean memory store', function () {
+  var client = new Client({
+    subprotocol: '1.0.0',
+    userId: false,
+    url: 'wss://localhost:1337'
+  })
+  return client.clean().then(function () {
+    expect(client.log).not.toBeDefined()
+  })
+})

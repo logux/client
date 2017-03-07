@@ -140,4 +140,29 @@ function Client (options) {
   })
 }
 
+Client.prototype = {
+
+  /**
+   * Clear every stored data. It will remove action log
+   * from `IndexedDB`.
+   *
+   * @return {Promise} Promise when all data will be removed.
+   *
+   * @example
+   * signout.addEventListener('click', () => {
+   *   app.clean()
+   * }, false)
+   */
+  clean: function clean () {
+    this.sync.destroy()
+    if (this.log.store.clean) {
+      return this.log.store.clean()
+    } else {
+      this.log = undefined
+      return Promise.resolve()
+    }
+  }
+
+}
+
 module.exports = Client

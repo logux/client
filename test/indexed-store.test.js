@@ -14,8 +14,8 @@ var store, other
 
 afterEach(function () {
   return Promise.all([
-    store ? store.destroy() : null,
-    other ? other.destroy() : null
+    store ? store.clean() : null,
+    other ? other.clean() : null
   ]).then(function () {
     store = undefined
     other = undefined
