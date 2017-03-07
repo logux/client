@@ -250,14 +250,14 @@ IndexedStore.prototype = {
   },
 
   /**
-   * Remove all database and data from `indexedDB`.
+   * Remove all database and data from `IndexedDB`.
    *
    * @return {Promise} Promise for end of removing
    *
    * @example
-   * afterEach(() => this.store.destroy())
+   * afterEach(() => this.store.clean())
    */
-  destroy: function destroy () {
+  clean: function clean () {
     return this.init().then(function (store) {
       store.db.close()
       return promisify(global.indexedDB.deleteDatabase(store.name))
