@@ -2,77 +2,117 @@
 <html>
   <head>
     <title>Logux Status</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        margin: 2em;
+      }
+      article {
+        max-width: 40em;
+        margin: 0 auto;
+      }
+      img {
+        float: right;
+        margin: 0 0 2em 2em;
+      }
+      h1 {
+        margin: 0 0 1em 0;
+      }
+      h2 {
+        margin: 2em 0 1em 0;
+      }
+      p {
+        margin: 0 0 1em 0;
+      }
+      section {
+        margin-top: 1.5em;
+      }
+      footer {
+        font-size: small;
+        margin-top: 0.5em;
+      }
+    </style>
   </head>
   <body>
-    <img id="logo" width="100" height="100" src="https://cdn.rawgit.com/logux/logux/master/logo.svg" />
-    <h1>Demo: Logux Status</h1>
-    <p>
-      <a href="https://github.com/logux" target="_blank">Logux</a> is a client-server communication protocol. It synchronizes actions between clients and server logs.
-      <br />
-      <a href="https://github.com/logux/logux-status" target="_blank">Logux Status</a> provides UX best practices to report Logux synchronization status to user.
-    </p>
-    <p>
-      This page tests Logux Status features:
-    </p>
-    <ul>
-      <li><strong>attention</strong> — highlight tab on synchronization error to notify user</li>
-      <li><strong>confirm</strong> — show confirm popup, when user close tab with non-synchronized actions</li>
-      <li><strong>favicon</strong> — change favicon to show synchronization status</li>
-      <li><strong>log</strong> — display Logux events in browser console</li>
-    </ul>
-    <h2>Demo</h2>
-    <p>
-      <label>
-        <input type="checkbox" id="toggle-connection" />
-        Toggle connection between client and server.
-        <br />
-        <small>
+    <article>
+      <img width="100" height="100"
+           src="https://cdn.rawgit.com/logux/logux/master/logo.svg" />
+      <h1>Logux Status</h1>
+      <p>
+        <a href="https://github.com/logux">Logux</a>
+        is a client-server communication tool.
+        It synchronizes actions between clients and server logs.
+      </p>
+      <p>
+        provides UX best practices to report Logux synchronization status
+        <a href="https://github.com/logux/logux-status">Logux Status</a>
+        to user.
+      </p>
+      <p>
+        This page tests Logux Status features:
+      </p>
+      <ul>
+        <li>
+          <strong>attention</strong> highlights tab on synchronization error
+          to notify user.
+        </li>
+        <li>
+          <strong>confirm</strong> shows confirm popup, when user close tab
+          with non-synchronized actions.
+        </li>
+        <li>
+          <strong>favicon</strong> changes favicon
+          to show synchronization status.
+        </li>
+        <li>
+          <strong>log</strong> displays Logux events in browser console.
+        </li>
+      </ul>
+      <h2>Controls</h2>
+      <section>
+        <label>
+          <input type="checkbox" id="connection" checked />
+          Client connected to server
+        </label>
+        <footer>
           Tests:
           <strong>favicon</strong>,
           <strong>log</strong>
-        </small>
-      </label>
-    </p>
-    <p>
-      <button id="send-client-error">Error after 3 seconds</button>
-      Click to emulate client error
-      <br />
-      <small>
-        Tests:
-        <strong>attention</strong>,
-        <strong>favicon</strong>,
-        <strong>log</strong>
-      </small>
-    </p>
-    <p>
-      <button id="send-server-error">Send server error after 3 seconds</button>
-      Click to emulate server error
-      <br />
-      <small>
-        Tests:
-        <strong>attention</strong>,
-        <strong>favicon</strong>,
-        <strong>log</strong>
-      </small>
-    </p>
-    <p>
-      <button id="add-action">Add action to log</button>
-      Click to add test action to log
-      <br />
-      <small>
-        Tests:
-        <strong>confirm</strong>,
-        <strong>log</strong>
-      </small>
-    </p>
-    <p>
-      <button id="clean-actions">Clean actions</button>
-      Click to clean log
-      <br />
-      <small>
-        Tests:
-        <strong>log</strong>
-      </small>
-    </p>
+        </footer>
+      </section>
+      <section>
+        <button id="clientError">Error after 3 seconds</button>
+        <footer>
+          Tests:
+          <strong>attention</strong>,
+          <strong>favicon</strong>,
+          <strong>log</strong>
+        </footer>
+      </section>
+      <section>
+        <button id="serverError">Server error after 3 seconds</button>
+        <footer>
+          Tests:
+          <strong>attention</strong>,
+          <strong>favicon</strong>,
+          <strong>log</strong>
+        </footer>
+      </section>
+      <section>
+        <button id="add">Add action to log</button>
+        <footer>
+          Tests:
+          <strong>confirm</strong>,
+          <strong>log</strong>
+        </footer>
+      </section>
+      <section>
+        <button id="clean">Clean actions</button>
+        <footer>
+          Tests:
+          <strong>log</strong>
+        </footer>
+      </section>
+    </article>
   </body>
 </html>

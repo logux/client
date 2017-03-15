@@ -1,47 +1,35 @@
-var LocalPair = require('logux-sync/local-pair')
-var ClientSync = require('logux-sync/client-sync')
-var ServerSync = require('logux-sync/server-sync')
 var MemoryStore = require('logux-core/memory-store')
-var Log = require('logux-core/log')
+var ClientSync = require('logux-sync/client-sync')
+var LocalPair = require('logux-sync/local-pair')
+var BaseSync = require('logux-sync/base-sync')
 var Client = require('logux-client/client')
+var Log = require('logux-core/log')
 
 // Logux Status features
-var log = require('../../log')
 var attention = require('../../attention')
 var confirm = require('../../confirm')
 var favicon = require('../../favicon')
+var log = require('../../log')
 
-var faviconNormal = require('./favicon/normal.png')
-var faviconOffline = require('./favicon/offline.png')
-var faviconError = require('./favicon/error.png')
+var faviconNormal = require('./normal.png')
+var faviconOffline = require('./offline.png')
+var faviconError = require('./error.png')
 
-// Create LocalPair instance
-// to emulate connection
 var pair = new LocalPair()
 
-// Create Logux Client instance.
-var client = new Client({
-  // There are some required options
-  // that used to create connection instance for Logux Client
-
-  // It's not needed
-  // because connection should be overrided by LocalPair
-  subprotocol: null,
-  url: null,
-  userId: null
+var serverLog = new Log({
+  store: new MemoryStore(),
+  nodeId: 'server'
 })
+new BaseSync('server', serverLog, pair.right)
 
-// Override Logux Client `sync` property
-// to make Logux Client work with LocalPair
-client.sync = new ClientSync('client', client.log, pair.left)
+var client = new Client({
+  subprotocol: '1.0.0',
+  userId: 10,
+  url: 'wss://example.com/'
+})
+client.sync = new ClientSync(client.sync.localNodeId, client.log, pair.left)
 
-// Create Logux Log for ServerSync
-var serverLog = new Log({ store: new MemoryStore(), nodeId: 'server' })
-// Create ServerSync instance with LocalPair connection
-new ServerSync('server', serverLog, pair.right)
-
-// Apply Logux Status features
-log(client)
 attention(client)
 confirm(client)
 favicon(client, {
@@ -49,9 +37,11 @@ favicon(client, {
   offline: faviconOffline,
   error: faviconError
 })
+log(client)
 
-// Toggle connection
-document.getElementById('toggle-connection').onchange = function (e) {
+client.sync.connection.connect()
+
+document.all.connection.onchange = function (e) {
   if (e.target.checked) {
     client.sync.connection.connect()
   } else {
@@ -59,29 +49,22 @@ document.getElementById('toggle-connection').onchange = function (e) {
   }
 }
 
-// Add action
-document.getElementById('add-action').onclick = function () {
-  client.log.add(
-    { type: 'test' },
-    { reasons: ['test'] }
-  )
-}
-
-// Clean actions
-document.getElementById('clean-actions').onclick = function () {
-  client.log.removeReason('test')
-}
-
-// Send client error after 3sec
-document.getElementById('send-client-error').onclick = function () {
+document.all.clientError.onclick = function () {
   setTimeout(function () {
     client.sync.syncError('wrong-format')
   }, 3000)
 }
 
-// Send server error after 3sec
-document.getElementById('send-server-error').onclick = function () {
+document.all.serverError.onclick = function () {
   setTimeout(function () {
     pair.right.send(['error', 'wrong-format'])
   }, 3000)
+}
+
+document.all.add.onclick = function () {
+  client.log.add({ type: 'TEST' }, { reasons: ['test'] })
+}
+
+document.all.clean.onclick = function () {
+  client.log.removeReason('test')
 }
