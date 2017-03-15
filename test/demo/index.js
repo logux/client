@@ -6,10 +6,10 @@ var Log = require('logux-core/log')
 var Client = require('logux-client/client')
 
 // Logux Status features
-var log = require('../../../log')
-var attention = require('../../../attention')
-var confirm = require('../../../confirm')
-var favicon = require('../../../favicon')
+var log = require('../../log')
+var attention = require('../../attention')
+var confirm = require('../../confirm')
+var favicon = require('../../favicon')
 
 var faviconNormal = require('./favicon/normal.png')
 var faviconOffline = require('./favicon/offline.png')
