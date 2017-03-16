@@ -147,3 +147,15 @@ window.onbeforeunload = function (e) {
   }
 }
 ```
+
+
+### Cross-Tab Communication
+
+If user will open website in two different browser tabs, Logux anyway will have
+single storage, so JS in tabs will have same actions.
+
+You can set `tab` key in metadata to isolate action only in current tab:
+
+```js
+app.log.add(action, { tab: app.id })
+```
