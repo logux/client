@@ -12,6 +12,7 @@
   "dependencies": {
     "logux-core": "logux/logux-core",
     "logux-sync": "logux/logux-sync",
+    "nanoevents": "^0.3.0",
     "shortid": "^2.2.8"
   },
   "devDependencies": {

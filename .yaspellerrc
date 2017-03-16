@@ -25,6 +25,7 @@
     "reconnections",
     "reconnection",
     "ws",
-    "UX"
+    "UX",
+    "nanoevents"
   ]
 }
