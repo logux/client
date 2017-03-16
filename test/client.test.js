@@ -279,18 +279,23 @@ it('synchronizes events between tabs', function () {
   }
   var client1 = new Client({
     subprotocol: '1.0.0',
-    userId: false,
+    userId: 10,
     url: 'wss://localhost:1337'
   })
   var client2 = new Client({
     subprotocol: '1.0.0',
-    userId: false,
+    userId: 10,
     url: 'wss://localhost:1337'
   })
   var client3 = new Client({
     subprotocol: '1.0.0',
     prefix: 'other',
-    userId: false,
+    userId: 10,
+    url: 'wss://localhost:1337'
+  })
+  var client4 = new Client({
+    subprotocol: '1.0.0',
+    userId: 20,
     url: 'wss://localhost:1337'
   })
 
@@ -308,6 +313,8 @@ it('synchronizes events between tabs', function () {
     return client2.log.add({ type: 'C' }, { tab: client1.tabId })
   }).then(function () {
     return client2.log.add({ type: 'D' }, { tab: client2.tabId })
+  }).then(function () {
+    return client4.log.add({ type: 'E' })
   }).then(function () {
     expect(events).toEqual([
       ['add', { type: 'A' }, []],
