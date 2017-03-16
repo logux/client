@@ -26,6 +26,7 @@
     "reconnection",
     "ws",
     "UX",
-    "nanoevents"
+    "nanoevents",
+    "tabId"
   ]
 }

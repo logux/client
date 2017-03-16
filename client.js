@@ -72,13 +72,22 @@ function Client (options) {
     this.options.prefix = 'logux'
   }
 
+  /**
+   * Unique browser tab ID.
+   * @type {string}
+   *
+   * @example
+   * app.log.add(action, { tab: app.tabId })
+   */
+  this.tabId = shortid(0)
+
   var userId = this.options.userId
   if (userId) {
     userId += ':'
   } else {
     userId = ''
   }
-  this.options.nodeId = userId + shortid(0)
+  this.options.nodeId = userId + this.tabId
 
   var auth
   if (/^ws:\/\//.test(this.options.url) && !options.allowDangerousProtocol) {
@@ -159,9 +168,13 @@ function Client (options) {
     var event = e.key.slice(prefix.length)
     var data = JSON.parse(e.newValue)
     if (event === 'Add') {
-      client.emitter.emit('add', data[0], data[1])
+      if (!data[1].tab || data[1].tab === client.tabId) {
+        client.emitter.emit('add', data[0], data[1])
+      }
     } else if (event === 'Clean') {
-      client.emitter.emit('clean', data[0], data[1])
+      if (!data[1].tab || data[1].tab === client.tabId) {
+        client.emitter.emit('clean', data[0], data[1])
+      }
     }
   })
 }
