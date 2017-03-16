@@ -38,12 +38,12 @@ function updateTitle () {
 client.sync.on('state', function () {
   updateTitle()
 })
-client.log.on('add', function () {
-  count++
+client.on('add', function (action) {
+  if (action.type === 'TICK') count++
   updateTitle()
 })
-client.log.on('clean', function () {
-  count--
+client.on('clean', function (action) {
+  if (action.type === 'TICK') count--
   updateTitle()
 })
 

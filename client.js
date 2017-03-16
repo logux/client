@@ -1,6 +1,7 @@
 var BrowserConnection = require('logux-sync/browser-connection')
 var MemoryStore = require('logux-core/memory-store')
 var ClientSync = require('logux-sync/client-sync')
+var NanoEvents = require('nanoevents')
 var Reconnect = require('logux-sync/reconnect')
 var shortid = require('shortid/lib/build')
 var Log = require('logux-core/log')
@@ -133,9 +134,34 @@ function Client (options) {
     auth: auth
   })
 
+  this.emitter = new NanoEvents()
+
   this.sync.on('debug', function (type, stack) {
     if (type === 'error') {
       console.error('Error on Logux server:\n', stack)
+    }
+  })
+
+  var client = this
+  this.log.on('add', function (action, meta) {
+    client.emitter.emit('add', action, meta)
+    client.send('Add', [action, meta])
+  })
+  this.log.on('clean', function (action, meta) {
+    client.emitter.emit('clean', action, meta)
+    client.send('Clean', [action, meta])
+  })
+
+  var prefix = this.options.prefix
+  window.addEventListener('storage', function (e) {
+    if (e.key.slice(0, prefix.length) !== prefix) return
+
+    var event = e.key.slice(prefix.length)
+    var data = JSON.parse(e.newValue)
+    if (event === 'Add') {
+      client.emitter.emit('add', data[0], data[1])
+    } else if (event === 'Clean') {
+      client.emitter.emit('clean', data[0], data[1])
     }
   })
 }
@@ -155,12 +181,60 @@ Client.prototype = {
    */
   clean: function clean () {
     this.sync.destroy()
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(this.options.prefix + 'Add')
+      localStorage.removeItem(this.options.prefix + 'Clean')
+    }
     if (this.log.store.clean) {
       return this.log.store.clean()
     } else {
       this.log = undefined
       return Promise.resolve()
     }
+  },
+
+  /**
+   * Subscribe for synchronization events. It implements nanoevents API.
+   * Supported events:
+   *
+   * * `add`: action was added to log by any browser tabs.
+   * * `clean`: action was cleaned to log by any browser tabs.
+   *
+   * @param {"add"|"clean"} event The event name.
+   * @param {listener} listener The listener function.
+   *
+   * @return {function} Unbind listener from event.
+   *
+   * @example
+   * app.on('add', (action, meta) => {
+   *   dispatch(action)
+   * })
+   */
+  on: function on (event, listener) {
+    return this.emitter.on(event, listener)
+  },
+
+  /**
+   * Add one-time listener for synchronization events.
+   * See {@link Client#on} for supported events.
+   *
+   * @param {"add"|"clean"} event The event name.
+   * @param {listener} listener The listener function.
+   *
+   * @return {function} Unbind listener from event.
+   *
+   * @example
+   * app.once('clean', () => {
+   *   cleaningWork = true
+   * })
+   */
+  once: function once (event, listener) {
+    return this.emitter.once(event, listener)
+  },
+
+  send: function send (event, data) {
+    if (typeof localStorage === 'undefined') return
+    localStorage.setItem(this.options.prefix + event, JSON.stringify(data))
   }
 
 }

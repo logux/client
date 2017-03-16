@@ -7,9 +7,11 @@ var Client = require('../client')
 
 var originError = console.error
 var originIndexedDB = global.indexedDB
+var originLocalStorage = global.localStorage
 afterEach(function () {
   console.error = originError
   global.indexedDB = originIndexedDB
+  global.localStorage = originLocalStorage
 })
 
 function createDialog (opts, credentials) {
@@ -235,6 +237,9 @@ it('does not display server debug message if type is not error', function () {
 
 it('cleans everything', function () {
   global.indexedDB = fakeIndexedDB
+  global.localStorage = {
+    removeItem: jest.fn()
+  }
   var client = new Client({
     subprotocol: '1.0.0',
     userId: false,
@@ -245,6 +250,9 @@ it('cleans everything', function () {
   return client.clean().then(function () {
     expect(client.sync.destroy).toHaveBeenCalled()
     expect(client.log.store.clean).toHaveBeenCalled()
+    expect(global.localStorage.removeItem.mock.calls).toEqual([
+      ['loguxAdd'], ['loguxClean']
+    ])
   })
 })
 
@@ -256,5 +264,76 @@ it('clean memory store', function () {
   })
   return client.clean().then(function () {
     expect(client.log).not.toBeDefined()
+  })
+})
+
+it('synchronizes events between tabs', function () {
+  global.localStorage = {
+    setItem: function (name, value) {
+      var event = new Event('storage')
+      event.key = name
+      event.newValue = value
+      window.dispatchEvent(event)
+    }
+  }
+  var client1 = new Client({
+    subprotocol: '1.0.0',
+    userId: false,
+    url: 'wss://localhost:1337'
+  })
+  var client2 = new Client({
+    subprotocol: '1.0.0',
+    userId: false,
+    url: 'wss://localhost:1337'
+  })
+  var client3 = new Client({
+    subprotocol: '1.0.0',
+    prefix: 'other',
+    userId: false,
+    url: 'wss://localhost:1337'
+  })
+
+  var events = []
+  client1.on('add', function (action, meta) {
+    events.push(['add', action, meta.reasons])
+  })
+  client1.on('clean', function (action, meta) {
+    events.push(['clean', action, meta.reasons])
+  })
+
+  return client2.log.add({ type: 'A' }).then(function () {
+    return client3.log.add({ type: 'B' })
+  }).then(function () {
+    expect(events).toEqual([
+      ['add', { type: 'A' }, []],
+      ['clean', { type: 'A' }, []]
+    ])
+  })
+})
+
+it('supports nanoevents API', function () {
+  var client = new Client({
+    subprotocol: '1.0.0',
+    userId: false,
+    url: 'wss://localhost:1337'
+  })
+
+  var once = []
+  client.once('add', function (action) {
+    once.push(action.type)
+  })
+  var twice = []
+  var unbind = client.on('add', function (action) {
+    twice.push(action.type)
+    if (action.type === 'B') unbind()
+  })
+
+  return client.log.add({ type: 'A' }).then(function () {
+    return client.log.add({ type: 'B' })
+  }).then(function () {
+    return client.log.add({ type: 'C' })
+  }).then(function () {
+    expect(once).toEqual(['A'])
+    expect(twice).toEqual(['A', 'B'])
   })
 })
