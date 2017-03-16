@@ -252,7 +252,7 @@ it('cleans everything', function () {
     expect(client.sync.destroy).toHaveBeenCalled()
     expect(client.log.store.clean).toHaveBeenCalled()
     expect(global.localStorage.removeItem.mock.calls).toEqual([
-      ['loguxAdd'], ['loguxClean']
+      ['logux:false:add'], ['logux:false:clean']
     ])
   })
 })

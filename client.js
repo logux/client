@@ -154,24 +154,24 @@ function Client (options) {
   var client = this
   this.log.on('add', function (action, meta) {
     client.emitter.emit('add', action, meta)
-    client.send('Add', [action, meta])
+    client.send('add', [action, meta])
   })
   this.log.on('clean', function (action, meta) {
     client.emitter.emit('clean', action, meta)
-    client.send('Clean', [action, meta])
+    client.send('clean', [action, meta])
   })
 
-  var prefix = this.options.prefix
+  var prefix = this.options.prefix + ':' + this.options.userId + ':'
   window.addEventListener('storage', function (e) {
     if (e.key.slice(0, prefix.length) !== prefix) return
 
     var event = e.key.slice(prefix.length)
     var data = JSON.parse(e.newValue)
-    if (event === 'Add') {
+    if (event === 'add') {
       if (!data[1].tab || data[1].tab === client.tabId) {
         client.emitter.emit('add', data[0], data[1])
       }
-    } else if (event === 'Clean') {
+    } else if (event === 'clean') {
       if (!data[1].tab || data[1].tab === client.tabId) {
         client.emitter.emit('clean', data[0], data[1])
       }
@@ -195,8 +195,9 @@ Client.prototype = {
   clean: function clean () {
     this.sync.destroy()
     if (typeof localStorage !== 'undefined') {
-      localStorage.removeItem(this.options.prefix + 'Add')
-      localStorage.removeItem(this.options.prefix + 'Clean')
+      var prefix = this.options.prefix + ':' + this.options.userId + ':'
+      localStorage.removeItem(prefix + 'add')
+      localStorage.removeItem(prefix + 'clean')
     }
     if (this.log.store.clean) {
       return this.log.store.clean()
@@ -247,7 +248,8 @@ Client.prototype = {
 
   send: function send (event, data) {
     if (typeof localStorage === 'undefined') return
-    localStorage.setItem(this.options.prefix + event, JSON.stringify(data))
+    var prefix = this.options.prefix + ':' + this.options.userId + ':'
+    localStorage.setItem(prefix + event, JSON.stringify(data))
   }
 
 }
