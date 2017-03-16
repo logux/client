@@ -73,13 +73,13 @@ function Client (options) {
   }
 
   /**
-   * Unique browser tab ID.
+   * Unique client ID. It could be used to isolate action to single tab.
    * @type {string}
    *
    * @example
-   * app.log.add(action, { tab: app.tabId })
+   * app.log.add(action, { tab: app.id })
    */
-  this.tabId = shortid(0)
+  this.id = shortid(0)
 
   var userId = this.options.userId
   if (userId) {
@@ -87,7 +87,7 @@ function Client (options) {
   } else {
     userId = ''
   }
-  this.options.nodeId = userId + this.tabId
+  this.options.nodeId = userId + this.id
 
   var auth
   if (/^ws:\/\//.test(this.options.url) && !options.allowDangerousProtocol) {
@@ -168,11 +168,11 @@ function Client (options) {
     var event = e.key.slice(prefix.length)
     var data = JSON.parse(e.newValue)
     if (event === 'add') {
-      if (!data[1].tab || data[1].tab === client.tabId) {
+      if (!data[1].tab || data[1].tab === client.id) {
         client.emitter.emit('add', data[0], data[1])
       }
     } else if (event === 'clean') {
-      if (!data[1].tab || data[1].tab === client.tabId) {
+      if (!data[1].tab || data[1].tab === client.id) {
         client.emitter.emit('clean', data[0], data[1])
       }
     }

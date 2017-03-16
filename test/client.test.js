@@ -124,8 +124,8 @@ it('uses user ID in node ID', function () {
     userId: 10,
     url: 'wss://localhost:1337'
   })
-  expect(client1.tabId).toBeDefined()
-  expect(client1.options.nodeId).toEqual('10:' + client1.tabId)
+  expect(client1.id).toBeDefined()
+  expect(client1.options.nodeId).toEqual('10:' + client1.id)
 
   var client2 = new Client({
     subprotocol: '1.0.0',
@@ -310,9 +310,9 @@ it('synchronizes events between tabs', function () {
   return client2.log.add({ type: 'A' }).then(function () {
     return client3.log.add({ type: 'B' })
   }).then(function () {
-    return client2.log.add({ type: 'C' }, { tab: client1.tabId })
+    return client2.log.add({ type: 'C' }, { tab: client1.id })
   }).then(function () {
-    return client2.log.add({ type: 'D' }, { tab: client2.tabId })
+    return client2.log.add({ type: 'D' }, { tab: client2.id })
   }).then(function () {
     return client4.log.add({ type: 'E' })
   }).then(function () {
