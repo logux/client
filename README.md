@@ -3,11 +3,11 @@
 <img align="right" width="95" height="95" title="Logux logo"
      src="https://cdn.rawgit.com/logux/logux/master/logo.svg">
 
-Logux is a client-server communication protocol. It synchronizes events
+Logux is a client-server communication protocol. It synchronizes action
 between clients and server logs.
 
-This 6 KB library allows you to put events (which look similar
-to Redux “actions”) to a local log and synchronize them with [Logux Server]
+This 7 KB library allows you to put action (which look similar
+to Redux actions) to a local log and synchronize them with [Logux Server]
 and thus with every other client being online.
 
 This is a low-level client API. Redux-like API, which is supposed
@@ -82,17 +82,17 @@ logux.sync.connection.connect()
 ```
 
 
-### Process Events
+### Process Actions
 
-Add callbacks for new events coming to the client log
+Add callbacks for new actions coming to the client log
 (from server, other clients or local `logux.log.add` call):
 
 ```js
-logux.log.on('event', function (event, meta) {
-  if (event.type === 'CHANGE_TITLE') {
-    var user = document.querySelector('.article[data-id=' + event.article + ']')
+logux.on('add', function (action, meta) {
+  if (action.type === 'CHANGE_TITLE') {
+    var user = document.querySelector('.article[data-id=' + action.article + ']')
     if (user) {
-      document.querySelector('.article__title').innerText = event.title
+      document.querySelector('.article__title').innerText = action.title
     }
   }
 })
@@ -103,9 +103,9 @@ Read [`logux-core`] docs for `logux.log` API.
 [`logux-core`]: https://github.com/logux/logux-core
 
 
-### Emit Events
+### Adding Actions
 
-When you need to send information to server, just add an event to log:
+When you need to send information to server, just add an action to log:
 
 ```js
 submit.addEventListener('click', function () {
