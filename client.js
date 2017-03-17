@@ -8,6 +8,12 @@ var Log = require('logux-core/log')
 
 var IndexedStore = require('./indexed-store')
 
+function sendToTabs (client, event, data) {
+  if (typeof localStorage === 'undefined') return
+  var prefix = client.options.prefix + ':' + client.options.userId + ':'
+  localStorage.setItem(prefix + event, JSON.stringify(data))
+}
+
 /**
  * Low-level browser API for Logux.
  *
@@ -154,11 +160,11 @@ function Client (options) {
   var client = this
   this.log.on('add', function (action, meta) {
     client.emitter.emit('add', action, meta)
-    client.send('add', [action, meta])
+    sendToTabs(client, 'add', [action, meta])
   })
   this.log.on('clean', function (action, meta) {
     client.emitter.emit('clean', action, meta)
-    client.send('clean', [action, meta])
+    sendToTabs(client, 'clean', [action, meta])
   })
 
   var prefix = this.options.prefix + ':' + this.options.userId + ':'
@@ -244,12 +250,6 @@ Client.prototype = {
    */
   once: function once (event, listener) {
     return this.emitter.once(event, listener)
-  },
-
-  send: function send (event, data) {
-    if (typeof localStorage === 'undefined') return
-    var prefix = this.options.prefix + ':' + this.options.userId + ':'
-    localStorage.setItem(prefix + event, JSON.stringify(data))
   }
 
 }
