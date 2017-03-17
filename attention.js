@@ -13,23 +13,40 @@
 function attention (client) {
   var sync = client.sync
 
+  var doc = document
   var originTitle = false
   var unbind = []
+  var timeoutId = false
 
-  function tabListener () {
-    if (!doc.hidden && originTitle) {
+  function restoreTitle () {
+    if (originTitle) {
       doc.title = originTitle
       originTitle = false
     }
   }
 
-  var doc = document
+  function blink () {
+    if (doc.hidden && !originTitle) {
+      originTitle = doc.title
+      doc.title += '*'
+    } else {
+      restoreTitle()
+    }
+
+    if (doc.hidden) timeoutId = setTimeout(blink, 1000)
+  }
+
+  function tabListener () {
+    if (!doc.hidden && timeoutId) {
+      timeoutId = clearTimeout(timeoutId)
+      restoreTitle()
+    }
+  }
 
   if (typeof doc !== 'undefined' && typeof doc.hidden !== 'undefined') {
     unbind.push(sync.on('error', function (error) {
-      if (error.type !== 'timeout' && !originTitle && doc.hidden) {
-        originTitle = document.title
-        document.title += '*'
+      if (error.type !== 'timeout' && !timeoutId) {
+        blink()
       }
     }))
 
