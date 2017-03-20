@@ -8,10 +8,63 @@ var Log = require('logux-core/log')
 
 var IndexedStore = require('./indexed-store')
 
+function storageKey (client, name) {
+  return client.options.prefix + ':' + client.options.userId + ':' + name
+}
+
 function sendToTabs (client, event, data) {
   if (typeof localStorage === 'undefined') return
-  var prefix = client.options.prefix + ':' + client.options.userId + ':'
-  localStorage.setItem(prefix + event, JSON.stringify(data))
+  localStorage.setItem(storageKey(client, event), JSON.stringify(data))
+}
+
+function getLeader (client) {
+  var data = localStorage.getItem(storageKey(client, 'leader'))
+  var json
+  if (typeof data === 'string') {
+    try {
+      json = JSON.parse(data)
+    } catch (e) { }
+  }
+
+  if (typeof json === 'object' && json !== null && json.length === 2) {
+    return json
+  } else {
+    return []
+  }
+}
+
+function leaderPing (client) {
+  sendToTabs(client, 'leader', [client.id, Date.now()])
+}
+
+function watchForLeader (client) {
+  clearTimeout(client.watching)
+  client.watching = setTimeout(function () {
+    client.start()
+  }, client.timeout)
+}
+
+function setRole (client, role) {
+  if (client.role !== role) {
+    var sync = client.sync
+    client.role = role
+
+    clearTimeout(client.watching)
+    if (role === 'leader') {
+      client.leadership = setInterval(function () {
+        leaderPing(client)
+      }, 2000)
+      sync.connection.connect()
+    } else {
+      clearTimeout(client.elections)
+      clearInterval(client.leadership)
+      if (sync.state !== 'disconnected' && sync.state !== 'wait') {
+        client.sync.connection.disconnect()
+      }
+    }
+
+    client.emitter.emit('role')
+  }
 }
 
 /**
@@ -49,7 +102,7 @@ function sendToTabs (client, event, data) {
  *   subprotocol: '1.0.0',
  *   url: 'wss://example.com:1337'
  * })
- * app.sync.connection.connect()
+ * app.start()
  *
  * @class
  */
@@ -77,6 +130,20 @@ function Client (options) {
   if (typeof this.options.prefix === 'undefined') {
     this.options.prefix = 'logux'
   }
+
+  /**
+   * Current tab role. Only `leader` tab connects to server. `followers` just
+   * listen events from `loader`.
+   * @type {"leader"|"follower"|"candidate"}
+   *
+   * @example
+   * app.on('role', () => {
+   *   console.log('Tab role:', app.role)
+   * })
+   */
+  this.role = 'candidate'
+
+  this.timeout = 3000 + Math.floor(Math.random() * 2000)
 
   /**
    * Unique client ID. It could be used to isolate action to single tab.
@@ -167,25 +234,82 @@ function Client (options) {
     sendToTabs(client, 'clean', [action, meta])
   })
 
-  var prefix = this.options.prefix + ':' + this.options.userId + ':'
   window.addEventListener('storage', function (e) {
-    if (e.key.slice(0, prefix.length) !== prefix) return
-
-    var event = e.key.slice(prefix.length)
-    var data = JSON.parse(e.newValue)
-    if (event === 'add') {
+    var data
+    if (e.key === storageKey(client, 'add')) {
+      data = JSON.parse(e.newValue)
       if (!data[1].tab || data[1].tab === client.id) {
         client.emitter.emit('add', data[0], data[1])
       }
-    } else if (event === 'clean') {
+    } else if (e.key === storageKey(client, 'clean')) {
+      data = JSON.parse(e.newValue)
       if (!data[1].tab || data[1].tab === client.id) {
         client.emitter.emit('clean', data[0], data[1])
       }
+    } else if (e.key === storageKey(client, 'leader')) {
+      setRole(client, 'follower')
+      watchForLeader(client)
     }
   })
 }
 
 Client.prototype = {
+
+  /**
+   * Connect to server and reconnect on any connection problems.
+   *
+   * @return {undefined}
+   *
+   * @example
+   * app.start()
+   */
+  start: function start () {
+    if (typeof localStorage === 'undefined') {
+      this.role = 'leader'
+      this.emitter.emit('role')
+      this.sync.connection.connect()
+      return
+    }
+
+    var activeLeader = false
+    var leader = getLeader(this)
+    if (leader[1] && leader[1] >= Date.now() - 5000) activeLeader = true
+
+    if (activeLeader) {
+      setRole(this, 'follower')
+      watchForLeader(this)
+    } else {
+      var client = this
+      leaderPing(client)
+      setRole(client, 'candidate')
+      client.elections = setTimeout(function () {
+        var data = getLeader(client, 'leader')
+        if (data[0] === client.id) {
+          setRole(client, 'leader')
+        } else {
+          setRole(client, 'follower')
+          watchForLeader(client)
+        }
+      }, 1000)
+    }
+  },
+
+  /**
+   * Disconnect and stop synchronization.
+   *
+   * @return {undefined}
+   *
+   * @example
+   * shutdown.addEventListener('click', () => {
+   *   app.destroy()
+   * })
+   */
+  destroy: function destroy () {
+    this.sync.destroy()
+    clearTimeout(this.watching)
+    clearTimeout(this.elections)
+    clearInterval(this.leadership)
+  },
 
   /**
    * Clear every stored data. It will remove action log
@@ -196,14 +320,14 @@ Client.prototype = {
    * @example
    * signout.addEventListener('click', () => {
    *   app.clean()
-   * }, false)
+   * })
    */
   clean: function clean () {
-    this.sync.destroy()
+    this.destroy()
     if (typeof localStorage !== 'undefined') {
-      var prefix = this.options.prefix + ':' + this.options.userId + ':'
-      localStorage.removeItem(prefix + 'add')
-      localStorage.removeItem(prefix + 'clean')
+      localStorage.removeItem(storageKey(this, 'add'))
+      localStorage.removeItem(storageKey(this, 'clean'))
+      localStorage.removeItem(storageKey(this, 'leader'))
     }
     if (this.log.store.clean) {
       return this.log.store.clean()
@@ -219,8 +343,9 @@ Client.prototype = {
    *
    * * `add`: action was added to log by any browser tabs.
    * * `clean`: action was cleaned to log by any browser tabs.
+   * * `role`: tab’s role was changed.
    *
-   * @param {"add"|"clean"} event The event name.
+   * @param {"add"|"clean"|"role"} event The event name.
    * @param {listener} listener The listener function.
    *
    * @return {function} Unbind listener from event.
@@ -238,7 +363,7 @@ Client.prototype = {
    * Add one-time listener for synchronization events.
    * See {@link Client#on} for supported events.
    *
-   * @param {"add"|"clean"} event The event name.
+   * @param {"add"|"clean"|"role"} event The event name.
    * @param {listener} listener The listener function.
    *
    * @return {function} Unbind listener from event.

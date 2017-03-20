@@ -5,6 +5,16 @@ var TestPair = require('logux-sync').TestPair
 
 var Client = require('../client')
 
+var fakeLocalStorage = {
+  storage: { },
+  setItem: function (key, value) {
+    this.storage[key] = value
+  },
+  getItem: function (key) {
+    return this.storage[key]
+  }
+}
+
 var originError = console.error
 var originIndexedDB = global.indexedDB
 var originLocalStorage = global.localStorage
@@ -12,6 +22,7 @@ afterEach(function () {
   console.error = originError
   global.indexedDB = originIndexedDB
   global.localStorage = originLocalStorage
+  fakeLocalStorage.storage = { }
 })
 
 function createDialog (opts, credentials) {
@@ -34,6 +45,27 @@ function createDialog (opts, credentials) {
     return pair.wait('left')
   }).then(function () {
     return client
+  })
+}
+
+function createClient () {
+  return new Client({
+    subprotocol: '1.0.0',
+    userId: false,
+    url: 'wss://localhost:1337'
+  })
+}
+
+function emitStorage (name, value) {
+  var event = new Event('storage')
+  event.key = name
+  event.newValue = value
+  window.dispatchEvent(event)
+}
+
+function wait (ms) {
+  return new Promise(function (resolve) {
+    return setTimeout(resolve, ms)
   })
 }
 
@@ -136,11 +168,7 @@ it('uses user ID in node ID', function () {
 })
 
 it('uses node ID in ID generator', function () {
-  var client = new Client({
-    subprotocol: '1.0.0',
-    userId: false,
-    url: 'wss://localhost:1337'
-  })
+  var client = createClient()
   var id = client.log.generateId()
   expect(typeof id[0]).toEqual('number')
   expect(id[1]).toEqual(client.options.nodeId)
@@ -213,11 +241,7 @@ it('sends options to sync', function () {
 
 it('display server debug error stacktrace with prefix', function () {
   console.error = jest.fn()
-  var client = new Client({
-    subprotocol: '1.0.0',
-    userId: false,
-    url: 'wss://localhost:1337'
-  })
+  var client = createClient()
   client.sync.emitter.emit('debug', 'error', 'Fake stacktrace\n')
   expect(console.error).toHaveBeenCalledWith(
       'Error on Logux server:\n',
@@ -227,11 +251,7 @@ it('display server debug error stacktrace with prefix', function () {
 
 it('does not display server debug message if type is not error', function () {
   console.error = jest.fn()
-  var client = new Client({
-    subprotocol: '1.0.0',
-    userId: false,
-    url: 'wss://localhost:1337'
-  })
+  var client = createClient()
   client.sync.emitter.emit('debug', 'notError', 'Fake stacktrace\n')
   expect(console.error).not.toHaveBeenCalled()
 })
@@ -241,28 +261,20 @@ it('cleans everything', function () {
   global.localStorage = {
     removeItem: jest.fn()
   }
-  var client = new Client({
-    subprotocol: '1.0.0',
-    userId: false,
-    url: 'wss://localhost:1337'
-  })
+  var client = createClient()
   client.sync.destroy = jest.fn()
   client.log.store.clean = jest.fn(client.log.store.clean)
   return client.clean().then(function () {
     expect(client.sync.destroy).toHaveBeenCalled()
     expect(client.log.store.clean).toHaveBeenCalled()
     expect(global.localStorage.removeItem.mock.calls).toEqual([
-      ['logux:false:add'], ['logux:false:clean']
+      ['logux:false:add'], ['logux:false:clean'], ['logux:false:leader']
     ])
   })
 })
 
 it('clean memory store', function () {
-  var client = new Client({
-    subprotocol: '1.0.0',
-    userId: false,
-    url: 'wss://localhost:1337'
-  })
+  var client = createClient()
   return client.clean().then(function () {
     expect(client.log).not.toBeDefined()
   })
@@ -271,10 +283,7 @@ it('clean memory store', function () {
 it('synchronizes events between tabs', function () {
   global.localStorage = {
     setItem: function (name, value) {
-      var event = new Event('storage')
-      event.key = name
-      event.newValue = value
-      window.dispatchEvent(event)
+      emitStorage(name, value)
     }
   }
   var client1 = new Client({
@@ -326,11 +335,7 @@ it('synchronizes events between tabs', function () {
 })
 
 it('supports nanoevents API', function () {
-  var client = new Client({
-    subprotocol: '1.0.0',
-    userId: false,
-    url: 'wss://localhost:1337'
-  })
+  var client = createClient()
 
   var once = []
   client.once('add', function (action) {
@@ -349,5 +354,109 @@ it('supports nanoevents API', function () {
   }).then(function () {
     expect(once).toEqual(['A'])
     expect(twice).toEqual(['A', 'B'])
+  })
+})
+
+it('uses candidate role from beggining', function () {
+  var client = createClient()
+  expect(client.role).toEqual('candidate')
+})
+
+it('becomes leader without localstorage', function () {
+  var client = createClient()
+
+  var roles = []
+  client.on('role', function () {
+    roles.push(client.role)
+  })
+  client.sync.connection.connect = jest.fn()
+
+  client.start()
+  expect(roles).toEqual(['leader'])
+  expect(client.sync.connection.connect).toHaveBeenCalled()
+})
+
+it('becomes follower on recent leader ping', function () {
+  global.localStorage = fakeLocalStorage
+  localStorage.setItem('logux:false:leader', '["",' + Date.now() + ']')
+  var client = createClient()
+
+  var roles = []
+  client.on('role', function () {
+    roles.push(client.role)
+  })
+  client.sync.connection.connect = jest.fn()
+
+  client.start()
+  expect(roles).toEqual(['follower'])
+  expect(client.sync.connection.connect).not.toHaveBeenCalled()
+  expect(client.watching).toBeDefined()
+})
+
+it('stops election on second candidate', function () {
+  global.localStorage = fakeLocalStorage
+  var client = createClient()
+
+  client.start()
+  expect(client.role).toEqual('candidate')
+
+  emitStorage('logux:false:leader', '["",' + Date.now() + ']')
+  expect(client.role).toEqual('follower')
+  expect(client.watching).toBeDefined()
+})
+
+it('stops election in leader check', function () {
+  global.localStorage = fakeLocalStorage
+  var client = createClient()
+
+  client.start()
+  expect(client.role).toEqual('candidate')
+
+  localStorage.setItem('logux:false:leader', '["",' + Date.now() + ']')
+  return wait(1010).then(function () {
+    expect(client.role).toEqual('follower')
+    expect(client.watching).toBeDefined()
+  })
+})
+
+it('pings on leader role', function () {
+  global.localStorage = fakeLocalStorage
+  localStorage.setItem('logux:false:leader', '["",' + (Date.now() - 6000) + ']')
+  var client = createClient()
+
+  client.sync.connection.disconnect = jest.fn()
+
+  client.start()
+  expect(client.role).toEqual('candidate')
+  return wait(1010).then(function () {
+    expect(client.role).toEqual('leader')
+    expect(client.watching).not.toBeDefined()
+    return wait(2010)
+  }).then(function () {
+    var data = JSON.parse(localStorage.getItem('logux:false:leader'))
+    expect(data[0]).toEqual(client.id)
+    expect(Date.now() - data[1]).toBeLessThan(100)
+
+    emitStorage('logux:false:leader', '["",' + Date.now() + ']')
+    expect(client.role).toEqual('follower')
+    expect(client.watching).toBeDefined()
+  })
+})
+
+it('has random timeout', function () {
+  var client1 = createClient()
+  var client2 = createClient()
+  expect(client1.timeout).not.toEqual(client2.timeout)
+})
+
+it('replaces dead leader', function () {
+  global.localStorage = fakeLocalStorage
+  localStorage.setItem('logux:false:leader', '["",' + (Date.now() - 4900) + ']')
+  var client = createClient()
+  client.timeout = 200
+
+  client.start()
+  return wait(client.timeout).then(function () {
+    expect(client.role).toEqual('candidate')
   })
 })

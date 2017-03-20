@@ -78,7 +78,7 @@ var logux = new Client({
   userId: user.content,
   url: server.content
 })
-logux.sync.connection.connect()
+logux.start()
 ```
 
 

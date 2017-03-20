@@ -31,11 +31,19 @@ function emoji (state) {
     return '😊'
   }
 }
+function role (value) {
+  return value.slice(0, 1).toUpperCase()
+}
 function updateTitle () {
-  document.title = emoji(client.sync.state) + ' ' + count
+  document.title = emoji(client.sync.state) + ' ' +
+                   role(client.role) + ' ' +
+                   count
 }
 
 client.sync.on('state', function () {
+  updateTitle()
+})
+client.on('role', function () {
   updateTitle()
 })
 client.on('add', function (action) {
@@ -48,7 +56,7 @@ client.on('clean', function (action) {
 })
 
 updateTitle()
-client.sync.connection.connect()
+client.start()
 
 document.all.connection.onchange = function (e) {
   if (e.target.checked) {
