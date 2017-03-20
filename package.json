@@ -17,9 +17,9 @@
   },
   "devDependencies": {
     "docdash": "^0.4.0",
-    "eslint": "^3.17.1",
+    "eslint": "^3.18.0",
     "eslint-config-logux": "^9.0.0",
-    "eslint-config-standard": "^7.0.1",
+    "eslint-config-standard": "^7.1.0",
     "eslint-plugin-es5": "^1.0.1",
     "eslint-plugin-jest": "^19.0.1",
     "eslint-plugin-node": "^4.2.1",
