@@ -12,6 +12,9 @@ var fakeLocalStorage = {
   },
   getItem: function (key) {
     return this.storage[key]
+  },
+  removeItem: function (key) {
+    delete this.storage[key]
   }
 }
 
@@ -268,7 +271,8 @@ it('cleans everything', function () {
     expect(client.sync.destroy).toHaveBeenCalled()
     expect(client.log.store.clean).toHaveBeenCalled()
     expect(global.localStorage.removeItem.mock.calls).toEqual([
-      ['logux:false:add'], ['logux:false:clean'], ['logux:false:leader']
+      ['logux:false:add'], ['logux:false:clean'],
+      ['logux:false:state'], ['logux:false:leader']
     ])
   })
 })
@@ -459,4 +463,42 @@ it('replaces dead leader', function () {
   return wait(client.timeout).then(function () {
     expect(client.role).toEqual('candidate')
   })
+})
+
+it('updates state if tab is a leader', function () {
+  global.localStorage = fakeLocalStorage
+  var client = createClient()
+  client.start()
+  expect(client.state).toEqual('disconnected')
+
+  return wait(1050).then(function () {
+    client.sync.state = 'synchronized'
+    client.sync.emitter.emit('state')
+    expect(client.state).toEqual('synchronized')
+    expect(localStorage.getItem('logux:false:state')).toEqual('"synchronized"')
+  })
+})
+
+it('listens for leader state', function () {
+  global.localStorage = fakeLocalStorage
+  localStorage.setItem('logux:false:leader', '["",' + Date.now() + ']')
+  localStorage.setItem('logux:false:state', '"wait"')
+
+  var client = createClient()
+  var states = []
+  client.on('state', function () {
+    states.push(client.state)
+  })
+  client.start()
+  expect(states).toEqual(['wait'])
+
+  localStorage.removeItem('logux:false:state')
+  emitStorage('logux:false:state', null)
+  expect(states).toEqual(['wait'])
+
+  localStorage.setItem('logux:false:state', '"synchronized"')
+  emitStorage('logux:false:state', null)
+  emitStorage('logux:false:state', '"sending"')
+  emitStorage('logux:false:state', '"synchronized"')
+  expect(states).toEqual(['wait', 'synchronized'])
 })

@@ -20,11 +20,7 @@ function sendToTabs (client, event, data) {
 function getLeader (client) {
   var data = localStorage.getItem(storageKey(client, 'leader'))
   var json
-  if (typeof data === 'string') {
-    try {
-      json = JSON.parse(data)
-    } catch (e) { }
-  }
+  if (typeof data === 'string') json = JSON.parse(data)
 
   if (typeof json === 'object' && json !== null && json.length === 2) {
     return json
@@ -51,6 +47,9 @@ function setRole (client, role) {
 
     clearTimeout(client.watching)
     if (role === 'leader') {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem(storageKey(client, 'state'))
+      }
       client.leadership = setInterval(function () {
         leaderPing(client)
       }, 2000)
@@ -58,8 +57,19 @@ function setRole (client, role) {
     } else {
       clearTimeout(client.elections)
       clearInterval(client.leadership)
+
       if (sync.state !== 'disconnected' && sync.state !== 'wait') {
         client.sync.connection.disconnect()
+      }
+    }
+
+    if (role === 'follower') {
+      var state = 'disconnected'
+      var json = localStorage.getItem(storageKey(client, 'state'))
+      if (json && json !== null) state = JSON.parse(json)
+      if (state !== client.state) {
+        client.state = state
+        client.emitter.emit('state')
       }
     }
 
@@ -143,7 +153,7 @@ function Client (options) {
    */
   this.role = 'candidate'
 
-  this.timeout = 3000 + Math.floor(Math.random() * 2000)
+  this.timeout = 3000 + Math.floor(Math.random() * 1000)
 
   /**
    * Unique client ID. It could be used to isolate action to single tab.
@@ -216,15 +226,37 @@ function Client (options) {
     auth: auth
   })
 
+  /**
+   * Leader tab synchronization state. It could be different
+   * from `Client#sync.state`, because only leader tab keep connection.
+   *
+   * @type {"disconnected"|"wait"|"connecting"|"sending"|"synchronized"}
+   *
+   * @example
+   * client.on('state', () => {
+   *   if (sync.state === 'wait' && sync.state === 'sending') {
+   *     showCloseWarning()
+   *   }
+   * })
+   */
+  this.state = this.sync.state
+
   this.emitter = new NanoEvents()
+  var client = this
+
+  this.sync.on('state', function () {
+    if (client.role === 'leader') {
+      client.state = client.sync.state
+      client.emitter.emit('state')
+      sendToTabs(client, 'state', client.state)
+    }
+  })
 
   this.sync.on('debug', function (type, stack) {
     if (type === 'error') {
       console.error('Error on Logux server:\n', stack)
     }
   })
-
-  var client = this
   this.log.on('add', function (action, meta) {
     client.emitter.emit('add', action, meta)
     if (meta.tab !== client.id) sendToTabs(client, 'add', [action, meta])
@@ -234,7 +266,9 @@ function Client (options) {
     if (meta.tab !== client.id) sendToTabs(client, 'clean', [action, meta])
   })
 
-  window.addEventListener('storage', function (e) {
+  this.storageListener = function (e) {
+    if (e.newValue === null) return
+
     var data
     if (e.key === storageKey(client, 'add')) {
       data = JSON.parse(e.newValue)
@@ -249,8 +283,15 @@ function Client (options) {
     } else if (e.key === storageKey(client, 'leader')) {
       setRole(client, 'follower')
       watchForLeader(client)
+    } else if (e.key === storageKey(client, 'state')) {
+      var state = JSON.parse(localStorage.getItem(e.key))
+      if (client.state !== state) {
+        client.state = state
+        client.emitter.emit('state')
+      }
     }
-  })
+  }
+  window.addEventListener('storage', this.storageListener)
 }
 
 Client.prototype = {
@@ -309,6 +350,7 @@ Client.prototype = {
     clearTimeout(this.watching)
     clearTimeout(this.elections)
     clearInterval(this.leadership)
+    window.removeEventListener('storage', this.storageListener)
   },
 
   /**
@@ -327,6 +369,7 @@ Client.prototype = {
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem(storageKey(this, 'add'))
       localStorage.removeItem(storageKey(this, 'clean'))
+      localStorage.removeItem(storageKey(this, 'state'))
       localStorage.removeItem(storageKey(this, 'leader'))
     }
     if (this.log.store.clean) {
@@ -344,8 +387,9 @@ Client.prototype = {
    * * `add`: action was added to log by any browser tabs.
    * * `clean`: action was cleaned to log by any browser tabs.
    * * `role`: tab’s role was changed.
+   * * `state`: leader tab synchronization state was changed.
    *
-   * @param {"add"|"clean"|"role"} event The event name.
+   * @param {"add"|"clean"|"role"|"state"} event The event name.
    * @param {listener} listener The listener function.
    *
    * @return {function} Unbind listener from event.
@@ -363,7 +407,7 @@ Client.prototype = {
    * Add one-time listener for synchronization events.
    * See {@link Client#on} for supported events.
    *
-   * @param {"add"|"clean"|"role"} event The event name.
+   * @param {"add"|"clean"|"role"|"state"} event The event name.
    * @param {listener} listener The listener function.
    *
    * @return {function} Unbind listener from event.
