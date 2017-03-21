@@ -227,11 +227,11 @@ function Client (options) {
   var client = this
   this.log.on('add', function (action, meta) {
     client.emitter.emit('add', action, meta)
-    sendToTabs(client, 'add', [action, meta])
+    if (meta.tab !== client.id) sendToTabs(client, 'add', [action, meta])
   })
   this.log.on('clean', function (action, meta) {
     client.emitter.emit('clean', action, meta)
-    sendToTabs(client, 'clean', [action, meta])
+    if (meta.tab !== client.id) sendToTabs(client, 'clean', [action, meta])
   })
 
   window.addEventListener('storage', function (e) {
