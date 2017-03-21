@@ -19,7 +19,9 @@ var client = new Client({
   userId: 10,
   url: 'wss://example.com/'
 })
+var old = client.sync
 client.sync = new ClientSync(client.sync.localNodeId, client.log, pair.left)
+client.sync.emitter = old.emitter
 
 var count = 0
 function emoji (state) {
@@ -35,13 +37,15 @@ function role (value) {
   return value.slice(0, 1).toUpperCase()
 }
 function updateTitle () {
-  document.title = emoji(client.sync.state) + ' ' +
+  document.title = emoji(client.state) + ' ' +
                    role(client.role) + ' ' +
                    count
 }
 
 client.sync.on('state', function () {
   document.all.connection.checked = client.sync.connected
+})
+client.on('state', function () {
   updateTitle()
 })
 client.on('role', function () {
