@@ -41,6 +41,7 @@ function updateTitle () {
 }
 
 client.sync.on('state', function () {
+  document.all.connection.checked = client.sync.connected
   updateTitle()
 })
 client.on('role', function () {
