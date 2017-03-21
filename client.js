@@ -84,24 +84,24 @@ function setRole (client, role) {
  * @param {string} options.url Server URL.
  * @param {string} options.subprotocol Client subprotocol version
  *                                     in SemVer format.
- * @param {number|string|false} options.userId User ID. Pass `false` on no user.
+ * @param {number|string|false} options.userId User ID. Pass `false` if no user.
  * @param {any} [options.credentials] Client credentials for authentication.
  * @param {string} [options.prefix="logux"] Prefix for `IndexedDB` database
  *                                          to run multiple Logux instances
- *                                          on same web page.
+ *                                          in the same browser.
  * @param {string|number} [options.nodeId] Unique client ID.
- *                                         Compacted UUID, by default.
+ *                                         Compacted UUID by default.
  * @param {number} [options.timeout=20000] Timeout in milliseconds
  *                                         to break connection.
  * @param {number} [options.ping=10000] Milliseconds since last message to test
  *                                      connection by sending ping.
- * @param {Store} [options.store] Store to save log. Will be `IndexedStore`,
- *                                by default.
+ * @param {Store} [options.store] Store to save log data. `IndexedStore`
+ *                                by default (if available)
  * @param {number} [options.minDelay=1000] Minimum delay between reconnections.
  * @param {number} [options.maxDelay=5000] Maximum delay between reconnections.
  * @param {number} [options.attempts=Infinity] Maximum reconnection attempts.
- * @param {bool} [options.allowDangerousProtocol=false] Hide warning in case
- *                                                      using ws: in production.
+ * @param {bool} [options.allowDangerousProtocol=false] Do not show warning when
+ *                                                      using 'ws://...' in production.
  *
  * @example
  * token = document.querySelector('meta[name=token]')
@@ -143,7 +143,7 @@ function Client (options) {
 
   /**
    * Current tab role. Only `leader` tab connects to server. `followers` just
-   * listen events from `loader`.
+   * listen to events from `leader`.
    * @type {"leader"|"follower"|"candidate"}
    *
    * @example
@@ -156,7 +156,7 @@ function Client (options) {
   this.timeout = 3000 + Math.floor(Math.random() * 1000)
 
   /**
-   * Unique client ID. It could be used to isolate action to single tab.
+   * Unique client ID. Can be used to add an action to the specific tab.
    * @type {string}
    *
    * @example
@@ -227,8 +227,8 @@ function Client (options) {
   })
 
   /**
-   * Leader tab synchronization state. It could be different
-   * from `Client#sync.state`, because only leader tab keep connection.
+   * Leader tab synchronization state. It can differs
+   * from `Client#sync.state` (because only the leader tab keeps connection).
    *
    * @type {"disconnected"|"wait"|"connecting"|"sending"|"synchronized"}
    *
@@ -297,7 +297,7 @@ function Client (options) {
 Client.prototype = {
 
   /**
-   * Connect to server and reconnect on any connection problems.
+   * Connect to server and reconnect on any connection problem.
    *
    * @return {undefined}
    *
@@ -354,7 +354,7 @@ Client.prototype = {
   },
 
   /**
-   * Clear every stored data. It will remove action log
+   * Clear stored data. Removes action log
    * from `IndexedDB`.
    *
    * @return {Promise} Promise when all data will be removed.
@@ -384,10 +384,10 @@ Client.prototype = {
    * Subscribe for synchronization events. It implements nanoevents API.
    * Supported events:
    *
-   * * `add`: action was added to log by any browser tabs.
-   * * `clean`: action was cleaned to log by any browser tabs.
-   * * `role`: tab’s role was changed.
-   * * `state`: leader tab synchronization state was changed.
+   * * `add`: action has been added to log (by any tab).
+   * * `clean`: action has been removed from log (by any tab).
+   * * `role`: tab role has been changed.
+   * * `state`: leader tab synchronization state has been changed.
    *
    * @param {"add"|"clean"|"role"|"state"} event The event name.
    * @param {listener} listener The listener function.
