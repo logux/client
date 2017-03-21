@@ -100,8 +100,9 @@ function setRole (client, role) {
  * @param {number} [options.minDelay=1000] Minimum delay between reconnections.
  * @param {number} [options.maxDelay=5000] Maximum delay between reconnections.
  * @param {number} [options.attempts=Infinity] Maximum reconnection attempts.
- * @param {bool} [options.allowDangerousProtocol=false] Do not show warning when
- *                                                      using 'ws://...' in production.
+ * @param {bool} [options.allowDangerousProtocol=false] Do not show warning
+ *                                                      when using 'ws://'
+ *                                                      in production.
  *
  * @example
  * token = document.querySelector('meta[name=token]')
