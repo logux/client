@@ -29,6 +29,15 @@ function favicon (client, links) {
   var fav = false
   var prevFav = false
 
+  function update () {
+    if (client.connected && normal && prevFav !== normal) {
+      fav.href = prevFav = normal
+    } else if (!client.connected && offline &&
+               prevFav !== offline && prevFav !== error) {
+      fav.href = prevFav = offline
+    }
+  }
+
   if (typeof doc !== 'undefined') {
     fav = doc.querySelector('link[rel~="icon"]')
 
@@ -39,14 +48,8 @@ function favicon (client, links) {
       document.head.appendChild(fav)
     }
 
-    unbind.push(client.on('state', function () {
-      if (client.connected && normal && prevFav !== normal) {
-        fav.href = prevFav = normal
-      } else if (!client.connected && offline &&
-                 prevFav !== offline && prevFav !== error) {
-        fav.href = prevFav = offline
-      }
-    }))
+    unbind.push(client.on('state', update))
+    update()
 
     unbind.push(client.sync.on('error', function (err) {
       if (err.type !== 'timeout' && error && prevFav !== error) {

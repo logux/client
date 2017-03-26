@@ -40,6 +40,16 @@ afterEach(function () {
   setFavHref('')
 })
 
+it('set favicon with current state', function () {
+  return createClient().then(function (client) {
+    favicon(client, {
+      offline: '/offline.ico',
+      normal: '/default.ico'
+    })
+    expect(getFavHref()).toBe('/offline.ico')
+  })
+})
+
 it('changes favicon on state event', function () {
   return createClient().then(function (client) {
     favicon(client, {
