@@ -34,8 +34,7 @@ function colorify (color, text, action, meta) {
 /**
  * Display Logux events in browser console.
  *
- * @param {Syncable|Client} client Observed Client instance
- *                                 or object with `sync` property.
+ * @param {Client} client Observed Client instance.
  * @param {object} [messages] Disable specific message types.
  * @param {boolean} [messages.state] Disable state messages.
  * @param {boolean} [messages.error] Disable error messages.
@@ -69,22 +68,20 @@ function log (client, messages) {
   var prevConnected = false
 
   if (messages.state !== false) {
-    unbind.push(sync.on('state', function () {
+    unbind.push(client.on('state', function () {
       var postfix = ''
 
-      if (sync.state === 'connecting' && sync.connection.url) {
+      if (client.state === 'connecting' && sync.connection.url) {
         postfix = '. ' + style(sync.localNodeId) + ' is connecting to ' +
                   style(sync.connection.url) + '.'
-      }
-
-      if (sync.connected && !prevConnected) {
+      } else if (client.connected && !prevConnected) {
         postfix = '. Client was connected to ' + style(sync.remoteNodeId) + '.'
         prevConnected = true
-      } else if (!sync.connected) {
+      } else if (!client.connected) {
         prevConnected = false
       }
 
-      showLog('state was changed to ' + style(sync.state) + postfix)
+      showLog('state was changed to ' + style(client.state) + postfix)
     }))
   }
 
@@ -98,7 +95,8 @@ function log (client, messages) {
   }
 
   if (messages.add !== false) {
-    unbind.push(sync.log.on('add', function (action, meta) {
+    unbind.push(client.on('add', function (action, meta) {
+      if (meta.tab && meta.tab !== client.id) return
       var message = 'action ' + style(action.type) + ' was added'
       if (meta.id[1] !== sync.localNodeId) {
         message += ' by ' + style(meta.id[1])
@@ -108,7 +106,8 @@ function log (client, messages) {
   }
 
   if (messages.clean !== false) {
-    unbind.push(sync.log.on('clean', function (action, meta) {
+    unbind.push(client.on('clean', function (action, meta) {
+      if (meta.tab && meta.tab !== client.id) return
       var message = 'action ' + style(action.type) + ' was cleaned'
       showLog(message, action, meta)
     }))

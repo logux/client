@@ -1,15 +1,25 @@
 var BaseSync = require('logux-sync').BaseSync
 var TestPair = require('logux-sync').TestPair
-var TestTime = require('logux-core').TestTime
+var Client = require('logux-client').Client
 
 var confirm = require('../confirm')
 
-function createTest () {
+function createClient () {
+  var client = new Client({
+    subprotocol: '1.0.0',
+    userId: false,
+    url: 'wss://localhost:1337'
+  })
+
   var pair = new TestPair()
-  pair.leftSync = new BaseSync('client', TestTime.getLog(), pair.left)
-  pair.leftSync.catch(function () { })
+  var sync = new BaseSync('client', client.log, pair.left)
+  sync.catch(function () { })
+  sync.emitter = client.sync.emitter
+  client.sync = sync
+  client.role = 'leader'
+
   return pair.left.connect().then(function () {
-    return pair
+    return client
   })
 }
 
@@ -22,12 +32,12 @@ beforeEach(function () {
   beforeunloader = false
 
   window.addEventListener = jest.fn(function (name, callback) {
-    expect(name).toEqual('beforeunload')
-    beforeunloader = callback
+    if (name === 'beforeunload') beforeunloader = callback
   })
   window.removeEventListener = jest.fn(function (name, callback) {
-    expect(name).toEqual('beforeunload')
-    if (beforeunloader === callback) beforeunloader = false
+    if (name === 'beforeunload' && beforeunloader === callback) {
+      beforeunloader = false
+    }
   })
 })
 afterEach(function () {
@@ -36,13 +46,13 @@ afterEach(function () {
 })
 
 it('confirms close', function () {
-  return createTest().then(function (test) {
-    confirm({ sync: test.leftSync }, 'test warning')
+  return createClient().then(function (client) {
+    confirm(client, 'test warning')
 
-    test.leftSync.setState('wait')
+    client.sync.setState('wait')
     expect(beforeunloader()).toEqual('test warning')
 
-    test.leftSync.setState('sending')
+    client.sync.setState('sending')
     var e = { }
     beforeunloader(e)
     expect(e.returnValue).toEqual('test warning')
@@ -54,27 +64,37 @@ it('confirms close', function () {
 })
 
 it('has default message', function () {
-  return createTest().then(function (test) {
-    confirm({ sync: test.leftSync })
-    test.leftSync.setState('wait')
+  return createClient().then(function (client) {
+    confirm(client)
+    client.sync.setState('wait')
     expect(typeof beforeunloader()).toEqual('string')
   })
 })
 
 it('does not confirm on synchronized state', function () {
-  return createTest().then(function (test) {
-    confirm({ sync: test.leftSync })
-    test.leftSync.setState('wait')
-    test.leftSync.setState('synchronized')
+  return createClient().then(function (client) {
+    confirm(client)
+    client.sync.setState('wait')
+    client.sync.setState('synchronized')
+    expect(beforeunloader).toBeFalsy()
+  })
+})
+
+it('does not config on follower tab', function () {
+  return createClient().then(function (client) {
+    confirm(client)
+    client.sync.setState('wait')
+    client.role = 'follower'
+    client.emitter.emit('role')
     expect(beforeunloader).toBeFalsy()
   })
 })
 
 it('returns unbind function', function () {
-  return createTest().then(function (test) {
-    var unbind = confirm({ sync: test.leftSync })
+  return createClient().then(function (client) {
+    var unbind = confirm(client)
     unbind()
-    test.leftSync.setState('wait')
+    client.sync.setState('wait')
     expect(beforeunloader).toBeFalsy()
   })
 })

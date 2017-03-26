@@ -1,8 +1,7 @@
 /**
  * Change favicon to show Logux synchronization status.
  *
- * @param {Syncable|Client} client Observed Client instance
- *                                 or object with `sync` property.
+ * @param {Client} client Observed Client instance.
  * @param {object} [links] Set favicon links.
  * @param {string} [links.normal] Default favicon link.
  * @param {string} [links.offline] Offline favicon link.
@@ -20,7 +19,6 @@
  */
 function favicon (client, links) {
   links = links || {}
-  var sync = client.sync
 
   var normal = links.normal
   var offline = links.offline
@@ -41,16 +39,16 @@ function favicon (client, links) {
       document.head.appendChild(fav)
     }
 
-    unbind.push(sync.on('state', function () {
-      if (sync.connected && normal && prevFav !== normal) {
+    unbind.push(client.on('state', function () {
+      if (client.connected && normal && prevFav !== normal) {
         fav.href = prevFav = normal
-      } else if (!sync.connected && offline &&
+      } else if (!client.connected && offline &&
                  prevFav !== offline && prevFav !== error) {
         fav.href = prevFav = offline
       }
     }))
 
-    unbind.push(sync.on('error', function (err) {
+    unbind.push(client.sync.on('error', function (err) {
       if (err.type !== 'timeout' && error && prevFav !== error) {
         fav.href = prevFav = error
       }

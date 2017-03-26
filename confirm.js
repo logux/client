@@ -1,8 +1,7 @@
 /**
  * Show confirm popup, when user close tab with non-synchronized actions.
  *
- * @param {Syncable|Client} client Observed Client instance
- *                                 or object with `sync` property.
+ * @param {Client} client Observed Client instance.
  * @param {String} [warning] The text of the warning.
  *
  * @return {Function} Unbind confirm listener.
@@ -12,8 +11,6 @@
  * confirm(client, 'Post does not saved to server. Are you sure to leave?')
  */
 function confirm (client, warning) {
-  var sync = client.sync
-
   warning = warning || 'Some data was not saved to server. ' +
                        'Are you sure to leave?'
 
@@ -23,13 +20,25 @@ function confirm (client, warning) {
     return warning
   }
 
-  return sync.on('state', function () {
-    if (sync.state === 'wait' || sync.state === 'sending') {
+  function update () {
+    var unsaved = client.state === 'wait' || client.state === 'sending'
+    if (client.role !== 'follower' && unsaved) {
       window.addEventListener('beforeunload', listen)
     } else {
       window.removeEventListener('beforeunload', listen)
     }
-  })
+  }
+
+  var unbind = []
+  unbind.push(client.on('role', update))
+  unbind.push(client.on('state', update))
+  update()
+
+  return function () {
+    for (var i = 0; i < unbind.length; i++) {
+      unbind[i]()
+    }
+  }
 }
 
 module.exports = confirm

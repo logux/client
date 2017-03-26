@@ -1,8 +1,7 @@
 /**
  * Highlight tabs on synchronization errors.
  *
- * @param {Syncable|Client} client Observed Client instance
- *                                 or object with `sync` property.
+ * @param {Client} client Observed Client instance.
  *
  * @return {Function} Unbind attention listener.
  *
@@ -11,8 +10,6 @@
  * attention(client)
  */
 function attention (client) {
-  var sync = client.sync
-
   var doc = document
   var originTitle = false
   var unbind = []
@@ -44,7 +41,7 @@ function attention (client) {
   }
 
   if (typeof doc !== 'undefined' && typeof doc.hidden !== 'undefined') {
-    unbind.push(sync.on('error', function (error) {
+    unbind.push(client.sync.on('error', function (error) {
       if (error.type !== 'timeout' && !timeoutId) {
         blink()
       }

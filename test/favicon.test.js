@@ -1,7 +1,7 @@
 var SyncError = require('logux-sync').SyncError
-var TestTime = require('logux-core').TestTime
 var BaseSync = require('logux-sync').BaseSync
 var TestPair = require('logux-sync').TestPair
+var Client = require('logux-client').Client
 
 var favicon = require('../favicon')
 
@@ -17,12 +17,22 @@ function setFavHref (href) {
   getFavNode().href = href
 }
 
-function createTest () {
+function createClient () {
+  var client = new Client({
+    subprotocol: '1.0.0',
+    userId: false,
+    url: 'wss://localhost:1337'
+  })
+
   var pair = new TestPair()
-  pair.leftSync = new BaseSync('test1', TestTime.getLog(), pair.left)
-  pair.leftSync.catch(function () {})
+  var sync = new BaseSync('client', client.log, pair.left)
+  sync.catch(function () { })
+  sync.emitter = client.sync.emitter
+  client.sync = sync
+  client.role = 'leader'
+
   return pair.left.connect().then(function () {
-    return pair
+    return client
   })
 }
 
@@ -31,63 +41,74 @@ afterEach(function () {
 })
 
 it('changes favicon on state event', function () {
-  return createTest().then(function (test) {
-    favicon({ sync: test.leftSync }, {
+  return createClient().then(function (client) {
+    favicon(client, {
       offline: '/offline.ico',
       normal: '/default.ico'
     })
 
-    test.leftSync.connected = false
-    test.leftSync.setState('A')
-    expect(getFavHref()).toBe('/offline.ico')
-
-    test.leftSync.connected = true
-    test.leftSync.setState('B')
+    client.sync.setState('sending')
     expect(getFavHref()).toBe('/default.ico')
+
+    client.sync.setState('disconnected')
+    expect(getFavHref()).toBe('/offline.ico')
   })
 })
 
 it('does not double favicon changes', function () {
-  return createTest().then(function (test) {
-    favicon({ sync: test.leftSync }, { error: '/error.ico' })
-    test.leftSync.emitter.emit('error', new Error('test'))
+  return createClient().then(function (client) {
+    favicon(client, { error: '/error.ico' })
+    client.sync.emitter.emit('error', new Error('test'))
     expect(getFavHref()).toBe('/error.ico')
 
     setFavHref('')
-    test.leftSync.emitter.emit('error', new Error('test'))
+    client.sync.emitter.emit('error', new Error('test'))
     expect(getFavHref()).toBe('')
   })
 })
 
 it('allows to miss timeout error', function () {
-  return createTest().then(function (test) {
-    favicon({ sync: test.leftSync }, { error: '/error.ico' })
-    test.left.emitter.emit('error', new SyncError(test.leftSync, 'timeout'))
+  return createClient().then(function (client) {
+    favicon(client, { error: '/error.ico' })
+    client.sync.emitter.emit('error', new SyncError(test.leftSync, 'timeout'))
     expect(getFavHref()).toBe('')
   })
 })
 
 it('does not override error by offline', function () {
-  return createTest().then(function (test) {
-    favicon({ sync: test.leftSync }, {
+  return createClient().then(function (client) {
+    favicon(client, {
       offline: '/offline.ico',
       error: '/error.ico'
     })
-    test.leftSync.emitter.emit('error', new Error('test'))
+    client.sync.emitter.emit('error', new Error('test'))
     expect(getFavHref()).toBe('/error.ico')
 
-    test.leftSync.connected = false
-    test.leftSync.setState('A')
+    client.sync.connected = false
+    client.sync.setState('A')
     expect(getFavHref()).toBe('/error.ico')
   })
 })
 
+it('supports cross-tab synchronization', function () {
+  return createClient().then(function (client) {
+    favicon(client, {
+      offline: '/offline.ico',
+      normal: '/default.ico'
+    })
+
+    client.state = 'sending'
+    client.emitter.emit('state')
+    expect(getFavHref()).toBe('/default.ico')
+  })
+})
+
 it('returns unbind function', function () {
-  return createTest().then(function (test) {
-    var unbind = favicon({ sync: test.leftSync }, { error: '/error.ico' })
+  return createClient().then(function (client) {
+    var unbind = favicon(client, { error: '/error.ico' })
 
     unbind()
-    test.left.emitter.emit('error', new Error('test'))
+    client.sync.emitter.emit('error', new Error('test'))
 
     expect(getFavHref()).not.toBe('/error.ico')
   })
