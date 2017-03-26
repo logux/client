@@ -3,7 +3,8 @@
  *
  * @param {Client} client Observed Client instance.
  * @param {object} [links] Set favicon links.
- * @param {string} [links.normal] Default favicon link.
+ * @param {string} [links.normal] Default favicon link. By defauly,
+ *                                it will be taken from current favicon.
  * @param {string} [links.offline] Offline favicon link.
  * @param {string} [links.error] Error favicon link.
  *
@@ -30,7 +31,7 @@ function favicon (client, links) {
   var prevFav = false
 
   function update () {
-    if (client.connected && normal && prevFav !== normal) {
+    if (client.connected && prevFav !== normal) {
       fav.href = prevFav = normal
     } else if (!client.connected && offline &&
                prevFav !== offline && prevFav !== error) {
@@ -40,6 +41,14 @@ function favicon (client, links) {
 
   if (typeof doc !== 'undefined') {
     fav = doc.querySelector('link[rel~="icon"]')
+
+    if (typeof normal === 'undefined') {
+      if (fav) {
+        normal = fav.href
+      } else {
+        normal = ''
+      }
+    }
 
     if (!fav) {
       fav = document.createElement('link')

@@ -36,6 +36,13 @@ function createClient () {
   })
 }
 
+beforeAll(function () {
+  var fav = document.createElement('link')
+  fav.rel = 'icon'
+  fav.href = ''
+  document.head.appendChild(fav)
+})
+
 afterEach(function () {
   setFavHref('')
 })
@@ -51,6 +58,7 @@ it('set favicon with current state', function () {
 })
 
 it('changes favicon on state event', function () {
+  getFavNode().href = '/custom.ico'
   return createClient().then(function (client) {
     favicon(client, {
       offline: '/offline.ico',
@@ -62,6 +70,26 @@ it('changes favicon on state event', function () {
 
     client.sync.setState('disconnected')
     expect(getFavHref()).toBe('/offline.ico')
+  })
+})
+
+it('works without favicon tag', function () {
+  getFavNode().remove()
+  return createClient().then(function (client) {
+    favicon(client, { offline: '/offline.ico' })
+    expect(getFavHref()).toBe('/offline.ico')
+
+    client.sync.setState('sending')
+    expect(getFavHref()).toBe('')
+  })
+})
+
+it('uses current favicon as normal', function () {
+  getFavNode().href = '/custom.ico'
+  return createClient().then(function (client) {
+    favicon(client, { offline: '/offline.ico' })
+    client.sync.setState('sending')
+    expect(getFavHref()).toBe('/custom.ico')
   })
 })
 
@@ -94,8 +122,7 @@ it('does not override error by offline', function () {
     client.sync.emitter.emit('error', new Error('test'))
     expect(getFavHref()).toBe('/error.ico')
 
-    client.sync.connected = false
-    client.sync.setState('A')
+    client.sync.setState('disconnected')
     expect(getFavHref()).toBe('/error.ico')
   })
 })
