@@ -502,3 +502,12 @@ it('listens for leader state', function () {
   emitStorage('logux:false:state', '"synchronized"')
   expect(states).toEqual(['wait', 'synchronized'])
 })
+
+it('has connected shortcut', function () {
+  var client = createClient()
+  expect(client.connected).toBeFalsy()
+  client.state = 'wait'
+  expect(client.connected).toBeFalsy()
+  client.state = 'sending'
+  expect(client.connected).toBeTruthy()
+})

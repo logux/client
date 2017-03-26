@@ -424,4 +424,10 @@ Client.prototype = {
 
 }
 
+Object.defineProperty(Client.prototype, 'connected', {
+  get: function get () {
+    return this.state !== 'disconnected' && this.state !== 'wait'
+  }
+})
+
 module.exports = Client
