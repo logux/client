@@ -3,7 +3,7 @@
  *
  * @param {Client} client Observed Client instance.
  * @param {object} [links] Set favicon links.
- * @param {string} [links.normal] Default favicon link. By defauly,
+ * @param {string} [links.normal] Default favicon link. By default,
  *                                it will be taken from current favicon.
  * @param {string} [links.offline] Offline favicon link.
  * @param {string} [links.error] Error favicon link.
