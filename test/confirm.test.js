@@ -47,27 +47,19 @@ afterEach(function () {
 
 it('confirms close', function () {
   return createClient().then(function (client) {
-    confirm(client, 'test warning')
+    confirm(client)
 
     client.sync.setState('wait')
-    expect(beforeunloader()).toEqual('test warning')
+    expect(beforeunloader()).toEqual('unsynced')
 
     client.sync.setState('sending')
     var e = { }
     beforeunloader(e)
-    expect(e.returnValue).toEqual('test warning')
+    expect(e.returnValue).toEqual('unsynced')
 
     window.event = { }
     beforeunloader()
-    expect(window.event.returnValue).toEqual('test warning')
-  })
-})
-
-it('has default message', function () {
-  return createClient().then(function (client) {
-    confirm(client)
-    client.sync.setState('wait')
-    expect(typeof beforeunloader()).toEqual('string')
+    expect(window.event.returnValue).toEqual('unsynced')
   })
 })
 
