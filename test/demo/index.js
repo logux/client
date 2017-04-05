@@ -9,7 +9,12 @@ var Log = require('logux-core/log')
 var attention = require('../../attention')
 var confirm = require('../../confirm')
 var favicon = require('../../favicon')
+var badge = require('../../badge')
 var log = require('../../log')
+
+var badgeMessages = require('../../badge/en')
+var badgeStyles = require('../../badge/default')
+var badgeIcons = require('../../badge/icons')
 
 var faviconNormal = require('./normal.png')
 var faviconOffline = require('./offline.png')
@@ -36,6 +41,11 @@ favicon(client, {
   normal: faviconNormal,
   offline: faviconOffline,
   error: faviconError
+})
+badge(client, {
+  messages: badgeMessages,
+  styles: badgeStyles,
+  icons: badgeIcons
 })
 log(client)
 
