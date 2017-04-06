@@ -25,21 +25,19 @@
       p {
         margin: 0 0 1em 0;
       }
+      section {
+        width: 50%;
+        float: left;
+        padding: 1em 0;
+      }
       .connection {
         width: 100%;
         font-size: 1.1em;
-      }
-      section {
-        margin: 1em 1.5em;
-        float: left;
       }
       button {
         height: 2em;
         min-width: 14em;
         font-size: 1.1em;
-      }
-      section {
-        margin-top: 1em;
       }
       footer {
         font-size: small;
@@ -79,6 +77,10 @@
           to show synchronization status.
         </li>
         <li>
+          <strong>badge</strong> shows widget to display Logux
+          synchronization status.
+        </li>
+        <li>
           <strong>log</strong> displays Logux events in browser console.
         </li>
       </ul>
@@ -91,6 +93,23 @@
         <footer>
           Tests:
           <strong>favicon</strong>,
+          <strong>badge</strong>,
+          <strong>log</strong>
+        </footer>
+      </section>
+      <section>
+        <button id="add">Add action to log</button>
+        <footer>
+          Tests:
+          <strong>confirm</strong>,
+          <strong>badge</strong>,
+          <strong>log</strong>
+        </footer>
+      </section>
+      <section>
+        <button id="clean">Clean actions</button>
+        <footer>
+          Tests:
           <strong>log</strong>
         </footer>
       </section>
@@ -100,6 +119,7 @@
           Tests:
           <strong>attention</strong>,
           <strong>favicon</strong>,
+          <strong>badge</strong>,
           <strong>log</strong>
         </footer>
       </section>
@@ -109,22 +129,18 @@
           Tests:
           <strong>attention</strong>,
           <strong>favicon</strong>,
+          <strong>badge</strong>,
           <strong>log</strong>
         </footer>
       </section>
       <section>
-        <button id="add">Add action to log</button>
+        <button id="subprotocolError">Subprotocol error</button>
         <footer>
           Tests:
-          <strong>confirm</strong>,
-          <strong>log</strong>
-        </footer>
-      </section>
-      <section>
-        <button id="clean">Clean actions</button>
-        <footer>
-          Tests:
-          <strong>log</strong>
+          <strong>attention</strong>,
+          <strong>favicon</strong>,
+          <strong>badge</strong>
+          <strong>log</strong>,
         </footer>
       </section>
     </article>

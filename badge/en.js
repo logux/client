@@ -5,5 +5,5 @@ module.exports = {
   connecting: 'Data saving',
   sending: 'Data saving',
   error: 'Server error.<br>Your data has not been saved',
-  protocolError: 'Saving is not working.Refresh the page'
+  protocolError: 'Saving is not working.<br>Refresh the page'
 }

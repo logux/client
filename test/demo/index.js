@@ -71,6 +71,10 @@ document.all.serverError.onclick = function () {
   }, 3000)
 }
 
+document.all.subprotocolError.onclick = function () {
+  client.sync.syncError('wrong-protocol', { supported: [1, 0], used: [2, 0] })
+}
+
 document.all.add.onclick = function () {
   client.log.add({ type: 'TEST' }, { reasons: ['test'] })
 }
