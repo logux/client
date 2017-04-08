@@ -35,6 +35,7 @@ var client = new Client({
 })
 
 var sync = new ClientSync(client.sync.localNodeId, client.log, pair.left)
+sync.connection.url = 'wss://example.com/'
 sync.emitter = client.sync.emitter
 client.sync = sync
 

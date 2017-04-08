@@ -75,7 +75,7 @@ function log (client, messages) {
       if (client.state === 'connecting' && sync.connection.url) {
         postfix = '. ' + style(sync.localNodeId) + ' is connecting to ' +
                   style(sync.connection.url) + '.'
-      } else if (client.connected && !prevConnected) {
+      } else if (client.connected && !prevConnected && sync.remoteNodeId) {
         postfix = '. Client was connected to ' + style(sync.remoteNodeId) + '.'
         prevConnected = true
       } else if (!client.connected) {

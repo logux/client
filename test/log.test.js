@@ -107,6 +107,20 @@ it('shows server node ID', function () {
   })
 })
 
+it('does not shows server node ID in follower role', function () {
+  return createClient().then(function (client) {
+    log(client, { color: false })
+
+    client.sync.remoteNodeId = undefined
+    client.sync.connected = true
+    client.sync.setState('synchronized')
+
+    expect(console.log).toBeCalledWith(
+      'Logux: state was changed to synchronized'
+    )
+  })
+})
+
 it('shows bold server node ID', function () {
   return createClient().then(function (client) {
     log(client, { color: true })
