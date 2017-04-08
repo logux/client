@@ -13,7 +13,7 @@ module.exports = {
     error: error,
     wait: offline
   },
-  baseStyles: {
+  base: {
     position: 'absolute',
     width: '200px',
     height: '50px',
@@ -23,7 +23,14 @@ module.exports = {
     color: '#ffffff',
     fontSize: '13px',
     fontFamily: 'Helvetica Neue, sans-serif',
-    zIndex: '100000'
+    zIndex: '100000',
+    backgroundPosition: '15px center',
+    backgroundRepeat: 'no-repeat'
+  },
+  text: {
+    display: 'table-cell',
+    verticalAlign: 'middle',
+    height: '50px'
   },
   synchronized: {
     backgroundColor: '#000000'

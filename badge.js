@@ -45,6 +45,19 @@ function setPosition (element, position) {
   }
 }
 
+var RESET = {
+  boxSizing: 'content-box',
+  visibility: 'visible',
+  textIndent: '0',
+  textTransform: 'none',
+  wordSpacing: 'normal',
+  letterSpacing: 'normal',
+  fontStyle: 'normal',
+  fontVariant: 'normal',
+  fontWeight: 'normal',
+  lineHeight: 'auto'
+}
+
 /**
  * Display Logux widget in browser.
  *
@@ -52,8 +65,8 @@ function setPosition (element, position) {
  *                                 or object with `sync` property.
  * @param {object} options Widget settings.
  * @param {object} options.styles Inline styles for different states.
- * @param {object} options.styles.baseStyles Configure widget container base
- *                                           styles.
+ * @param {object} options.styles.base Base styles.
+ * @param {object} options.styles.text Style for text element inside widget.
  * @param {object} options.styles.synchronized Styles for synchronized state.
  * @param {object} options.styles.disconnected Styles for disconnected state.
  * @param {object} options.styles.wait Styles for wait state.
@@ -113,34 +126,11 @@ function badge (client, options) {
 
   function injectIcon (state) {
     widget.style.backgroundImage = 'url(' + icons[state] + ')'
-    widget.style.backgroundPosition = '15px center'
-    widget.style.backgroundRepeat = 'no-repeat'
   }
 
-  // reset inherited CSS properties
-  injectStyles(widget, {
-    boxSizing: 'content-box',
-    visibility: 'visible',
-    textIndent: '0',
-    textTransform: 'none',
-    wordSpacing: 'normal',
-    letterSpacing: 'normal',
-    fontStyle: 'normal',
-    fontVariant: 'normal',
-    fontWeight: 'normal',
-    lineHeight: 'auto'
-  })
-
-  // inject base widget styles
-  injectStyles(widget, options.styles.baseStyles)
-
-  // inject base text container styles
-  injectStyles(text, {
-    display: 'table-cell',
-    verticalAlign: 'middle',
-    height: options.styles.baseStyles.height
-  })
-
+  injectStyles(widget, RESET)
+  injectStyles(widget, options.styles.base)
+  injectStyles(text, options.styles.text)
   setPosition(widget, position)
 
   var unbind = []
