@@ -1,4 +1,18 @@
+var refresh = require('./refresh.svg')
+var success = require('./success.svg')
+var offline = require('./offline.svg')
+var error = require('./error.svg')
+
 module.exports = {
+  icons: {
+    protocolError: refresh,
+    synchronized: success,
+    disconnected: offline,
+    connecting: refresh,
+    sending: refresh,
+    error: error,
+    wait: offline
+  },
   baseStyles: {
     position: 'absolute',
     width: '200px',

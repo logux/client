@@ -14,7 +14,6 @@ var log = require('../../log')
 
 var badgeMessages = require('../../badge/en')
 var badgeStyles = require('../../badge/default')
-var badgeIcons = require('../../badge/icons')
 
 var faviconNormal = require('./normal.png')
 var faviconOffline = require('./offline.png')
@@ -43,11 +42,7 @@ favicon(client, {
   offline: faviconOffline,
   error: faviconError
 })
-badge(client, {
-  messages: badgeMessages,
-  styles: badgeStyles,
-  icons: badgeIcons
-})
+badge(client, { messages: badgeMessages, styles: badgeStyles })
 log(client)
 
 client.on('role', function () {

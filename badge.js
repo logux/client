@@ -50,52 +50,57 @@ function setPosition (element, position) {
  *
  * @param {Syncable|Client} client Observed Client instance
  *                                 or object with `sync` property.
- * @param {object} settings Configure widget appearance.
- * @param {object} settings.styles Configure widget styles for different states.
- * @param {object} settings.styles.baseStyles Configure widget container base
- *                                            styles.
- * @param {object} settings.styles.synchronized Styles in synchronized state.
- * @param {object} settings.styles.disconnected Styles in disconnected state.
- * @param {object} settings.styles.wait Styles in wait state.
- * @param {object} settings.styles.connecting Styles in connecting state.
- * @param {object} settings.styles.sending Styles in sending state.
- * @param {object} settings.styles.error Error styles.
- * @param {object} settings.styles.protocolError Protocol error styles.
- * @param {object} settings.messages Widget text for different states.
- * @param {object} settings.messages.synchronized Text in synchronized state.
- * @param {object} settings.messages.disconnected Text in disconnected state.
- * @param {object} settings.messages.wait Text in wait state.
- * @param {object} settings.messages.connecting Text in connecting state.
- * @param {object} settings.messages.sending Text in sending state.
- * @param {object} settings.messages.error Error text.
- * @param {object} settings.messages.protocolError Protocol error text.
- * @param {object} settings.icons Widget icons for different states.
- * @param {object} settings.icons.synchronized Icon in synchronized state.
- * @param {object} settings.icons.disconnected Icon in disconnected state.
- * @param {object} settings.icons.wait Icon in wait state.
- * @param {object} settings.icons.connecting Icon in connecting state.
- * @param {object} settings.icons.sending Icon in sending state.
- * @param {object} settings.icons.error Error icon.
- * @param {object} settings.icons.protocolError Protocol error icon.
- * @param {string} [settings.position] Widget position in browser.
+ * @param {object} options Widget settings.
+ * @param {object} options.styles Inline styles for different states.
+ * @param {object} options.styles.baseStyles Configure widget container base
+ *                                           styles.
+ * @param {object} options.styles.synchronized Styles for synchronized state.
+ * @param {object} options.styles.disconnected Styles for disconnected state.
+ * @param {object} options.styles.wait Styles for wait state.
+ * @param {object} options.styles.connecting Styles for connecting state.
+ * @param {object} options.styles.sending Styles for sending state.
+ * @param {object} options.styles.error Error styles.
+ * @param {object} options.styles.protocolError Protocol error styles.
+ * @param {object} options.styles.icons Icons in URL link or `data:uri`.
+ * @param {string} options.styles.icons.synchronized Synchronized state.
+ * @param {string} options.styles.icons.disconnected Disconnected state.
+ * @param {string} options.styles.icons.wait Wait state.
+ * @param {string} options.styles.icons.connecting Connecting state.
+ * @param {string} options.styles.icons.sending Sending state.
+ * @param {string} options.styles.icons.error Error state.
+ * @param {string} options.styles.icons.protocolError Protocol error state.
+ * @param {object} options.messages Widget text for different states.
+ * @param {object} options.messages.synchronized Text for synchronized state.
+ * @param {object} options.messages.disconnected Text for disconnected state.
+ * @param {object} options.messages.wait Text for wait state.
+ * @param {object} options.messages.connecting Text for connecting state.
+ * @param {object} options.messages.sending Text for sending state.
+ * @param {object} options.messages.error Error text.
+ * @param {object} options.messages.protocolError Protocol error text.
+ * @param {string} [options.position="bottom-right"] Widget position.
  *
  * @return {Function} Unbind badge listener and remove widget from DOM.
  *
  * @example
  * import badge from 'logux-status/badge'
+ * import messages from 'logux/status/badge/en'
+ * import styles from 'logux/status/badge/default'
+ *
  * badge(client, {
+ *  messages: messages,
  *  styles: {
+ *    ...styles,
  *    synchronized: { backgroundColor: 'green' }
  *  },
  *  position: 'top-left'
  * })
  */
-function badge (client, settings) {
+function badge (client, options) {
   var sync = client.sync
 
-  var messages = settings.messages
-  var icons = settings.icons
-  var position = settings.position || 'bottom-right'
+  var messages = options.messages
+  var icons = options.styles.icons
+  var position = options.position || 'bottom-right'
 
   var widget = document.createElement('div')
   var text = document.createElement('span')
@@ -103,7 +108,7 @@ function badge (client, settings) {
   widget.id = 'logux-badge'
 
   function injectStateStyles (state) {
-    injectStyles(widget, settings.styles[state])
+    injectStyles(widget, options.styles[state])
   }
 
   function injectIcon (state) {
@@ -127,13 +132,13 @@ function badge (client, settings) {
   })
 
   // inject base widget styles
-  injectStyles(widget, settings.styles.baseStyles)
+  injectStyles(widget, options.styles.baseStyles)
 
   // inject base text container styles
   injectStyles(text, {
     display: 'table-cell',
     verticalAlign: 'middle',
-    height: settings.styles.baseStyles.height
+    height: options.styles.baseStyles.height
   })
 
   setPosition(widget, position)
