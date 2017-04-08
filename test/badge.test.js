@@ -3,15 +3,11 @@ var TestTime = require('logux-core').TestTime
 var BaseSync = require('logux-sync').BaseSync
 var TestPair = require('logux-sync').TestPair
 
-var badgeMessages = require('../badge/ru')
-var badgeStyles = require('../badge/default')
+var messages = require('../badge/en')
+var styles = require('../badge/default')
 var badge = require('../badge')
 
-var OPTIONS = {
-  duration: 10,
-  messages: badgeMessages,
-  styles: badgeStyles
-}
+var OPTS = { messages: messages, styles: styles }
 
 function findBadgeNode () {
   return document.querySelector('div')
@@ -25,6 +21,13 @@ function wait (ms) {
   return new Promise(function (resolve) {
     setTimeout(resolve, ms)
   })
+}
+
+function merge (a, b) {
+  var result = { }
+  for (var i in a) result[i] = a[i]
+  for (var j in b) result[j] = b[j]
+  return result
 }
 
 function createTest () {
@@ -43,7 +46,7 @@ afterEach(function () {
 
 it('should inject base widget styles', function () {
   return createTest().then(function (test) {
-    badge({ sync: test.leftSync }, OPTIONS)
+    badge({ sync: test.leftSync }, OPTS)
 
     expect(findBadgeNode().style.position).toEqual('fixed')
     expect(findBadgeNode().childNodes[0].style.display).toEqual('table-cell')
@@ -52,7 +55,7 @@ it('should inject base widget styles', function () {
 
 it('should handle synchronized state', function () {
   return createTest().then(function (test) {
-    badge({ sync: test.leftSync }, OPTIONS)
+    badge({ sync: test.leftSync }, merge(OPTS, { duration: 10 }))
 
     test.leftSync.connected = true
     test.leftSync.setState('synchronized')
@@ -65,7 +68,7 @@ it('should handle synchronized state', function () {
     test.leftSync.setState('synchronized')
     expect(findBadgeNode().style.display).toEqual('block')
     expect(findBadgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
-    expect(getBadgeMessage()).toEqual(badgeMessages.synchronized)
+    expect(getBadgeMessage()).toEqual(messages.synchronized)
     return wait(10)
   }).then(function () {
     expect(findBadgeNode().style.display).toEqual('none')
@@ -74,7 +77,7 @@ it('should handle synchronized state', function () {
 
 it('should handle disconnected state', function () {
   return createTest().then(function (test) {
-    badge({ sync: test.leftSync }, OPTIONS)
+    badge({ sync: test.leftSync }, OPTS)
 
     test.leftSync.connected = true
     test.leftSync.setState('connected')
@@ -82,26 +85,26 @@ it('should handle disconnected state', function () {
     test.leftSync.setState('disconnected')
     expect(findBadgeNode().style.display).toEqual('block')
     expect(findBadgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
-    expect(getBadgeMessage()).toEqual(badgeMessages.disconnected)
+    expect(getBadgeMessage()).toEqual(messages.disconnected)
   })
 })
 
 it('should handle wait state', function () {
   return createTest().then(function (test) {
-    badge({ sync: test.leftSync }, OPTIONS)
+    badge({ sync: test.leftSync }, OPTS)
 
     test.leftSync.connected = false
     test.leftSync.setState('disconnected')
     test.leftSync.setState('wait')
     expect(findBadgeNode().style.display).toEqual('block')
     expect(findBadgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
-    expect(getBadgeMessage()).toEqual(badgeMessages.wait)
+    expect(getBadgeMessage()).toEqual(messages.wait)
   })
 })
 
 it('should handle sending state', function () {
   return createTest().then(function (test) {
-    badge({ sync: test.leftSync }, OPTIONS)
+    badge({ sync: test.leftSync }, OPTS)
 
     test.leftSync.connected = false
     test.leftSync.setState('disconnected')
@@ -113,13 +116,13 @@ it('should handle sending state', function () {
     test.leftSync.setState('sending')
     expect(findBadgeNode().style.display).toEqual('block')
     expect(findBadgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
-    expect(getBadgeMessage()).toEqual(badgeMessages.sending)
+    expect(getBadgeMessage()).toEqual(messages.sending)
   })
 })
 
 it('should handle connecting state', function () {
   return createTest().then(function (test) {
-    badge({ sync: test.leftSync }, OPTIONS)
+    badge({ sync: test.leftSync }, OPTS)
 
     test.leftSync.connected = false
     test.leftSync.setState('disconnected')
@@ -131,26 +134,26 @@ it('should handle connecting state', function () {
     test.leftSync.setState('connecting')
     expect(findBadgeNode().style.display).toEqual('block')
     expect(findBadgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
-    expect(getBadgeMessage()).toEqual(badgeMessages.connecting)
+    expect(getBadgeMessage()).toEqual(messages.connecting)
   })
 })
 
 it('should handle error', function () {
   return createTest().then(function (test) {
-    badge({ sync: test.leftSync }, OPTIONS)
+    badge({ sync: test.leftSync }, OPTS)
 
     test.leftSync.emitter.emit('error', { type: 'any error' })
     expect(findBadgeNode().style.display).toEqual('block')
     expect(findBadgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
-    expect(getBadgeMessage()).toEqual(badgeMessages.error)
+    expect(getBadgeMessage()).toEqual(messages.error)
   })
 })
 
 it('should handle server errors', function () {
   return createTest().then(function (test) {
-    badge({ sync: test.leftSync }, OPTIONS)
+    badge({ sync: test.leftSync }, OPTS)
 
-    var errorOptions = {
+    var errorOPTS = {
       testError: 'testError',
       supported: [1, 2, 3],
       used: [1, 2, 3]
@@ -160,42 +163,38 @@ it('should handle server errors', function () {
     test.leftSync.emitter.emit('error', error)
     expect(findBadgeNode().style.display).toEqual('block')
     expect(findBadgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
-    expect(getBadgeMessage()).toEqual(badgeMessages.error)
+    expect(getBadgeMessage()).toEqual(messages.error)
 
-    error = new SyncError(test.leftSync, 'wrong-subprotocol', errorOptions)
+    error = new SyncError(test.leftSync, 'wrong-subprotocol', errorOPTS)
     test.leftSync.emitter.emit('error', error)
     expect(findBadgeNode().style.display).toEqual('block')
     expect(findBadgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
-    expect(getBadgeMessage()).toEqual(badgeMessages.protocolError)
+    expect(getBadgeMessage()).toEqual(messages.protocolError)
 
-    error = new SyncError(test.leftSync, 'wrong-protocol', errorOptions)
+    error = new SyncError(test.leftSync, 'wrong-protocol', errorOPTS)
     test.leftSync.emitter.emit('error', error)
     expect(findBadgeNode().style.display).toEqual('block')
     expect(findBadgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
-    expect(getBadgeMessage()).toEqual(badgeMessages.protocolError)
+    expect(getBadgeMessage()).toEqual(messages.protocolError)
   })
 })
 
 it('should handle client error', function () {
   return createTest().then(function (test) {
-    badge({ sync: test.leftSync }, OPTIONS)
+    badge({ sync: test.leftSync }, OPTS)
 
     var error = new SyncError(test.leftSync, 'test', 'type', true)
     test.leftSync.emitter.emit('clientError', error)
 
     expect(findBadgeNode().style.display).toEqual('block')
     expect(findBadgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
-    expect(getBadgeMessage()).toEqual(badgeMessages.error)
+    expect(getBadgeMessage()).toEqual(messages.error)
   })
 })
 
 it('should handle bottom and left side of position setting', function () {
-  var opts = { }
-  for (var i in OPTIONS) opts[i] = OPTIONS[i]
-  opts.position = 'bottom-left'
-
   return createTest().then(function (test) {
-    badge({ sync: test.leftSync }, opts)
+    badge({ sync: test.leftSync }, merge(OPTS, { position: 'bottom-left' }))
 
     expect(findBadgeNode().style.bottom).toEqual('0px')
     expect(findBadgeNode().style.left).toEqual('0px')
@@ -203,12 +202,8 @@ it('should handle bottom and left side of position setting', function () {
 })
 
 it('should handle top and right side of position setting', function () {
-  var opts = { }
-  for (var i in OPTIONS) opts[i] = OPTIONS[i]
-  opts.position = 'top-right'
-
   return createTest().then(function (test) {
-    badge({ sync: test.leftSync }, opts)
+    badge({ sync: test.leftSync }, merge(OPTS, { position: 'top-right' }))
 
     expect(findBadgeNode().style.top).toEqual('0px')
     expect(findBadgeNode().style.right).toEqual('0px')
@@ -216,12 +211,8 @@ it('should handle top and right side of position setting', function () {
 })
 
 it('should handle center/middle position setting', function () {
-  var opts = { }
-  for (var i in OPTIONS) opts[i] = OPTIONS[i]
-  opts.position = 'center-middle'
-
   return createTest().then(function (test) {
-    badge({ sync: test.leftSync }, opts)
+    badge({ sync: test.leftSync }, merge(OPTS, { position: 'center-middle' }))
 
     expect(findBadgeNode().style.top).toEqual('50%')
     expect(findBadgeNode().style.left).toEqual('50%')
@@ -231,7 +222,7 @@ it('should handle center/middle position setting', function () {
 
 it('should return unbind function and remove badge from DOM', function () {
   return createTest().then(function (test) {
-    var unbind = badge({ sync: test.leftSync }, OPTIONS)
+    var unbind = badge({ sync: test.leftSync }, OPTS)
     unbind()
 
     test.leftSync.emitter.emit('error', { type: 'wrong-protocol' })
