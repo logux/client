@@ -102,7 +102,7 @@ it('shows server node ID', function () {
     client.sync.connected = false
     client.sync.setState('wait')
     expect(console.log).toHaveBeenLastCalledWith(
-        'Logux: state was changed to wait'
+      'Logux: state was changed to wait'
     )
   })
 })
@@ -129,11 +129,11 @@ it('shows bold server node ID', function () {
     client.sync.connected = false
     client.sync.setState('wait')
     expect(console.log).toHaveBeenLastCalledWith(
-        '%cLogux:%c state was changed to %cwait%c',
-        'color: #ffa200',
-        '',
-        'font-weight: bold',
-        ''
+      '%cLogux:%c state was changed to %cwait%c',
+      'color: #ffa200',
+      '',
+      'font-weight: bold',
+      ''
     )
   })
 })
@@ -146,7 +146,20 @@ it('shows state event', function () {
     client.sync.emitter.emit('state')
 
     expect(console.log).toBeCalledWith(
-        'Logux: state was changed to disconnected'
+      'Logux: state was changed to disconnected'
+    )
+  })
+})
+
+it('shows role event', function () {
+  return createClient().then(function (client) {
+    log(client, { color: false })
+
+    client.sync.connected = false
+    client.emitter.emit('role')
+
+    expect(console.log).toBeCalledWith(
+      'Logux: tab role was changed to leader'
     )
   })
 })
@@ -166,9 +179,9 @@ it('shows colorized error event', function () {
     var error = new SyncError(client.sync, 'test')
     client.sync.connection.emitter.emit('error', error)
     expect(console.error).toBeCalledWith(
-        '%cLogux:%c error: test',
-        'color: #ffa200',
-        ''
+      '%cLogux:%c error: test',
+      'color: #ffa200',
+      ''
     )
   })
 })
@@ -192,9 +205,9 @@ it('shows bold server error', function () {
     client.sync.emitter.emit('clientError', error)
 
     expect(console.error).toBeCalledWith(
-        '%cLogux:%c server sent error: test',
-        'color: #ffa200',
-        ''
+      '%cLogux:%c server sent error: test',
+      'color: #ffa200',
+      ''
     )
   })
 })
@@ -289,10 +302,12 @@ it('allows to disable some message types', function () {
       error: false,
       clean: false,
       color: false,
+      role: false,
       add: false
     })
 
     client.sync.emitter.emit('state')
+    client.emitter.emit('role')
 
     var error = new SyncError(client.sync, 'test', 'type', true)
     client.sync.emitter.emit('error', error)

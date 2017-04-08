@@ -33,7 +33,10 @@ var client = new Client({
   userId: 10,
   url: 'wss://example.com/'
 })
-client.sync = new ClientSync(client.sync.localNodeId, client.log, pair.left)
+
+var sync = new ClientSync(client.sync.localNodeId, client.log, pair.left)
+sync.emitter = client.sync.emitter
+client.sync = sync
 
 attention(client)
 confirm(client)
@@ -49,7 +52,7 @@ badge(client, {
 })
 log(client)
 
-client.sync.connection.connect()
+client.start()
 
 document.all.connection.onchange = function (e) {
   if (e.target.checked) {

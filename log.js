@@ -36,10 +36,11 @@ function colorify (color, text, action, meta) {
  *
  * @param {Client} client Observed Client instance.
  * @param {object} [messages] Disable specific message types.
- * @param {boolean} [messages.state] Disable state messages.
+ * @param {boolean} [messages.state] Disable connection state messages.
+ * @param {boolean} [messages.role] Disable tab role messages.
  * @param {boolean} [messages.error] Disable error messages.
- * @param {boolean} [messages.add] Disable add messages.
- * @param {boolean} [messages.clean] Disable clean messages.
+ * @param {boolean} [messages.add] Disable action add messages.
+ * @param {boolean} [messages.clean] Disable action clean messages.
  * @param {boolean} [messages.color] Disable colors in logs.
  *
  * @return {Function} Unbind log listener.
@@ -82,6 +83,12 @@ function log (client, messages) {
       }
 
       showLog('state was changed to ' + style(client.state) + postfix)
+    }))
+  }
+
+  if (messages.role !== false) {
+    unbind.push(client.on('role', function () {
+      showLog('tab role was changed to ' + style(client.role))
     }))
   }
 
