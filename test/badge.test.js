@@ -13,7 +13,7 @@ var OPTIONS = {
 }
 
 function findBadgeNode () {
-  return document.getElementById('logux-badge')
+  return document.querySelector('div')
 }
 
 function getBadgeMessage () {

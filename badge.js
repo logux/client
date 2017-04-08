@@ -117,8 +117,6 @@ function badge (client, options) {
   var widget = document.createElement('div')
   var text = document.createElement('span')
 
-  widget.id = 'logux-badge'
-
   function injectStateStyles (state) {
     injectStyles(widget, options.styles[state])
   }
