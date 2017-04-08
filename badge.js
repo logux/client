@@ -17,24 +17,24 @@ function setPosition (element, position) {
   parsePosition.forEach(function (pos) {
     switch (pos) {
       case 'top':
-        element.style.top = '20px'
+        element.style.top = '0'
         break
       case 'middle':
         element.style.top = '50%'
         element.style.transform = 'translateY(-50%)'
         break
       case 'bottom':
-        element.style.bottom = '20px'
+        element.style.bottom = '0'
         break
       case 'left':
-        element.style.left = '20px'
+        element.style.left = '0'
         break
       case 'center':
         element.style.left = '50%'
         element.style.transform = 'translateX(-50%)'
         break
       case 'right':
-        element.style.right = '20px'
+        element.style.right = '0'
         break
     }
   })
@@ -112,7 +112,6 @@ function badge (client, options) {
   var sync = client.sync
 
   var messages = options.messages
-  var icons = options.styles.icons
   var position = options.position || 'bottom-right'
 
   var widget = document.createElement('div')
@@ -122,10 +121,6 @@ function badge (client, options) {
 
   function injectStateStyles (state) {
     injectStyles(widget, options.styles[state])
-  }
-
-  function injectIcon (state) {
-    widget.style.backgroundImage = 'url(' + icons[state] + ')'
   }
 
   injectStyles(widget, RESET)
@@ -139,7 +134,6 @@ function badge (client, options) {
   var isConnecting = false
 
   unbind.push(sync.on('state', function () {
-    injectIcon(sync.state)
     injectStateStyles(sync.state)
 
     switch (sync.state) {
@@ -204,13 +198,9 @@ function badge (client, options) {
     show(widget)
     if (error.type === 'wrong-protocol' || error.type === 'wrong-subprotocol') {
       text.innerHTML = messages.protocolError
-
-      injectIcon('protocolError')
       injectStateStyles('protocolError')
     } else {
       text.innerHTML = messages.error
-
-      injectIcon('error')
       injectStateStyles('error')
     }
   }))
@@ -218,8 +208,6 @@ function badge (client, options) {
   unbind.push(sync.on('clientError', function () {
     show(widget)
     text.innerHTML = messages.error
-
-    injectIcon('error')
     injectStateStyles('error')
   }))
 

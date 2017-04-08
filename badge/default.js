@@ -4,53 +4,56 @@ var offline = require('./offline.svg')
 var error = require('./error.svg')
 
 module.exports = {
-  icons: {
-    protocolError: refresh,
-    synchronized: success,
-    disconnected: offline,
-    connecting: refresh,
-    sending: refresh,
-    error: error,
-    wait: offline
-  },
   base: {
-    position: 'absolute',
-    width: '200px',
-    height: '50px',
-    paddingLeft: '50px',
+    display: 'none',
+    position: 'fixed',
+    width: '15.4em',
+    height: '4em',
+    lineHeight: '1.4',
+    margin: '1.5em',
+    paddingLeft: '4.2em',
     opacity: '0.8',
-    borderRadius: '5px',
-    color: '#ffffff',
-    fontSize: '13px',
+    borderRadius: '0.4em',
+    color: '#fff',
     fontFamily: 'Helvetica Neue, sans-serif',
-    zIndex: '100000',
-    backgroundPosition: '15px center',
-    backgroundRepeat: 'no-repeat'
+    zIndex: '999',
+    backgroundColor: '#000',
+    backgroundPosition: '1.2em center',
+    backgroundRepeat: 'no-repeat',
+    backgroundSize: '1.8em'
   },
   text: {
     display: 'table-cell',
     verticalAlign: 'middle',
-    height: '50px'
+    height: '4em'
   },
   synchronized: {
-    backgroundColor: '#000000'
+    display: 'block',
+    backgroundImage: 'url(' + success + ')'
   },
   disconnected: {
-    backgroundColor: '#000000'
+    display: 'block',
+    backgroundImage: 'url(' + offline + ')'
   },
   wait: {
-    backgroundColor: '#000000'
+    display: 'block',
+    backgroundImage: 'url(' + offline + ')'
   },
   sending: {
-    backgroundColor: '#000000'
+    display: 'block',
+    backgroundImage: 'url(' + refresh + ')'
   },
   connecting: {
-    backgroundColor: '#000000'
+    display: 'block',
+    backgroundImage: 'url(' + refresh + ')'
   },
   error: {
-    backgroundColor: '#F42A2A'
+    display: 'block',
+    backgroundColor: '#F42A2A',
+    backgroundImage: 'url(' + error + ')'
   },
   protocolError: {
-    backgroundColor: '#000000'
+    display: 'block',
+    backgroundImage: 'url(' + refresh + ')'
   }
 }
