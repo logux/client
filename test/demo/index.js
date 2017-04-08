@@ -20,7 +20,7 @@ var faviconNormal = require('./normal.png')
 var faviconOffline = require('./offline.png')
 var faviconError = require('./error.png')
 
-var pair = new LocalPair()
+var pair = new LocalPair(500)
 
 var serverLog = new Log({
   store: new MemoryStore(),
