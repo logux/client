@@ -22,10 +22,7 @@ var faviconError = require('./error.png')
 
 var pair = new LocalPair(500)
 
-var serverLog = new Log({
-  store: new MemoryStore(),
-  nodeId: 'server'
-})
+var serverLog = new Log({ store: new MemoryStore(), nodeId: 'server' })
 new BaseSync('server', serverLog, pair.right)
 
 var client = new Client({
