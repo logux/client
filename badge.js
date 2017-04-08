@@ -91,6 +91,7 @@ var RESET = {
  * @param {object} options.messages.error Error text.
  * @param {object} options.messages.protocolError Protocol error text.
  * @param {string} [options.position="bottom-right"] Widget position.
+ * @param {number} [options.duration=3000] Synchronized state duration.
  *
  * @return {Function} Unbind badge listener and remove widget from DOM.
  *
@@ -113,21 +114,24 @@ function badge (client, options) {
 
   var messages = options.messages
   var position = options.position || 'bottom-right'
+  var styles = options.styles
+
+  var duration = options.duration
+  if (typeof duration === 'undefined') duration = 3000
 
   var widget = document.createElement('div')
   var text = document.createElement('span')
 
   function injectStateStyles (state) {
-    injectStyles(widget, options.styles[state])
+    injectStyles(widget, styles[state])
   }
 
   injectStyles(widget, RESET)
-  injectStyles(widget, options.styles.base)
-  injectStyles(text, options.styles.text)
+  injectStyles(widget, styles.base)
+  injectStyles(text, styles.text)
   setPosition(widget, position)
 
   var unbind = []
-
   var isWaiting = false
   var isConnecting = false
 
@@ -145,7 +149,7 @@ function badge (client, options) {
 
           setTimeout(function () {
             hide(widget)
-          }, 3000)
+          }, duration)
         } else {
           hide(widget)
         }

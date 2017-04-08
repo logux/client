@@ -8,8 +8,9 @@ var badgeStyles = require('../badge/default')
 var badge = require('../badge')
 
 var OPTIONS = {
-  styles: badgeStyles,
-  messages: badgeMessages
+  duration: 10,
+  messages: badgeMessages,
+  styles: badgeStyles
 }
 
 function findBadgeNode () {
@@ -20,9 +21,15 @@ function getBadgeMessage () {
   return findBadgeNode().childNodes[0].innerHTML
 }
 
+function wait (ms) {
+  return new Promise(function (resolve) {
+    setTimeout(resolve, ms)
+  })
+}
+
 function createTest () {
   var pair = new TestPair()
-  pair.leftSync = new BaseSync('test1', TestTime.getLog(), pair.left)
+  pair.leftSync = new BaseSync('client', TestTime.getLog(), pair.left)
   pair.leftSync.catch(function () {})
   return pair.left.connect().then(function () {
     return pair
@@ -43,7 +50,7 @@ it('should inject base widget styles', function () {
   })
 })
 
-it('should handle synchronized state', function (done) {
+it('should handle synchronized state', function () {
   return createTest().then(function (test) {
     badge({ sync: test.leftSync }, OPTIONS)
 
@@ -59,10 +66,9 @@ it('should handle synchronized state', function (done) {
     expect(findBadgeNode().style.display).toEqual('block')
     expect(findBadgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
     expect(getBadgeMessage()).toEqual(badgeMessages.synchronized)
-    setTimeout(function () {
-      expect(findBadgeNode().style.display).toEqual('none')
-      done()
-    }, 3000)
+    return wait(10)
+  }).then(function () {
+    expect(findBadgeNode().style.display).toEqual('none')
   })
 })
 
