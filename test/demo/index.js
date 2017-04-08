@@ -53,6 +53,12 @@ badge(client, {
 })
 log(client)
 
+client.on('role', function () {
+  var isLeader = client.role === 'leader'
+  document.all.connection.disabled = !isLeader
+  document.all.disabled.style.display = isLeader ? 'none' : 'inline'
+})
+
 client.start()
 
 document.all.connection.onchange = function (e) {
