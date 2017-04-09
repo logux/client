@@ -39,7 +39,7 @@ it('receives errors', function () {
   return createTest().then(function (test) {
     attention({ sync: test.leftSync })
     test.left.emitter.emit('error', new Error('test'))
-    expect(document.title).toBe('title*')
+    expect(document.title).toBe('* title')
   })
 })
 
@@ -72,7 +72,7 @@ it('sets old title when user open a tab', function () {
     attention({ sync: test.leftSync })
 
     test.left.emitter.emit('error', new Error('test'))
-    expect(document.title).toBe('title*')
+    expect(document.title).toBe('* title')
 
     nextHidden = false
     listener()
@@ -86,7 +86,7 @@ it('does not double title changes', function () {
 
     test.leftSync.emitter.emit('error', new Error('test'))
     test.leftSync.emitter.emit('error', new Error('test'))
-    expect(document.title).toBe('title*')
+    expect(document.title).toBe('* title')
   })
 })
 

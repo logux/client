@@ -25,7 +25,7 @@ function attention (client) {
   function blink () {
     if (doc.hidden && !originTitle) {
       originTitle = doc.title
-      doc.title += '*'
+      doc.title = '* ' + doc.title
     } else {
       restoreTitle()
     }
