@@ -72,7 +72,7 @@ it('does not confirm on synchronized state', function () {
   })
 })
 
-it('does not config on follower tab', function () {
+it('does not confirm on follower tab', function () {
   return createClient().then(function (client) {
     confirm(client)
     client.sync.setState('wait')
