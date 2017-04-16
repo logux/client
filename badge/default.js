@@ -17,7 +17,6 @@ module.exports = {
     color: '#fff',
     fontFamily: 'Helvetica Neue, sans-serif',
     zIndex: '999',
-    backgroundColor: '#000',
     backgroundPosition: '1.2em center',
     backgroundRepeat: 'no-repeat',
     backgroundSize: '1.8em'
@@ -29,22 +28,27 @@ module.exports = {
   },
   synchronized: {
     display: 'block',
+    backgroundColor: '#000',
     backgroundImage: 'url(' + success + ')'
   },
   disconnected: {
     display: 'block',
+    backgroundColor: '#000',
     backgroundImage: 'url(' + offline + ')'
   },
   wait: {
     display: 'block',
+    backgroundColor: '#000',
     backgroundImage: 'url(' + offline + ')'
   },
   sending: {
     display: 'block',
+    backgroundColor: '#000',
     backgroundImage: 'url(' + refresh + ')'
   },
   connecting: {
     display: 'block',
+    backgroundColor: '#000',
     backgroundImage: 'url(' + refresh + ')'
   },
   error: {
@@ -54,6 +58,7 @@ module.exports = {
   },
   protocolError: {
     display: 'block',
+    backgroundColor: '#000',
     backgroundImage: 'url(' + refresh + ')'
   }
 }
