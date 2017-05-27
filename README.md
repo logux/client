@@ -66,13 +66,13 @@ Create Logux Client instance in your client-side JS;
 `onready` event handler seems to be a good place for this:
 
 ```js
-var Client = require('logux-client/client')
+var CrossTabClient = require('logux-client/cross-tab-client')
 
 var user = document.querySelector('meta[name=user]')
 var token = document.querySelector('meta[name=token]')
 var server = document.querySelector('meta[name=server]')
 
-var logux = new Client({
+var logux = new CrossTabClient({
   credentials: token.content,
   subprotocol: '1.0.0',
   userId: user.content,
@@ -80,6 +80,10 @@ var logux = new Client({
 })
 logux.start()
 ```
+
+If you sure, that your application will not be runned in separated browser
+tabs (for instance, you are developing a app for kiosk), you can use
+`Client` instead of `CrossTabClient`.
 
 
 ### Process Actions
