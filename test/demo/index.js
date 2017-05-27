@@ -4,7 +4,7 @@ var LocalPair = require('logux-sync/local-pair')
 var BaseSync = require('logux-sync/base-sync')
 var Log = require('logux-core/log')
 
-var Client = require('../../client')
+var CrossTabClient = require('../../cross-tab-client')
 
 var pair = new LocalPair()
 
@@ -14,7 +14,7 @@ var serverLog = new Log({
 })
 new BaseSync('server', serverLog, pair.right)
 
-var client = new Client({
+var client = new CrossTabClient({
   subprotocol: '1.0.0',
   userId: 10,
   url: 'wss://example.com/'
