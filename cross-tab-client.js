@@ -42,9 +42,7 @@ function setRole (client, role) {
 
     clearTimeout(client.watching)
     if (role === 'leader') {
-      if (typeof localStorage !== 'undefined') {
-        localStorage.removeItem(storageKey(client, 'state'))
-      }
+      localStorage.removeItem(storageKey(client, 'state'))
       client.leadership = setInterval(function () {
         leaderPing(client)
       }, 2000)
