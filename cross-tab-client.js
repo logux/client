@@ -291,6 +291,14 @@ CrossTabClient.prototype = {
 
 }
 
+/**
+ * Is leader tab connected to server.
+ *
+ * @name connected
+ * @type {boolean}
+ * @memberof CrossTabClient#
+ */
+
 CrossTabClient.prototype = merge(CrossTabClient.prototype, Client.prototype)
 
 Object.defineProperty(CrossTabClient.prototype, 'connected', {
