@@ -45,7 +45,7 @@ function setRole (client, role) {
       localStorage.removeItem(storageKey(client, 'state'))
       client.leadership = setInterval(function () {
         leaderPing(client)
-      }, 2000)
+      }, client.leaderPing)
       sync.connection.connect()
     } else {
       clearTimeout(client.elections)
@@ -130,7 +130,11 @@ function CrossTabClient (options) {
    * })
    */
   this.role = 'candidate'
+
   this.roleTimeout = 3000 + Math.floor(Math.random() * 1000)
+  this.leaderTimeout = 5000
+  this.leaderPing = 2000
+  this.electionDelay = 1000
 
   /**
    * Leader tab synchronization state. It can differs
@@ -206,7 +210,9 @@ CrossTabClient.prototype = {
 
     var activeLeader = false
     var leader = getLeader(this)
-    if (leader[1] && leader[1] >= Date.now() - 5000) activeLeader = true
+    if (leader[1] && leader[1] >= Date.now() - this.leaderTimeout) {
+      activeLeader = true
+    }
 
     if (activeLeader) {
       setRole(this, 'follower')
@@ -223,7 +229,7 @@ CrossTabClient.prototype = {
           setRole(client, 'follower')
           watchForLeader(client)
         }
-      }, 1000)
+      }, this.electionDelay)
     }
   },
 
