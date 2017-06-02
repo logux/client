@@ -24,11 +24,14 @@ afterEach(function () {
 })
 
 function createClient () {
-  return new CrossTabClient({
+  var client = new CrossTabClient({
     subprotocol: '1.0.0',
     userId: false,
     url: 'wss://localhost:1337'
   })
+  client.electionDelay = 100
+  client.leaderPing = 200
+  return client
 }
 
 function emitStorage (name, value) {
@@ -201,7 +204,7 @@ it('stops election in leader check', function () {
   expect(client.role).toEqual('candidate')
 
   localStorage.setItem('logux:false:leader', '["",' + Date.now() + ']')
-  return wait(1010).then(function () {
+  return wait(client.electionDelay + 10).then(function () {
     expect(client.role).toEqual('follower')
     expect(client.watching).toBeDefined()
   })
@@ -209,17 +212,18 @@ it('stops election in leader check', function () {
 
 it('pings on leader role', function () {
   global.localStorage = fakeLocalStorage
-  localStorage.setItem('logux:false:leader', '["",' + (Date.now() - 6000) + ']')
   var client = createClient()
-
   client.sync.connection.disconnect = jest.fn()
+
+  var last = Date.now() - client.leaderTimeout - 10
+  localStorage.setItem('logux:false:leader', '["",' + last + ']')
 
   client.start()
   expect(client.role).toEqual('candidate')
-  return wait(1010).then(function () {
+  return wait(client.electionDelay + 10).then(function () {
     expect(client.role).toEqual('leader')
     expect(client.watching).not.toBeDefined()
-    return wait(2010)
+    return wait(client.leaderPing + 10)
   }).then(function () {
     var data = JSON.parse(localStorage.getItem('logux:false:leader'))
     expect(data[0]).toEqual(client.id)
@@ -238,10 +242,12 @@ it('has random timeout', function () {
 })
 
 it('replaces dead leader', function () {
-  global.localStorage = fakeLocalStorage
-  localStorage.setItem('logux:false:leader', '["",' + (Date.now() - 4900) + ']')
   var client = createClient()
   client.roleTimeout = 200
+
+  global.localStorage = fakeLocalStorage
+  var last = Date.now() - client.leaderTimeout + 10
+  localStorage.setItem('logux:false:leader', '["",' + last + ']')
 
   client.start()
   return wait(client.roleTimeout).then(function () {
@@ -252,10 +258,11 @@ it('replaces dead leader', function () {
 it('updates state if tab is a leader', function () {
   global.localStorage = fakeLocalStorage
   var client = createClient()
+
   client.start()
   expect(client.state).toEqual('disconnected')
 
-  return wait(1050).then(function () {
+  return wait(client.electionDelay + 10).then(function () {
     client.sync.state = 'synchronized'
     client.sync.emitter.emit('state')
     expect(client.state).toEqual('synchronized')
