@@ -320,3 +320,27 @@ it('has connected shortcut', function () {
   client.state = 'sending'
   expect(client.connected).toBeTruthy()
 })
+
+it('works on IE storage event', function () {
+  global.localStorage = fakeLocalStorage
+  var client = createClient()
+
+  var events = 0
+  client.on('add', function () {
+    events += 1
+  })
+  client.on('clean', function () {
+    events += 1
+  })
+
+  client.start()
+  emitStorage('logux:false:leader', localStorage.getItem('logux:false:leader'))
+
+  return wait(client.electionDelay + 10).then(function () {
+    expect(client.role).toEqual('leader')
+
+    emitStorage('logux:false:add', '["' + client.id + '",{},{}]')
+    emitStorage('logux:false:clean', '["' + client.id + '",{},{}]')
+    expect(events).toEqual(0)
+  })
+})
