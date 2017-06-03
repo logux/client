@@ -213,6 +213,13 @@ it('sends options to sync', function () {
   expect(client.sync.options.ping).toEqual(1000)
 })
 
+it('connects', function () {
+  var client = createClient()
+  client.sync.connection.connect = jest.fn()
+  client.start()
+  expect(client.sync.connection.connect).toHaveBeenCalled()
+})
+
 it('display server debug error stacktrace with prefix', function () {
   console.error = jest.fn()
   var client = createClient()
