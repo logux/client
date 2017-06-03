@@ -163,11 +163,15 @@ function CrossTabClient (options) {
 
   this.log.on('add', function (action, meta) {
     client.emitter.emit('add', action, meta)
-    if (meta.tab !== client.id) sendToTabs(client, 'add', [action, meta])
+    if (meta.tab !== client.id) {
+      sendToTabs(client, 'add', [client.id, action, meta])
+    }
   })
   this.log.on('clean', function (action, meta) {
     client.emitter.emit('clean', action, meta)
-    if (meta.tab !== client.id) sendToTabs(client, 'clean', [action, meta])
+    if (meta.tab !== client.id) {
+      sendToTabs(client, 'clean', [client.id, action, meta])
+    }
   })
 
   this.storageListener = function (e) {
@@ -176,17 +180,24 @@ function CrossTabClient (options) {
     var data
     if (e.key === storageKey(client, 'add')) {
       data = JSON.parse(e.newValue)
-      if (!data[1].tab || data[1].tab === client.id) {
-        client.emitter.emit('add', data[0], data[1])
+      if (data[0] !== client.id) {
+        if (!data[2].tab || data[2].tab === client.id) {
+          client.emitter.emit('add', data[1], data[2])
+        }
       }
     } else if (e.key === storageKey(client, 'clean')) {
       data = JSON.parse(e.newValue)
-      if (!data[1].tab || data[1].tab === client.id) {
-        client.emitter.emit('clean', data[0], data[1])
+      if (data[0] !== client.id) {
+        if (!data[2].tab || data[2].tab === client.id) {
+          client.emitter.emit('clean', data[1], data[2])
+        }
       }
     } else if (e.key === storageKey(client, 'leader')) {
-      setRole(client, 'follower')
-      watchForLeader(client)
+      data = JSON.parse(e.newValue)
+      if (data[0] !== client.id) {
+        setRole(client, 'follower')
+        watchForLeader(client)
+      }
     } else if (e.key === storageKey(client, 'state')) {
       var state = JSON.parse(localStorage.getItem(e.key))
       if (client.state !== state) {
