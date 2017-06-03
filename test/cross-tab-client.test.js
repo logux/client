@@ -255,6 +255,24 @@ it('replaces dead leader', function () {
   })
 })
 
+it('disconnects on leader changes', function () {
+  var client = createClient()
+
+  client.sync.connection.disconnect = jest.fn()
+  global.localStorage = fakeLocalStorage
+
+  client.start()
+  return wait(client.electionDelay + 10).then(function () {
+    client.sync.state = 'connected'
+
+    var now = Date.now()
+    localStorage.setItem('logux:false:leader', '["",' + now + ']')
+    emitStorage('logux:false:leader', '["",' + now + ']')
+
+    expect(client.sync.connection.disconnect).toHaveBeenCalled()
+  })
+})
+
 it('updates state if tab is a leader', function () {
   global.localStorage = fakeLocalStorage
   var client = createClient()
