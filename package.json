@@ -46,9 +46,9 @@
     "lint": "eslint *.js test/**/*.js",
     "docs": "jsdoc --configure .jsdocrc *.js",
     "test": "jest --coverage && yarn run lint && yarn run spellcheck",
-    "prebundle": "webpack cross-tab-client.js bundle/index.js",
-    "bundle": "gzip -9 -f bundle/index.js",
-    "postbundle": "ls -lh bundle/*.gz | awk '{print \"Size:\", $5\"B\"}'",
+    "presize": "webpack cross-tab-client.js bundle/index.js",
+    "size": "gzip -9 -f bundle/index.js",
+    "postsize": "ls -lh bundle/*.gz | awk '{print \"Size:\", $5\"B\"}'",
     "demo": "webpack-dev-server --config test/demo/webpack.config"
   },
   "jest": {
