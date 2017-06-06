@@ -29,8 +29,9 @@ function createClient () {
     userId: false,
     url: 'wss://localhost:1337'
   })
-  client.electionDelay = 100
-  client.leaderPing = 200
+  client.electionDelay = client.electionDelay / 20
+  client.leaderTimeout = client.leaderTimeout / 20
+  client.leaderPing = client.leaderPing / 20
   return client
 }
 
@@ -242,15 +243,18 @@ it('has random timeout', function () {
 })
 
 it('replaces dead leader', function () {
+  global.localStorage = fakeLocalStorage
   var client = createClient()
   client.roleTimeout = 200
 
-  global.localStorage = fakeLocalStorage
-  var last = Date.now() - client.leaderTimeout + 10
+  var last = Date.now() + client.leaderTimeout
   localStorage.setItem('logux:false:leader', '["",' + last + ']')
 
   client.start()
   return wait(client.roleTimeout).then(function () {
+    expect(client.role).toEqual('follower')
+    return wait(client.leaderTimeout + client.roleTimeout)
+  }).then(function () {
     expect(client.role).toEqual('candidate')
   })
 })
