@@ -205,49 +205,10 @@ function CrossTabClient (options) {
     }
   })
 
-  this.storageListener = function (e) {
-    if (e.newValue === null) return
-
-    var data
-    if (e.key === storageKey(client, 'add')) {
-      data = JSON.parse(e.newValue)
-      if (data[0] !== client.id) {
-        if (!data[2].tab || data[2].tab === client.id) {
-          client.emitter.emit('add', data[1], data[2])
-        }
-      }
-    } else if (e.key === storageKey(client, 'clean')) {
-      data = JSON.parse(e.newValue)
-      if (data[0] !== client.id) {
-        if (!data[2].tab || data[2].tab === client.id) {
-          client.emitter.emit('clean', data[1], data[2])
-        }
-      }
-    } else if (e.key === storageKey(client, 'leader')) {
-      data = JSON.parse(e.newValue)
-      if (data.length === 0) {
-        onDeadLeader(client)
-      } else if (data[0] !== client.id && client.role !== 'candidate') {
-        setRole(client, 'follower')
-        watchForLeader(client)
-      }
-    } else if (e.key === storageKey(client, 'state')) {
-      var state = JSON.parse(localStorage.getItem(e.key))
-      if (client.state !== state) {
-        client.state = state
-        client.emitter.emit('state')
-      }
-    }
-  }
-  window.addEventListener('storage', this.storageListener)
-
-  this.unloadListener = function () {
-    if (client.role === 'leader') {
-      client.unloading = true
-      sendToTabs(client, 'leader', [])
-    }
-  }
-  window.addEventListener('unload', this.unloadListener)
+  this.onStorage = this.onStorage.bind(this)
+  this.onUnload = this.onUnload.bind(this)
+  window.addEventListener('storage', this.onStorage)
+  window.addEventListener('unload', this.onUnload)
 }
 
 CrossTabClient.prototype = {
@@ -274,8 +235,8 @@ CrossTabClient.prototype = {
     clearTimeout(this.watching)
     clearTimeout(this.elections)
     clearInterval(this.leadership)
-    window.removeEventListener('storage', this.storageListener)
-    window.removeEventListener('unload', this.unloadListener)
+    window.removeEventListener('storage', this.onStorage)
+    window.removeEventListener('unload', this.onUnload)
   },
 
   clean: function clean () {
@@ -327,6 +288,48 @@ CrossTabClient.prototype = {
    */
   once: function once (event, listener) {
     return this.emitter.once(event, listener)
+  },
+
+  onStorage: function (e) {
+    if (e.newValue === null) return
+
+    var data
+    if (e.key === storageKey(this, 'add')) {
+      data = JSON.parse(e.newValue)
+      if (data[0] !== this.id) {
+        if (!data[2].tab || data[2].tab === this.id) {
+          this.emitter.emit('add', data[1], data[2])
+        }
+      }
+    } else if (e.key === storageKey(this, 'clean')) {
+      data = JSON.parse(e.newValue)
+      if (data[0] !== this.id) {
+        if (!data[2].tab || data[2].tab === this.id) {
+          this.emitter.emit('clean', data[1], data[2])
+        }
+      }
+    } else if (e.key === storageKey(this, 'leader')) {
+      data = JSON.parse(e.newValue)
+      if (data.length === 0) {
+        onDeadLeader(this)
+      } else if (data[0] !== this.id && this.role !== 'candidate') {
+        setRole(this, 'follower')
+        watchForLeader(this)
+      }
+    } else if (e.key === storageKey(this, 'state')) {
+      var state = JSON.parse(localStorage.getItem(e.key))
+      if (this.state !== state) {
+        this.state = state
+        this.emitter.emit('state')
+      }
+    }
+  },
+
+  onUnload: function () {
+    if (this.role === 'leader') {
+      this.unloading = true
+      sendToTabs(this, 'leader', [])
+    }
   }
 
 }
