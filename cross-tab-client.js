@@ -26,7 +26,11 @@ function leaderPing (client) {
 function watchForLeader (client) {
   clearTimeout(client.watching)
   client.watching = setTimeout(function () {
-    client.start()
+    if (!isActiveLeader(client)) {
+      startElection(client)
+    } else {
+      watchForLeader(client)
+    }
   }, client.roleTimeout)
 }
 
@@ -39,7 +43,7 @@ function setRole (client, role) {
     if (role === 'leader') {
       localStorage.removeItem(storageKey(client, 'state'))
       client.leadership = setInterval(function () {
-        leaderPing(client)
+        if (!client.unloading) leaderPing(client)
       }, client.leaderPing)
       sync.connection.connect()
     } else {
@@ -63,6 +67,25 @@ function setRole (client, role) {
 
     client.emitter.emit('role')
   }
+}
+
+function isActiveLeader (client) {
+  var leader = getLeader(client)
+  return leader[1] && leader[1] >= Date.now() - client.leaderTimeout
+}
+
+function startElection (client) {
+  leaderPing(client)
+  setRole(client, 'candidate')
+  client.elections = setTimeout(function () {
+    var data = getLeader(client, 'leader')
+    if (data[0] === client.id) {
+      setRole(client, 'leader')
+    } else {
+      setRole(client, 'follower')
+      watchForLeader(client)
+    }
+  }, client.electionDelay)
 }
 
 /**
@@ -189,7 +212,9 @@ function CrossTabClient (options) {
       }
     } else if (e.key === storageKey(client, 'leader')) {
       data = JSON.parse(e.newValue)
-      if (data[0] !== client.id) {
+      if (data.length === 0) {
+        startElection(client)
+      } else if (data[0] !== client.id && client.role !== 'candidate') {
         setRole(client, 'follower')
         watchForLeader(client)
       }
@@ -202,6 +227,14 @@ function CrossTabClient (options) {
     }
   }
   window.addEventListener('storage', this.storageListener)
+
+  this.unloadListener = function () {
+    if (client.role === 'leader') {
+      client.unloading = true
+      sendToTabs(client, 'leader', [])
+    }
+  }
+  window.addEventListener('unload', this.unloadListener)
 }
 
 CrossTabClient.prototype = {
@@ -214,28 +247,11 @@ CrossTabClient.prototype = {
       return
     }
 
-    var activeLeader = false
-    var leader = getLeader(this)
-    if (leader[1] && leader[1] >= Date.now() - this.leaderTimeout) {
-      activeLeader = true
-    }
-
-    if (activeLeader) {
+    if (isActiveLeader(this)) {
       setRole(this, 'follower')
       watchForLeader(this)
     } else {
-      var client = this
-      leaderPing(client)
-      setRole(client, 'candidate')
-      client.elections = setTimeout(function () {
-        var data = getLeader(client, 'leader')
-        if (data[0] === client.id) {
-          setRole(client, 'leader')
-        } else {
-          setRole(client, 'follower')
-          watchForLeader(client)
-        }
-      }, this.electionDelay)
+      startElection(this)
     }
   },
 
@@ -246,6 +262,7 @@ CrossTabClient.prototype = {
     clearTimeout(this.elections)
     clearInterval(this.leadership)
     window.removeEventListener('storage', this.storageListener)
+    window.removeEventListener('unload', this.unloadListener)
   },
 
   clean: function clean () {
