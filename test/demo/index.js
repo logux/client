@@ -6,7 +6,7 @@ var Log = require('logux-core/log')
 
 var CrossTabClient = require('../../cross-tab-client')
 
-var pair = new LocalPair()
+var pair = new LocalPair(500)
 
 var serverLog = new Log({
   store: new MemoryStore(),
@@ -27,6 +27,8 @@ var count = 0
 function emoji (state) {
   if (state === 'disconnected') {
     return '😴'
+  } else if (state === 'connecting') {
+    return '🔌'
   } else if (state === 'wait') {
     return '⏲️'
   } else {
@@ -44,8 +46,6 @@ function updateTitle () {
 
 client.on('state', function () {
   document.all.connection.checked = client.connected
-})
-client.on('state', function () {
   updateTitle()
 })
 client.on('role', function () {
