@@ -377,10 +377,60 @@ it('does not sends event on tab closing in following mode', function () {
 it('starts election on leader unload', function () {
   global.localStorage = fakeLocalStorage
   client = createClient()
+
   localStorage.setItem('logux:false:leader', '["",' + Date.now() + ']')
+  localStorage.setItem('logux:false:state', '"synchronized"')
+
+  client.start()
   return wait(client.electionDelay + 10).then(function () {
     emitStorage('logux:false:leader', '[]')
     expect(client.role).toEqual('candidate')
+    expect(client.state).toEqual('disconnected')
+    expect(localStorage.getItem('logux:false:state')).toEqual('"disconnected"')
     expect(localStorage.getItem('logux:false:leader')).toContain(client.id)
+  })
+})
+
+it('changes state on dead leader', function () {
+  global.localStorage = fakeLocalStorage
+  client = createClient()
+
+  var last = Date.now() - client.leaderTimeout - 1
+  localStorage.setItem('logux:false:leader', '["",' + last + ']')
+  localStorage.setItem('logux:false:state', '"connecting"')
+
+  client.start()
+  expect(client.state).toEqual('disconnected')
+})
+
+it('changes state on leader death', function () {
+  global.localStorage = fakeLocalStorage
+  client = createClient()
+  client.roleTimeout = 20
+
+  var last = Date.now() - client.leaderTimeout + 10
+  localStorage.setItem('logux:false:leader', '["",' + last + ']')
+  localStorage.setItem('logux:false:state', '"sending"')
+
+  client.start()
+  return wait(client.roleTimeout + 20).then(function () {
+    expect(client.state).toEqual('wait')
+    expect(localStorage.getItem('logux:false:state')).toEqual('"wait"')
+  })
+})
+
+it('does not change wait state on dead leader', function () {
+  global.localStorage = fakeLocalStorage
+  client = createClient()
+  client.roleTimeout = 20
+
+  var last = Date.now() - client.leaderTimeout + 10
+  localStorage.setItem('logux:false:leader', '["",' + last + ']')
+  localStorage.setItem('logux:false:state', '"wait"')
+
+  client.start()
+  return wait(client.roleTimeout).then(function () {
+    expect(client.state).toEqual('wait')
+    expect(localStorage.getItem('logux:false:state')).toEqual('"wait"')
   })
 })
