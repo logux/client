@@ -42,14 +42,15 @@ function updateTitle () {
                    count
 }
 
-client.sync.on('state', function () {
-  document.all.connection.checked = client.sync.connected
+client.on('state', function () {
+  document.all.connection.checked = client.connected
 })
 client.on('state', function () {
   updateTitle()
 })
 client.on('role', function () {
   updateTitle()
+  document.all.connection.disabled = client.role !== 'leader'
 })
 client.on('add', function (action) {
   if (action.type === 'TICK') count++
