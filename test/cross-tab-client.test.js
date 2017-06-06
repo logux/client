@@ -13,26 +13,26 @@ var fakeLocalStorage = {
   }
 }
 
-var originError = console.error
+var client
 var originIndexedDB = global.indexedDB
 var originLocalStorage = global.localStorage
 afterEach(function () {
-  console.error = originError
+  if (client) client.destroy()
   global.indexedDB = originIndexedDB
   global.localStorage = originLocalStorage
   fakeLocalStorage.storage = { }
 })
 
 function createClient () {
-  var client = new CrossTabClient({
+  var result = new CrossTabClient({
     subprotocol: '1.0.0',
     userId: false,
     url: 'wss://localhost:1337'
   })
-  client.electionDelay = client.electionDelay / 20
-  client.leaderTimeout = client.leaderTimeout / 20
-  client.leaderPing = client.leaderPing / 20
-  return client
+  result.electionDelay = result.electionDelay / 20
+  result.leaderTimeout = result.leaderTimeout / 20
+  result.leaderPing = result.leaderPing / 20
+  return result
 }
 
 function emitStorage (name, value) {
@@ -49,7 +49,7 @@ function wait (ms) {
 }
 
 it('saves options', function () {
-  var client = new CrossTabClient({
+  client = new CrossTabClient({
     subprotocol: '1.0.0',
     userId: false,
     url: 'wss://localhost:1337'
@@ -58,7 +58,7 @@ it('saves options', function () {
 })
 
 it('supports nanoevents API', function () {
-  var client = createClient()
+  client = createClient()
 
   var once = []
   client.once('add', function (action) {
@@ -84,7 +84,7 @@ it('cleans everything', function () {
   global.localStorage = {
     removeItem: jest.fn()
   }
-  var client = createClient()
+  client = createClient()
   client.sync.destroy = jest.fn()
   return client.clean().then(function () {
     expect(client.sync.destroy).toHaveBeenCalled()
@@ -150,12 +150,12 @@ it('synchronizes events between tabs', function () {
 })
 
 it('uses candidate role from beggining', function () {
-  var client = createClient()
+  client = createClient()
   expect(client.role).toEqual('candidate')
 })
 
 it('becomes leader without localStorage', function () {
-  var client = createClient()
+  client = createClient()
 
   var roles = []
   client.on('role', function () {
@@ -171,7 +171,7 @@ it('becomes leader without localStorage', function () {
 it('becomes follower on recent leader ping', function () {
   global.localStorage = fakeLocalStorage
   localStorage.setItem('logux:false:leader', '["",' + Date.now() + ']')
-  var client = createClient()
+  client = createClient()
 
   var roles = []
   client.on('role', function () {
@@ -187,7 +187,7 @@ it('becomes follower on recent leader ping', function () {
 
 it('stops election on second candidate', function () {
   global.localStorage = fakeLocalStorage
-  var client = createClient()
+  client = createClient()
 
   client.start()
   expect(client.role).toEqual('candidate')
@@ -201,7 +201,7 @@ it('stops election on second candidate', function () {
 
 it('stops election in leader check', function () {
   global.localStorage = fakeLocalStorage
-  var client = createClient()
+  client = createClient()
 
   client.start()
   expect(client.role).toEqual('candidate')
@@ -215,7 +215,7 @@ it('stops election in leader check', function () {
 
 it('pings on leader role', function () {
   global.localStorage = fakeLocalStorage
-  var client = createClient()
+  client = createClient()
   client.sync.connection.disconnect = jest.fn()
 
   var last = Date.now() - client.leaderTimeout - 10
@@ -246,7 +246,7 @@ it('has random timeout', function () {
 
 it('replaces dead leader', function () {
   global.localStorage = fakeLocalStorage
-  var client = createClient()
+  client = createClient()
   client.roleTimeout = client.leaderTimeout / 2
 
   localStorage.setItem('logux:false:leader', '["",' + Date.now() + ']')
@@ -262,7 +262,7 @@ it('replaces dead leader', function () {
 
 it('disconnects on leader changes', function () {
   global.localStorage = fakeLocalStorage
-  var client = createClient()
+  client = createClient()
   client.sync.connection.disconnect = jest.fn()
 
   client.start()
@@ -279,7 +279,7 @@ it('disconnects on leader changes', function () {
 
 it('updates state if tab is a leader', function () {
   global.localStorage = fakeLocalStorage
-  var client = createClient()
+  client = createClient()
 
   client.start()
   expect(client.state).toEqual('disconnected')
@@ -297,7 +297,7 @@ it('listens for leader state', function () {
   localStorage.setItem('logux:false:leader', '["",' + Date.now() + ']')
   localStorage.setItem('logux:false:state', '"wait"')
 
-  var client = createClient()
+  client = createClient()
   var states = []
   client.on('state', function () {
     states.push(client.state)
@@ -317,7 +317,7 @@ it('listens for leader state', function () {
 })
 
 it('has connected shortcut', function () {
-  var client = createClient()
+  client = createClient()
   expect(client.connected).toBeFalsy()
   client.state = 'wait'
   expect(client.connected).toBeFalsy()
@@ -327,7 +327,7 @@ it('has connected shortcut', function () {
 
 it('works on IE storage event', function () {
   global.localStorage = fakeLocalStorage
-  var client = createClient()
+  client = createClient()
 
   var events = 0
   client.on('add', function () {
@@ -351,7 +351,7 @@ it('works on IE storage event', function () {
 
 it('sends event on tab closing', function () {
   global.localStorage = fakeLocalStorage
-  var client = createClient()
+  client = createClient()
   client.start()
   return wait(client.electionDelay + 10).then(function () {
     window.dispatchEvent(new Event('unload'))
@@ -361,7 +361,7 @@ it('sends event on tab closing', function () {
 
 it('does not sends event on tab closing in following mode', function () {
   global.localStorage = fakeLocalStorage
-  var client = createClient()
+  client = createClient()
 
   var prevLeader = '["",' + Date.now() + ']'
   localStorage.setItem('logux:false:leader', prevLeader)
@@ -374,7 +374,7 @@ it('does not sends event on tab closing in following mode', function () {
 
 it('starts election on leader unload', function () {
   global.localStorage = fakeLocalStorage
-  var client = createClient()
+  client = createClient()
   localStorage.setItem('logux:false:leader', '["",' + Date.now() + ']')
   return wait(client.electionDelay + 10).then(function () {
     emitStorage('logux:false:leader', '[]')
