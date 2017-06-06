@@ -23,11 +23,20 @@ function leaderPing (client) {
   sendToTabs(client, 'leader', [client.id, Date.now()])
 }
 
+function onDeadLeader (client) {
+  if (client.state === 'sending') {
+    setState(client, 'wait')
+  } else if (client.state !== 'disconnected' && client.state !== 'wait') {
+    setState(client, 'disconnected')
+  }
+  startElection(client)
+}
+
 function watchForLeader (client) {
   clearTimeout(client.watching)
   client.watching = setTimeout(function () {
     if (!isActiveLeader(client)) {
-      startElection(client)
+      onDeadLeader(client)
     } else {
       watchForLeader(client)
     }
@@ -86,6 +95,12 @@ function startElection (client) {
       watchForLeader(client)
     }
   }, client.electionDelay)
+}
+
+function setState (client, state) {
+  client.state = state
+  client.emitter.emit('state')
+  sendToTabs(client, 'state', client.state)
 }
 
 /**
@@ -173,9 +188,7 @@ function CrossTabClient (options) {
 
   this.sync.on('state', function () {
     if (client.role === 'leader') {
-      client.state = client.sync.state
-      client.emitter.emit('state')
-      sendToTabs(client, 'state', client.state)
+      setState(client, client.sync.state)
     }
   })
 
@@ -213,7 +226,7 @@ function CrossTabClient (options) {
     } else if (e.key === storageKey(client, 'leader')) {
       data = JSON.parse(e.newValue)
       if (data.length === 0) {
-        startElection(client)
+        onDeadLeader(client)
       } else if (data[0] !== client.id && client.role !== 'candidate') {
         setRole(client, 'follower')
         watchForLeader(client)
