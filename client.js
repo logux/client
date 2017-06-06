@@ -152,6 +152,9 @@ function Client (options) {
       console.error('Error on Logux server:\n', stack)
     }
   })
+
+  this.onUnload = this.onUnload.bind(this)
+  window.addEventListener('unload', this.onUnload)
 }
 
 Client.prototype = {
@@ -180,6 +183,7 @@ Client.prototype = {
    */
   destroy: function destroy () {
     this.sync.destroy()
+    window.removeEventListener('unload', this.onUnload)
   },
 
   /**
@@ -200,6 +204,12 @@ Client.prototype = {
     } else {
       this.log = undefined
       return Promise.resolve()
+    }
+  },
+
+  onUnload: function () {
+    if (this.sync.connection.connected) {
+      this.sync.connection.disconnect()
     }
   }
 

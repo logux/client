@@ -236,7 +236,6 @@ CrossTabClient.prototype = {
     clearTimeout(this.elections)
     clearInterval(this.leadership)
     window.removeEventListener('storage', this.onStorage)
-    window.removeEventListener('unload', this.onUnload)
   },
 
   clean: function clean () {
@@ -330,6 +329,8 @@ CrossTabClient.prototype = {
       this.unloading = true
       sendToTabs(this, 'leader', [])
     }
+
+    Client.prototype.onUnload.call(this)
   }
 
 }
