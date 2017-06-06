@@ -330,7 +330,9 @@ CrossTabClient.prototype = merge(CrossTabClient.prototype, Client.prototype)
 
 Object.defineProperty(CrossTabClient.prototype, 'connected', {
   get: function get () {
-    return this.state !== 'disconnected' && this.state !== 'wait'
+    return this.state !== 'disconnected' &&
+           this.state !== 'wait' &&
+           this.state !== 'connecting'
   }
 })
 

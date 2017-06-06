@@ -321,6 +321,8 @@ it('has connected shortcut', function () {
   expect(client.connected).toBeFalsy()
   client.state = 'wait'
   expect(client.connected).toBeFalsy()
+  client.state = 'connecting'
+  expect(client.connected).toBeFalsy()
   client.state = 'sending'
   expect(client.connected).toBeTruthy()
 })
