@@ -61,7 +61,12 @@ client.on('clean', function (action) {
   updateTitle()
 })
 
-updateTitle()
+client.log.each(function (action) {
+  if (action.type === 'TICK') count++
+}).then(function () {
+  updateTitle()
+})
+
 client.start()
 
 document.all.connection.onchange = function (e) {
