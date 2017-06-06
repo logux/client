@@ -192,9 +192,11 @@ it('stops election on second candidate', function () {
   client.start()
   expect(client.role).toEqual('candidate')
 
-  emitStorage('logux:false:leader', '["",' + Date.now() + ']')
-  expect(client.role).toEqual('follower')
-  expect(client.watching).toBeDefined()
+  localStorage.setItem('logux:false:leader', '["",' + (Date.now() - 10) + ']')
+  return wait(client.electionDelay + 10).then(function () {
+    expect(client.role).toEqual('follower')
+    expect(client.watching).toBeDefined()
+  })
 })
 
 it('stops election in leader check', function () {
@@ -245,25 +247,23 @@ it('has random timeout', function () {
 it('replaces dead leader', function () {
   global.localStorage = fakeLocalStorage
   var client = createClient()
-  client.roleTimeout = 200
+  client.roleTimeout = client.leaderTimeout / 2
 
-  var last = Date.now() + client.leaderTimeout
-  localStorage.setItem('logux:false:leader', '["",' + last + ']')
-
+  localStorage.setItem('logux:false:leader', '["",' + Date.now() + ']')
   client.start()
+
   return wait(client.roleTimeout).then(function () {
     expect(client.role).toEqual('follower')
     return wait(client.leaderTimeout + client.roleTimeout)
   }).then(function () {
-    expect(client.role).toEqual('candidate')
+    expect(client.role).not.toEqual('follower')
   })
 })
 
 it('disconnects on leader changes', function () {
-  var client = createClient()
-
-  client.sync.connection.disconnect = jest.fn()
   global.localStorage = fakeLocalStorage
+  var client = createClient()
+  client.sync.connection.disconnect = jest.fn()
 
   client.start()
   return wait(client.electionDelay + 10).then(function () {
@@ -346,5 +346,39 @@ it('works on IE storage event', function () {
     emitStorage('logux:false:add', '["' + client.id + '",{},{}]')
     emitStorage('logux:false:clean', '["' + client.id + '",{},{}]')
     expect(events).toEqual(0)
+  })
+})
+
+it('sends event on tab closing', function () {
+  global.localStorage = fakeLocalStorage
+  var client = createClient()
+  client.start()
+  return wait(client.electionDelay + 10).then(function () {
+    window.dispatchEvent(new Event('unload'))
+    expect(localStorage.getItem('logux:false:leader')).toEqual('[]')
+  })
+})
+
+it('does not sends event on tab closing in following mode', function () {
+  global.localStorage = fakeLocalStorage
+  var client = createClient()
+
+  var prevLeader = '["",' + Date.now() + ']'
+  localStorage.setItem('logux:false:leader', prevLeader)
+  client.start()
+
+  return wait(client.electionDelay + 10).then(function () {
+    expect(localStorage.getItem('logux:false:leader')).toEqual(prevLeader)
+  })
+})
+
+it('starts election on leader unload', function () {
+  global.localStorage = fakeLocalStorage
+  var client = createClient()
+  localStorage.setItem('logux:false:leader', '["",' + Date.now() + ']')
+  return wait(client.electionDelay + 10).then(function () {
+    emitStorage('logux:false:leader', '[]')
+    expect(client.role).toEqual('candidate')
+    expect(localStorage.getItem('logux:false:leader')).toContain(client.id)
   })
 })
