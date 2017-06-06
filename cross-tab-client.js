@@ -14,14 +14,9 @@ function sendToTabs (client, event, data) {
 
 function getLeader (client) {
   var data = localStorage.getItem(storageKey(client, 'leader'))
-  var json
+  var json = []
   if (typeof data === 'string') json = JSON.parse(data)
-
-  if (typeof json === 'object' && json !== null && json.length === 2) {
-    return json
-  } else {
-    return []
-  }
+  return json
 }
 
 function leaderPing (client) {
