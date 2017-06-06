@@ -254,3 +254,10 @@ it('clean memory store', function () {
     expect(client.log).not.toBeDefined()
   })
 })
+
+it('disconnects on unload', function () {
+  var client = createClient()
+  client.sync.connection.connected = true
+  window.dispatchEvent(new Event('unload'))
+  expect(client.sync.connection.connected).toBeFalsy()
+})
