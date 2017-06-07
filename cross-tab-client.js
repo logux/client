@@ -106,7 +106,7 @@ function setState (client, state) {
 /**
  * Low-level browser API for Logux.
  *
- * Instead of {@link Client}, this class work prevent conflicts
+ * Instead of {@link Client}, this class prevents conflicts
  * between Logux instances in different tabs on single browser.
  *
  * @param {object} options Client options.

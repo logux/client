@@ -17,7 +17,10 @@ var client
 var originIndexedDB = global.indexedDB
 var originLocalStorage = global.localStorage
 afterEach(function () {
-  if (client) client.destroy()
+  if (client) {
+    client.destroy()
+    client = undefined
+  }
   global.indexedDB = originIndexedDB
   global.localStorage = originLocalStorage
   fakeLocalStorage.storage = { }
