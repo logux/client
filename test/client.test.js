@@ -278,13 +278,6 @@ it('clean memory store', function () {
   })
 })
 
-it('disconnects on unload', function () {
-  var client = createClient()
-  client.sync.connection.connected = true
-  window.dispatchEvent(new Event('unload'))
-  expect(client.sync.connection.connected).toBeFalsy()
-})
-
 it('pings', function () {
   global.localStorage = fakeLocalStorage
   var client = createClient()
