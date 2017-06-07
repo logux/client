@@ -62,6 +62,7 @@ function createClient () {
     userId: false,
     url: 'wss://localhost:1337'
   })
+  client.sync.connection.connect = function () { }
   client.tabPing = 50
   return client
 }
@@ -271,25 +272,48 @@ it('cleans everything', function () {
   })
 })
 
-it('clean memory store', function () {
-  var client = createClient()
-  return client.clean().then(function () {
-    expect(client.log).not.toBeDefined()
-  })
-})
-
-it('pings', function () {
+it('pings after tab-specific action', function () {
   global.localStorage = fakeLocalStorage
   var client = createClient()
   client.options.prefix = 'test'
   client.sync.connection.connect = function () { }
 
-  expect(localStorage.getItem('test:tabs:' + client.id)).not.toBeDefined()
   client.start()
-  expect(localStorage.getItem('test:tabs:' + client.id)).toBeDefined()
+  expect(localStorage.getItem('test:tab:' + client.id)).not.toBeDefined()
 
-  var prev = localStorage.getItem('test:tabs:' + client.id)
+  client.log.add({ type: 'A' }, { tab: client.id })
+  expect(localStorage.getItem('test:tab:' + client.id)).toBeDefined()
+
+  var prev = localStorage.getItem('test:tab:' + client.id)
   return wait(client.tabPing).then(function () {
-    expect(localStorage.getItem('test:tabs:' + client.id)).toBeGreaterThan(prev)
+    expect(localStorage.getItem('test:tab:' + client.id)).toBeGreaterThan(prev)
+  })
+})
+
+it('cleans own actions on destroy', function () {
+  global.localStorage = fakeLocalStorage
+  var client = createClient()
+
+  client.start()
+  client.log.add({ type: 'A' }, { tab: client.id })
+
+  client.destroy()
+  return wait(1).then(function () {
+    expect(client.log.store.created.length).toEqual(0)
+    expect(localStorage.getItem('test:tab:' + client.id)).not.toBeDefined()
+  })
+})
+
+it('cleans own actions on unload', function () {
+  global.localStorage = fakeLocalStorage
+  var client = createClient()
+
+  client.start()
+  client.log.add({ type: 'A' }, { tab: client.id })
+
+  window.dispatchEvent(new Event('unload'))
+  return wait(1).then(function () {
+    expect(client.log.store.created.length).toEqual(0)
+    expect(localStorage.getItem('test:tab:' + client.id)).not.toBeDefined()
   })
 })

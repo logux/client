@@ -8,14 +8,22 @@ var Log = require('logux-core/log')
 var IndexedStore = require('./indexed-store')
 
 function tabPing (client) {
-  localStorage.setItem(client.options.prefix + ':tabs:' + client.id, Date.now())
+  localStorage.setItem(client.options.prefix + ':tab:' + client.id, Date.now())
+}
+
+function cleanTabActions (client, id) {
+  client.log.removeReason('tab' + id).then(function () {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(client.options.prefix + ':tab:' + id)
+    }
+  })
 }
 
 /**
  * Base class for browser API to be extended in {@link CrossTabClient}.
  *
  * Because this class could have conflicts between different browser tab,
- * you should use it if you are really sure, that application will not
+ * you should use it only if you are really sure, that application will not
  * be run in different tab (for instance, if you are developing a kiosk app).
  *
  * @param {object} options Client options.
@@ -129,6 +137,19 @@ function Client (options) {
    */
   this.log = new Log({ store: store, nodeId: this.options.nodeId })
 
+  var client = this
+  this.tabPing = 60000
+  if (typeof localStorage !== 'undefined') {
+    this.log.on('add', function (action, meta) {
+      if (!client.pinging && meta.tab === client.id) {
+        tabPing(client)
+        client.pinging = setInterval(function () {
+          tabPing(client)
+        }, client.tabPing)
+      }
+    })
+  }
+
   var ws = new BrowserConnection(this.options.url)
   var connection = new Reconnect(ws, {
     minDelay: this.options.minDelay,
@@ -159,8 +180,6 @@ function Client (options) {
 
   this.onUnload = this.onUnload.bind(this)
   window.addEventListener('unload', this.onUnload)
-
-  this.tabPing = 60000
 }
 
 Client.prototype = {
@@ -175,15 +194,6 @@ Client.prototype = {
    */
   start: function start () {
     this.sync.connection.connect()
-
-    if (typeof localStorage !== 'undefined') {
-      tabPing(this)
-
-      var client = this
-      this.pinging = setInterval(function () {
-        tabPing(client)
-      }, this.tabPing)
-    }
   },
 
   /**
@@ -219,12 +229,12 @@ Client.prototype = {
     if (this.log.store.clean) {
       return this.log.store.clean()
     } else {
-      this.log = undefined
       return Promise.resolve()
     }
   },
 
   onUnload: function () {
+    if (this.pinging) cleanTabActions(this, this.id)
   }
 
 }
