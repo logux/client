@@ -182,6 +182,7 @@ Client.prototype = {
    * })
    */
   destroy: function destroy () {
+    this.onUnload()
     this.sync.destroy()
     window.removeEventListener('unload', this.onUnload)
   },
