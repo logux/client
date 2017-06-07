@@ -139,6 +139,7 @@ function Client (options) {
 
   var client = this
   this.tabPing = 60000
+  this.tabTimeout = 10 * this.tabPing
   if (typeof localStorage !== 'undefined') {
     this.log.on('add', function (action, meta) {
       if (!client.pinging && meta.tab === client.id) {
@@ -184,6 +185,20 @@ function Client (options) {
 
 Client.prototype = {
 
+  cleanPrevActions: function cleanPrevActions () {
+    if (typeof localStorage === 'undefined') return
+
+    for (var i in localStorage) {
+      var prefix = this.options.prefix + ':tab:'
+      if (i.slice(0, prefix.length) === prefix) {
+        var time = parseInt(localStorage.getItem(i))
+        if (Date.now() - time > this.tabTimeout) {
+          cleanTabActions(this, i.slice(prefix.length))
+        }
+      }
+    }
+  },
+
   /**
    * Connect to server and reconnect on any connection problem.
    *
@@ -193,6 +208,7 @@ Client.prototype = {
    * app.start()
    */
   start: function start () {
+    this.cleanPrevActions()
     this.sync.connection.connect()
   },
 

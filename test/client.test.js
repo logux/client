@@ -5,18 +5,23 @@ var TestPair = require('logux-sync').TestPair
 
 var Client = require('../client')
 
-var fakeLocalStorage = {
-  storage: { },
-  setItem: function (key, value) {
-    this.storage[key] = value
-  },
-  getItem: function (key) {
-    return this.storage[key]
-  },
-  removeItem: function (key) {
-    delete this.storage[key]
+var fakeLocalStorage
+beforeEach(function () {
+  fakeLocalStorage = {
+    storage: { },
+    setItem: function (key, value) {
+      this[key] = value
+      this.storage[key] = value
+    },
+    getItem: function (key) {
+      return this.storage[key]
+    },
+    removeItem: function (key) {
+      delete this[key]
+      delete this.storage[key]
+    }
   }
-}
+})
 
 var originError = console.error
 var originIndexedDB = global.indexedDB
@@ -275,30 +280,33 @@ it('cleans everything', function () {
 it('pings after tab-specific action', function () {
   global.localStorage = fakeLocalStorage
   var client = createClient()
+  var id = client.id
   client.options.prefix = 'test'
   client.sync.connection.connect = function () { }
 
   client.start()
-  expect(localStorage.getItem('test:tab:' + client.id)).not.toBeDefined()
+  expect(localStorage.getItem('test:tab:' + id)).not.toBeDefined()
 
-  client.log.add({ type: 'A' }, { tab: client.id })
-  expect(localStorage.getItem('test:tab:' + client.id)).toBeDefined()
-
-  var prev = localStorage.getItem('test:tab:' + client.id)
-  return wait(client.tabPing).then(function () {
-    expect(localStorage.getItem('test:tab:' + client.id)).toBeGreaterThan(prev)
+  var prev
+  return client.log.add({ type: 'A' }, { tab: id }).then(function () {
+    expect(localStorage.getItem('test:tab:' + id)).toBeDefined()
+    prev = localStorage.getItem('test:tab:' + id)
+    return wait(client.tabPing)
+  }).then(function () {
+    expect(localStorage.getItem('test:tab:' + id)).toBeGreaterThan(prev)
   })
 })
 
 it('cleans own actions on destroy', function () {
   global.localStorage = fakeLocalStorage
   var client = createClient()
+  var meta = { tab: client.id, reasons: ['tab' + client.id] }
 
   client.start()
-  client.log.add({ type: 'A' }, { tab: client.id })
-
-  client.destroy()
-  return wait(1).then(function () {
+  return client.log.add({ type: 'A' }, meta).then(function () {
+    client.destroy()
+    return wait(1)
+  }).then(function () {
     expect(client.log.store.created.length).toEqual(0)
     expect(localStorage.getItem('test:tab:' + client.id)).not.toBeDefined()
   })
@@ -307,13 +315,33 @@ it('cleans own actions on destroy', function () {
 it('cleans own actions on unload', function () {
   global.localStorage = fakeLocalStorage
   var client = createClient()
+  var meta = { tab: client.id, reasons: ['tab' + client.id] }
 
   client.start()
-  client.log.add({ type: 'A' }, { tab: client.id })
-
-  window.dispatchEvent(new Event('unload'))
-  return wait(1).then(function () {
+  return client.log.add({ type: 'A' }, meta).then(function () {
+    window.dispatchEvent(new Event('unload'))
+    return wait(1)
+  }).then(function () {
     expect(client.log.store.created.length).toEqual(0)
     expect(localStorage.getItem('test:tab:' + client.id)).not.toBeDefined()
+  })
+})
+
+it('cleans other tab action after timeout', function () {
+  global.localStorage = fakeLocalStorage
+  var client = createClient()
+
+  return Promise.all([
+    client.log.add({ type: 'A' }, { tab: '1', reasons: ['tab1'] }),
+    client.log.add({ type: 'B' }, { tab: '2', reasons: ['tab2'] })
+  ]).then(function () {
+    localStorage.setItem('logux:tab:1', Date.now() - client.tabTimeout - 1)
+    localStorage.setItem('logux:tab:2', Date.now() - client.tabTimeout + 100)
+    client.start()
+    return wait(1)
+  }).then(function () {
+    expect(client.log.store.created.length).toEqual(1)
+    expect(client.log.store.created[0][0]).toEqual({ type: 'B' })
+    expect(localStorage.getItem('test:tab:2')).not.toBeDefined()
   })
 })
