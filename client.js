@@ -225,9 +225,6 @@ Client.prototype = {
   },
 
   onUnload: function () {
-    if (this.sync.connection.connected) {
-      this.sync.connection.disconnect()
-    }
   }
 
 }
