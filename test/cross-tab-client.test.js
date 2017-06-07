@@ -351,12 +351,22 @@ it('works on IE storage event', function () {
   })
 })
 
-it('sends event on tab closing', function () {
+it('sends unleader event on tab closing', function () {
   global.localStorage = fakeLocalStorage
   client = createClient()
   client.start()
   return wait(client.electionDelay + 10).then(function () {
     window.dispatchEvent(new Event('unload'))
+    expect(localStorage.getItem('logux:false:leader')).toEqual('[]')
+  })
+})
+
+it('sends unleader event on destroy', function () {
+  global.localStorage = fakeLocalStorage
+  client = createClient()
+  client.start()
+  return wait(client.electionDelay + 10).then(function () {
+    client.destroy()
     expect(localStorage.getItem('logux:false:leader')).toEqual('[]')
   })
 })
