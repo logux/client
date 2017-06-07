@@ -214,6 +214,8 @@ function CrossTabClient (options) {
 CrossTabClient.prototype = {
 
   start: function start () {
+    this.cleanPrevActions()
+
     if (typeof localStorage === 'undefined') {
       this.role = 'leader'
       this.emitter.emit('role')

@@ -1,17 +1,22 @@
 var CrossTabClient = require('../cross-tab-client')
 
-var fakeLocalStorage = {
-  storage: { },
-  setItem: function (key, value) {
-    this.storage[key] = value
-  },
-  getItem: function (key) {
-    return this.storage[key]
-  },
-  removeItem: function (key) {
-    delete this.storage[key]
+var fakeLocalStorage
+beforeEach(function () {
+  fakeLocalStorage = {
+    storage: { },
+    setItem: function (key, value) {
+      this[key] = value
+      this.storage[key] = value
+    },
+    getItem: function (key) {
+      return this.storage[key]
+    },
+    removeItem: function (key) {
+      delete this[key]
+      delete this.storage[key]
+    }
   }
-}
+})
 
 var client
 var originIndexedDB = global.indexedDB
@@ -445,5 +450,18 @@ it('does not change wait state on dead leader', function () {
   return wait(client.roleTimeout).then(function () {
     expect(client.state).toEqual('wait')
     expect(localStorage.getItem('logux:false:state')).toEqual('"wait"')
+  })
+})
+
+it('cleans tab-specific action after timeout', function () {
+  global.localStorage = fakeLocalStorage
+  client = createClient()
+
+  localStorage.setItem('logux:tab:1', Date.now() - client.tabTimeout - 1)
+  return client.log.add({ type: 'A' }, { reasons: ['tab1'] }).then(function () {
+    client.start()
+    return wait(1)
+  }).then(function () {
+    expect(client.log.store.created.length).toEqual(0)
   })
 })
