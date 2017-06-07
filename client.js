@@ -233,7 +233,7 @@ Client.prototype = {
     }
   },
 
-  onUnload: function () {
+  onUnload: function onUnload () {
     if (this.pinging) cleanTabActions(this, this.id)
   }
 

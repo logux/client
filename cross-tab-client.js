@@ -289,7 +289,7 @@ CrossTabClient.prototype = {
     return this.emitter.once(event, listener)
   },
 
-  onStorage: function (e) {
+  onStorage: function onStorage (e) {
     if (e.newValue === null) return
 
     var data
@@ -324,7 +324,7 @@ CrossTabClient.prototype = {
     }
   },
 
-  onUnload: function () {
+  onUnload: function onUnload () {
     if (this.role === 'leader') {
       this.unloading = true
       sendToTabs(this, 'leader', [])
