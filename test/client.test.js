@@ -5,12 +5,33 @@ var TestPair = require('logux-sync').TestPair
 
 var Client = require('../client')
 
+var fakeLocalStorage = {
+  storage: { },
+  setItem: function (key, value) {
+    this.storage[key] = value
+  },
+  getItem: function (key) {
+    return this.storage[key]
+  },
+  removeItem: function (key) {
+    delete this.storage[key]
+  }
+}
+
 var originError = console.error
 var originIndexedDB = global.indexedDB
+var originLocalStorage = global.localStorage
 afterEach(function () {
   console.error = originError
   global.indexedDB = originIndexedDB
+  global.localStorage = originLocalStorage
 })
+
+function wait (ms) {
+  return new Promise(function (resolve) {
+    return setTimeout(resolve, ms)
+  })
+}
 
 function createDialog (opts, credentials) {
   var client = new Client(opts)
@@ -36,11 +57,13 @@ function createDialog (opts, credentials) {
 }
 
 function createClient () {
-  return new Client({
+  var client = new Client({
     subprotocol: '1.0.0',
     userId: false,
     url: 'wss://localhost:1337'
   })
+  client.tabPing = 50
+  return client
 }
 
 it('saves options', function () {
@@ -260,4 +283,20 @@ it('disconnects on unload', function () {
   client.sync.connection.connected = true
   window.dispatchEvent(new Event('unload'))
   expect(client.sync.connection.connected).toBeFalsy()
+})
+
+it('pings', function () {
+  global.localStorage = fakeLocalStorage
+  var client = createClient()
+  client.options.prefix = 'test'
+  client.sync.connection.connect = function () { }
+
+  expect(localStorage.getItem('test:tabs:' + client.id)).not.toBeDefined()
+  client.start()
+  expect(localStorage.getItem('test:tabs:' + client.id)).toBeDefined()
+
+  var prev = localStorage.getItem('test:tabs:' + client.id)
+  return wait(client.tabPing).then(function () {
+    expect(localStorage.getItem('test:tabs:' + client.id)).toBeGreaterThan(prev)
+  })
 })

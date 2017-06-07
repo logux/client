@@ -7,6 +7,10 @@ var Log = require('logux-core/log')
 
 var IndexedStore = require('./indexed-store')
 
+function tabPing (client) {
+  localStorage.setItem(client.options.prefix + ':tabs:' + client.id, Date.now())
+}
+
 /**
  * Base class for browser API to be extended in {@link CrossTabClient}.
  *
@@ -155,6 +159,8 @@ function Client (options) {
 
   this.onUnload = this.onUnload.bind(this)
   window.addEventListener('unload', this.onUnload)
+
+  this.tabPing = 60000
 }
 
 Client.prototype = {
@@ -169,6 +175,15 @@ Client.prototype = {
    */
   start: function start () {
     this.sync.connection.connect()
+
+    if (typeof localStorage !== 'undefined') {
+      tabPing(this)
+
+      var client = this
+      this.pinging = setInterval(function () {
+        tabPing(client)
+      }, this.tabPing)
+    }
   },
 
   /**
@@ -184,6 +199,7 @@ Client.prototype = {
   destroy: function destroy () {
     this.onUnload()
     this.sync.destroy()
+    clearInterval(this.pinging)
     window.removeEventListener('unload', this.onUnload)
   },
 
