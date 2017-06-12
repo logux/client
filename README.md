@@ -81,7 +81,7 @@ var logux = new CrossTabClient({
 logux.start()
 ```
 
-If you sure, that your application will not be runned in separated browser
+If you sure, that your application will not be run in separated browser
 tabs (for instance, you are developing a app for kiosk), you can use
 `Client` instead of `CrossTabClient`.
 
