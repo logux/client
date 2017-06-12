@@ -1,7 +1,7 @@
 /**
  * Show confirm popup, when user close tab with non-synchronized actions.
  *
- * @param {Client} client Observed Client instance.
+ * @param {CrossTabClient} client Observed Client instance.
  *
  * @return {Function} Unbind confirm listener.
  *

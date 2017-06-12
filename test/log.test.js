@@ -1,8 +1,8 @@
+var CrossTabClient = require('logux-client').CrossTabClient
 var SyncError = require('logux-sync').SyncError
 var TestTime = require('logux-core').TestTime
 var BaseSync = require('logux-sync').BaseSync
 var TestPair = require('logux-sync').TestPair
-var Client = require('logux-client').Client
 
 jest.mock('browser-supports-log-styles', function () {
   return function () {
@@ -17,7 +17,7 @@ function createClient () {
   var sync = new BaseSync('test1', TestTime.getLog(), pair.left)
   sync.catch(function () { })
 
-  var client = new Client({
+  var client = new CrossTabClient({
     subprotocol: '1.0.0',
     userId: false,
     url: 'wss://localhost:1337'
@@ -50,6 +50,7 @@ afterEach(function () {
 
 it('shows connecting state URL', function () {
   return createClient().then(function (client) {
+    client.sync.setState('disconnected')
     log(client, { color: false })
 
     client.sync.connected = false
@@ -65,6 +66,7 @@ it('shows connecting state URL', function () {
 
 it('shows Logux prefix with color and make state and nodeId bold', function () {
   return createClient().then(function (client) {
+    client.sync.setState('disconnected')
     log(client, { color: true })
 
     client.sync.connected = false
@@ -160,7 +162,7 @@ it('shows state event', function () {
     client.sync.emitter.emit('state')
 
     expect(console.log).toBeCalledWith(
-      'Logux: state was changed to disconnected'
+      'Logux: state was changed to connecting'
     )
   })
 })

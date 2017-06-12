@@ -34,7 +34,7 @@ function colorify (color, text, action, meta) {
 /**
  * Display Logux events in browser console.
  *
- * @param {Client} client Observed Client instance.
+ * @param {CrossTabClient} client Observed Client instance.
  * @param {object} [messages] Disable specific message types.
  * @param {boolean} [messages.state] Disable connection state messages.
  * @param {boolean} [messages.role] Disable tab role messages.
