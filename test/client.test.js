@@ -254,8 +254,8 @@ it('display server debug error stacktrace with prefix', function () {
   var client = createClient()
   client.sync.emitter.emit('debug', 'error', 'Fake stacktrace\n')
   expect(console.error).toHaveBeenCalledWith(
-      'Error on Logux server:\n',
-      'Fake stacktrace\n'
+    'Error on Logux server:\n',
+    'Fake stacktrace\n'
   )
 })
 
