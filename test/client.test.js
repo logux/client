@@ -43,7 +43,7 @@ function createDialog (opts, credentials) {
 
   var pair = new TestPair()
   client.sync = new ClientSync(
-    client.options.nodeId,
+    client.nodeId,
     client.log,
     pair.left,
     client.sync.options
@@ -160,21 +160,21 @@ it('uses user ID in node ID', function () {
     url: 'wss://localhost:1337'
   })
   expect(client1.id).toBeDefined()
-  expect(client1.options.nodeId).toEqual('10:' + client1.id)
+  expect(client1.nodeId).toEqual('10:' + client1.id)
 
   var client2 = new Client({
     subprotocol: '1.0.0',
     userId: false,
     url: 'wss://localhost:1337'
   })
-  expect(client2.options.nodeId).not.toMatch(/:/)
+  expect(client2.nodeId).not.toMatch(/:/)
 })
 
 it('uses node ID in ID generator', function () {
   var client = createClient()
   var id = client.log.generateId()
   expect(typeof id[0]).toEqual('number')
-  expect(id[1]).toEqual(client.options.nodeId)
+  expect(id[1]).toEqual(client.nodeId)
   expect(id[2]).toBe(0)
 })
 

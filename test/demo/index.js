@@ -10,9 +10,9 @@ var pair = new LocalPair(500)
 
 var serverLog = new Log({
   store: new MemoryStore(),
-  nodeId: 'server'
+  nodeId: 'server:uuid'
 })
-new BaseSync('server', serverLog, pair.right)
+new BaseSync('server:uuid', serverLog, pair.right)
 
 var client = new CrossTabClient({
   subprotocol: '1.0.0',

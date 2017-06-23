@@ -35,8 +35,6 @@ function cleanTabActions (client, id) {
  * @param {string} [options.prefix="logux"] Prefix for `IndexedDB` database
  *                                          to run multiple Logux instances
  *                                          in the same browser.
- * @param {string|number} [options.nodeId] Unique client ID.
- *                                         Compacted UUID by default.
  * @param {number} [options.timeout=20000] Timeout in milliseconds
  *                                         to break connection.
  * @param {number} [options.ping=10000] Milliseconds since last message to test
@@ -69,7 +67,7 @@ function Client (options) {
    * @type {object}
    *
    * @example
-   * console.log('Logux node ID is ' + app.options.nodeId)
+   * console.log('Connecting to ' + app.options.url)
    */
   this.options = options || { }
 
@@ -103,7 +101,14 @@ function Client (options) {
   } else {
     userId = ''
   }
-  this.options.nodeId = userId + this.id
+  /**
+   * Unique Logux node ID.
+   * @type {string}
+   *
+   * @example
+   * console.log('Client ID: ', app.nodeId)
+   */
+  this.nodeId = userId + this.id
 
   var auth
   if (/^ws:\/\//.test(this.options.url) && !options.allowDangerousProtocol) {
@@ -135,7 +140,7 @@ function Client (options) {
    * @example
    * app.log.keep(customKeeper)
    */
-  this.log = new Log({ store: store, nodeId: this.options.nodeId })
+  this.log = new Log({ store: store, nodeId: this.nodeId })
 
   var client = this
   this.tabPing = 60000
@@ -165,7 +170,7 @@ function Client (options) {
    * @example
    * if (client.sync.state === 'synchronized')
    */
-  this.sync = new ClientSync(this.options.nodeId, this.log, connection, {
+  this.sync = new ClientSync(this.nodeId, this.log, connection, {
     credentials: this.options.credentials,
     subprotocol: this.options.subprotocol,
     timeout: this.options.timeout,
