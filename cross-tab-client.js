@@ -118,8 +118,6 @@ function setState (client, state) {
  * @param {string} [options.prefix="logux"] Prefix for `IndexedDB` database
  *                                          to run multiple Logux instances
  *                                          in the same browser.
- * @param {string|number} [options.nodeId] Unique client ID.
- *                                         Compacted UUID by default.
  * @param {number} [options.timeout=20000] Timeout in milliseconds
  *                                         to break connection.
  * @param {number} [options.ping=10000] Milliseconds since last message to test

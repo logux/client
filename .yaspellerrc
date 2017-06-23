@@ -28,6 +28,7 @@
     "UX",
     "nanoevents",
     "tabId",
-    "CrossTabClient"
+    "CrossTabClient",
+    "nodeId"
   ]
 }
