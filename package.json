@@ -31,6 +31,7 @@
     "html-webpack-plugin": "^2.28.0",
     "jest": "^20.0.4",
     "jsdoc": "^3.4.3",
+    "logux-store-tests": "0.0.1",
     "lint-staged": "^4.0.0",
     "pre-commit": "^1.2.2",
     "rimraf": "^2.6.1",
