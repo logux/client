@@ -108,7 +108,7 @@ it('does not double favicon changes', function () {
 it('allows to miss timeout error', function () {
   return createClient().then(function (client) {
     favicon(client, { error: '/error.ico' })
-    client.sync.emitter.emit('error', new SyncError(test.leftSync, 'timeout'))
+    client.sync.emitter.emit('error', new SyncError(client.sync, 'timeout'))
     expect(getFavHref()).toBe('')
   })
 })
