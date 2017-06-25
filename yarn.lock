@@ -2800,6 +2800,10 @@ logux-core@logux/logux-core:
   dependencies:
     nanoevents "^0.3.0"
 
+logux-store-tests@MrMeison/logux-store-tests#move-common-tests:
+  version "0.0.1"
+  resolved "https://codeload.github.com/MrMeison/logux-store-tests/tar.gz/09b89226d467b125f4ea6a5b3b32704c5b252c0d"
+
 logux-sync@logux/logux-sync:
   version "0.1.2"
   resolved "https://codeload.github.com/logux/logux-sync/tar.gz/a49b499c3e224cf3a0e9f0f0ad6f0d2b9aa531bf"

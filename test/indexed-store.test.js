@@ -150,7 +150,7 @@ it('throws a errors', function () {
   var error = new Error()
   global.indexedDB = {
     open: function () {
-      var request = {}
+      var request = { }
       setTimeout(function () {
         request.onerror({ target: { error: error } })
       }, 1)
@@ -168,13 +168,13 @@ it('throws a errors', function () {
 
 it('updates reasons cache', function () {
   store = new IndexedStore()
-  return store.add({}, { id: [1], time: 1, reasons: ['a'] }).then(function () {
+  return store.add({ }, { id: [1], time: 1, reasons: ['a'] }).then(function () {
     return store.changeMeta([1], { reasons: ['a', 'b', 'c'] })
   }).then(function () {
-    return store.removeReason('b', {}, nope)
+    return store.removeReason('b', { }, nope)
   }).then(function () {
     return check(store, [
-      [{}, { added: 1, id: [1], time: 1, reasons: ['a', 'c'] }]
+      [{ }, { added: 1, id: [1], time: 1, reasons: ['a', 'c'] }]
     ])
   })
 })
