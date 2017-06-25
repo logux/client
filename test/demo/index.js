@@ -1,8 +1,8 @@
+var CrossTabClient = require('logux-client/cross-tab-client')
 var MemoryStore = require('logux-core/memory-store')
 var ClientSync = require('logux-sync/client-sync')
 var LocalPair = require('logux-sync/local-pair')
 var BaseSync = require('logux-sync/base-sync')
-var Client = require('logux-client/client')
 var Log = require('logux-core/log')
 
 // Logux Status features
@@ -24,7 +24,7 @@ var pair = new LocalPair(500)
 var serverLog = new Log({ store: new MemoryStore(), nodeId: 'server' })
 new BaseSync('server', serverLog, pair.right)
 
-var client = new Client({
+var client = new CrossTabClient({
   subprotocol: '1.0.0',
   userId: 10,
   url: 'wss://example.com/'
