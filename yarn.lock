@@ -2912,13 +2912,13 @@ log-update@^1.0.2:
 
 logux-core@logux/logux-core:
   version "0.1.0"
-  resolved "https://codeload.github.com/logux/logux-core/tar.gz/53b5ff8120ffa9d2fd985795c2ad6a39e4345835"
+  resolved "https://codeload.github.com/logux/logux-core/tar.gz/a7a6f8a3456e3bb8d8da239f0f4157e43b609134"
   dependencies:
     nanoevents "^0.3.0"
 
-logux-store-tests@MrMeison/logux-store-tests#move-common-tests:
-  version "0.0.1"
-  resolved "https://codeload.github.com/MrMeison/logux-store-tests/tar.gz/09b89226d467b125f4ea6a5b3b32704c5b252c0d"
+logux-store-tests@logux/logux-store-tests:
+  version "0.0.0"
+  resolved "https://codeload.github.com/logux/logux-store-tests/tar.gz/0ef49eaf211292ddeac1796cef5cc7315e5d5bfd"
 
 logux-sync@logux/logux-sync:
   version "0.1.2"
@@ -3907,13 +3907,13 @@ rxjs@^5.0.0-beta.11:
   dependencies:
     symbol-observable "^1.0.1"
 
-safe-buffer@^5.0.1, safe-buffer@~5.0.1:
-  version "5.0.1"
-  resolved "https://registry.yarnpkg.com/safe-buffer/-/safe-buffer-5.0.1.tgz#d263ca54696cd8a306b5ca6551e92de57918fbe7"
-
-safe-buffer@^5.1.0, safe-buffer@~5.1.0:
+safe-buffer@^5.0.1, safe-buffer@^5.1.0, safe-buffer@~5.1.0:
   version "5.1.1"
   resolved "https://registry.yarnpkg.com/safe-buffer/-/safe-buffer-5.1.1.tgz#893312af69b2123def71f57889001671eeb2c853"
+
+safe-buffer@~5.0.1:
+  version "5.0.1"
+  resolved "https://registry.yarnpkg.com/safe-buffer/-/safe-buffer-5.0.1.tgz#d263ca54696cd8a306b5ca6551e92de57918fbe7"
 
 safe-regex@^1.1.0:
   version "1.1.0"
@@ -4420,8 +4420,8 @@ typedarray@^0.0.6:
   resolved "https://registry.yarnpkg.com/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
 
 uglify-js@3.0.x:
-  version "3.0.19"
-  resolved "https://registry.yarnpkg.com/uglify-js/-/uglify-js-3.0.19.tgz#ab1dfe2a171361b81fa9ffb3383461ea384557ed"
+  version "3.0.20"
+  resolved "https://registry.yarnpkg.com/uglify-js/-/uglify-js-3.0.20.tgz#cb35b2bcfe478051b6f3282be8db4e4add49a1e5"
   dependencies:
     commander "~2.9.0"
     source-map "~0.5.1"

@@ -2,7 +2,6 @@
 
 var fakeIndexedDB = require('fake-indexeddb')
 var eachTest = require('logux-store-tests')
-var TestTime = require('logux-core').TestTime
 
 var IndexedStore = require('../indexed-store')
 
@@ -73,32 +72,6 @@ it('allows to change DB name', function () {
   })
 })
 
-it('stores any metadata', function () {
-  store = new IndexedStore()
-  return store.add(
-    { type: 'A' },
-    { id: [1, 'a'], time: 1, test: 1 }
-  ).then(function () {
-    return check(store, [
-      [{ type: 'A' }, { added: 1, id: [1, 'a'], time: 1, test: 1 }]
-    ])
-  })
-})
-
-it('ignores entries with same ID', function () {
-  store = new IndexedStore()
-  var id = [1, 'a', 1]
-  return store.add({ a: 1 }, { id: id, time: 1 }).then(function (meta) {
-    expect(meta).toEqual({ id: id, time: 1, added: 1 })
-    return store.add({ a: 2 }, { id: id, time: 2 })
-  }).then(function (meta) {
-    expect(meta).toBeFalsy()
-    return check(store, [
-      [{ a: 1 }, { id: id, time: 1, added: 1 }]
-    ])
-  })
-})
-
 it('reloads page on database update', function () {
   document.reload = jest.fn()
   store = new IndexedStore()
@@ -115,34 +88,6 @@ it('reloads page on database update', function () {
     })
   }).then(function () {
     expect(document.reload).toHaveBeenCalled()
-  })
-})
-
-it('checks that action ID is used in log', function () {
-  store = new IndexedStore()
-  return store.add({ type: 'A' }, { id: [1], time: 1 }).then(function () {
-    return store.has([1])
-  }).then(function (result) {
-    expect(result).toBeTruthy()
-    return store.has([2])
-  }).then(function (result) {
-    expect(result).toBeFalsy()
-  })
-})
-
-it('works with real log', function () {
-  store = new IndexedStore()
-  var log = TestTime.getLog({ store: store })
-  var entries = []
-  return Promise.all([
-    log.add({ type: 'A' }, { id: [2], reasons: ['test'] }),
-    log.add({ type: 'B' }, { id: [1], reasons: ['test'] })
-  ]).then(function () {
-    return log.each(function (action) {
-      entries.push(action)
-    })
-  }).then(function () {
-    expect(entries).toEqual([{ type: 'A' }, { type: 'B' }])
   })
 })
 
