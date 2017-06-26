@@ -14,6 +14,3 @@ coverage/
 docs/
 .jsdocrc
 .yaspellerrc
-
-bundle/
-webpack.config.js
