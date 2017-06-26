@@ -7,5 +7,4 @@ yarn-error.log
 
 coverage/
 docs/
-bundle/
 test/demo/build/
