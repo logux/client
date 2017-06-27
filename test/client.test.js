@@ -352,3 +352,23 @@ it('adds current subprotocol to meta', function () {
     expect(client.log.store.created[0][1].subprotocol).toEqual('1.0.0')
   })
 })
+
+it('adds current subprotocol only to own actions', function () {
+  var client = createClient()
+  return client.log.add(
+    { type: 'A' },
+    { reasons: ['test'], id: [1, '0:other', 0] }
+  ).then(function () {
+    expect(client.log.store.created[0][1].subprotocol).not.toBeDefined()
+  })
+})
+
+it('allows to override subprotocol in meta', function () {
+  var client = createClient()
+  return client.log.add(
+    { type: 'A' },
+    { subprotocol: '0.1.0', reasons: ['test'] }
+  ).then(function () {
+    expect(client.log.store.created[0][1].subprotocol).toEqual('0.1.0')
+  })
+})

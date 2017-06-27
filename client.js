@@ -145,7 +145,7 @@ function Client (options) {
   var client = this
 
   this.log.on('preadd', function (action, meta) {
-    if (typeof meta.subprotocol === 'undefined') {
+    if (meta.id[1] === client.nodeId && !meta.subprotocol) {
       meta.subprotocol = client.options.subprotocol
     }
   })
