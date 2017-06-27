@@ -345,3 +345,10 @@ it('cleans other tab action after timeout', function () {
     expect(localStorage.getItem('test:tab:2')).not.toBeDefined()
   })
 })
+
+it('adds current subprotocol to meta', function () {
+  var client = createClient()
+  return client.log.add({ type: 'A' }, { reasons: ['test'] }).then(function () {
+    expect(client.log.store.created[0][1].subprotocol).toEqual('1.0.0')
+  })
+})

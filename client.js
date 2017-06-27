@@ -143,6 +143,13 @@ function Client (options) {
   this.log = new Log({ store: store, nodeId: this.nodeId })
 
   var client = this
+
+  this.log.on('preadd', function (action, meta) {
+    if (typeof meta.subprotocol === 'undefined') {
+      meta.subprotocol = client.options.subprotocol
+    }
+  })
+
   this.tabPing = 60000
   this.tabTimeout = 10 * this.tabPing
   if (typeof localStorage !== 'undefined') {
