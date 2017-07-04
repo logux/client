@@ -21,7 +21,7 @@
     "eslint-config-logux": "^15.0.0",
     "eslint-config-standard": "^10.2.1",
     "eslint-plugin-es5": "^1.1.0",
-    "eslint-plugin-import": "^2.6.0",
+    "eslint-plugin-import": "^2.6.1",
     "eslint-plugin-jest": "^20.0.3",
     "eslint-plugin-node": "^5.1.0",
     "eslint-plugin-promise": "^3.5.0",
@@ -35,7 +35,7 @@
     "logux-store-tests": "logux/logux-store-tests",
     "pre-commit": "^1.2.2",
     "rimraf": "^2.6.1",
-    "size-limit": "^0.1.1",
+    "size-limit": "^0.3.0",
     "webpack": "^3.0.0",
     "webpack-dev-server": "^2.5.0",
     "yaspeller-ci": "^0.4.0"
