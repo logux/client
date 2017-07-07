@@ -41,6 +41,10 @@ function wait (ms) {
 function createDialog (opts, credentials) {
   var client = new Client(opts)
 
+  client.log.on('preadd', function (action, meta) {
+    meta.reasons.push('test')
+  })
+
   var pair = new TestPair()
   client.sync = new ClientSync(
     client.nodeId,
@@ -408,5 +412,60 @@ it('filters data before sending', function () {
         channels: ['user:0']
       }]
     ])
+  })
+})
+
+it('compresses subprotocol', function () {
+  var client
+  return createDialog({
+    subprotocol: '1.0.0',
+    userId: 10,
+    url: 'wss://test.com'
+  }).then(function (created) {
+    client = created
+    client.sync.connection.pair.clear()
+    return Promise.all([
+      client.log.add(
+        { type: 'a' },
+        { id: [1, '10:id', 0], subprotocol: '1.0.0', reasons: ['test'] }
+      ),
+      client.log.add(
+        { type: 'a' },
+        { id: [2, '10:id', 0], subprotocol: '2.0.0', reasons: ['test'] }
+      )
+    ])
+  }).then(function () {
+    client.sync.connection.pair.right.send(['synced', 1])
+    client.sync.connection.pair.right.send(['synced', 2])
+    return client.sync.waitFor('synchronized')
+  }).then(function () {
+    expect(client.sync.connection.pair.leftSent).toEqual([
+      ['sync', 1, { type: 'a' }, { id: [1, '10:id', 0], time: 1 }],
+      ['sync', 2, { type: 'a' }, {
+        id: [2, '10:id', 0], time: 2, subprotocol: '2.0.0'
+      }]
+    ])
+  })
+})
+
+it('decompresses subprotocol', function () {
+  var client
+  var action = { type: 'a' }
+  return createDialog({
+    subprotocol: '1.0.0',
+    userId: 10,
+    url: 'wss://test.com'
+  }).then(function (created) {
+    client = created
+    client.sync.connection.emitter.emit('message', [
+      'sync', 1, action, { id: [1, '10:id', 0], time: 1 }
+    ])
+    client.sync.connection.emitter.emit('message', [
+      'sync', 2, action, { id: [2, '10:id', 0], time: 2, subprotocol: '2.0.0' }
+    ])
+    return client.sync.waitFor('synchronized')
+  }).then(function () {
+    expect(client.log.store.created[0][1].subprotocol).toEqual('2.0.0')
+    expect(client.log.store.created[1][1].subprotocol).toEqual('0.0.0')
   })
 })
