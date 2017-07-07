@@ -57,6 +57,7 @@ function createDialog (opts, credentials) {
     }])
     return pair.wait('left')
   }).then(function () {
+    client.sync.timeFix = 0
     return client
   })
 }
@@ -167,7 +168,7 @@ it('uses user ID in node ID', function () {
     userId: false,
     url: 'wss://localhost:1337'
   })
-  expect(client2.nodeId).not.toMatch(/:/)
+  expect(client2.nodeId).toEqual('false:' + client2.id)
 })
 
 it('uses node ID in ID generator', function () {
@@ -370,5 +371,42 @@ it('allows to override subprotocol in meta', function () {
     { subprotocol: '0.1.0', reasons: ['test'] }
   ).then(function () {
     expect(client.log.store.created[0][1].subprotocol).toEqual('0.1.0')
+  })
+})
+
+it('filters data before sending', function () {
+  var client
+  return createDialog({
+    subprotocol: '1.0.0',
+    userId: 10,
+    url: 'wss://test.com'
+  }).then(function (created) {
+    client = created
+    client.sync.connection.pair.clear()
+    return Promise.all([
+      client.log.add({ type: 'a' }, {
+        id: [1, '10:uuid', 0],
+        time: 1,
+        users: ['0'],
+        custom: 1,
+        reasons: ['test'],
+        nodeIds: ['0:uuid'],
+        channels: ['user:0']
+      }),
+      client.log.add({ type: 'c' }, { id: [1, '0:uuid', 0], reasons: ['test'] })
+    ])
+  }).then(function () {
+    client.sync.connection.pair.right.send(['synced', 1])
+    return client.sync.waitFor('synchronized')
+  }).then(function () {
+    expect(client.sync.connection.pair.leftSent).toEqual([
+      ['sync', 1, { type: 'a' }, {
+        id: [1, '10:uuid', 0],
+        time: 1,
+        users: ['0'],
+        nodeIds: ['0:uuid'],
+        channels: ['user:0']
+      }]
+    ])
   })
 })
