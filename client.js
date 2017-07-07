@@ -172,14 +172,24 @@ function Client (options) {
     return Promise.resolve(user === client.options.userId)
   }
 
-  function map (action, meta) {
+  function outMap (action, meta) {
     var filtered = { }
     for (var i in meta) {
       if (ALLOWED_META.indexOf(i) !== -1) {
         filtered[i] = meta[i]
       }
+      if (meta.subprotocol && meta.subprotocol !== client.options.subprotocol) {
+        filtered.subprotocol = meta.subprotocol
+      }
     }
     return Promise.resolve([action, filtered])
+  }
+
+  function inMap (action, meta) {
+    if (!meta.subprotocol) {
+      meta.subprotocol = client.sync.remoteSubprotocol
+    }
+    return Promise.resolve([action, meta])
   }
 
   /**
@@ -194,7 +204,8 @@ function Client (options) {
     subprotocol: this.options.subprotocol,
     outFilter: filter,
     timeout: this.options.timeout,
-    outMap: map,
+    outMap: outMap,
+    inMap: inMap,
     ping: this.options.ping,
     auth: auth
   })
