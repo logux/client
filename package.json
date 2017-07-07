@@ -18,10 +18,10 @@
   "devDependencies": {
     "docdash": "^0.4.0",
     "eslint": "^4.1.1",
-    "eslint-config-logux": "^15.0.0",
+    "eslint-config-logux": "^15.0.1",
     "eslint-config-standard": "^10.2.1",
     "eslint-plugin-es5": "^1.1.0",
-    "eslint-plugin-import": "^2.6.1",
+    "eslint-plugin-import": "^2.7.0",
     "eslint-plugin-jest": "^20.0.3",
     "eslint-plugin-node": "^5.1.0",
     "eslint-plugin-promise": "^3.5.0",
@@ -31,14 +31,14 @@
     "html-webpack-plugin": "^2.29.0",
     "jest": "^20.0.4",
     "jsdoc": "^3.4.3",
-    "lint-staged": "^4.0.0",
+    "lint-staged": "^4.0.1",
     "logux-store-tests": "logux/logux-store-tests",
     "pre-commit": "^1.2.2",
     "rimraf": "^2.6.1",
-    "size-limit": "^0.3.0",
-    "webpack": "^3.0.0",
+    "size-limit": "^0.5.0",
+    "webpack": "^3.1.0",
     "webpack-dev-server": "^2.5.0",
-    "yaspeller-ci": "^0.4.0"
+    "yaspeller-ci": "^0.6.0"
   },
   "scripts": {
     "lint-staged": "lint-staged",
