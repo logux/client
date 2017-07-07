@@ -19,6 +19,8 @@ function cleanTabActions (client, id) {
   })
 }
 
+var ALLOWED_META = ['id', 'time', 'nodeIds', 'users', 'channels']
+
 /**
  * Base class for browser API to be extended in {@link CrossTabClient}.
  *
@@ -94,13 +96,8 @@ function Client (options) {
    * app.log.add(action, { tab: app.id })
    */
   this.id = shortid(0)
+  this.options.userId = this.options.userId.toString()
 
-  var userId = this.options.userId
-  if (userId) {
-    userId += ':'
-  } else {
-    userId = ''
-  }
   /**
    * Unique Logux node ID.
    * @type {string}
@@ -108,7 +105,7 @@ function Client (options) {
    * @example
    * console.log('Client ID: ', app.nodeId)
    */
-  this.nodeId = userId + this.id
+  this.nodeId = this.options.userId + ':' + this.id
 
   var auth
   if (/^ws:\/\//.test(this.options.url) && !options.allowDangerousProtocol) {
@@ -170,6 +167,21 @@ function Client (options) {
     attempts: this.options.attempts
   })
 
+  function filter (action, meta) {
+    var user = meta.id[1].split(':')[0]
+    return Promise.resolve(user === client.options.userId)
+  }
+
+  function map (action, meta) {
+    var filtered = { }
+    for (var i in meta) {
+      if (ALLOWED_META.indexOf(i) !== -1) {
+        filtered[i] = meta[i]
+      }
+    }
+    return Promise.resolve([action, filtered])
+  }
+
   /**
    * Sync instance from `logux-sync` to synchronize logs.
    * @type {ClientSync}
@@ -180,7 +192,9 @@ function Client (options) {
   this.sync = new ClientSync(this.nodeId, this.log, connection, {
     credentials: this.options.credentials,
     subprotocol: this.options.subprotocol,
+    outFilter: filter,
     timeout: this.options.timeout,
+    outMap: map,
     ping: this.options.ping,
     auth: auth
   })
