@@ -447,25 +447,3 @@ it('compresses subprotocol', function () {
     ])
   })
 })
-
-it('decompresses subprotocol', function () {
-  var client
-  var action = { type: 'a' }
-  return createDialog({
-    subprotocol: '1.0.0',
-    userId: 10,
-    url: 'wss://test.com'
-  }).then(function (created) {
-    client = created
-    client.sync.connection.emitter.emit('message', [
-      'sync', 1, action, { id: [1, '10:id', 0], time: 1 }
-    ])
-    client.sync.connection.emitter.emit('message', [
-      'sync', 2, action, { id: [2, '10:id', 0], time: 2, subprotocol: '2.0.0' }
-    ])
-    return client.sync.waitFor('synchronized')
-  }).then(function () {
-    expect(client.log.store.created[0][1].subprotocol).toEqual('2.0.0')
-    expect(client.log.store.created[1][1].subprotocol).toEqual('0.0.0')
-  })
-})
