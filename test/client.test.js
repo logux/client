@@ -471,3 +471,36 @@ it('compresses subprotocol', function () {
     ])
   })
 })
+
+it('warns about subscription actions without sync', function () {
+  console.error = jest.fn()
+  var client = createClient()
+  return Promise.all([
+    client.log.add({ type: 'logux/subscribe', name: 'test' }),
+    client.log.add({ type: 'logux/unsubscribe', name: 'test' })
+  ]).then(function () {
+    expect(console.error.mock.calls).toEqual([
+      ['logux/subscribe action without meta.sync'],
+      ['logux/unsubscribe action without meta.sync']
+    ])
+  })
+})
+
+it('resubscribe to previous subscriptions', function () {
+  var client = createClient()
+  client.log.on('preadd', function (action, meta) {
+    meta.reasons.push('test')
+  })
+  return Promise.all([
+    client.log.add({ type: 'logux/subscribe', name: 'a' }, { sync: true }),
+    client.log.add({ type: 'logux/unsubscribe', name: 'a' }, { sync: true }),
+    client.log.add({ type: 'logux/subscribe', name: 'b' }, { sync: true })
+  ]).then(function () {
+    client.sync.emitter.emit('connect')
+    expect(client.log.store.created.length).toEqual(4)
+    expect(client.log.store.created[0][0]).toEqual({
+      type: 'logux/subscribe', name: 'b'
+    })
+    expect(client.log.store.created[0][1].sync).toBeTruthy()
+  })
+})
