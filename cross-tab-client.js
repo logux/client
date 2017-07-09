@@ -1,4 +1,3 @@
-var NanoEvents = require('nanoevents')
 var merge = require('logux-sync/merge')
 
 var Client = require('./client')
@@ -147,8 +146,6 @@ function setState (client, state) {
  */
 function CrossTabClient (options) {
   Client.call(this, options)
-
-  this.emitter = new NanoEvents()
 
   /**
    * Current tab role. Only `leader` tab connects to server. `followers` just

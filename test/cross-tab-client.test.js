@@ -465,3 +465,14 @@ it('cleans tab-specific action after timeout', function () {
     expect(client.log.store.created.length).toEqual(0)
   })
 })
+
+it('detects subscriptions from different tabs', function () {
+  global.localStorage = fakeLocalStorage
+  client = createClient()
+  emitStorage('logux:false:add', '["other",' +
+    '{"type":"logux/subscribe","name":"a"},{"sync":true}' +
+  ']')
+  expect(client.subscriptions).toEqual({
+    a: { type: 'logux/subscribe', name: 'a' }
+  })
+})

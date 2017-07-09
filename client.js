@@ -1,6 +1,7 @@
 var BrowserConnection = require('logux-sync/browser-connection')
 var MemoryStore = require('logux-core/memory-store')
 var ClientSync = require('logux-sync/client-sync')
+var NanoEvents = require('nanoevents')
 var Reconnect = require('logux-sync/reconnect')
 var shortid = require('shortid/lib/build')
 var Log = require('logux-core/log')
@@ -147,6 +148,29 @@ function Client (options) {
     }
   })
 
+  this.subscriptions = { }
+  function listener (action, meta) {
+    if (action.type === 'logux/subscribe') {
+      client.subscriptions[action.name] = action
+      if (!meta.sync) {
+        console.error('logux/subscribe action without meta.sync')
+      }
+    } else if (action.type === 'logux/unsubscribe') {
+      delete client.subscriptions[action.name]
+      if (!meta.sync) {
+        console.error('logux/unsubscribe action without meta.sync')
+      }
+    }
+  }
+
+  this.emitter = new NanoEvents()
+
+  if (this.on) {
+    this.on('add', listener)
+  } else {
+    this.log.on('add', listener)
+  }
+
   this.tabPing = 60000
   this.tabTimeout = 10 * this.tabPing
   if (typeof localStorage !== 'undefined') {
@@ -208,25 +232,17 @@ function Client (options) {
     }
   })
 
+  this.sync.on('connect', function () {
+    for (var i in client.subscriptions) {
+      client.log.add(client.subscriptions[i], { sync: true })
+    }
+  })
+
   this.onUnload = this.onUnload.bind(this)
   window.addEventListener('unload', this.onUnload)
 }
 
 Client.prototype = {
-
-  cleanPrevActions: function cleanPrevActions () {
-    if (typeof localStorage === 'undefined') return
-
-    for (var i in localStorage) {
-      var prefix = this.options.prefix + ':tab:'
-      if (i.slice(0, prefix.length) === prefix) {
-        var time = parseInt(localStorage.getItem(i))
-        if (Date.now() - time > this.tabTimeout) {
-          cleanTabActions(this, i.slice(prefix.length))
-        }
-      }
-    }
-  },
 
   /**
    * Connect to server and reconnect on any connection problem.
@@ -275,6 +291,20 @@ Client.prototype = {
       return this.log.store.clean()
     } else {
       return Promise.resolve()
+    }
+  },
+
+  cleanPrevActions: function cleanPrevActions () {
+    if (typeof localStorage === 'undefined') return
+
+    for (var i in localStorage) {
+      var prefix = this.options.prefix + ':tab:'
+      if (i.slice(0, prefix.length) === prefix) {
+        var time = parseInt(localStorage.getItem(i))
+        if (Date.now() - time > this.tabTimeout) {
+          cleanTabActions(this, i.slice(prefix.length))
+        }
+      }
     }
   },
 
