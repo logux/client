@@ -17,8 +17,8 @@
   },
   "devDependencies": {
     "docdash": "^0.4.0",
-    "eslint": "^4.1.1",
-    "eslint-config-logux": "^15.0.1",
+    "eslint": "^4.2.0",
+    "eslint-config-logux": "^16.0.0",
     "eslint-config-standard": "^10.2.1",
     "eslint-plugin-es5": "^1.1.0",
     "eslint-plugin-import": "^2.7.0",
@@ -35,9 +35,9 @@
     "logux-store-tests": "logux/logux-store-tests",
     "pre-commit": "^1.2.2",
     "rimraf": "^2.6.1",
-    "size-limit": "^0.5.0",
+    "size-limit": "^0.6.0",
     "webpack": "^3.1.0",
-    "webpack-dev-server": "^2.5.0",
+    "webpack-dev-server": "^2.5.1",
     "yaspeller-ci": "^0.6.0"
   },
   "scripts": {
@@ -46,10 +46,15 @@
     "clean": "rimraf docs/ coverage/ test/demo/build/",
     "lint": "eslint *.js test/{**/,}*.js",
     "docs": "jsdoc --configure .jsdocrc *.js",
-    "test": "jest --coverage && yarn lint && yarn size && yarn spellcheck",
-    "size": "size-limit 9KB cross-tab-client.js",
+    "test": "jest --coverage && yarn lint && size-limit && yarn spellcheck",
     "demo": "webpack-dev-server --config test/demo/webpack.config"
   },
+  "sizeLimit": [
+    {
+      "path": "cross-tab-client.js",
+      "limit": "9KB"
+    }
+  ],
   "jest": {
     "coverageThreshold": {
       "global": {
