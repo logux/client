@@ -38,7 +38,17 @@ function wait (ms) {
   })
 }
 
+var DEFAULTS = {
+  subprotocol: '1.0.0',
+  userId: 10,
+  url: 'wss://test.com'
+}
+
 function createDialog (opts, credentials) {
+  if (!opts) opts = { }
+  for (var i in DEFAULTS) {
+    if (typeof opts[i] === 'undefined') opts[i] = DEFAULTS[i]
+  }
   var client = new Client(opts)
 
   client.log.on('preadd', function (action, meta) {
@@ -106,11 +116,7 @@ it('throws on missed user ID', function () {
 
 it('not warns on WSS', function () {
   console.error = jest.fn()
-  return createDialog({
-    subprotocol: '1.0.0',
-    userId: false,
-    url: 'wss://test.com'
-  }).then(function (client) {
+  return createDialog().then(function (client) {
     expect(client.sync.connected).toBeTruthy()
     expect(console.error).not.toBeCalledWith()
   })
@@ -118,11 +124,7 @@ it('not warns on WSS', function () {
 
 it('forces to use WSS in production domain', function () {
   console.error = jest.fn()
-  return createDialog({
-    subprotocol: '1.0.0',
-    userId: false,
-    url: 'ws://test.com'
-  }).then(function (client) {
+  return createDialog({ url: 'ws://test.com' }).then(function (client) {
     expect(client.sync.connected).toBeFalsy()
     expect(console.error).toBeCalledWith(
       'Without SSL, old proxies can block WebSockets. ' +
@@ -135,8 +137,6 @@ it('ignores WS with allowDangerousProtocol', function () {
   console.error = jest.fn()
   return createDialog({
     allowDangerousProtocol: true,
-    subprotocol: '1.0.0',
-    userId: false,
     url: 'ws://test.com'
   }).then(function (client) {
     expect(client.sync.connected).toBeTruthy()
@@ -147,8 +147,6 @@ it('ignores WS with allowDangerousProtocol', function () {
 it('ignores WS in development', function () {
   console.error = jest.fn()
   return createDialog({
-    subprotocol: '1.0.0',
-    userId: false,
     url: 'ws://test.com'
   }, {
     env: 'development'
@@ -378,26 +376,46 @@ it('allows to override subprotocol in meta', function () {
   })
 })
 
+it('sends only special actions', function () {
+  var client
+  return createDialog().then(function (created) {
+    client = created
+    client.sync.connection.pair.clear()
+    return Promise.all([
+      client.log.add({ type: 'a' }, { id: [1, '10:uuid', 0], sync: true }),
+      client.log.add({ type: 'c' }, { id: [2, '10:uuid', 0] })
+    ])
+  }).then(function () {
+    client.sync.connection.pair.right.send(['synced', 1])
+    return client.sync.waitFor('synchronized')
+  }).then(function () {
+    expect(client.sync.connection.pair.leftSent).toEqual([
+      ['sync', 1, { type: 'a' }, { id: [1, '10:uuid', 0], time: 1 }]
+    ])
+  })
+})
+
 it('filters data before sending', function () {
   var client
-  return createDialog({
-    subprotocol: '1.0.0',
-    userId: 10,
-    url: 'wss://test.com'
-  }).then(function (created) {
+  return createDialog().then(function (created) {
     client = created
     client.sync.connection.pair.clear()
     return Promise.all([
       client.log.add({ type: 'a' }, {
         id: [1, '10:uuid', 0],
         time: 1,
+        sync: true,
         users: ['0'],
         custom: 1,
         reasons: ['test'],
         nodeIds: ['0:uuid'],
         channels: ['user:0']
       }),
-      client.log.add({ type: 'c' }, { id: [1, '0:uuid', 0], reasons: ['test'] })
+      client.log.add({ type: 'c' }, {
+        id: [1, '0:uuid', 0],
+        sync: true,
+        reasons: ['test']
+      })
     ])
   }).then(function () {
     client.sync.connection.pair.right.send(['synced', 1])
@@ -417,21 +435,27 @@ it('filters data before sending', function () {
 
 it('compresses subprotocol', function () {
   var client
-  return createDialog({
-    subprotocol: '1.0.0',
-    userId: 10,
-    url: 'wss://test.com'
-  }).then(function (created) {
+  return createDialog().then(function (created) {
     client = created
     client.sync.connection.pair.clear()
     return Promise.all([
       client.log.add(
         { type: 'a' },
-        { id: [1, '10:id', 0], subprotocol: '1.0.0', reasons: ['test'] }
+        {
+          id: [1, '10:id', 0],
+          sync: true,
+          reasons: ['test'],
+          subprotocol: '1.0.0'
+        }
       ),
       client.log.add(
         { type: 'a' },
-        { id: [2, '10:id', 0], subprotocol: '2.0.0', reasons: ['test'] }
+        {
+          id: [2, '10:id', 0],
+          sync: true,
+          reasons: ['test'],
+          subprotocol: '2.0.0'
+        }
       )
     ])
   }).then(function () {
