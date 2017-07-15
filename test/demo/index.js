@@ -61,9 +61,15 @@ document.all.connection.onchange = function (e) {
   }
 }
 
-document.all.clientError.onclick = function () {
+document.all.error.onclick = function () {
   setTimeout(function () {
-    client.sync.syncError('wrong-format')
+    client.log.add({ type: 'logux/undo', reason: 'error' })
+  }, 3000)
+}
+
+document.all.denied.onclick = function () {
+  setTimeout(function () {
+    client.log.add({ type: 'logux/undo', reason: 'denied' })
   }, 3000)
 }
 
@@ -74,7 +80,10 @@ document.all.serverError.onclick = function () {
 }
 
 document.all.subprotocolError.onclick = function () {
-  client.sync.syncError('wrong-protocol', { supported: [1, 0], used: [2, 0] })
+  client.sync.syncError('wrong-subprotocol', {
+    supported: '2.x',
+    used: '1.0.0'
+  })
 }
 
 document.all.add.onclick = function () {
