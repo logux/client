@@ -1,4 +1,4 @@
-var TestTime = require('logux-core').TestTime
+var CrossTabClient = require('logux-client').CrossTabClient
 var BaseSync = require('logux-sync').BaseSync
 var TestPair = require('logux-sync').TestPair
 var SyncError = require('logux-sync').SyncError
@@ -18,13 +18,24 @@ Object.defineProperty(document, 'hidden', {
   }
 })
 
-function createTest () {
+function createClient () {
   document.title = 'title'
+
+  var client = new CrossTabClient({
+    subprotocol: '1.0.0',
+    userId: false,
+    url: 'wss://localhost:1337'
+  })
+
   var pair = new TestPair()
-  pair.leftSync = new BaseSync('server', TestTime.getLog(), pair.left)
-  pair.leftSync.catch(function () { })
+  var sync = new BaseSync('client', client.log, pair.left)
+  sync.catch(function () { })
+  sync.emitter = client.sync.emitter
+  client.sync = sync
+  client.role = 'leader'
+
   return pair.left.connect().then(function () {
-    return pair
+    return client
   })
 }
 
@@ -36,9 +47,17 @@ afterEach(function () {
 })
 
 it('receives errors', function () {
-  return createTest().then(function (test) {
-    attention({ sync: test.leftSync })
-    test.left.emitter.emit('error', new Error('test'))
+  return createClient().then(function (client) {
+    attention(client)
+    client.sync.emitter.emit('error', new Error('test'))
+    expect(document.title).toBe('* title')
+  })
+})
+
+it('receives undo', function () {
+  return createClient().then(function (client) {
+    attention(client)
+    client.log.add({ type: 'logux/undo', reason: 'error' })
     expect(document.title).toBe('* title')
   })
 })
@@ -46,17 +65,17 @@ it('receives errors', function () {
 it('returns unbind function', function () {
   document.removeEventListener = jest.fn()
 
-  return createTest().then(function (test) {
-    var unbind = attention({ sync: test.leftSync })
+  return createClient().then(function (client) {
+    var unbind = attention(client)
     unbind()
     expect(document.removeEventListener).toBeCalled()
   })
 })
 
 it('allows to miss timeout error', function () {
-  return createTest().then(function (test) {
-    attention({ sync: test.leftSync })
-    test.left.emitter.emit('error', new SyncError(test.leftSync, 'timeout'))
+  return createClient().then(function (client) {
+    attention(client)
+    client.sync.emitter.emit('error', new SyncError(client.sync, 'timeout'))
     expect(document.title).toBe('title')
   })
 })
@@ -68,10 +87,10 @@ it('sets old title when user open a tab', function () {
     listener = callback
   }
 
-  return createTest().then(function (test) {
-    attention({ sync: test.leftSync })
+  return createClient().then(function (client) {
+    attention(client)
 
-    test.left.emitter.emit('error', new Error('test'))
+    client.sync.emitter.emit('error', new Error('test'))
     expect(document.title).toBe('* title')
 
     nextHidden = false
@@ -81,21 +100,21 @@ it('sets old title when user open a tab', function () {
 })
 
 it('does not double title changes', function () {
-  return createTest().then(function (test) {
-    attention({ sync: test.leftSync })
+  return createClient().then(function (client) {
+    attention(client)
 
-    test.leftSync.emitter.emit('error', new Error('test'))
-    test.leftSync.emitter.emit('error', new Error('test'))
+    client.sync.emitter.emit('error', new Error('test'))
+    client.sync.emitter.emit('error', new Error('test'))
     expect(document.title).toBe('* title')
   })
 })
 
 it('does not change title of visible tab', function () {
-  return createTest().then(function (test) {
-    attention({ sync: test.leftSync })
+  return createClient().then(function (client) {
+    attention(client)
 
     nextHidden = false
-    test.left.emitter.emit('error', new Error('test'))
+    client.sync.emitter.emit('error', new Error('test'))
     expect(document.title).toBe('title')
   })
 })

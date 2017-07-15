@@ -47,6 +47,12 @@ function attention (client) {
       }
     }))
 
+    unbind.push(client.log.on('add', function (action) {
+      if (action.type === 'logux/undo' && action.reason && !timeoutId) {
+        blink()
+      }
+    }))
+
     document.addEventListener('visibilitychange', tabListener, false)
     unbind.push(function () {
       document.removeEventListener('visibilitychange', tabListener, false)
