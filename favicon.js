@@ -39,6 +39,12 @@ function favicon (client, links) {
     }
   }
 
+  function setError () {
+    if (error && prevFav !== error) {
+      fav.href = prevFav = error
+    }
+  }
+
   if (typeof doc !== 'undefined') {
     fav = doc.querySelector('link[rel~="icon"]')
 
@@ -60,10 +66,12 @@ function favicon (client, links) {
     unbind.push(client.on('state', update))
     update()
 
+    unbind.push(client.log.on('add', function (action) {
+      if (action.type === 'logux/undo' && action.reason) setError()
+    }))
+
     unbind.push(client.sync.on('error', function (err) {
-      if (err.type !== 'timeout' && error && prevFav !== error) {
-        fav.href = prevFav = error
-      }
+      if (err.type !== 'timeout') setError()
     }))
   }
 

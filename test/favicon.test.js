@@ -105,6 +105,14 @@ it('does not double favicon changes', function () {
   })
 })
 
+it('uses error icon on undo', function () {
+  return createClient().then(function (client) {
+    favicon(client, { error: '/error.ico' })
+    client.log.add({ type: 'logux/undo', reason: 'error' })
+    expect(getFavHref()).toBe('/error.ico')
+  })
+})
+
 it('allows to miss timeout error', function () {
   return createClient().then(function (client) {
     favicon(client, { error: '/error.ico' })
