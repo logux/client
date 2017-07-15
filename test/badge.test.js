@@ -44,7 +44,7 @@ afterEach(function () {
   if (node) document.body.removeChild(node)
 })
 
-it('should inject base widget styles', function () {
+it('injects base widget styles', function () {
   return createTest().then(function (test) {
     badge({ sync: test.leftSync }, OPTS)
 
@@ -53,7 +53,7 @@ it('should inject base widget styles', function () {
   })
 })
 
-it('should handle synchronized state', function () {
+it('handles synchronized state', function () {
   return createTest().then(function (test) {
     badge({ sync: test.leftSync }, merge(OPTS, { duration: 10 }))
 
@@ -75,7 +75,7 @@ it('should handle synchronized state', function () {
   })
 })
 
-it('should handle disconnected state', function () {
+it('handles disconnected state', function () {
   return createTest().then(function (test) {
     badge({ sync: test.leftSync }, OPTS)
 
@@ -89,7 +89,7 @@ it('should handle disconnected state', function () {
   })
 })
 
-it('should handle wait state', function () {
+it('handles wait state', function () {
   return createTest().then(function (test) {
     badge({ sync: test.leftSync }, OPTS)
 
@@ -102,7 +102,7 @@ it('should handle wait state', function () {
   })
 })
 
-it('should handle sending state', function () {
+it('handles sending state', function () {
   return createTest().then(function (test) {
     badge({ sync: test.leftSync }, OPTS)
 
@@ -120,7 +120,7 @@ it('should handle sending state', function () {
   })
 })
 
-it('should handle connecting state', function () {
+it('handles connecting state', function () {
   return createTest().then(function (test) {
     badge({ sync: test.leftSync }, OPTS)
 
@@ -138,7 +138,7 @@ it('should handle connecting state', function () {
   })
 })
 
-it('should handle error', function () {
+it('handles error', function () {
   return createTest().then(function (test) {
     badge({ sync: test.leftSync }, OPTS)
 
@@ -149,7 +149,7 @@ it('should handle error', function () {
   })
 })
 
-it('should handle server errors', function () {
+it('handles server errors', function () {
   return createTest().then(function (test) {
     badge({ sync: test.leftSync }, OPTS)
 
@@ -179,7 +179,7 @@ it('should handle server errors', function () {
   })
 })
 
-it('should handle client error', function () {
+it('handles client error', function () {
   return createTest().then(function (test) {
     badge({ sync: test.leftSync }, OPTS)
 
@@ -192,7 +192,7 @@ it('should handle client error', function () {
   })
 })
 
-it('should handle bottom and left side of position setting', function () {
+it('handles bottom and left side of position setting', function () {
   return createTest().then(function (test) {
     badge({ sync: test.leftSync }, merge(OPTS, { position: 'bottom-left' }))
 
@@ -201,7 +201,7 @@ it('should handle bottom and left side of position setting', function () {
   })
 })
 
-it('should handle top and right side of position setting', function () {
+it('handles top and right side of position setting', function () {
   return createTest().then(function (test) {
     badge({ sync: test.leftSync }, merge(OPTS, { position: 'top-right' }))
 
@@ -210,7 +210,7 @@ it('should handle top and right side of position setting', function () {
   })
 })
 
-it('should handle center/middle position setting', function () {
+it('handles center/middle position setting', function () {
   return createTest().then(function (test) {
     badge({ sync: test.leftSync }, merge(OPTS, { position: 'center-middle' }))
 
@@ -220,7 +220,7 @@ it('should handle center/middle position setting', function () {
   })
 })
 
-it('should return unbind function and remove badge from DOM', function () {
+it('returns unbind function and remove badge from DOM', function () {
   return createTest().then(function (test) {
     var unbind = badge({ sync: test.leftSync }, OPTS)
     unbind()
