@@ -145,7 +145,7 @@ it('handles error', function () {
     test.leftSync.emitter.emit('error', { type: 'any error' })
     expect(findBadgeNode().style.display).toEqual('block')
     expect(findBadgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
-    expect(getBadgeMessage()).toEqual(messages.error)
+    expect(getBadgeMessage()).toEqual(messages.syncError)
   })
 })
 
@@ -163,7 +163,7 @@ it('handles server errors', function () {
     test.leftSync.emitter.emit('error', error)
     expect(findBadgeNode().style.display).toEqual('block')
     expect(findBadgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
-    expect(getBadgeMessage()).toEqual(messages.error)
+    expect(getBadgeMessage()).toEqual(messages.syncError)
 
     error = new SyncError(test.leftSync, 'wrong-subprotocol', errorOPTS)
     test.leftSync.emitter.emit('error', error)
@@ -188,7 +188,31 @@ it('handles client error', function () {
 
     expect(findBadgeNode().style.display).toEqual('block')
     expect(findBadgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
+    expect(getBadgeMessage()).toEqual(messages.syncError)
+  })
+})
+
+it('handles error undo actions', function () {
+  return createTest().then(function (test) {
+    badge({ sync: test.leftSync }, OPTS)
+
+    test.leftSync.log.add({ type: 'logux/undo', reason: 'error' })
+
+    expect(findBadgeNode().style.display).toEqual('block')
+    expect(findBadgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
     expect(getBadgeMessage()).toEqual(messages.error)
+  })
+})
+
+it('handles denied undo actions', function () {
+  return createTest().then(function (test) {
+    badge({ sync: test.leftSync }, OPTS)
+
+    test.leftSync.log.add({ type: 'logux/undo', reason: 'denied' })
+
+    expect(findBadgeNode().style.display).toEqual('block')
+    expect(findBadgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
+    expect(getBadgeMessage()).toEqual(messages.denied)
   })
 })
 

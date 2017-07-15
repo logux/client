@@ -202,15 +202,26 @@ function badge (client, options) {
       text.innerHTML = messages.protocolError
       injectStateStyles('protocolError')
     } else {
-      text.innerHTML = messages.error
+      text.innerHTML = messages.syncError
       injectStateStyles('error')
     }
   }))
 
   unbind.push(sync.on('clientError', function () {
     show(widget)
-    text.innerHTML = messages.error
+    text.innerHTML = messages.syncError
     injectStateStyles('error')
+  }))
+
+  unbind.push(sync.log.on('add', function (action) {
+    if (action.type === 'logux/undo' && action.reason) {
+      if (action.reason === 'denied') {
+        text.innerHTML = messages.denied
+      } else {
+        text.innerHTML = messages.error
+      }
+      injectStateStyles('error')
+    }
   }))
 
   widget.appendChild(text)

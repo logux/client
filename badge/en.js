@@ -4,6 +4,8 @@ module.exports = {
   wait: 'No Internet connection<br>Your data has not been saved',
   connecting: 'Data saving',
   sending: 'Data saving',
-  error: 'Server error<br>Your data has not been saved',
+  syncError: 'Server error<br>Your data has not been saved',
+  error: 'Server error<br>You changes was reverted',
+  denied: 'You have no access<br>You changes was reverted',
   protocolError: 'Saving is not working<br>Refresh the page'
 }
