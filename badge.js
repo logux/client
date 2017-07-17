@@ -122,10 +122,6 @@ function badge (client, options) {
   var widget = document.createElement('div')
   var text = document.createElement('span')
 
-  function injectStateStyles (state) {
-    injectStyles(widget, styles[state])
-  }
-
   injectStyles(widget, RESET)
   injectStyles(widget, styles.base)
   injectStyles(text, styles.text)
@@ -136,7 +132,7 @@ function badge (client, options) {
   var isConnecting = false
 
   unbind.push(sync.on('state', function () {
-    injectStateStyles(sync.state)
+    injectStyles(widget, styles[sync.state])
     if (sync.state === 'synchronized') {
       if (isConnecting) {
         show(widget)
@@ -184,15 +180,15 @@ function badge (client, options) {
     show(widget)
     if (error.type === 'wrong-protocol' || error.type === 'wrong-subprotocol') {
       text.innerHTML = messages.protocolError
-      injectStateStyles('protocolError')
+      injectStyles(widget, styles.protocolError)
     } else {
       text.innerHTML = messages.syncError
-      injectStateStyles('error')
+      injectStyles(widget, styles.error)
     }
   }))
 
   unbind.push(sync.on('clientError', function () {
-    injectStateStyles('error')
+    injectStyles(widget, styles.error)
     show(widget)
     text.innerHTML = messages.syncError
   }))
@@ -204,7 +200,7 @@ function badge (client, options) {
       } else {
         text.innerHTML = messages.error
       }
-      injectStateStyles('error')
+      injectStyles(widget, styles.error)
       show(widget)
     }
   }))
