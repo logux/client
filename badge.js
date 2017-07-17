@@ -88,7 +88,9 @@ var RESET = {
  * @param {object} options.messages.wait Text for wait state.
  * @param {object} options.messages.connecting Text for connecting state.
  * @param {object} options.messages.sending Text for sending state.
+ * @param {object} options.messages.syncError Logux error text.
  * @param {object} options.messages.error Error text.
+ * @param {object} options.messages.denied Denied text.
  * @param {object} options.messages.protocolError Protocol error text.
  * @param {string} [options.position="bottom-right"] Widget position.
  * @param {number} [options.duration=3000] Synchronized state duration.
@@ -114,10 +116,8 @@ function badge (client, options) {
 
   var messages = options.messages
   var position = options.position || 'bottom-right'
+  var duration = options.duration || 3000
   var styles = options.styles
-
-  var duration = options.duration
-  if (typeof duration === 'undefined') duration = 3000
 
   var widget = document.createElement('div')
   var text = document.createElement('span')
@@ -137,61 +137,45 @@ function badge (client, options) {
 
   unbind.push(sync.on('state', function () {
     injectStateStyles(sync.state)
-
-    switch (sync.state) {
-      case 'synchronized': {
-        if (isConnecting) {
-          show(widget)
-          text.innerHTML = messages.synchronized
-
-          isWaiting = false
-          isConnecting = false
-
-          setTimeout(function () {
-            hide(widget)
-          }, duration)
-        } else {
-          hide(widget)
-        }
-        break
-      }
-      case 'disconnected': {
+    if (sync.state === 'synchronized') {
+      if (isConnecting) {
         show(widget)
-        text.innerHTML = messages.disconnected
-
+        text.innerHTML = messages.synchronized
         isWaiting = false
         isConnecting = false
-        break
+        setTimeout(function () {
+          hide(widget)
+        }, duration)
+      } else {
+        hide(widget)
       }
-      case 'wait': {
+    } else if (sync.state === 'disconnected') {
+      show(widget)
+      text.innerHTML = messages.disconnected
+      isWaiting = false
+      isConnecting = false
+    } else if (sync.state === 'wait') {
+      show(widget)
+      text.innerHTML = messages.wait
+      isConnecting = false
+      isWaiting = true
+    } else if (sync.state === 'connecting') {
+      if (isWaiting) {
         show(widget)
-        text.innerHTML = messages.wait
-
-        isConnecting = false
-        isWaiting = true
-        break
-      }
-      case 'connecting': {
+        text.innerHTML = messages.connecting
+        isConnecting = true
+        isWaiting = false
+      } else {
         hide(widget)
-        if (isWaiting) {
-          show(widget)
-          text.innerHTML = messages.connecting
-
-          isConnecting = true
-          isWaiting = false
-        }
-        break
       }
-      case 'sending': {
+    } else if (sync.state === 'sending') {
+      if (isWaiting) {
+        show(widget)
+        text.innerHTML = messages.sending
+        isConnecting = true
+        isWaiting = false
+      } else {
         hide(widget)
-        if (isWaiting) {
-          show(widget)
-          text.innerHTML = messages.sending
-
-          isConnecting = true
-          isWaiting = false
-        }
-        break
       }
     }
   }))
@@ -208,9 +192,9 @@ function badge (client, options) {
   }))
 
   unbind.push(sync.on('clientError', function () {
+    injectStateStyles('error')
     show(widget)
     text.innerHTML = messages.syncError
-    injectStateStyles('error')
   }))
 
   unbind.push(sync.log.on('add', function (action) {
@@ -221,6 +205,7 @@ function badge (client, options) {
         text.innerHTML = messages.error
       }
       injectStateStyles('error')
+      show(widget)
     }
   }))
 
