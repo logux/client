@@ -32,13 +32,12 @@
     "jest": "^20.0.4",
     "jsdoc": "^3.5.3",
     "lint-staged": "^4.0.2",
-    "loglevel": "^1.4.1",
     "logux-store-tests": "logux/logux-store-tests",
     "pre-commit": "^1.2.2",
     "rimraf": "^2.6.1",
     "size-limit": "^0.7.1",
     "webpack": "^3.3.0",
-    "webpack-dev-server": "^2.6.0",
+    "webpack-dev-server": "^2.6.1",
     "yaspeller-ci": "^0.6.0"
   },
   "scripts": {
