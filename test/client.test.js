@@ -291,7 +291,9 @@ it('pings after tab-specific action', function () {
   expect(localStorage.getItem('test:tab:' + id)).not.toBeDefined()
 
   var prev
-  return client.log.add({ type: 'A' }, { tab: id }).then(function () {
+  return client.log.add(
+    { type: 'A' }, { reasons: ['tab' + id] }
+  ).then(function () {
     expect(localStorage.getItem('test:tab:' + id)).toBeDefined()
     prev = localStorage.getItem('test:tab:' + id)
     return wait(client.tabPing)
