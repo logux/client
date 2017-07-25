@@ -173,13 +173,15 @@ function Client (options) {
 
   this.tabPing = 60000
   this.tabTimeout = 10 * this.tabPing
+  var reason = 'tab' + client.id
   if (typeof localStorage !== 'undefined') {
-    this.log.on('add', function (action, meta) {
-      if (!client.pinging && meta.tab === client.id) {
+    var unbind = this.log.on('add', function (action, meta) {
+      if (meta.reasons.indexOf(reason) !== -1) {
         tabPing(client)
         client.pinging = setInterval(function () {
           tabPing(client)
         }, client.tabPing)
+        unbind()
       }
     })
   }
