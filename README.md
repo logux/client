@@ -117,6 +117,8 @@ submit.addEventListener('click', function () {
     type: 'CHANGE_TITLE',
     article: articleId.value,
     title: titleField.value
+  }, {
+    reasons: ['lastValue']
   })
 }, false)
 ```
