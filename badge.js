@@ -1,3 +1,5 @@
+var status = require('./status')
+
 function show (element) {
   element.style.display = 'block'
 }
@@ -112,8 +114,6 @@ var RESET = {
  * })
  */
 function badge (client, options) {
-  var sync = client.sync
-
   var messages = options.messages
   var position = options.position || 'bottom-right'
   var duration = options.duration || 3000
@@ -127,13 +127,12 @@ function badge (client, options) {
   injectStyles(text, styles.text)
   setPosition(widget, position)
 
-  var unbind = []
   var isWaiting = false
   var isConnecting = false
 
-  unbind.push(sync.on('state', function () {
-    injectStyles(widget, styles[sync.state])
-    if (sync.state === 'synchronized') {
+  var unbind = status(client, {
+    synchronized: function () {
+      injectStyles(widget, styles.synchronized)
       if (isConnecting) {
         show(widget)
         text.innerHTML = messages.synchronized
@@ -145,17 +144,23 @@ function badge (client, options) {
       } else {
         hide(widget)
       }
-    } else if (sync.state === 'disconnected') {
+    },
+    disconnected: function () {
+      injectStyles(widget, styles.disconnected)
       show(widget)
       text.innerHTML = messages.disconnected
       isWaiting = false
       isConnecting = false
-    } else if (sync.state === 'wait') {
+    },
+    wait: function () {
+      injectStyles(widget, styles.wait)
       show(widget)
       text.innerHTML = messages.wait
       isConnecting = false
       isWaiting = true
-    } else if (sync.state === 'connecting') {
+    },
+    connecting: function () {
+      injectStyles(widget, styles.connecting)
       if (isWaiting) {
         show(widget)
         text.innerHTML = messages.connecting
@@ -164,7 +169,9 @@ function badge (client, options) {
       } else {
         hide(widget)
       }
-    } else if (sync.state === 'sending') {
+    },
+    sending: function () {
+      injectStyles(widget, styles.sending)
       if (isWaiting) {
         show(widget)
         text.innerHTML = messages.sending
@@ -173,45 +180,34 @@ function badge (client, options) {
       } else {
         hide(widget)
       }
-    }
-  }))
-
-  unbind.push(sync.on('error', function (error) {
-    show(widget)
-    if (error.type === 'wrong-protocol' || error.type === 'wrong-subprotocol') {
+    },
+    protocolError: function () {
+      show(widget)
       text.innerHTML = messages.protocolError
       injectStyles(widget, styles.protocolError)
-    } else {
+    },
+    syncError: function () {
+      show(widget)
       text.innerHTML = messages.syncError
       injectStyles(widget, styles.error)
-    }
-  }))
-
-  unbind.push(sync.on('clientError', function () {
-    injectStyles(widget, styles.error)
-    show(widget)
-    text.innerHTML = messages.syncError
-  }))
-
-  unbind.push(sync.log.on('add', function (action) {
-    if (action.type === 'logux/undo' && action.reason) {
-      if (action.reason === 'denied') {
-        text.innerHTML = messages.denied
-      } else {
-        text.innerHTML = messages.error
-      }
+    },
+    error: function () {
+      text.innerHTML = messages.error
+      injectStyles(widget, styles.error)
+      show(widget)
+    },
+    denied: function () {
+      text.innerHTML = messages.denied
       injectStyles(widget, styles.error)
       show(widget)
     }
-  }))
+  })
 
   widget.appendChild(text)
   document.body.appendChild(widget)
 
   return function () {
-    for (var i = 0; i < unbind.length; i++) {
-      unbind[i]()
-    }
+    unbind()
     document.body.removeChild(widget)
   }
 }
