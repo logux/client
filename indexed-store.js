@@ -103,11 +103,15 @@ IndexedStore.prototype = {
     })
   },
 
-  has: function has (id) {
+  byId: function byId (id) {
     return this.init().then(function (store) {
       return promisify(store.os('log').index('id').get(id))
     }).then(function (result) {
-      return !!result
+      if (result) {
+        return [result.action, result.meta]
+      } else {
+        return [null, null]
+      }
     })
   },
 
