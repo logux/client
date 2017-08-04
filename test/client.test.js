@@ -41,9 +41,9 @@ function createDialog (opts, credentials) {
   var pair = new TestPair()
 
   if (!opts) opts = { }
-  if (typeof opts.subprotocol === 'undefined') opts.subprotocol = '1.0.0'
-  if (typeof opts.userId === 'undefined') opts.userId = 10
-  if (typeof opts.server === 'undefined') opts.server = pair.left
+  if (!opts.subprotocol) opts.subprotocol = '1.0.0'
+  if (!opts.userId) opts.userId = 10
+  if (!opts.server) opts.server = pair.left
 
   var client = new Client(opts)
 
