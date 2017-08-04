@@ -34,8 +34,8 @@ afterEach(function () {
 function createClient () {
   var result = new CrossTabClient({
     subprotocol: '1.0.0',
-    userId: false,
-    url: 'wss://localhost:1337'
+    server: 'wss://localhost:1337',
+    userId: false
   })
   result.electionDelay = result.electionDelay / 20
   result.leaderTimeout = result.leaderTimeout / 20
@@ -59,8 +59,8 @@ function wait (ms) {
 it('saves options', function () {
   client = new CrossTabClient({
     subprotocol: '1.0.0',
-    userId: false,
-    url: 'wss://localhost:1337'
+    server: 'wss://localhost:1337',
+    userId: false
   })
   expect(client.options.subprotocol).toEqual('1.0.0')
 })
@@ -111,24 +111,24 @@ it('synchronizes events between tabs', function () {
   }
   var client1 = new CrossTabClient({
     subprotocol: '1.0.0',
-    userId: 10,
-    url: 'wss://localhost:1337'
+    server: 'wss://localhost:1337',
+    userId: 10
   })
   var client2 = new CrossTabClient({
     subprotocol: '1.0.0',
-    userId: 10,
-    url: 'wss://localhost:1337'
+    server: 'wss://localhost:1337',
+    userId: 10
   })
   var client3 = new CrossTabClient({
     subprotocol: '1.0.0',
+    server: 'wss://localhost:1337',
     prefix: 'other',
-    userId: 10,
-    url: 'wss://localhost:1337'
+    userId: 10
   })
   var client4 = new CrossTabClient({
     subprotocol: '1.0.0',
-    userId: 20,
-    url: 'wss://localhost:1337'
+    server: 'wss://localhost:1337',
+    userId: 20
   })
 
   var events = []
