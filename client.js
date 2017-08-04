@@ -58,7 +58,8 @@ var ALLOWED_META = ['id', 'time', 'nodeIds', 'users', 'channels']
  * const app = new Client({
  *   credentials: token.content,
  *   subprotocol: '1.0.0',
- *   server: 'wss://example.com:1337'
+ *   server: 'wss://example.com:1337',
+ *   userId: 10
  * })
  * app.start()
  *
