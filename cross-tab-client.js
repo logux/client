@@ -109,7 +109,7 @@ function setState (client, state) {
  * between Logux instances in different tabs on single browser.
  *
  * @param {object} options Client options.
- * @param {string} options.url Server URL.
+ * @param {string|Connection} options.server Server URL.
  * @param {string} options.subprotocol Client subprotocol version
  *                                     in SemVer format.
  * @param {number|string|false} options.userId User ID. Pass `false` if no user.
@@ -137,7 +137,8 @@ function setState (client, state) {
  * const app = new CrossTabClient({
  *   credentials: token.content,
  *   subprotocol: '1.0.0',
- *   url: 'wss://example.com:1337'
+ *   server: 'wss://example.com:1337',
+ *   userId: 10
  * })
  * app.start()
  *

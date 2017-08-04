@@ -30,7 +30,7 @@ var ALLOWED_META = ['id', 'time', 'nodeIds', 'users', 'channels']
  * be run in different tab (for instance, if you are developing a kiosk app).
  *
  * @param {object} options Client options.
- * @param {string} options.url Server URL.
+ * @param {string|Connection} options.server Server URL.
  * @param {string} options.subprotocol Client subprotocol version
  *                                     in SemVer format.
  * @param {number|string|false} options.userId User ID. Pass `false` if no user.
@@ -58,7 +58,7 @@ var ALLOWED_META = ['id', 'time', 'nodeIds', 'users', 'channels']
  * const app = new Client({
  *   credentials: token.content,
  *   subprotocol: '1.0.0',
- *   url: 'wss://example.com:1337'
+ *   server: 'wss://example.com:1337'
  * })
  * app.start()
  *
@@ -70,12 +70,12 @@ function Client (options) {
    * @type {object}
    *
    * @example
-   * console.log('Connecting to ' + app.options.url)
+   * console.log('Connecting to ' + app.options.server)
    */
   this.options = options || { }
 
-  if (typeof this.options.url === 'undefined') {
-    throw new Error('Missed url option in Logux client')
+  if (typeof this.options.server === 'undefined') {
+    throw new Error('Missed server option in Logux client')
   }
   if (typeof this.options.subprotocol === 'undefined') {
     throw new Error('Missed subprotocol option in Logux client')
@@ -109,7 +109,7 @@ function Client (options) {
   this.nodeId = this.options.userId + ':' + this.id
 
   var auth
-  if (/^ws:\/\//.test(this.options.url) && !options.allowDangerousProtocol) {
+  if (/^ws:\/\//.test(this.options.server) && !options.allowDangerousProtocol) {
     auth = function (cred) {
       if (typeof cred !== 'object' || cred.env !== 'development') {
         console.error(
@@ -186,12 +186,17 @@ function Client (options) {
     })
   }
 
-  var ws = new BrowserConnection(this.options.url)
-  var connection = new Reconnect(ws, {
-    minDelay: this.options.minDelay,
-    maxDelay: this.options.maxDelay,
-    attempts: this.options.attempts
-  })
+  var connection
+  if (typeof this.options.server === 'string') {
+    var ws = new BrowserConnection(this.options.server)
+    connection = new Reconnect(ws, {
+      minDelay: this.options.minDelay,
+      maxDelay: this.options.maxDelay,
+      attempts: this.options.attempts
+    })
+  } else {
+    connection = this.options.server
+  }
 
   function filter (action, meta) {
     var user = meta.id[1].split(':')[0]

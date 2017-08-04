@@ -75,8 +75,8 @@ var server = document.querySelector('meta[name=server]')
 var logux = new CrossTabClient({
   credentials: token.content,
   subprotocol: '1.0.0',
-  userId: user.content,
-  url: server.content
+  server: server.content,
+  userId: user.content
 })
 logux.start()
 ```

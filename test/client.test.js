@@ -1,6 +1,5 @@
 var fakeIndexedDB = require('fake-indexeddb')
 var MemoryStore = require('logux-core').MemoryStore
-var ClientSync = require('logux-sync').ClientSync
 var TestPair = require('logux-sync').TestPair
 
 var Client = require('../client')
@@ -38,30 +37,32 @@ function wait (ms) {
   })
 }
 
-var DEFAULTS = {
-  subprotocol: '1.0.0',
-  userId: 10,
-  url: 'wss://test.com'
-}
-
 function createDialog (opts, credentials) {
+  var pair = new TestPair()
+
   if (!opts) opts = { }
-  for (var i in DEFAULTS) {
-    if (typeof opts[i] === 'undefined') opts[i] = DEFAULTS[i]
-  }
+  if (typeof opts.subprotocol === 'undefined') opts.subprotocol = '1.0.0'
+  if (typeof opts.userId === 'undefined') opts.userId = 10
+  if (typeof opts.server === 'undefined') opts.server = pair.left
+
   var client = new Client(opts)
+
+  if (typeof opts.server === 'string') {
+    var events1 = client.sync.connection.connection.emitter.events
+    var events2 = pair.left.emitter.events
+    for (var i in events1) {
+      if (events2[i]) {
+        events2[i] = events2[i].concat(events1[i])
+      } else {
+        events2[i] = events1[i].slice(0)
+      }
+    }
+    client.sync.connection = pair.left
+  }
 
   client.log.on('preadd', function (action, meta) {
     meta.reasons.push('test')
   })
-
-  var pair = new TestPair()
-  client.sync = new ClientSync(
-    client.nodeId,
-    client.log,
-    pair.left,
-    client.sync.options
-  )
 
   return client.sync.connection.connect().then(function () {
     return pair.wait('right')
@@ -79,8 +80,8 @@ function createDialog (opts, credentials) {
 function createClient () {
   var client = new Client({
     subprotocol: '1.0.0',
-    userId: false,
-    url: 'wss://localhost:1337'
+    server: 'wss://localhost:1337',
+    userId: false
   })
   client.sync.connection.connect = function () { }
   client.tabPing = 50
@@ -90,27 +91,27 @@ function createClient () {
 it('saves options', function () {
   var client = new Client({
     subprotocol: '1.0.0',
-    userId: false,
-    url: 'wss://localhost:1337'
+    server: 'wss://localhost:1337',
+    userId: false
   })
   expect(client.options.subprotocol).toEqual('1.0.0')
 })
 
-it('throws on missed URL', function () {
+it('throws on missed server', function () {
   expect(function () {
     new Client({ userId: false, subprotocol: '1.0.0' })
-  }).toThrowError(/url/)
+  }).toThrowError(/server/)
 })
 
 it('throws on missed subprotocol', function () {
   expect(function () {
-    new Client({ userId: false, url: 'wss://localhost:1337' })
+    new Client({ userId: false, server: 'wss://localhost:1337' })
   }).toThrowError(/subprotocol/)
 })
 
 it('throws on missed user ID', function () {
   expect(function () {
-    new Client({ subprotocol: '1.0.0', url: 'wss://localhost:1337' })
+    new Client({ subprotocol: '1.0.0', server: 'wss://localhost:1337' })
   }).toThrowError(/userId/)
 })
 
@@ -124,7 +125,7 @@ it('not warns on WSS', function () {
 
 it('forces to use WSS in production domain', function () {
   console.error = jest.fn()
-  return createDialog({ url: 'ws://test.com' }).then(function (client) {
+  return createDialog({ server: 'ws://test.com' }).then(function (client) {
     expect(client.sync.connected).toBeFalsy()
     expect(console.error).toBeCalledWith(
       'Without SSL, old proxies can block WebSockets. ' +
@@ -137,7 +138,7 @@ it('ignores WS with allowDangerousProtocol', function () {
   console.error = jest.fn()
   return createDialog({
     allowDangerousProtocol: true,
-    url: 'ws://test.com'
+    server: 'ws://test.com'
   }).then(function (client) {
     expect(client.sync.connected).toBeTruthy()
     expect(console.error).not.toBeCalledWith()
@@ -147,7 +148,7 @@ it('ignores WS with allowDangerousProtocol', function () {
 it('ignores WS in development', function () {
   console.error = jest.fn()
   return createDialog({
-    url: 'ws://test.com'
+    server: 'ws://test.com'
   }, {
     env: 'development'
   }).then(function (client) {
@@ -159,16 +160,16 @@ it('ignores WS in development', function () {
 it('uses user ID in node ID', function () {
   var client1 = new Client({
     subprotocol: '1.0.0',
-    userId: 10,
-    url: 'wss://localhost:1337'
+    server: 'wss://localhost:1337',
+    userId: 10
   })
   expect(client1.id).toBeDefined()
   expect(client1.nodeId).toEqual('10:' + client1.id)
 
   var client2 = new Client({
     subprotocol: '1.0.0',
-    userId: false,
-    url: 'wss://localhost:1337'
+    server: 'wss://localhost:1337',
+    userId: false
   })
   expect(client2.nodeId).toEqual('false:' + client2.id)
 })
@@ -185,9 +186,9 @@ it('uses custom store', function () {
   var store = new MemoryStore()
   var client = new Client({
     subprotocol: '1.0.0',
+    server: 'wss://localhost:1337',
     userId: false,
-    store: store,
-    url: 'wss://localhost:1337'
+    store: store
   })
   expect(client.log.store).toBe(store)
 })
@@ -196,8 +197,8 @@ it('uses user ID in store name', function () {
   global.indexedDB = fakeIndexedDB
   var client = new Client({
     subprotocol: '1.0.0',
-    userId: 10,
-    url: 'wss://localhost:1337'
+    server: 'wss://localhost:1337',
+    userId: 10
   })
   expect(client.log.store.name).toEqual('logux:10')
 })
@@ -206,9 +207,9 @@ it('uses custom prefix', function () {
   global.indexedDB = fakeIndexedDB
   var client = new Client({
     subprotocol: '1.0.0',
+    server: 'wss://localhost:1337',
     prefix: 'app',
-    userId: 10,
-    url: 'wss://localhost:1337'
+    userId: 10
   })
   expect(client.log.store.name).toEqual('app:10')
 })
@@ -219,15 +220,16 @@ it('sends options to connection', function () {
     minDelay: 100,
     maxDelay: 500,
     attempts: 5,
-    userId: false,
-    url: 'wss://localhost:1337'
+    server: 'wss://localhost:1337',
+    userId: false
   })
   expect(client.sync.connection.options).toEqual({
     minDelay: 100,
     maxDelay: 500,
     attempts: 5
   })
-  expect(client.sync.connection.connection.url).toEqual('wss://localhost:1337')
+  expect(client.sync.connection.connection.url).toEqual(
+    'wss://localhost:1337')
 })
 
 it('sends options to sync', function () {
@@ -235,9 +237,9 @@ it('sends options to sync', function () {
     subprotocol: '1.0.0',
     credentials: 'token',
     timeout: 2000,
+    server: 'wss://localhost:1337',
     userId: false,
-    ping: 1000,
-    url: 'wss://localhost:1337'
+    ping: 1000
   })
   expect(client.sync.options.subprotocol).toEqual('1.0.0')
   expect(client.sync.options.credentials).toEqual('token')
