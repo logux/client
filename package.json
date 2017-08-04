@@ -28,14 +28,14 @@
     "eslint-plugin-security": "^1.4.0",
     "eslint-plugin-standard": "^3.0.1",
     "fake-indexeddb": "^2.0.3",
-    "html-webpack-plugin": "^2.29.0",
+    "html-webpack-plugin": "^2.30.1",
     "jest": "^20.0.4",
     "jsdoc": "^3.5.3",
     "lint-staged": "^4.0.2",
     "logux-store-tests": "logux/logux-store-tests",
     "pre-commit": "^1.2.2",
     "rimraf": "^2.6.1",
-    "size-limit": "^0.7.1",
+    "size-limit": "^0.8.0",
     "webpack": "^3.4.1",
     "webpack-dev-server": "^2.6.1",
     "yaspeller-ci": "^0.6.0"
@@ -49,7 +49,7 @@
     "test": "jest --coverage && yarn lint && size-limit && yarn spellcheck",
     "demo": "webpack-dev-server --config test/demo/webpack.config"
   },
-  "sizeLimit": [
+  "size-limit": [
     {
       "path": "cross-tab-client.js",
       "limit": "9KB"
