@@ -13,7 +13,7 @@
     "logux-core": "logux/logux-core",
     "logux-sync": "logux/logux-sync",
     "nanoevents": "^0.3.0",
-    "shortid": "^2.2.8"
+    "nanoid": "^0.1.0"
   },
   "devDependencies": {
     "docdash": "^0.4.0",

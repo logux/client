@@ -3316,6 +3316,10 @@ nanoevents@^0.3.0:
   version "0.3.0"
   resolved "https://registry.yarnpkg.com/nanoevents/-/nanoevents-0.3.0.tgz#4d7ed1e38510e19bd79b99ffc4a2e5f91f33a411"
 
+nanoid@^0.1.0:
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-0.1.0.tgz#4365edaffed98a9858b5f0e0f8e884c93617c06c"
+
 natural-compare@^1.4.0:
   version "1.4.0"
   resolved "https://registry.yarnpkg.com/natural-compare/-/natural-compare-1.4.0.tgz#4abebfeed7541f2c27acfb29bdbbd15c8d5ba4f7"
@@ -4241,10 +4245,6 @@ shebang-regex@^1.0.0:
 shellwords@^0.1.0:
   version "0.1.0"
   resolved "https://registry.yarnpkg.com/shellwords/-/shellwords-0.1.0.tgz#66afd47b6a12932d9071cbfd98a52e785cd0ba14"
-
-shortid@^2.2.8:
-  version "2.2.8"
-  resolved "https://registry.yarnpkg.com/shortid/-/shortid-2.2.8.tgz#033b117d6a2e975804f6f0969dbe7d3d0b355131"
 
 showdown@^1.7.1:
   version "1.7.2"
