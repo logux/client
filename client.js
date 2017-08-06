@@ -3,7 +3,7 @@ var MemoryStore = require('logux-core/memory-store')
 var ClientSync = require('logux-sync/client-sync')
 var NanoEvents = require('nanoevents')
 var Reconnect = require('logux-sync/reconnect')
-var shortid = require('shortid/lib/build')
+var nanoid = require('nanoid')
 var Log = require('logux-core/log')
 
 var IndexedStore = require('./indexed-store')
@@ -97,7 +97,7 @@ function Client (options) {
    * @example
    * app.log.add(action, { tab: app.id })
    */
-  this.id = shortid(0)
+  this.id = nanoid()
   this.options.userId = this.options.userId.toString()
 
   /**
