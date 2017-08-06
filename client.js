@@ -98,7 +98,7 @@ function Client (options) {
    * @example
    * app.log.add(action, { tab: app.id })
    */
-  this.id = generateId(urlAlphabet, 10)
+  this.id = generateId(urlAlphabet, 8)
   this.options.userId = this.options.userId.toString()
 
   /**
