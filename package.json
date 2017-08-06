@@ -17,7 +17,7 @@
   },
   "devDependencies": {
     "docdash": "^0.4.0",
-    "eslint": "^4.3.0",
+    "eslint": "^4.4.0",
     "eslint-config-logux": "^16.0.0",
     "eslint-config-standard": "^10.2.1",
     "eslint-plugin-es5": "^1.1.0",
@@ -30,7 +30,7 @@
     "fake-indexeddb": "^2.0.3",
     "html-webpack-plugin": "^2.30.1",
     "jest": "^20.0.4",
-    "jsdoc": "^3.5.3",
+    "jsdoc": "^3.5.4",
     "lint-staged": "^4.0.2",
     "logux-store-tests": "logux/logux-store-tests",
     "pre-commit": "^1.2.2",
