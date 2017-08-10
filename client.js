@@ -1,10 +1,9 @@
 var BrowserConnection = require('logux-sync/browser-connection')
 var MemoryStore = require('logux-core/memory-store')
-var urlAlphabet = require('nanoid/url')
-var generateId = require('nanoid/generate')
 var ClientSync = require('logux-sync/client-sync')
 var NanoEvents = require('nanoevents')
 var Reconnect = require('logux-sync/reconnect')
+var nanoid = require('nanoid')
 var Log = require('logux-core/log')
 
 var IndexedStore = require('./indexed-store')
@@ -98,7 +97,7 @@ function Client (options) {
    * @example
    * app.log.add(action, { tab: app.id })
    */
-  this.id = generateId(urlAlphabet, 8)
+  this.id = nanoid(8)
   this.options.userId = this.options.userId.toString()
 
   /**
