@@ -5,27 +5,17 @@ var TestPair = require('logux-sync').TestPair
 
 var status = require('../status')
 
-var CALLBACKS = [
-  'synchronized', 'disconnected', 'wait', 'connecting', 'sending',
-  'syncError', 'protocolError', 'error', 'denied'
-]
-
 function createTest () {
   var pair = new TestPair()
   pair.leftSync = new BaseSync('client', TestTime.getLog(), pair.left)
   pair.leftSync.catch(function () {})
   return pair.left.connect().then(function () {
-    var callbacks = { }
     pair.calls = []
     pair.args = []
-    CALLBACKS.forEach(function (i) {
-      callbacks[i] = function () {
-        pair.calls.push(i)
-        pair.args.push(Array.prototype.slice.call(arguments, 0))
-      }
+    status({ sync: pair.leftSync }, function (state, details) {
+      pair.calls.push(state)
+      pair.args.push(details)
     })
-
-    status({ sync: pair.leftSync }, callbacks)
     return pair
   })
 }
@@ -53,7 +43,7 @@ it('notifies about synchronization error', function () {
     test.leftSync.emitter.emit('clientError', error2)
 
     expect(test.calls).toEqual(['syncError', 'syncError'])
-    expect(test.args).toEqual([[error1], [error2]])
+    expect(test.args).toEqual([{ error: error1 }, { error: error2 }])
   })
 })
 
@@ -73,8 +63,8 @@ it('notifies about server error', function () {
   return createTest().then(function (test) {
     test.leftSync.log.add({ type: 'logux/undo', reason: 'error' })
     expect(test.calls).toEqual(['sending', 'error'])
-    expect(test.args[1][0].type).toEqual('logux/undo')
-    expect(test.args[1][1].time).toEqual(1)
+    expect(test.args[1].action.type).toEqual('logux/undo')
+    expect(test.args[1].meta.time).toEqual(1)
   })
 })
 
@@ -82,26 +72,9 @@ it('notifies about problem with access', function () {
   return createTest().then(function (test) {
     test.leftSync.log.add({ type: 'logux/undo', reason: 'denied' })
     expect(test.calls).toEqual(['sending', 'denied'])
-    expect(test.args[1][0].type).toEqual('logux/undo')
-    expect(test.args[1][1].time).toEqual(1)
+    expect(test.args[1].action.type).toEqual('logux/undo')
+    expect(test.args[1].meta.time).toEqual(1)
   })
-})
-
-it('calls only passed callbacks', function () {
-  var pair = new TestPair()
-  var sync = new BaseSync('client', TestTime.getLog(), pair.left)
-
-  var calls = 0
-  status({ sync: sync }, {
-    denied: function () {
-      calls += 1
-    }
-  })
-
-  sync.log.add({ type: 'logux/undo', reason: 'error' })
-  sync.log.add({ type: 'logux/undo', reason: 'denied' })
-
-  expect(calls).toEqual(1)
 })
 
 it('removes listeners', function () {
@@ -109,8 +82,8 @@ it('removes listeners', function () {
   var sync = new BaseSync('client', TestTime.getLog(), pair.left)
 
   var calls = 0
-  var unbind = status({ sync: sync }, {
-    denied: function () {
+  var unbind = status({ sync: sync }, function (state) {
+    if (state === 'denied') {
       calls += 1
     }
   })

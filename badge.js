@@ -130,8 +130,8 @@ function badge (client, options) {
   var isWaiting = false
   var isConnecting = false
 
-  var unbind = status(client, {
-    synchronized: function () {
+  var unbind = status(client, function (state) {
+    if (state === 'synchronized') {
       injectStyles(widget, styles.synchronized)
       if (isConnecting) {
         show(widget)
@@ -144,22 +144,19 @@ function badge (client, options) {
       } else {
         hide(widget)
       }
-    },
-    disconnected: function () {
+    } else if (state === 'disconnected') {
       injectStyles(widget, styles.disconnected)
       show(widget)
       text.innerHTML = messages.disconnected
       isWaiting = false
       isConnecting = false
-    },
-    wait: function () {
+    } else if (state === 'wait') {
       injectStyles(widget, styles.wait)
       show(widget)
       text.innerHTML = messages.wait
       isConnecting = false
       isWaiting = true
-    },
-    connecting: function () {
+    } else if (state === 'connecting') {
       injectStyles(widget, styles.connecting)
       if (isWaiting) {
         show(widget)
@@ -169,8 +166,7 @@ function badge (client, options) {
       } else {
         hide(widget)
       }
-    },
-    sending: function () {
+    } else if (state === 'sending') {
       injectStyles(widget, styles.sending)
       if (isWaiting) {
         show(widget)
@@ -180,23 +176,19 @@ function badge (client, options) {
       } else {
         hide(widget)
       }
-    },
-    protocolError: function () {
+    } else if (state === 'protocolError') {
       show(widget)
       text.innerHTML = messages.protocolError
       injectStyles(widget, styles.protocolError)
-    },
-    syncError: function () {
+    } else if (state === 'syncError') {
       show(widget)
       text.innerHTML = messages.syncError
       injectStyles(widget, styles.error)
-    },
-    error: function () {
+    } else if (state === 'error') {
       text.innerHTML = messages.error
       injectStyles(widget, styles.error)
       show(widget)
-    },
-    denied: function () {
+    } else if (state === 'denied') {
       text.innerHTML = messages.denied
       injectStyles(widget, styles.error)
       show(widget)
