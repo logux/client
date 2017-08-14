@@ -1,6 +1,5 @@
 var CrossTabClient = require('logux-client').CrossTabClient
 var SyncError = require('logux-sync').SyncError
-var BaseSync = require('logux-sync').BaseSync
 var TestPair = require('logux-sync').TestPair
 
 var favicon = require('../favicon')
@@ -18,17 +17,14 @@ function setFavHref (href) {
 }
 
 function createClient () {
+  var pair = new TestPair()
   var client = new CrossTabClient({
     subprotocol: '1.0.0',
-    userId: false,
-    url: 'wss://localhost:1337'
+    server: pair.left,
+    userId: false
   })
 
-  var pair = new TestPair()
-  var sync = new BaseSync('client', client.log, pair.left)
-  sync.catch(function () { })
-  sync.emitter = client.sync.emitter
-  client.sync = sync
+  client.sync.catch(function () { })
   client.role = 'leader'
 
   return pair.left.connect().then(function () {

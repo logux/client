@@ -26,8 +26,8 @@ new BaseSync('server', serverLog, pair.right)
 
 var client = new CrossTabClient({
   subprotocol: '1.0.0',
-  userId: 10,
-  url: 'wss://example.com/'
+  server: 'wss://example.com/',
+  userId: 10
 })
 
 var sync = new ClientSync(client.sync.localNodeId, client.log, pair.left)

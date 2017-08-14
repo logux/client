@@ -1,7 +1,5 @@
 var CrossTabClient = require('logux-client').CrossTabClient
 var SyncError = require('logux-sync').SyncError
-var TestTime = require('logux-core').TestTime
-var BaseSync = require('logux-sync').BaseSync
 var TestPair = require('logux-sync').TestPair
 
 jest.mock('browser-supports-log-styles', function () {
@@ -14,21 +12,21 @@ var log = require('../log')
 
 function createClient () {
   var pair = new TestPair()
-  var sync = new BaseSync('test1', TestTime.getLog(), pair.left)
-  sync.catch(function () { })
-
   var client = new CrossTabClient({
     subprotocol: '1.0.0',
-    userId: false,
-    url: 'wss://localhost:1337'
+    server: pair.left,
+    userId: 10
   })
+
   client.role = 'leader'
+  client.sync.localNodeId = '10:uuid'
+  client.sync.catch(function () { })
 
-  sync.emitter = client.sync.emitter
-  client.sync = sync
-
-  sync.log.emitter = client.log.emitter
-  client.log = sync.log
+  var lastId = 0
+  client.log.generateId = function () {
+    lastId += 1
+    return [lastId, '10:uuid', 0]
+  }
 
   return pair.left.connect().then(function () {
     return client
@@ -59,7 +57,7 @@ it('shows connecting state URL', function () {
 
     expect(console.log).toBeCalledWith(
       'Logux: state was changed to connecting. ' +
-      'test1 is connecting to ws://ya.ru.'
+      '10:uuid is connecting to ws://ya.ru.'
     )
   })
 })
@@ -75,7 +73,7 @@ it('shows Logux prefix with color and make state and nodeId bold', function () {
 
     expect(console.log).toBeCalledWith(
       '%cLogux:%c state was changed to %cconnecting%c. ' +
-      '%ctest1%c is connecting to %cws://ya.ru%c.',
+      '%c10:uuid%c is connecting to %cws://ya.ru%c.',
       'color: #ffa200',
       '',
       'font-weight: bold',
@@ -236,14 +234,14 @@ it('shows add and clean event', function () {
         expect(console.log).toBeCalledWith(
           'Logux: action A was added',
           { type: 'A' },
-          { id: [1, 'test1', 0], reasons: ['test'], time: 1, added: 1 }
+          { id: [1, '10:uuid', 0], reasons: ['test'], time: 1, added: 1 }
         )
         return client.sync.log.removeReason('test')
       }).then(function () {
         expect(console.log).toHaveBeenLastCalledWith(
           'Logux: action A was cleaned',
           { type: 'A' },
-          { id: [1, 'test1', 0], reasons: [], time: 1, added: 1 }
+          { id: [1, '10:uuid', 0], reasons: [], time: 1, added: 1 }
         )
       })
   })
@@ -274,7 +272,7 @@ it('shows add and clean event and make action type bold', function () {
           'font-weight: bold',
           '',
           { type: 'A' },
-          { id: [1, 'test1', 0], reasons: ['test'], time: 1, added: 1 }
+          { id: [1, '10:uuid', 0], reasons: ['test'], time: 1, added: 1 }
         )
         return client.sync.log.removeReason('test')
       }).then(function () {
@@ -285,7 +283,7 @@ it('shows add and clean event and make action type bold', function () {
           'font-weight: bold',
           '',
           { type: 'A' },
-          { id: [1, 'test1', 0], reasons: [], time: 1, added: 1 }
+          { id: [1, '10:uuid', 0], reasons: [], time: 1, added: 1 }
         )
       })
   })
@@ -298,7 +296,7 @@ it('shows add event with action and make action type bold', function () {
     return client.sync.log.add({ type: 'B' }, { reasons: ['test'] })
   }).then(function () {
     expect(console.log).toBeCalledWith(
-      '%cLogux:%c action %cB%c was added by %ctest1%c',
+      '%cLogux:%c action %cB%c was added by %c10:uuid%c',
       'color: #ffa200',
       '',
       'font-weight: bold',
@@ -306,7 +304,7 @@ it('shows add event with action and make action type bold', function () {
       'font-weight: bold',
       '',
       { type: 'B' },
-      { id: [1, 'test1', 0], reasons: ['test'], time: 1, added: 1 }
+      { id: [1, '10:uuid', 0], reasons: ['test'], time: 1, added: 1 }
     )
   })
 })
@@ -359,9 +357,9 @@ it('supports cross-tab synchronization', function () {
       'Logux: state was changed to disconnected'
     )
 
-    client.emitter.emit('add', { type: 'A' }, { id: [1, 'test1', 0] })
+    client.emitter.emit('add', { type: 'A' }, { id: [1, '10:uuid', 0] })
     expect(console.log).lastCalledWith(
-      'Logux: action A was added', { type: 'A' }, { id: [1, 'test1', 0] }
+      'Logux: action A was added', { type: 'A' }, { id: [1, '10:uuid', 0] }
     )
   })
 })
