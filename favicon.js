@@ -57,10 +57,10 @@ function favicon (client, links) {
     }
 
     if (!fav) {
-      fav = document.createElement('link')
+      fav = doc.createElement('link')
       fav.rel = 'icon'
       fav.href = ''
-      document.head.appendChild(fav)
+      doc.head.appendChild(fav)
     }
 
     unbind.push(client.on('state', update))
