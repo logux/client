@@ -201,7 +201,7 @@ function Client (options) {
 
   function filter (action, meta) {
     var user = meta.id[1].split(':')[0]
-    return Promise.resolve(meta.sync && user === client.options.userId)
+    return Promise.resolve(!!meta.sync && user === client.options.userId)
   }
 
   function map (action, meta) {
