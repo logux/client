@@ -48,13 +48,18 @@ it('injects base widget styles', function () {
 })
 
 it('shows synchronized state', function () {
-  return createTest({ duration: 10 }).then(function (test) {
+  var test
+  return createTest({ duration: 10 }).then(function (created) {
+    test = created
+
     test.leftSync.connected = true
     test.leftSync.setState('synchronized')
     expect(badgeNode().style.display).toEqual('none')
 
     test.leftSync.connected = false
     test.leftSync.setState('wait')
+    return test.leftSync.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
+  }).then(function () {
     test.leftSync.setState('connecting')
     test.leftSync.connected = true
     test.leftSync.setState('synchronized')
@@ -84,14 +89,19 @@ it('shows wait state', function () {
     test.leftSync.connected = false
     test.leftSync.setState('disconnected')
     test.leftSync.setState('wait')
+    return test.leftSync.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
+  }).then(function () {
     expect(badgeNode().style.display).toEqual('block')
     expect(badgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
-    expect(getBadgeMessage()).toEqual(messages.wait)
+    expect(getBadgeMessage()).toEqual(messages.waitSync)
   })
 })
 
 it('shows sending state', function () {
-  return createTest().then(function (test) {
+  var test
+  return createTest().then(function (created) {
+    test = created
+
     test.leftSync.connected = false
     test.leftSync.setState('disconnected')
     test.leftSync.setState('sending')
@@ -99,6 +109,8 @@ it('shows sending state', function () {
 
     test.leftSync.connected = false
     test.leftSync.setState('wait')
+    return test.leftSync.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
+  }).then(function () {
     test.leftSync.setState('sending')
     expect(badgeNode().style.display).toEqual('block')
     expect(badgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
@@ -107,7 +119,10 @@ it('shows sending state', function () {
 })
 
 it('shows connecting state', function () {
-  return createTest().then(function (test) {
+  var test
+  return createTest().then(function (created) {
+    test = created
+
     test.leftSync.connected = false
     test.leftSync.setState('disconnected')
     test.leftSync.setState('connecting')
@@ -115,6 +130,8 @@ it('shows connecting state', function () {
 
     test.leftSync.connected = false
     test.leftSync.setState('wait')
+    return test.leftSync.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
+  }).then(function () {
     test.leftSync.setState('connecting')
     expect(badgeNode().style.display).toEqual('block')
     expect(badgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')

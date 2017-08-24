@@ -71,7 +71,7 @@ var RESET = {
  * @param {object} options.styles.text Style for text element inside widget.
  * @param {object} options.styles.synchronized Styles for synchronized state.
  * @param {object} options.styles.disconnected Styles for disconnected state.
- * @param {object} options.styles.wait Styles for wait state.
+ * @param {object} options.styles.waitSync Styles for wait state.
  * @param {object} options.styles.connecting Styles for connecting state.
  * @param {object} options.styles.sending Styles for sending state.
  * @param {object} options.styles.error Error styles.
@@ -79,7 +79,7 @@ var RESET = {
  * @param {object} options.styles.icons Icons in URL link or `data:uri`.
  * @param {string} options.styles.icons.synchronized Synchronized state.
  * @param {string} options.styles.icons.disconnected Disconnected state.
- * @param {string} options.styles.icons.wait Wait state.
+ * @param {string} options.styles.icons.waitSync Wait state.
  * @param {string} options.styles.icons.connecting Connecting state.
  * @param {string} options.styles.icons.sending Sending state.
  * @param {string} options.styles.icons.error Error state.
@@ -87,7 +87,7 @@ var RESET = {
  * @param {object} options.messages Widget text for different states.
  * @param {object} options.messages.synchronized Text for synchronized state.
  * @param {object} options.messages.disconnected Text for disconnected state.
- * @param {object} options.messages.wait Text for wait state.
+ * @param {object} options.messages.waitSync Text for wait state.
  * @param {object} options.messages.connecting Text for connecting state.
  * @param {object} options.messages.sending Text for sending state.
  * @param {object} options.messages.syncError Logux error text.
@@ -150,10 +150,10 @@ function badge (client, options) {
       text.innerHTML = messages.disconnected
       isWaiting = false
       isConnecting = false
-    } else if (state === 'wait') {
-      injectStyles(widget, styles.wait)
+    } else if (state === 'waitSync') {
+      injectStyles(widget, styles.waitSync)
       show(widget)
-      text.innerHTML = messages.wait
+      text.innerHTML = messages.waitSync
       isConnecting = false
       isWaiting = true
     } else if (state === 'connecting') {

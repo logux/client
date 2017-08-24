@@ -87,7 +87,7 @@ document.all.subprotocolError.onclick = function () {
 }
 
 document.all.add.onclick = function () {
-  client.log.add({ type: 'TEST' }, { reasons: ['test'] })
+  client.log.add({ type: 'TEST' }, { sync: true, reasons: ['test'] })
 }
 
 document.all.clean.onclick = function () {

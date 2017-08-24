@@ -10,11 +10,17 @@
  */
 function status (client, callback) {
   var sync = client.sync
+  var wait = sync.state === 'wait'
 
   var unbind = []
 
   unbind.push(sync.on('state', function () {
-    callback(sync.state)
+    if (sync.state === 'wait') {
+      wait = true
+    } else {
+      wait = false
+      callback(sync.state)
+    }
   }))
 
   unbind.push(sync.on('error', function (error) {
@@ -36,6 +42,8 @@ function status (client, callback) {
       } else {
         callback('error', { action: action, meta: meta })
       }
+    } else if (wait && meta.sync && meta.added) {
+      callback('waitSync')
     }
   }))
 

@@ -24,13 +24,27 @@ it('notifies about states', function () {
   return createTest({ duration: 10 }).then(function (test) {
     test.leftSync.connected = false
     test.leftSync.setState('disconnected')
-    test.leftSync.setState('wait')
     test.leftSync.setState('connecting')
     test.leftSync.connected = true
     test.leftSync.setState('synchronized')
     expect(test.calls).toEqual([
-      'disconnected', 'wait', 'connecting', 'synchronized'
+      'disconnected', 'connecting', 'synchronized'
     ])
+  })
+})
+
+it('notifies only about wait for sync actions', function () {
+  var test
+  return createTest({ duration: 10 }).then(function (created) {
+    test = created
+
+    test.leftSync.connected = false
+    test.leftSync.setState('wait')
+    expect(test.calls).toEqual([])
+
+    return test.leftSync.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
+  }).then(function () {
+    expect(test.calls).toEqual(['waitSync'])
   })
 })
 
