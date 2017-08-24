@@ -29,8 +29,6 @@ function emoji (state) {
     return '😴'
   } else if (state === 'connecting') {
     return '🔌'
-  } else if (state === 'wait') {
-    return '⏲️'
   } else {
     return '😊'
   }

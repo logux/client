@@ -3254,7 +3254,7 @@ logux-store-tests@logux/logux-store-tests:
 
 logux-sync@logux/logux-sync:
   version "0.1.2"
-  resolved "https://codeload.github.com/logux/logux-sync/tar.gz/213645a768b9e06b3912a96dac22eac62bbac206"
+  resolved "https://codeload.github.com/logux/logux-sync/tar.gz/b83a95944b6712074e8915d3a0ee25655e9a4664"
   dependencies:
     nanoevents "^0.3.0"
 

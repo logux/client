@@ -23,9 +23,7 @@ function leaderPing (client) {
 }
 
 function onDeadLeader (client) {
-  if (client.state === 'sending') {
-    setState(client, 'wait')
-  } else if (client.state !== 'disconnected' && client.state !== 'wait') {
+  if (client.state !== 'disconnected') {
     setState(client, 'disconnected')
   }
   startElection(client)
@@ -58,7 +56,7 @@ function setRole (client, role) {
       clearTimeout(client.elections)
       clearInterval(client.leadership)
 
-      if (sync.state !== 'disconnected' && sync.state !== 'wait') {
+      if (sync.state !== 'disconnected') {
         client.sync.connection.disconnect()
       }
     }
@@ -169,11 +167,11 @@ function CrossTabClient (options) {
    * Leader tab synchronization state. It can differs
    * from `Client#sync.state` (because only the leader tab keeps connection).
    *
-   * @type {"disconnected"|"wait"|"connecting"|"sending"|"synchronized"}
+   * @type {"disconnected"|"connecting"|"sending"|"synchronized"}
    *
    * @example
    * client.on('state', () => {
-   *   if (sync.state === 'wait' && sync.state === 'sending') {
+   *   if (sync.state === 'disconnected' && sync.state === 'sending') {
    *     showCloseWarning()
    *   }
    * })
@@ -345,9 +343,7 @@ CrossTabClient.prototype = merge(CrossTabClient.prototype, Client.prototype)
 
 Object.defineProperty(CrossTabClient.prototype, 'connected', {
   get: function get () {
-    return this.state !== 'disconnected' &&
-           this.state !== 'wait' &&
-           this.state !== 'connecting'
+    return this.state !== 'disconnected' && this.state !== 'connecting'
   }
 })
 
