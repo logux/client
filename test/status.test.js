@@ -39,19 +39,20 @@ it('notifies only about wait for sync actions', function () {
     test = created
 
     test.leftSync.connected = false
-    test.leftSync.setState('wait')
-    expect(test.calls).toEqual([])
+    test.leftSync.setState('disconnected')
+    expect(test.calls).toEqual(['disconnected'])
 
     return test.leftSync.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
   }).then(function () {
     test.leftSync.setState('connecting')
-    test.leftSync.setState('wait')
-      test.leftSync.setState('connecting')
+    test.leftSync.setState('disconnected')
+    test.leftSync.setState('connecting')
     test.leftSync.setState('sending')
     expect(test.calls).toEqual([
-      'waitSync',
+      'disconnected',
+      'wait',
       'connectingAfterWait',
-      'waitSync',
+      'wait',
       'connectingAfterWait',
       'sendingAfterWait'
     ])

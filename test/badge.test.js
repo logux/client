@@ -93,7 +93,7 @@ it('shows wait state', function () {
   }).then(function () {
     expect(badgeNode().style.display).toEqual('block')
     expect(badgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
-    expect(getBadgeMessage()).toEqual(messages.waitSync)
+    expect(getBadgeMessage()).toEqual(messages.wait)
   })
 })
 

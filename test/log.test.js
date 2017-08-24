@@ -100,9 +100,9 @@ it('shows server node ID', function () {
     )
 
     client.sync.connected = false
-    client.sync.setState('wait')
+    client.sync.setState('disconnected')
     expect(console.log).toHaveBeenLastCalledWith(
-      'Logux: state was changed to wait'
+      'Logux: state was changed to disconnected'
     )
   })
 })
@@ -141,9 +141,9 @@ it('shows bold server node ID', function () {
     )
 
     client.sync.connected = false
-    client.sync.setState('wait')
+    client.sync.setState('disconnected')
     expect(console.log).toHaveBeenLastCalledWith(
-      '%cLogux:%c state was changed to %cwait%c',
+      '%cLogux:%c state was changed to %cdisconnected%c',
       'color: #ffa200',
       '',
       'font-weight: bold',

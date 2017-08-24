@@ -10,19 +10,21 @@
  */
 function status (client, callback) {
   var sync = client.sync
-  var wait = sync.state === 'wait'
-  var waitSync = false
+  var disconnected = sync.state === 'disconnected'
+  var wait = false
 
   var unbind = []
 
   unbind.push(sync.on('state', function () {
-    if (sync.state === 'wait') {
-      wait = true
-      if (waitSync) callback('waitSync')
+    if (sync.state === 'disconnected') {
+      disconnected = true
+      callback(wait ? 'wait' : 'disconnected')
     } else {
-      wait = false
-      if (sync.state === 'synchronized') waitSync = false
-      callback(sync.state + (waitSync ? 'AfterWait' : ''))
+      if (sync.state === 'synchronized') {
+        disconnected = false
+        wait = false
+      }
+      callback(sync.state + (wait ? 'AfterWait' : ''))
     }
   }))
 
@@ -45,9 +47,9 @@ function status (client, callback) {
       } else {
         callback('error', { action: action, meta: meta })
       }
-    } else if (wait && meta.sync && meta.added) {
-      waitSync = true
-      callback('waitSync')
+    } else if (disconnected && meta.sync && meta.added) {
+      wait = true
+      callback('wait')
     }
   }))
 

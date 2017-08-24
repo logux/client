@@ -36,7 +36,7 @@ module.exports = {
     backgroundColor: '#000',
     backgroundImage: 'url(' + offline + ')'
   },
-  waitSync: {
+  wait: {
     display: 'block',
     backgroundColor: '#000',
     backgroundImage: 'url(' + offline + ')'

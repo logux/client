@@ -10,6 +10,9 @@
  * confirm(client, 'Post does not saved to server. Are you sure to leave?')
  */
 function confirm (client) {
+  var disconnected = client.state === 'disconnected'
+  var wait = false
+
   function listen (e) {
     if (typeof e === 'undefined') e = window.event
     if (e) e.returnValue = 'unsynced'
@@ -17,7 +20,13 @@ function confirm (client) {
   }
 
   function update () {
-    var unsaved = client.state === 'wait' || client.state === 'sending'
+    if (client.state === 'disconnected') {
+      disconnected = true
+    } else if (client.state === 'synchronized') {
+      disconnected = false
+    }
+    var unsaved = wait && disconnected
+
     if (client.role !== 'follower' && unsaved) {
       window.addEventListener('beforeunload', listen)
     } else {
@@ -29,6 +38,13 @@ function confirm (client) {
   unbind.push(client.on('role', update))
   unbind.push(client.on('state', update))
   update()
+
+  unbind.push(client.log.on('add', function (action, meta) {
+    if (disconnected && meta.sync && meta.added) {
+      wait = true
+      update()
+    }
+  }))
 
   return function () {
     for (var i = 0; i < unbind.length; i++) {

@@ -43,10 +43,16 @@ afterEach(function () {
 })
 
 it('confirms close', function () {
-  return createClient().then(function (client) {
+  var client
+  return createClient().then(function (created) {
+    client = created
     confirm(client)
 
-    client.sync.setState('wait')
+    client.sync.setState('disconnected')
+    expect(beforeunloader).toBeFalsy()
+
+    return client.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
+  }).then(function () {
     expect(beforeunloader()).toEqual('unsynced')
 
     client.sync.setState('sending')
@@ -61,18 +67,28 @@ it('confirms close', function () {
 })
 
 it('does not confirm on synchronized state', function () {
-  return createClient().then(function (client) {
+  var client
+  return createClient().then(function (created) {
+    client = created
     confirm(client)
-    client.sync.setState('wait')
+    client.sync.setState('disconnected')
+    expect(beforeunloader).toBeFalsy()
+    return client.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
+  }).then(function () {
     client.sync.setState('synchronized')
     expect(beforeunloader).toBeFalsy()
   })
 })
 
 it('does not confirm on follower tab', function () {
-  return createClient().then(function (client) {
+  var client
+  return createClient().then(function (created) {
+    client = created
     confirm(client)
-    client.sync.setState('wait')
+    client.sync.setState('disconnected')
+    expect(beforeunloader).toBeFalsy()
+    return client.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
+  }).then(function () {
     client.role = 'follower'
     client.emitter.emit('role')
     expect(beforeunloader).toBeFalsy()
@@ -80,10 +96,15 @@ it('does not confirm on follower tab', function () {
 })
 
 it('returns unbind function', function () {
-  return createClient().then(function (client) {
+  var client
+  return createClient().then(function (created) {
+    client = created
     var unbind = confirm(client)
     unbind()
-    client.sync.setState('wait')
+    client.sync.setState('disconnected')
+    expect(beforeunloader).toBeFalsy()
+    return client.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
+  }).then(function () {
     expect(beforeunloader).toBeFalsy()
   })
 })
