@@ -303,7 +303,7 @@ it('updates state if tab is a leader', function () {
 it('listens for leader state', function () {
   global.localStorage = fakeLocalStorage
   localStorage.setItem('logux:false:leader', '["",' + Date.now() + ']')
-  localStorage.setItem('logux:false:state', '"wait"')
+  localStorage.setItem('logux:false:state', '"connecting"')
 
   client = createClient()
   var states = []
@@ -311,23 +311,21 @@ it('listens for leader state', function () {
     states.push(client.state)
   })
   client.start()
-  expect(states).toEqual(['wait'])
+  expect(states).toEqual(['connecting'])
 
   localStorage.removeItem('logux:false:state')
   emitStorage('logux:false:state', null)
-  expect(states).toEqual(['wait'])
+  expect(states).toEqual(['connecting'])
 
   localStorage.setItem('logux:false:state', '"synchronized"')
   emitStorage('logux:false:state', null)
   emitStorage('logux:false:state', '"sending"')
   emitStorage('logux:false:state', '"synchronized"')
-  expect(states).toEqual(['wait', 'synchronized'])
+  expect(states).toEqual(['connecting', 'synchronized'])
 })
 
 it('has connected shortcut', function () {
   client = createClient()
-  expect(client.connected).toBeFalsy()
-  client.state = 'wait'
   expect(client.connected).toBeFalsy()
   client.state = 'connecting'
   expect(client.connected).toBeFalsy()
@@ -432,24 +430,8 @@ it('changes state on leader death', function () {
 
   client.start()
   return wait(client.roleTimeout + 20).then(function () {
-    expect(client.state).toEqual('wait')
-    expect(localStorage.getItem('logux:false:state')).toEqual('"wait"')
-  })
-})
-
-it('does not change wait state on dead leader', function () {
-  global.localStorage = fakeLocalStorage
-  client = createClient()
-  client.roleTimeout = 20
-
-  var last = Date.now() - client.leaderTimeout + 10
-  localStorage.setItem('logux:false:leader', '["",' + last + ']')
-  localStorage.setItem('logux:false:state', '"wait"')
-
-  client.start()
-  return wait(client.roleTimeout).then(function () {
-    expect(client.state).toEqual('wait')
-    expect(localStorage.getItem('logux:false:state')).toEqual('"wait"')
+    expect(client.state).toEqual('disconnected')
+    expect(localStorage.getItem('logux:false:state')).toEqual('"disconnected"')
   })
 })
 

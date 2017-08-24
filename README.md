@@ -143,17 +143,6 @@ logux.sync.on('state', function () {
 })
 ```
 
-Notify user on page leaving, if some data is not synchronized yet:
-
-```js
-window.onbeforeunload = function (e) {
-  if (logux.sync.state === 'wait') {
-    e.returnValue = 'Edits were not saved'
-    return e.returnValue
-  }
-}
-```
-
 
 ### Cross-Tab Communication
 

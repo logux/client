@@ -72,6 +72,12 @@ function createDialog (opts, credentials) {
     }])
     return pair.wait('left')
   }).then(function () {
+    if (client.sync.connected) {
+      return client.sync.waitFor('synchronized')
+    } else {
+      return false
+    }
+  }).then(function () {
     client.sync.timeFix = 0
     return client
   })
