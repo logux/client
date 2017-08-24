@@ -2,7 +2,6 @@ module.exports = {
   synchronized: 'Your data has been saved',
   disconnected: 'No Internet connection',
   waitSync: 'No Internet connection<br>Your data has not been saved',
-  connecting: 'Data saving',
   sending: 'Data saving',
   syncError: 'Server error<br>Your data has not been saved',
   error: 'Server error<br>You changes was reverted',

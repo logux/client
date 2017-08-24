@@ -104,38 +104,20 @@ it('shows sending state', function () {
 
     test.leftSync.connected = false
     test.leftSync.setState('disconnected')
-    test.leftSync.setState('sending')
-    expect(badgeNode().style.display).toEqual('none')
+    test.leftSync.setState('connecting')
+    expect(getBadgeMessage()).toEqual(messages.disconnected)
 
     test.leftSync.connected = false
     test.leftSync.setState('wait')
     return test.leftSync.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
   }).then(function () {
-    test.leftSync.setState('sending')
+    test.leftSync.setState('connecting')
     expect(badgeNode().style.display).toEqual('block')
     expect(badgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
     expect(getBadgeMessage()).toEqual(messages.sending)
-  })
-})
 
-it('shows connecting state', function () {
-  var test
-  return createTest().then(function (created) {
-    test = created
-
-    test.leftSync.connected = false
-    test.leftSync.setState('disconnected')
-    test.leftSync.setState('connecting')
-    expect(badgeNode().style.display).toEqual('none')
-
-    test.leftSync.connected = false
-    test.leftSync.setState('wait')
-    return test.leftSync.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
-  }).then(function () {
-    test.leftSync.setState('connecting')
-    expect(badgeNode().style.display).toEqual('block')
-    expect(badgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
-    expect(getBadgeMessage()).toEqual(messages.connecting)
+    test.leftSync.setState('sending')
+    expect(getBadgeMessage()).toEqual(messages.sending)
   })
 })
 

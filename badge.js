@@ -80,7 +80,6 @@ var RESET = {
  * @param {string} options.styles.icons.synchronized Synchronized state.
  * @param {string} options.styles.icons.disconnected Disconnected state.
  * @param {string} options.styles.icons.waitSync Wait state.
- * @param {string} options.styles.icons.connecting Connecting state.
  * @param {string} options.styles.icons.sending Sending state.
  * @param {string} options.styles.icons.error Error state.
  * @param {string} options.styles.icons.protocolError Protocol error state.
@@ -88,7 +87,6 @@ var RESET = {
  * @param {object} options.messages.synchronized Text for synchronized state.
  * @param {object} options.messages.disconnected Text for disconnected state.
  * @param {object} options.messages.waitSync Text for wait state.
- * @param {object} options.messages.connecting Text for connecting state.
  * @param {object} options.messages.sending Text for sending state.
  * @param {object} options.messages.syncError Logux error text.
  * @param {object} options.messages.error Error text.
@@ -127,17 +125,20 @@ function badge (client, options) {
   injectStyles(text, styles.text)
   setPosition(widget, position)
 
-  var isWaiting = false
-  var isConnecting = false
+  var waiting = false
 
   var unbind = status(client, function (state) {
-    if (state === 'synchronized') {
+    if (state === 'sendingAfterWait' || state === 'connectingAfterWait') {
+      injectStyles(widget, styles.sending)
+      show(widget)
+      text.innerHTML = messages.sending
+      waiting = true
+    } else if (state === 'synchronized') {
       injectStyles(widget, styles.synchronized)
-      if (isConnecting) {
+      if (waiting) {
+        waiting = false
         show(widget)
         text.innerHTML = messages.synchronized
-        isWaiting = false
-        isConnecting = false
         setTimeout(function () {
           hide(widget)
         }, duration)
@@ -148,34 +149,11 @@ function badge (client, options) {
       injectStyles(widget, styles.disconnected)
       show(widget)
       text.innerHTML = messages.disconnected
-      isWaiting = false
-      isConnecting = false
     } else if (state === 'waitSync') {
       injectStyles(widget, styles.waitSync)
       show(widget)
       text.innerHTML = messages.waitSync
-      isConnecting = false
-      isWaiting = true
-    } else if (state === 'connecting') {
-      injectStyles(widget, styles.connecting)
-      if (isWaiting) {
-        show(widget)
-        text.innerHTML = messages.connecting
-        isConnecting = true
-        isWaiting = false
-      } else {
-        hide(widget)
-      }
-    } else if (state === 'sending') {
-      injectStyles(widget, styles.sending)
-      if (isWaiting) {
-        show(widget)
-        text.innerHTML = messages.sending
-        isConnecting = true
-        isWaiting = false
-      } else {
-        hide(widget)
-      }
+      waiting = true
     } else if (state === 'protocolError') {
       show(widget)
       text.innerHTML = messages.protocolError

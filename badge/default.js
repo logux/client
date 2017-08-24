@@ -46,11 +46,6 @@ module.exports = {
     backgroundColor: '#000',
     backgroundImage: 'url(' + refresh + ')'
   },
-  connecting: {
-    display: 'block',
-    backgroundColor: '#000',
-    backgroundImage: 'url(' + refresh + ')'
-  },
   error: {
     display: 'block',
     backgroundColor: '#F42A2A',
