@@ -1,13 +1,5 @@
 var status = require('./status')
 
-function show (element) {
-  element.style.display = 'block'
-}
-
-function hide (element) {
-  element.style.display = 'none'
-}
-
 function injectStyles (element, styles) {
   for (var property in styles) {
     element.style[property] = styles[property]
@@ -124,41 +116,35 @@ function badge (client, options) {
   injectStyles(text, styles.text)
   setPosition(widget, position)
 
+  function show (style, msg) {
+    text.innerHTML = msg
+    injectStyles(widget, style)
+    widget.style.display = 'block'
+  }
+
+  function hide () {
+    widget.style.display = 'none'
+  }
+
   var unbind = status(client, function (state) {
     if (state === 'sendingAfterWait' || state === 'connectingAfterWait') {
-      injectStyles(widget, styles.sending)
-      text.innerHTML = messages.sending
-      show(widget)
+      show(styles.sending, messages.sending)
     } else if (state === 'synchronizedAfterWait') {
-      injectStyles(widget, styles.synchronized)
-      text.innerHTML = messages.synchronized
-      show(widget)
+      show(styles.synchronized, messages.synchronized)
     } else if (state === 'synchronized') {
       hide(widget)
     } else if (state === 'disconnected') {
-      injectStyles(widget, styles.disconnected)
-      text.innerHTML = messages.disconnected
-      show(widget)
+      show(styles.disconnected, messages.disconnected)
     } else if (state === 'wait') {
-      injectStyles(widget, styles.wait)
-      text.innerHTML = messages.wait
-      show(widget)
+      show(styles.wait, messages.wait)
     } else if (state === 'protocolError') {
-      injectStyles(widget, styles.protocolError)
-      text.innerHTML = messages.protocolError
-      show(widget)
+      show(styles.protocolError, messages.protocolError)
     } else if (state === 'syncError') {
-      injectStyles(widget, styles.error)
-      text.innerHTML = messages.syncError
-      show(widget)
+      show(styles.error, messages.syncError)
     } else if (state === 'error') {
-      injectStyles(widget, styles.error)
-      text.innerHTML = messages.error
-      show(widget)
+      show(styles.error, messages.error)
     } else if (state === 'denied') {
-      injectStyles(widget, styles.error)
-      text.innerHTML = messages.denied
-      show(widget)
+      show(styles.error, messages.denied)
     }
   }, options)
 
