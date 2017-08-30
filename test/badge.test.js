@@ -57,7 +57,7 @@ it('shows synchronized state', function () {
     expect(badgeNode().style.display).toEqual('none')
 
     test.leftSync.connected = false
-    test.leftSync.setState('wait')
+    test.leftSync.setState('disconnected')
     return test.leftSync.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
   }).then(function () {
     test.leftSync.setState('connecting')

@@ -5,25 +5,40 @@
  * @param {Syncable|Client} client Observed Client instance
  *                                 or object with `sync` property.
  * @param {statusReceiver} callback Status callback.
+ * @param {object} [options] Options.
+ * @param {number} [options.duration=3000] `synchronizedAfterWait` duration.
  *
  * @return {Function} Unbind status listener.
  */
-function status (client, callback) {
+function status (client, callback, options) {
   var sync = client.sync
   var disconnected = sync.state === 'disconnected'
   var wait = false
 
+  var timeout
+
   var unbind = []
 
+  if (!options) options = { }
+  if (typeof options.duration === 'undefined') options.duration = 3000
+
   unbind.push(sync.on('state', function () {
+    clearTimeout(timeout)
     if (sync.state === 'disconnected') {
       disconnected = true
       callback(wait ? 'wait' : 'disconnected')
-    } else {
-      if (sync.state === 'synchronized') {
-        disconnected = false
+    } else if (sync.state === 'synchronized') {
+      disconnected = false
+      if (wait) {
         wait = false
+        callback('synchronizedAfterWait')
+        timeout = setTimeout(function () {
+          callback('synchronized')
+        }, options.duration)
+      } else {
+        callback('synchronized')
       }
+    } else {
       callback(sync.state + (wait ? 'AfterWait' : ''))
     }
   }))

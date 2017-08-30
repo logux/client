@@ -5,7 +5,13 @@ var TestPair = require('logux-sync').TestPair
 
 var status = require('../status')
 
-function createTest () {
+function wait (ms) {
+  return new Promise(function (resolve) {
+    setTimeout(resolve, ms)
+  })
+}
+
+function createTest (options) {
   var pair = new TestPair()
   pair.leftSync = new BaseSync('client', TestTime.getLog(), pair.left)
   pair.leftSync.catch(function () {})
@@ -15,7 +21,7 @@ function createTest () {
     status({ sync: pair.leftSync }, function (state, details) {
       pair.calls.push(state)
       pair.args.push(details)
-    })
+    }, options)
     return pair
   })
 }
@@ -48,13 +54,27 @@ it('notifies only about wait for sync actions', function () {
     test.leftSync.setState('disconnected')
     test.leftSync.setState('connecting')
     test.leftSync.setState('sending')
+    test.leftSync.setState('synchronized')
     expect(test.calls).toEqual([
       'disconnected',
       'wait',
       'connectingAfterWait',
       'wait',
       'connectingAfterWait',
-      'sendingAfterWait'
+      'sendingAfterWait',
+      'synchronizedAfterWait'
+    ])
+    return wait(15)
+  }).then(function () {
+    expect(test.calls).toEqual([
+      'disconnected',
+      'wait',
+      'connectingAfterWait',
+      'wait',
+      'connectingAfterWait',
+      'sendingAfterWait',
+      'synchronizedAfterWait',
+      'synchronized'
     ])
   })
 })

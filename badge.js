@@ -114,7 +114,6 @@ var RESET = {
 function badge (client, options) {
   var messages = options.messages
   var position = options.position || 'bottom-right'
-  var duration = options.duration || 3000
   var styles = options.styles
 
   var widget = document.createElement('div')
@@ -125,53 +124,43 @@ function badge (client, options) {
   injectStyles(text, styles.text)
   setPosition(widget, position)
 
-  var waiting = false
-
   var unbind = status(client, function (state) {
     if (state === 'sendingAfterWait' || state === 'connectingAfterWait') {
       injectStyles(widget, styles.sending)
-      show(widget)
       text.innerHTML = messages.sending
-      waiting = true
-    } else if (state === 'synchronized') {
+      show(widget)
+    } else if (state === 'synchronizedAfterWait') {
       injectStyles(widget, styles.synchronized)
-      if (waiting) {
-        waiting = false
-        show(widget)
-        text.innerHTML = messages.synchronized
-        setTimeout(function () {
-          hide(widget)
-        }, duration)
-      } else {
-        hide(widget)
-      }
+      text.innerHTML = messages.synchronized
+      show(widget)
+    } else if (state === 'synchronized') {
+      hide(widget)
     } else if (state === 'disconnected') {
       injectStyles(widget, styles.disconnected)
-      show(widget)
       text.innerHTML = messages.disconnected
+      show(widget)
     } else if (state === 'wait') {
       injectStyles(widget, styles.wait)
-      show(widget)
       text.innerHTML = messages.wait
-      waiting = true
+      show(widget)
     } else if (state === 'protocolError') {
-      show(widget)
-      text.innerHTML = messages.protocolError
       injectStyles(widget, styles.protocolError)
-    } else if (state === 'syncError') {
+      text.innerHTML = messages.protocolError
       show(widget)
+    } else if (state === 'syncError') {
+      injectStyles(widget, styles.error)
       text.innerHTML = messages.syncError
-      injectStyles(widget, styles.error)
+      show(widget)
     } else if (state === 'error') {
-      text.innerHTML = messages.error
       injectStyles(widget, styles.error)
+      text.innerHTML = messages.error
       show(widget)
     } else if (state === 'denied') {
-      text.innerHTML = messages.denied
       injectStyles(widget, styles.error)
+      text.innerHTML = messages.denied
       show(widget)
     }
-  })
+  }, options)
 
   widget.appendChild(text)
   document.body.appendChild(widget)
