@@ -46,7 +46,7 @@ function status (client, callback, options) {
   unbind.push(sync.on('error', function (error) {
     if (error.type === 'wrong-protocol' || error.type === 'wrong-subprotocol') {
       callback('protocolError')
-    } else {
+    } else if (error.type !== 'timeout') {
       callback('syncError', { error: error })
     }
   }))

@@ -92,6 +92,14 @@ it('notifies about synchronization error', function () {
   })
 })
 
+it('ignores timeout error', function () {
+  return createTest().then(function (test) {
+    var error1 = { type: 'timeout' }
+    test.leftSync.emitter.emit('error', error1)
+    expect(test.calls).toEqual([])
+  })
+})
+
 it('notifies about old client', function () {
   return createTest().then(function (test) {
     var protocol = new SyncError(test.leftSync, 'wrong-protocol', { })
