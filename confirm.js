@@ -24,6 +24,7 @@ function confirm (client) {
       disconnected = true
     } else if (client.state === 'synchronized') {
       disconnected = false
+      wait = false
     }
 
     if (client.role !== 'follower' && wait && disconnected) {

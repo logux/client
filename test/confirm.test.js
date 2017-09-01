@@ -72,10 +72,12 @@ it('does not confirm on synchronized state', function () {
     client = created
     confirm(client)
     client.sync.setState('disconnected')
-    expect(beforeunloader).toBeFalsy()
     return client.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
   }).then(function () {
     client.sync.setState('synchronized')
+    expect(beforeunloader).toBeFalsy()
+
+    client.sync.setState('disconnected')
     expect(beforeunloader).toBeFalsy()
   })
 })
