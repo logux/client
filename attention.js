@@ -13,7 +13,7 @@ function attention (client) {
   var doc = document
   var originTitle = false
   var unbind = []
-  var timeoutId = false
+  var timeout = false
 
   function restoreTitle () {
     if (originTitle) {
@@ -30,25 +30,25 @@ function attention (client) {
       restoreTitle()
     }
 
-    if (doc.hidden) timeoutId = setTimeout(blink, 1000)
+    if (doc.hidden) timeout = setTimeout(blink, 1000)
   }
 
   function tabListener () {
-    if (!doc.hidden && timeoutId) {
-      timeoutId = clearTimeout(timeoutId)
+    if (!doc.hidden && timeout) {
+      timeout = clearTimeout(timeout)
       restoreTitle()
     }
   }
 
-  if (typeof doc !== 'undefined' && typeof doc.hidden !== 'undefined') {
+  if (doc && typeof doc.hidden !== 'undefined') {
     unbind.push(client.sync.on('error', function (error) {
-      if (error.type !== 'timeout' && !timeoutId) {
+      if (error.type !== 'timeout' && !timeout) {
         blink()
       }
     }))
 
     unbind.push(client.log.on('add', function (action) {
-      if (action.type === 'logux/undo' && action.reason && !timeoutId) {
+      if (action.type === 'logux/undo' && action.reason && !timeout) {
         blink()
       }
     }))

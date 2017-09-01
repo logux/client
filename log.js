@@ -9,11 +9,10 @@ function colorify (color, text, action, meta) {
   if (!color) text = text.replace(/%c/g, '')
 
   var args = [text]
-  var i
 
   if (color) {
     var styles = text.match(/%c[^%]+%c/g)
-    for (i = 0; i < styles.length; i++) {
+    for (var i = 0; i < styles.length; i++) {
       if (i === 0) {
         args.push('color: #ffa200')
       } else {

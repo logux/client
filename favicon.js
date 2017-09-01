@@ -19,7 +19,7 @@
  * })
  */
 function favicon (client, links) {
-  links = links || {}
+  if (!links) links = { }
 
   var normal = links.normal
   var offline = links.offline
@@ -45,15 +45,11 @@ function favicon (client, links) {
     }
   }
 
-  if (typeof doc !== 'undefined') {
+  if (doc) {
     fav = doc.querySelector('link[rel~="icon"]')
 
     if (typeof normal === 'undefined') {
-      if (fav) {
-        normal = fav.href
-      } else {
-        normal = ''
-      }
+      normal = fav ? fav.href : ''
     }
 
     if (!fav) {

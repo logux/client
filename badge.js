@@ -1,41 +1,29 @@
 var status = require('./status')
 
 function injectStyles (element, styles) {
-  for (var property in styles) {
-    element.style[property] = styles[property]
+  for (var i in styles) {
+    element.style[i] = styles[i]
   }
 }
 
 function setPosition (element, position) {
-  var parsePosition = position.split('-')
-  parsePosition.forEach(function (pos) {
-    switch (pos) {
-      case 'top':
-        element.style.top = '0'
-        break
-      case 'middle':
-        element.style.top = '50%'
-        element.style.transform = 'translateY(-50%)'
-        break
-      case 'bottom':
-        element.style.bottom = '0'
-        break
-      case 'left':
-        element.style.left = '0'
-        break
-      case 'center':
-        element.style.left = '50%'
-        element.style.transform = 'translateX(-50%)'
-        break
-      case 'right':
-        element.style.right = '0'
-        break
-    }
-  })
+  var style = element.style
   if (position === 'middle-center' || position === 'center-middle') {
-    element.style.top = '50%'
-    element.style.left = '50%'
-    element.style.transform = 'translate(-50%, -50%)'
+    style.top = '50%'
+    style.left = '50%'
+    style.transform = 'translate(-50%, -50%)'
+  } else {
+    position.split('-').forEach(function (pos) {
+      if (pos === 'middle') {
+        style.top = '50%'
+        style.transform = 'translateY(-50%)'
+      } else if (pos === 'center') {
+        style.left = '50%'
+        style.transform = 'translateX(-50%)'
+      } else {
+        style[pos] = '0'
+      }
+    })
   }
 }
 

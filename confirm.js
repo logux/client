@@ -1,3 +1,9 @@
+function block (e) {
+  if (typeof e === 'undefined') e = window.event
+  if (e) e.returnValue = 'unsynced'
+  return 'unsynced'
+}
+
 /**
  * Show confirm popup, when user close tab with non-synchronized actions.
  *
@@ -13,24 +19,17 @@ function confirm (client) {
   var disconnected = client.state === 'disconnected'
   var wait = false
 
-  function listen (e) {
-    if (typeof e === 'undefined') e = window.event
-    if (e) e.returnValue = 'unsynced'
-    return 'unsynced'
-  }
-
   function update () {
     if (client.state === 'disconnected') {
       disconnected = true
     } else if (client.state === 'synchronized') {
       disconnected = false
     }
-    var unsaved = wait && disconnected
 
-    if (client.role !== 'follower' && unsaved) {
-      window.addEventListener('beforeunload', listen)
+    if (client.role !== 'follower' && wait && disconnected) {
+      window.addEventListener('beforeunload', block)
     } else {
-      window.removeEventListener('beforeunload', listen)
+      window.removeEventListener('beforeunload', block)
     }
   }
 

@@ -5,7 +5,6 @@ var error = require('./error.svg')
 
 module.exports = {
   base: {
-    display: 'none',
     position: 'fixed',
     width: '15.4em',
     height: '4em',
@@ -27,32 +26,26 @@ module.exports = {
     height: '4em'
   },
   synchronized: {
-    display: 'block',
     backgroundColor: '#000',
     backgroundImage: 'url(' + success + ')'
   },
   disconnected: {
-    display: 'block',
     backgroundColor: '#000',
     backgroundImage: 'url(' + offline + ')'
   },
   wait: {
-    display: 'block',
     backgroundColor: '#000',
     backgroundImage: 'url(' + offline + ')'
   },
   sending: {
-    display: 'block',
     backgroundColor: '#000',
     backgroundImage: 'url(' + refresh + ')'
   },
   error: {
-    display: 'block',
     backgroundColor: '#F42A2A',
     backgroundImage: 'url(' + error + ')'
   },
   protocolError: {
-    display: 'block',
     backgroundColor: '#000',
     backgroundImage: 'url(' + refresh + ')'
   }
