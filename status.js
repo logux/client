@@ -14,6 +14,7 @@ function status (client, callback, options) {
   var sync = client.sync
   var disconnected = sync.state === 'disconnected'
   var wait = false
+  var connecting = false
 
   var timeout
 
@@ -23,7 +24,11 @@ function status (client, callback, options) {
   if (typeof options.duration === 'undefined') options.duration = 3000
 
   unbind.push(sync.on('state', function () {
-    clearTimeout(timeout)
+    if (sync.state !== 'connecting') {
+      clearTimeout(timeout)
+      if (connecting) connecting = false
+    }
+
     if (sync.state === 'disconnected') {
       disconnected = true
       callback(wait ? 'wait' : 'disconnected')
@@ -38,6 +43,11 @@ function status (client, callback, options) {
       } else {
         callback('synchronized')
       }
+    } else if (sync.state === 'connecting' && !connecting) {
+      connecting = true
+      timeout = setTimeout(function () {
+        callback('connecting' + (wait ? 'AfterWait' : ''))
+      }, 100)
     } else {
       callback(sync.state + (wait ? 'AfterWait' : ''))
     }

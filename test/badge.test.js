@@ -114,10 +114,13 @@ it('shows sending state', function () {
     test.leftSync.setState('connecting')
     expect(badgeNode().style.display).toEqual('block')
     expect(badgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
-    expect(getBadgeMessage()).toEqual(messages.sending)
+    expect(getBadgeMessage()).toEqual(messages.wait)
+    return wait(105).then(function () {
+      expect(getBadgeMessage()).toEqual(messages.sending)
 
-    test.leftSync.setState('sending')
-    expect(getBadgeMessage()).toEqual(messages.sending)
+      test.leftSync.setState('sending')
+      expect(getBadgeMessage()).toEqual(messages.sending)
+    })
   })
 })
 
