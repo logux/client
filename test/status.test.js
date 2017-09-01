@@ -27,17 +27,19 @@ function createTest (options) {
 }
 
 it('notifies about states', function () {
-  return createTest({ duration: 10 }).then(function (test) {
+  var test
+  return createTest().then(function (created) {
+    test = created
     test.leftSync.connected = false
     test.leftSync.setState('disconnected')
     test.leftSync.setState('connecting')
-    wait(105).then(function () {
-      test.leftSync.connected = true
-      test.leftSync.setState('synchronized')
-      expect(test.calls).toEqual([
-        'disconnected', 'connecting', 'synchronized'
-      ])
-    })
+    return wait(105)
+  }).then(function () {
+    test.leftSync.connected = true
+    test.leftSync.setState('synchronized')
+    expect(test.calls).toEqual([
+      'disconnected', 'connecting', 'synchronized'
+    ])
   })
 })
 
@@ -53,24 +55,24 @@ it('notifies only about wait for sync actions', function () {
     return test.leftSync.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
   }).then(function () {
     test.leftSync.setState('connecting')
-    return wait(105).then(function () {
-      test.leftSync.setState('disconnected')
-      test.leftSync.setState('connecting')
-      return wait(105).then(function () {
-        test.leftSync.setState('sending')
-        test.leftSync.setState('synchronized')
-        expect(test.calls).toEqual([
-          'disconnected',
-          'wait',
-          'connectingAfterWait',
-          'wait',
-          'connectingAfterWait',
-          'sendingAfterWait',
-          'synchronizedAfterWait'
-        ])
-        return wait(15)
-      })
-    })
+    return wait(105)
+  }).then(function () {
+    test.leftSync.setState('disconnected')
+    test.leftSync.setState('connecting')
+    return wait(105)
+  }).then(function () {
+    test.leftSync.setState('sending')
+    test.leftSync.setState('synchronized')
+    expect(test.calls).toEqual([
+      'disconnected',
+      'wait',
+      'connectingAfterWait',
+      'wait',
+      'connectingAfterWait',
+      'sendingAfterWait',
+      'synchronizedAfterWait'
+    ])
+    return wait(15)
   }).then(function () {
     expect(test.calls).toEqual([
       'disconnected',
@@ -85,7 +87,7 @@ it('notifies only about wait for sync actions', function () {
   })
 })
 
-it('skips "connecting" notification if it took less than 100ms', function () {
+it('skips connecting notification if it took less than 100ms', function () {
   return createTest().then(function (test) {
     test.leftSync.connected = false
     test.leftSync.setState('disconnected')
