@@ -185,14 +185,31 @@ it('supports bottom and left side of position setting', function () {
   })
 })
 
-it('supports top and right side of position setting', function () {
-  return createTest({ position: 'top-right' }).then(function () {
-    expect(badgeNode().style.top).toEqual('0px')
+it('supports middle and right side of position setting', function () {
+  return createTest({ position: 'middle-right' }).then(function () {
+    expect(badgeNode().style.top).toEqual('50%')
     expect(badgeNode().style.right).toEqual('0px')
+    expect(badgeNode().style.transform).toEqual('translateY(-50%)')
   })
 })
 
-it('supports center/middle position setting', function () {
+it('supports bottom and center side of position setting', function () {
+  return createTest({ position: 'bottom-center' }).then(function () {
+    expect(badgeNode().style.bottom).toEqual('0px')
+    expect(badgeNode().style.left).toEqual('50%')
+    expect(badgeNode().style.transform).toEqual('translateX(-50%)')
+  })
+})
+
+it('supports middle-center position setting', function () {
+  return createTest({ position: 'middle-center' }).then(function () {
+    expect(badgeNode().style.top).toEqual('50%')
+    expect(badgeNode().style.left).toEqual('50%')
+    expect(badgeNode().style.transform).toEqual('translate(-50%, -50%)')
+  })
+})
+
+it('supports center-middle position setting', function () {
   return createTest({ position: 'center-middle' }).then(function () {
     expect(badgeNode().style.top).toEqual('50%')
     expect(badgeNode().style.left).toEqual('50%')

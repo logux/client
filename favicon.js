@@ -2,7 +2,7 @@
  * Change favicon to show Logux synchronization status.
  *
  * @param {CrossTabClient} client Observed Client instance.
- * @param {object} [links] Set favicon links.
+ * @param {object} links Set favicon links.
  * @param {string} [links.normal] Default favicon link. By default,
  *                                it will be taken from current favicon.
  * @param {string} [links.offline] Offline favicon link.
@@ -19,8 +19,6 @@
  * })
  */
 function favicon (client, links) {
-  if (!links) links = { }
-
   var normal = links.normal
   var offline = links.offline
   var error = links.error
