@@ -454,7 +454,7 @@ it('detects subscriptions from different tabs', function () {
   emitStorage('logux:false:add', '["other",' +
     '{"type":"logux/subscribe","name":"a"},{"sync":true}' +
   ']')
-  expect(client.subscriptions).toEqual({
-    a: { type: 'logux/subscribe', name: 'a' }
-  })
+  expect(client.subscriptions).toEqual([
+    { type: 'logux/subscribe', name: 'a' }
+  ])
 })
