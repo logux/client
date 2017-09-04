@@ -672,8 +672,8 @@ caniuse-api@^1.5.2:
     lodash.uniq "^4.5.0"
 
 caniuse-db@^1.0.30000529, caniuse-db@^1.0.30000634, caniuse-db@^1.0.30000639:
-  version "1.0.30000721"
-  resolved "https://registry.yarnpkg.com/caniuse-db/-/caniuse-db-1.0.30000721.tgz#cdc52efe8f82dd13916615b78e86f704ece61802"
+  version "1.0.30000722"
+  resolved "https://registry.yarnpkg.com/caniuse-db/-/caniuse-db-1.0.30000722.tgz#e0bc209d91a578319103b50749f2aa7e4a672a79"
 
 caseless@~0.12.0:
   version "0.12.0"
@@ -3256,7 +3256,7 @@ loglevel@^1.4.1:
 
 logux-core@logux/logux-core:
   version "0.1.0"
-  resolved "https://codeload.github.com/logux/logux-core/tar.gz/ff87373a6d0bdc18e37d9e450acaee79319b0034"
+  resolved "https://codeload.github.com/logux/logux-core/tar.gz/3ef10d744a6fedac1cd8b21d8d6aca2591247fb4"
   dependencies:
     nanoevents "^0.3.0"
 
