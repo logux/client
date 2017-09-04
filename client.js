@@ -20,6 +20,18 @@ function cleanTabActions (client, id) {
   })
 }
 
+function subscribeAction (action) {
+  var subscribe = { }
+  for (var i in action) {
+    if (i === 'type') {
+      subscribe.type = 'logux/subscribe'
+    } else {
+      subscribe[i] = action[i]
+    }
+  }
+  return subscribe
+}
+
 var ALLOWED_META = ['id', 'time', 'nodeIds', 'users', 'channels']
 
 /**
@@ -149,15 +161,18 @@ function Client (options) {
     }
   })
 
-  this.subscriptions = { }
+  this.subscriptions = []
   function listener (action, meta) {
     if (action.type === 'logux/subscribe') {
-      client.subscriptions[action.name] = action
+      client.subscriptions.push(action)
       if (!meta.sync) {
         console.error('logux/subscribe action without meta.sync')
       }
     } else if (action.type === 'logux/unsubscribe') {
-      delete client.subscriptions[action.name]
+      var json = JSON.stringify(subscribeAction(action))
+      client.subscriptions = client.subscriptions.filter(function (i) {
+        return i.name !== action.name && JSON.stringify(i) !== json
+      })
       if (!meta.sync) {
         console.error('logux/unsubscribe action without meta.sync')
       }
