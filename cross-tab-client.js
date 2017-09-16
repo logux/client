@@ -7,7 +7,7 @@ function storageKey (client, name) {
 }
 
 function sendToTabs (client, event, data) {
-  if (typeof localStorage === 'undefined') return
+  if (!client.isLocalStorage) return
   localStorage.setItem(storageKey(client, event), JSON.stringify(data))
 }
 
@@ -210,7 +210,7 @@ CrossTabClient.prototype = {
   start: function start () {
     this.cleanPrevActions()
 
-    if (typeof localStorage === 'undefined') {
+    if (!this.isLocalStorage) {
       this.role = 'leader'
       this.emitter.emit('role')
       this.sync.connection.connect()
@@ -235,7 +235,7 @@ CrossTabClient.prototype = {
   },
 
   clean: function clean () {
-    if (typeof localStorage !== 'undefined') {
+    if (this.isLocalStorage) {
       localStorage.removeItem(storageKey(this, 'add'))
       localStorage.removeItem(storageKey(this, 'clean'))
       localStorage.removeItem(storageKey(this, 'state'))

@@ -89,11 +89,12 @@ it('supports nanoevents API', function () {
 })
 
 it('cleans everything', function () {
-  global.localStorage = {
-    removeItem: jest.fn()
-  }
+  global.localStorage = fakeLocalStorage
   client = createClient()
+
   client.sync.destroy = jest.fn()
+  global.localStorage.removeItem = jest.fn()
+
   return client.clean().then(function () {
     expect(client.sync.destroy).toHaveBeenCalled()
     expect(global.localStorage.removeItem.mock.calls).toEqual([
@@ -103,11 +104,26 @@ it('cleans everything', function () {
   })
 })
 
+it('does not use broken localStorage', function () {
+  global.localStorage = {
+    setItem: function () {
+      throw new Error('The quota has been exceeded')
+    }
+  }
+  client = new CrossTabClient({
+    subprotocol: '1.0.0',
+    server: 'wss://localhost:1337',
+    userId: 10
+  })
+  return client.log.add({ type: 'A' }, { reasons: ['tab' + client.id] })
+})
+
 it('synchronizes events between tabs', function () {
   global.localStorage = {
     setItem: function (name, value) {
       emitStorage(name, value)
-    }
+    },
+    removeItem: function () { }
   }
   var client1 = new CrossTabClient({
     subprotocol: '1.0.0',
