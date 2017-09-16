@@ -14,7 +14,7 @@ function tabPing (client) {
 
 function cleanTabActions (client, id) {
   client.log.removeReason('tab' + id).then(function () {
-    if (typeof localStorage !== 'undefined') {
+    if (client.isLocalStorage) {
       localStorage.removeItem(client.options.prefix + ':tab:' + id)
     }
   })
@@ -112,6 +112,15 @@ function Client (options) {
   this.id = nanoid(8)
   this.options.userId = this.options.userId.toString()
 
+  this.isLocalStorage = false
+  if (typeof localStorage !== 'undefined') {
+    try {
+      localStorage.setItem(this.id, '1')
+      localStorage.removeItem(this.id)
+      this.isLocalStorage = true
+    } catch (e) {}
+  }
+
   /**
    * Unique Logux node ID.
    * @type {string}
@@ -190,7 +199,7 @@ function Client (options) {
   this.tabPing = 60000
   this.tabTimeout = 10 * this.tabPing
   var reason = 'tab' + client.id
-  if (typeof localStorage !== 'undefined') {
+  if (this.isLocalStorage) {
     var unbind = this.log.on('add', function (action, meta) {
       if (meta.reasons.indexOf(reason) !== -1) {
         tabPing(client)
@@ -318,7 +327,7 @@ Client.prototype = {
   },
 
   cleanPrevActions: function cleanPrevActions () {
-    if (typeof localStorage === 'undefined') return
+    if (!this.isLocalStorage) return
 
     for (var i in localStorage) {
       var prefix = this.options.prefix + ':tab:'
