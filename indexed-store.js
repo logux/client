@@ -1,3 +1,5 @@
+var isFirstOlder = require('logux-core/is-first-older')
+
 var VERSION = 1
 
 function rejectify (request, reject) {
@@ -30,6 +32,10 @@ function nextEntry (request) {
       return { entries: [] }
     }
   }
+}
+
+function isDefined (value) {
+  return typeof value !== 'undefined'
 }
 
 /**
@@ -186,12 +192,22 @@ IndexedStore.prototype = {
           }
 
           var entry = e.target.result.value
+          var meta = entry.meta
           var c = criteria
-          if (typeof c.minAdded !== 'undefined' && entry.added < c.minAdded) {
+
+          if (isDefined(c.olderThan) && !isFirstOlder(meta, c.olderThan)) {
             e.target.result.continue()
             return
           }
-          if (typeof c.maxAdded !== 'undefined' && entry.added > c.maxAdded) {
+          if (isDefined(c.youngerThan) && !isFirstOlder(c.youngerThan, meta)) {
+            e.target.result.continue()
+            return
+          }
+          if (isDefined(c.minAdded) && entry.added < c.minAdded) {
+            e.target.result.continue()
+            return
+          }
+          if (isDefined(c.maxAdded) && entry.added > c.maxAdded) {
             e.target.result.continue()
             return
           }
