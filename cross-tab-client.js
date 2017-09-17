@@ -121,6 +121,7 @@ function setState (client, state) {
  *                                      connection by sending ping.
  * @param {Store} [options.store] Store to save log data. `IndexedStore`
  *                                by default (if available)
+ * @param {TestTime} [options.time] Test time to test client.
  * @param {number} [options.minDelay=1000] Minimum delay between reconnections.
  * @param {number} [options.maxDelay=5000] Maximum delay between reconnections.
  * @param {number} [options.attempts=Infinity] Maximum reconnection attempts.

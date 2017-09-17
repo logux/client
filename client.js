@@ -56,6 +56,7 @@ var ALLOWED_META = ['id', 'time', 'nodeIds', 'users', 'channels']
  *                                      connection by sending ping.
  * @param {Store} [options.store] Store to save log data. `IndexedStore`
  *                                by default (if available)
+ * @param {TestTime} [options.time] Test time to test client.
  * @param {number} [options.minDelay=1000] Minimum delay between reconnections.
  * @param {number} [options.maxDelay=5000] Maximum delay between reconnections.
  * @param {number} [options.attempts=Infinity] Maximum reconnection attempts.
@@ -153,6 +154,12 @@ function Client (options) {
     }
   }
 
+  var log
+  if (this.options.time) {
+    log = this.options.time.nextLog({ store: store, nodeId: this.nodeId })
+  } else {
+    log = new Log({ store: store, nodeId: this.nodeId })
+  }
   /**
    * Client events log.
    * @type {Log}
@@ -160,11 +167,11 @@ function Client (options) {
    * @example
    * app.log.keep(customKeeper)
    */
-  this.log = new Log({ store: store, nodeId: this.nodeId })
+  this.log = log
 
   var client = this
 
-  this.log.on('preadd', function (action, meta) {
+  log.on('preadd', function (action, meta) {
     if (meta.id[1] === client.nodeId && !meta.subprotocol) {
       meta.subprotocol = client.options.subprotocol
     }
@@ -193,14 +200,14 @@ function Client (options) {
   if (this.on) {
     this.on('add', listener)
   } else {
-    this.log.on('add', listener)
+    log.on('add', listener)
   }
 
   this.tabPing = 60000
   this.tabTimeout = 10 * this.tabPing
   var reason = 'tab' + client.id
   if (this.isLocalStorage) {
-    var unbind = this.log.on('add', function (action, meta) {
+    var unbind = log.on('add', function (action, meta) {
       if (meta.reasons.indexOf(reason) !== -1) {
         tabPing(client)
         client.pinging = setInterval(function () {

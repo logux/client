@@ -1,6 +1,7 @@
 var fakeIndexedDB = require('fake-indexeddb')
 var MemoryStore = require('logux-core').MemoryStore
 var TestPair = require('logux-sync').TestPair
+var TestTime = require('logux-core').TestTime
 
 var Client = require('../client')
 
@@ -251,6 +252,16 @@ it('sends options to sync', function () {
   expect(client.sync.options.credentials).toEqual('token')
   expect(client.sync.options.timeout).toEqual(2000)
   expect(client.sync.options.ping).toEqual(1000)
+})
+
+it('uses test time', function () {
+  var client = new Client({
+    subprotocol: '1.0.0',
+    server: 'wss://localhost:1337',
+    userId: '10',
+    time: new TestTime()
+  })
+  expect(client.log.generateId()).toEqual([1, '10:' + client.id, 0])
 })
 
 it('connects', function () {
