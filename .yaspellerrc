@@ -29,6 +29,7 @@
     "nanoevents",
     "tabId",
     "CrossTabClient",
-    "nodeId"
+    "nodeId",
+    "TestTime"
   ]
 }
