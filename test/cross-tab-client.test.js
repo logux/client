@@ -68,10 +68,6 @@ it('saves options', function () {
 it('supports nanoevents API', function () {
   client = createClient()
 
-  var once = []
-  client.once('add', function (action) {
-    once.push(action.type)
-  })
   var twice = []
   var unbind = client.on('add', function (action) {
     twice.push(action.type)
@@ -83,7 +79,6 @@ it('supports nanoevents API', function () {
   }).then(function () {
     return client.log.add({ type: 'C' })
   }).then(function () {
-    expect(once).toEqual(['A'])
     expect(twice).toEqual(['A', 'B'])
   })
 })

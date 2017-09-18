@@ -12,7 +12,7 @@
   "dependencies": {
     "logux-core": "logux/logux-core",
     "logux-sync": "logux/logux-sync",
-    "nanoevents": "^0.4.1",
+    "nanoevents": "^1.0.0",
     "nanoid": "^0.2.1"
   },
   "devDependencies": {
@@ -35,7 +35,7 @@
     "logux-store-tests": "logux/logux-store-tests",
     "pre-commit": "^1.2.2",
     "rimraf": "^2.6.2",
-    "size-limit": "^0.11.3",
+    "size-limit": "^0.11.4",
     "webpack-dev-server": "^2.8.2",
     "yaspeller-ci": "^0.7.0"
   },
@@ -51,7 +51,7 @@
   "size-limit": [
     {
       "path": "cross-tab-client.js",
-      "limit": "9KB"
+      "limit": "8.5 KB"
     }
   ],
   "jest": {

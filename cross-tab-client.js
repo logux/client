@@ -268,24 +268,6 @@ CrossTabClient.prototype = {
     return this.emitter.on(event, listener)
   },
 
-  /**
-   * Add one-time listener for synchronization events.
-   * See {@link Client#on} for supported events.
-   *
-   * @param {"add"|"clean"|"role"|"state"} event The event name.
-   * @param {listener} listener The listener function.
-   *
-   * @return {function} Unbind listener from event.
-   *
-   * @example
-   * app.once('clean', () => {
-   *   cleaningWork = true
-   * })
-   */
-  once: function once (event, listener) {
-    return this.emitter.once(event, listener)
-  },
-
   onStorage: function onStorage (e) {
     if (e.newValue === null) return
 
