@@ -187,7 +187,7 @@ function Client (options) {
     } else if (type === 'logux/unsubscribe') {
       var json = JSON.stringify(subscribeAction(action))
       client.subscriptions = client.subscriptions.filter(function (i) {
-        return i.name !== action.name && JSON.stringify(i) !== json
+        return i.channel !== action.channel && JSON.stringify(i) !== json
       })
     }
     if (process.env.NODE_ENV !== 'production') {

@@ -514,22 +514,22 @@ it('resubscribe to previous subscriptions', function () {
   })
   return Promise.all([
     client.log.add(
-      { type: 'logux/subscribe', name: 'a' }, { sync: true }),
+      { type: 'logux/subscribe', channel: 'a' }, { sync: true }),
     client.log.add(
-      { type: 'logux/unsubscribe', name: 'a' }, { sync: true }),
+      { type: 'logux/unsubscribe', channel: 'a' }, { sync: true }),
     client.log.add(
-      { type: 'logux/subscribe', name: 'b', b: 1 }, { sync: true }),
+      { type: 'logux/subscribe', channel: 'b', b: 1 }, { sync: true }),
     client.log.add(
-      { type: 'logux/subscribe', name: 'b', b: 2 }, { sync: true })
+      { type: 'logux/subscribe', channel: 'b', b: 2 }, { sync: true })
   ]).then(function () {
     client.sync.emitter.emit('connect')
     expect(client.log.store.created.length).toEqual(6)
     expect(client.log.store.created[0][0]).toEqual({
-      type: 'logux/subscribe', name: 'b', b: 2
+      type: 'logux/subscribe', channel: 'b', b: 2
     })
     expect(client.log.store.created[0][1].sync).toBeTruthy()
     expect(client.log.store.created[1][0]).toEqual({
-      type: 'logux/subscribe', name: 'b', b: 1
+      type: 'logux/subscribe', channel: 'b', b: 1
     })
   })
 })
