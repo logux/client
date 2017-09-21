@@ -51,7 +51,7 @@
   "size-limit": [
     {
       "path": "cross-tab-client.js",
-      "limit": "8.5 KB"
+      "limit": "8.4 KB"
     }
   ],
   "jest": {

@@ -88,15 +88,17 @@ function Client (options) {
    */
   this.options = options || { }
 
-  if (typeof this.options.server === 'undefined') {
-    throw new Error('Missed server option in Logux client')
-  }
-  if (typeof this.options.subprotocol === 'undefined') {
-    throw new Error('Missed subprotocol option in Logux client')
-  }
-  if (typeof this.options.userId === 'undefined') {
-    throw new Error('Missed userId option in Logux client. ' +
-                    'Pass false if you have no users.')
+  if (process.env.NODE_ENV !== 'production') {
+    if (typeof this.options.server === 'undefined') {
+      throw new Error('Missed server option in Logux client')
+    }
+    if (typeof this.options.subprotocol === 'undefined') {
+      throw new Error('Missed subprotocol option in Logux client')
+    }
+    if (typeof this.options.userId === 'undefined') {
+      throw new Error('Missed userId option in Logux client. ' +
+                      'Pass false if you have no users.')
+    }
   }
 
   if (typeof this.options.prefix === 'undefined') {
@@ -136,8 +138,8 @@ function Client (options) {
     auth = function (cred) {
       if (typeof cred !== 'object' || cred.env !== 'development') {
         console.error(
-          'Without SSL, old proxies can block WebSockets. ' +
-          'Use WSS connection for Logux or set allowDangerousProtocol option.'
+          'Without SSL, old proxies blocks WebSockets. ' +
+          'Use WSS for Logux or set allowDangerousProtocol option.'
         )
         return Promise.resolve(false)
       }
@@ -179,18 +181,20 @@ function Client (options) {
 
   this.subscriptions = []
   function listener (action, meta) {
-    if (action.type === 'logux/subscribe') {
+    var type = action.type
+    if (type === 'logux/subscribe') {
       client.subscriptions.push(action)
-      if (!meta.sync) {
-        console.error('logux/subscribe action without meta.sync')
-      }
-    } else if (action.type === 'logux/unsubscribe') {
+    } else if (type === 'logux/unsubscribe') {
       var json = JSON.stringify(subscribeAction(action))
       client.subscriptions = client.subscriptions.filter(function (i) {
         return i.name !== action.name && JSON.stringify(i) !== json
       })
-      if (!meta.sync) {
-        console.error('logux/unsubscribe action without meta.sync')
+    }
+    if (process.env.NODE_ENV !== 'production') {
+      if (type === 'logux/subscribe' || type === 'logux/unsubscribe') {
+        if (!meta.sync) {
+          console.error(type + ' action without meta.sync')
+        }
       }
     }
   }
