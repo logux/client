@@ -12,12 +12,12 @@
   "dependencies": {
     "logux-core": "logux/logux-core",
     "logux-sync": "logux/logux-sync",
-    "nanoevents": "^1.0.0",
+    "nanoevents": "^1.0.1",
     "nanoid": "^0.2.1"
   },
   "devDependencies": {
     "docdash": "^0.4.0",
-    "eslint": "^4.7.0",
+    "eslint": "^4.7.1",
     "eslint-config-logux": "^16.2.0",
     "eslint-config-standard": "^10.2.1",
     "eslint-plugin-es5": "^1.1.0",
