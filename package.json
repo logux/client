@@ -10,8 +10,8 @@
   "license": "MIT",
   "repository": "logux/logux-client",
   "dependencies": {
-    "logux-core": "logux/logux-core",
-    "logux-sync": "logux/logux-sync",
+    "logux-core": "^0.2.0",
+    "logux-sync": "^0.2.0",
     "nanoevents": "^1.0.2",
     "nanoid": "^0.2.1"
   },
@@ -32,7 +32,7 @@
     "jest": "^21.1.0",
     "jsdoc": "^3.5.5",
     "lint-staged": "^4.2.2",
-    "logux-store-tests": "logux/logux-store-tests",
+    "logux-store-tests": "^0.1.1",
     "pre-commit": "^1.2.2",
     "rimraf": "^2.6.2",
     "size-limit": "^0.11.4",
