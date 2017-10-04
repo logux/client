@@ -47,8 +47,6 @@ function check (indexed, created, added) {
   })
 }
 
-function nope () { }
-
 eachTest(function (desc, creator) {
   it(desc, creator(function () {
     store = new IndexedStore()
@@ -116,7 +114,7 @@ it('updates reasons cache', function () {
   return store.add({ }, { id: [1], time: 1, reasons: ['a'] }).then(function () {
     return store.changeMeta([1], { reasons: ['a', 'b', 'c'] })
   }).then(function () {
-    return store.removeReason('b', { }, nope)
+    return store.removeReason('b', { }, function () { })
   }).then(function () {
     return check(store, [
       [{ }, { added: 1, id: [1], time: 1, reasons: ['a', 'c'] }]
