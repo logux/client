@@ -53,6 +53,7 @@ function isDefined (value) {
  */
 function IndexedStore (name) {
   this.name = name || 'logux'
+  this.adding = { }
 }
 
 IndexedStore.prototype = {
@@ -147,6 +148,9 @@ IndexedStore.prototype = {
       created: meta.time + '\t' + meta.id.slice(1).join('\t')
     }
 
+    if (this.adding[entry.created]) return Promise.resolve(false)
+    this.adding[entry.created] = true
+
     return this.init().then(function (store) {
       var log = store.os('log', 'write')
       return promisify(log.index('id').get(meta.id)).then(function (exist) {
@@ -154,6 +158,7 @@ IndexedStore.prototype = {
           return false
         } else {
           return promisify(log.add(entry)).then(function (added) {
+            delete store.adding[entry.created]
             meta.added = added
             return meta
           })
