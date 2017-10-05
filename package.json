@@ -32,7 +32,7 @@
     "jest": "^21.2.1",
     "jsdoc": "^3.5.5",
     "lint-staged": "^4.2.3",
-    "logux-store-tests": "^0.1.1",
+    "logux-store-tests": "^0.1.2",
     "pre-commit": "^1.2.2",
     "rimraf": "^2.6.2",
     "size-limit": "^0.11.6",
