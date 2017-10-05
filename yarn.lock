@@ -3454,9 +3454,9 @@ logux-core@^0.2.0:
   dependencies:
     nanoevents "^1.0.2"
 
-logux-store-tests@^0.1.1:
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/logux-store-tests/-/logux-store-tests-0.1.1.tgz#69bfa49569fdc122b54d77f26cb3b1130be34468"
+logux-store-tests@^0.1.2:
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/logux-store-tests/-/logux-store-tests-0.1.2.tgz#d5c112179643e6523090f0ef724fd4f9bb372134"
 
 logux-sync@^0.2.0:
   version "0.2.0"

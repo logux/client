@@ -145,7 +145,7 @@ IndexedStore.prototype = {
       time: meta.time,
       action: action,
       reasons: meta.reasons,
-      created: meta.time + '\t' + meta.id.slice(1).join('\t')
+      created: [meta.time, meta.id[1], meta.id[2], meta.id[0]].join('\t')
     }
 
     if (this.adding[entry.created]) return Promise.resolve(false)
