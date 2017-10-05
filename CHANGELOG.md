@@ -1,6 +1,10 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.2.1
+* Sort correctly actions with same `time`.
+* Fix race condition between uniqueness check and add.
+
 ## 0.2
 * Use Logux Protocol 2.
 * Use Logux Core 0.2 and Logux Sync 0.2.
