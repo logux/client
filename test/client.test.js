@@ -531,5 +531,9 @@ it('resubscribe to previous subscriptions', function () {
     expect(client.log.store.created[1][0]).toEqual({
       type: 'logux/subscribe', channel: 'b', b: 1
     })
+    return Promise.resolve()
+  }).then(function () {
+    client.sync.emitter.emit('connect')
+    expect(client.log.store.created.length).toEqual(8)
   })
 })

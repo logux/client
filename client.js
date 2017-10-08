@@ -182,10 +182,15 @@ function Client (options) {
   this.subscriptions = []
   function listener (action, meta) {
     var type = action.type
+    var json
     if (type === 'logux/subscribe') {
-      client.subscriptions.push(action)
+      json = JSON.stringify(action)
+      var already = client.subscriptions.some(function (i) {
+        return i.channel === action.channel && JSON.stringify(i) === json
+      })
+      if (!already) client.subscriptions.push(action)
     } else if (type === 'logux/unsubscribe') {
-      var json = JSON.stringify(subscribeAction(action))
+      json = JSON.stringify(subscribeAction(action))
       client.subscriptions = client.subscriptions.filter(function (i) {
         return i.channel !== action.channel && JSON.stringify(i) !== json
       })
