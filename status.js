@@ -11,8 +11,8 @@
  * @return {Function} Unbind status listener.
  */
 function status (client, callback, options) {
-  var sync = client.sync
-  var disconnected = sync.state === 'disconnected'
+  var observable = client.on ? client : client.sync
+  var disconnected = observable.state === 'disconnected'
   var wait = false
 
   if (!options) options = { }
@@ -21,13 +21,13 @@ function status (client, callback, options) {
   var timeout
   var unbind = []
 
-  unbind.push(sync.on('state', function () {
+  unbind.push(observable.on('state', function () {
     clearTimeout(timeout)
 
-    if (sync.state === 'disconnected') {
+    if (observable.state === 'disconnected') {
       disconnected = true
       callback(wait ? 'wait' : 'disconnected')
-    } else if (sync.state === 'synchronized') {
+    } else if (observable.state === 'synchronized') {
       disconnected = false
       if (wait) {
         wait = false
@@ -38,16 +38,16 @@ function status (client, callback, options) {
       } else {
         callback('synchronized')
       }
-    } else if (sync.state === 'connecting') {
+    } else if (observable.state === 'connecting') {
       timeout = setTimeout(function () {
         callback('connecting' + (wait ? 'AfterWait' : ''))
       }, 100)
     } else {
-      callback(sync.state + (wait ? 'AfterWait' : ''))
+      callback(client.state + (wait ? 'AfterWait' : ''))
     }
   }))
 
-  unbind.push(sync.on('error', function (error) {
+  unbind.push(client.sync.on('error', function (error) {
     if (error.type === 'wrong-protocol' || error.type === 'wrong-subprotocol') {
       callback('protocolError')
     } else if (error.type !== 'timeout') {
@@ -55,11 +55,11 @@ function status (client, callback, options) {
     }
   }))
 
-  unbind.push(sync.on('clientError', function (error) {
+  unbind.push(client.sync.on('clientError', function (error) {
     callback('syncError', { error: error })
   }))
 
-  unbind.push(sync.log.on('add', function (action, meta) {
+  unbind.push(client.log.on('add', function (action, meta) {
     if (action.type === 'logux/undo' && action.reason) {
       if (action.reason === 'denied') {
         callback('denied', { action: action, meta: meta })

@@ -1,6 +1,6 @@
+var CrossTabClient = require('logux-client').CrossTabClient
 var SyncError = require('logux-sync').SyncError
 var TestTime = require('logux-core').TestTime
-var BaseSync = require('logux-sync').BaseSync
 var TestPair = require('logux-sync').TestPair
 
 var messages = require('../badge/en')
@@ -23,14 +23,26 @@ function wait (ms) {
 
 function createTest (override) {
   var pair = new TestPair()
-  pair.leftSync = new BaseSync('client', TestTime.getLog(), pair.left)
+  var client = new CrossTabClient({
+    subprotocol: '1.0.0',
+    server: pair.left,
+    userId: 10,
+    time: new TestTime()
+  })
+
+  client.role = 'leader'
+  client.sync.catch(function () { })
+
+  pair.client = client
+  pair.leftSync = client.sync
+
   pair.leftSync.catch(function () {})
   return pair.left.connect().then(function () {
     var opts = { messages: messages, styles: styles }
     for (var i in override) {
       opts[i] = override[i]
     }
-    badge({ sync: pair.leftSync }, opts)
+    badge(client, opts)
     return pair
   })
 }
@@ -219,12 +231,18 @@ it('supports center-middle position setting', function () {
 
 it('removes badge from DOM', function () {
   var pair = new TestPair()
-  pair.leftSync = new BaseSync('client', TestTime.getLog(), pair.left)
+  var client = new CrossTabClient({
+    subprotocol: '1.0.0',
+    server: pair.left,
+    userId: 10,
+    time: new TestTime()
+  })
+
   var opts = { messages: messages, styles: styles }
-  var unbind = badge({ sync: pair.leftSync }, opts)
+  var unbind = badge(client, opts)
 
   unbind()
 
   expect(badgeNode()).toEqual(null)
-  pair.leftSync.emitter.emit('error', { type: 'wrong-protocol' })
+  client.sync.emitter.emit('error', { type: 'wrong-protocol' })
 })

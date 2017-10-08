@@ -1,7 +1,8 @@
+var CrossTabClient = require('logux-client').CrossTabClient
 var SyncError = require('logux-sync').SyncError
 var TestTime = require('logux-core').TestTime
-var BaseSync = require('logux-sync').BaseSync
 var TestPair = require('logux-sync').TestPair
+var BaseSync = require('logux-sync').BaseSync
 
 var status = require('../status')
 
@@ -13,12 +14,23 @@ function wait (ms) {
 
 function createTest (options) {
   var pair = new TestPair()
-  pair.leftSync = new BaseSync('client', TestTime.getLog(), pair.left)
-  pair.leftSync.catch(function () {})
+  var client = new CrossTabClient({
+    subprotocol: '1.0.0',
+    server: pair.left,
+    userId: 10,
+    time: new TestTime()
+  })
+
+  client.role = 'leader'
+  client.sync.catch(function () { })
+
+  pair.client = client
+  pair.leftSync = client.sync
+
   return pair.left.connect().then(function () {
     pair.calls = []
     pair.args = []
-    status({ sync: pair.leftSync }, function (state, details) {
+    status(client, function (state, details) {
       pair.calls.push(state)
       pair.args.push(details)
     }, options)
@@ -40,6 +52,14 @@ it('notifies about states', function () {
     expect(test.calls).toEqual([
       'disconnected', 'connecting', 'synchronized'
     ])
+  })
+})
+
+it('notifies about other tab states', function () {
+  return createTest().then(function (test) {
+    test.client.state = 'disconnected'
+    test.client.emitter.emit('state')
+    expect(test.calls).toEqual(['disconnected'])
   })
 })
 
@@ -134,35 +154,53 @@ it('notifies about old client', function () {
 it('notifies about server error', function () {
   return createTest().then(function (test) {
     test.leftSync.log.add({ type: 'logux/undo', reason: 'error' })
-    expect(test.calls).toEqual(['sending', 'error'])
-    expect(test.args[1].action.type).toEqual('logux/undo')
-    expect(test.args[1].meta.time).toEqual(1)
+    expect(test.calls).toEqual(['error'])
+    expect(test.args[0].action.type).toEqual('logux/undo')
+    expect(test.args[0].meta.time).toEqual(1)
   })
 })
 
 it('notifies about problem with access', function () {
   return createTest().then(function (test) {
     test.leftSync.log.add({ type: 'logux/undo', reason: 'denied' })
-    expect(test.calls).toEqual(['sending', 'denied'])
-    expect(test.args[1].action.type).toEqual('logux/undo')
-    expect(test.args[1].meta.time).toEqual(1)
+    expect(test.calls).toEqual(['denied'])
+    expect(test.args[0].action.type).toEqual('logux/undo')
+    expect(test.args[0].meta.time).toEqual(1)
   })
+})
+
+it('works with syncable', function () {
+  var pair = new TestPair()
+  pair.leftSync = new BaseSync('client', TestTime.getLog(), pair.left)
+
+  var calls = []
+  status({ sync: pair.leftSync, log: pair.leftSync.log }, function (state) {
+    calls.push(state)
+  })
+
+  pair.leftSync.setState('synchronized')
+  expect(calls).toEqual(['synchronized'])
 })
 
 it('removes listeners', function () {
   var pair = new TestPair()
-  var sync = new BaseSync('client', TestTime.getLog(), pair.left)
+  var client = new CrossTabClient({
+    subprotocol: '1.0.0',
+    server: pair.left,
+    userId: 10,
+    time: new TestTime()
+  })
 
   var calls = 0
-  var unbind = status({ sync: sync }, function (state) {
+  var unbind = status(client, function (state) {
     if (state === 'denied') {
       calls += 1
     }
   })
 
-  sync.log.add({ type: 'logux/undo', reason: 'denied' })
+  client.log.add({ type: 'logux/undo', reason: 'denied' })
   unbind()
-  sync.log.add({ type: 'logux/undo', reason: 'denied' })
+  client.log.add({ type: 'logux/undo', reason: 'denied' })
 
   expect(calls).toEqual(1)
 })
