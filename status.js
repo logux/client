@@ -59,7 +59,8 @@ function status (client, callback, options) {
     callback('syncError', { error: error })
   }))
 
-  unbind.push(client.log.on('add', function (action, meta) {
+  var log = client.on ? client : client.log
+  unbind.push(log.on('add', function (action, meta) {
     if (action.type === 'logux/undo' && action.reason) {
       if (action.reason === 'denied') {
         callback('denied', { action: action, meta: meta })
