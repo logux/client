@@ -1,6 +1,9 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.2.2
+* Fix subscription to same channel twice.
+
 ## 0.2.1
 * Sort correctly actions with same `time`.
 * Fix race condition between uniqueness check and add.
