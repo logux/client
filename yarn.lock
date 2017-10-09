@@ -705,8 +705,8 @@ caniuse-api@^1.5.2:
     lodash.uniq "^4.5.0"
 
 caniuse-db@^1.0.30000529, caniuse-db@^1.0.30000634, caniuse-db@^1.0.30000639:
-  version "1.0.30000744"
-  resolved "https://registry.yarnpkg.com/caniuse-db/-/caniuse-db-1.0.30000744.tgz#00758ff7dd5f7138d34a15608dccf71a59656ffe"
+  version "1.0.30000745"
+  resolved "https://registry.yarnpkg.com/caniuse-db/-/caniuse-db-1.0.30000745.tgz#b259a61737a3e48c4fb4b6b1bc44edeb264cd422"
 
 caseless@~0.12.0:
   version "0.12.0"
@@ -3448,15 +3448,15 @@ loglevel@^1.4.1:
   version "1.5.0"
   resolved "https://registry.yarnpkg.com/loglevel/-/loglevel-1.5.0.tgz#3863984a2c326b986fbb965f378758a6dc8a4324"
 
-logux-core@^0.2.0:
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/logux-core/-/logux-core-0.2.0.tgz#311c6858452eff5379504fc12c633274b33e351f"
+logux-core@^0.2.1:
+  version "0.2.1"
+  resolved "https://registry.yarnpkg.com/logux-core/-/logux-core-0.2.1.tgz#e63ca128a08eb1c4d4f1c965b07269ebb92b516b"
   dependencies:
     nanoevents "^1.0.2"
 
-logux-store-tests@^0.1.2:
-  version "0.1.2"
-  resolved "https://registry.yarnpkg.com/logux-store-tests/-/logux-store-tests-0.1.2.tgz#d5c112179643e6523090f0ef724fd4f9bb372134"
+logux-store-tests@^0.1.3:
+  version "0.1.3"
+  resolved "https://registry.yarnpkg.com/logux-store-tests/-/logux-store-tests-0.1.3.tgz#765649878b8545b9f89547902a3d0804377c5ef8"
 
 logux-sync@^0.2.1:
   version "0.2.1"
