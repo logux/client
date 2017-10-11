@@ -51,7 +51,7 @@
   "size-limit": [
     {
       "path": "cross-tab-client.js",
-      "limit": "8.4 KB"
+      "limit": "8.6 KB"
     }
   ],
   "jest": {
@@ -59,7 +59,11 @@
       "global": {
         "statements": 100
       }
-    }
+    },
+    "coveragePathIgnorePatterns": [
+      "/node_modules/",
+      "/promise.js"
+    ]
   },
   "eslintConfig": {
     "extends": "eslint-config-logux/browser"
