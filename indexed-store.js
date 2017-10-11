@@ -1,5 +1,9 @@
 var isFirstOlder = require('logux-core/is-first-older')
 
+// Firefox has problem between native Promise and IndexedDB
+// https://github.com/dfahlander/Dexie.js/issues/317
+var Promise = require('./promise')
+
 var VERSION = 1
 
 function rejectify (request, reject) {
@@ -148,7 +152,11 @@ IndexedStore.prototype = {
       created: [meta.time, meta.id[1], meta.id[2], meta.id[0]].join('\t')
     }
 
-    if (this.adding[entry.created]) return Promise.resolve(false)
+    if (this.adding[entry.created]) {
+      return new Promise(function (resolve) {
+        resolve(false)
+      })
+    }
     this.adding[entry.created] = true
 
     return this.init().then(function (store) {

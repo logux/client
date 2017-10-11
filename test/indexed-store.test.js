@@ -90,7 +90,7 @@ it('reloads page on database update', function () {
 })
 
 it('throws a errors', function () {
-  var error = new Error()
+  var error = new Error('test')
   global.indexedDB = {
     open: function () {
       var request = { }
