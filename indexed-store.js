@@ -1,7 +1,7 @@
 var isFirstOlder = require('logux-core/is-first-older')
 
 // Firefox has problem between native Promise and IndexedDB
-// https://github.com/dfahlander/Dexie.js/issues/317
+// https://bugzilla.mozilla.org/show_bug.cgi?id=1383029
 var Promise = require('./promise')
 
 var VERSION = 1
