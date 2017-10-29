@@ -3711,6 +3711,10 @@ nan@^2.3.0:
   version "2.7.0"
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.7.0.tgz#d95bf721ec877e08db276ed3fc6eb78f9083ad46"
 
+nanodelay@^0.1.2:
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/nanodelay/-/nanodelay-0.1.2.tgz#01ded04dc57ae4947cc206c37e3219a0941663a8"
+
 nanoevents@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/nanoevents/-/nanoevents-1.0.2.tgz#5078a4f8d3e4318aa585c5f2c633cc57fc06ac0f"
