@@ -2,6 +2,7 @@ var fakeIndexedDB = require('fake-indexeddb')
 var MemoryStore = require('logux-core').MemoryStore
 var TestPair = require('logux-sync').TestPair
 var TestTime = require('logux-core').TestTime
+var delay = require('nanodelay')
 
 var Client = require('../client')
 
@@ -31,12 +32,6 @@ afterEach(function () {
   global.indexedDB = originIndexedDB
   global.localStorage = originLocalStorage
 })
-
-function wait (ms) {
-  return new Promise(function (resolve) {
-    return setTimeout(resolve, ms)
-  })
-}
 
 function createDialog (opts, credentials) {
   var pair = new TestPair()
@@ -315,7 +310,7 @@ it('pings after tab-specific action', function () {
   ).then(function () {
     expect(localStorage.getItem('test:tab:' + id)).toBeDefined()
     prev = localStorage.getItem('test:tab:' + id)
-    return wait(client.tabPing)
+    return delay(client.tabPing)
   }).then(function () {
     expect(localStorage.getItem('test:tab:' + id)).toBeGreaterThan(prev)
   })
@@ -329,7 +324,7 @@ it('cleans own actions on destroy', function () {
   client.start()
   return client.log.add({ type: 'A' }, meta).then(function () {
     client.destroy()
-    return wait(1)
+    return Promise.resolve()
   }).then(function () {
     expect(client.log.store.created.length).toEqual(0)
     expect(localStorage.getItem('test:tab:' + client.id)).not.toBeDefined()
@@ -344,7 +339,7 @@ it('cleans own actions on unload', function () {
   client.start()
   return client.log.add({ type: 'A' }, meta).then(function () {
     window.dispatchEvent(new Event('unload'))
-    return wait(1)
+    return Promise.resolve()
   }).then(function () {
     expect(client.log.store.created.length).toEqual(0)
     expect(localStorage.getItem('test:tab:' + client.id)).not.toBeDefined()
@@ -362,7 +357,7 @@ it('cleans other tab action after timeout', function () {
     localStorage.setItem('logux:tab:1', Date.now() - client.tabTimeout - 1)
     localStorage.setItem('logux:tab:2', Date.now() - client.tabTimeout + 100)
     client.start()
-    return wait(1)
+    return Promise.resolve()
   }).then(function () {
     expect(client.log.store.created.length).toEqual(1)
     expect(client.log.store.created[0][0]).toEqual({ type: 'B' })

@@ -1,3 +1,5 @@
+var delay = require('nanodelay')
+
 var CrossTabClient = require('../cross-tab-client')
 
 var fakeLocalStorage
@@ -48,12 +50,6 @@ function emitStorage (name, value) {
   event.key = name
   event.newValue = value
   window.dispatchEvent(event)
-}
-
-function wait (ms) {
-  return new Promise(function (resolve) {
-    return setTimeout(resolve, ms)
-  })
 }
 
 it('saves options', function () {
@@ -212,7 +208,7 @@ it('stops election on second candidate', function () {
   expect(client.role).toEqual('candidate')
 
   localStorage.setItem('logux:false:leader', '["",' + (Date.now() - 10) + ']')
-  return wait(client.electionDelay + 10).then(function () {
+  return delay(client.electionDelay + 10).then(function () {
     expect(client.role).toEqual('follower')
     expect(client.watching).toBeDefined()
   })
@@ -226,7 +222,7 @@ it('stops election in leader check', function () {
   expect(client.role).toEqual('candidate')
 
   localStorage.setItem('logux:false:leader', '["",' + Date.now() + ']')
-  return wait(client.electionDelay + 10).then(function () {
+  return delay(client.electionDelay + 10).then(function () {
     expect(client.role).toEqual('follower')
     expect(client.watching).toBeDefined()
   })
@@ -242,10 +238,10 @@ it('pings on leader role', function () {
 
   client.start()
   expect(client.role).toEqual('candidate')
-  return wait(client.electionDelay + 10).then(function () {
+  return delay(client.electionDelay + 10).then(function () {
     expect(client.role).toEqual('leader')
     expect(client.watching).not.toBeDefined()
-    return wait(client.leaderPing + 10)
+    return delay(client.leaderPing + 10)
   }).then(function () {
     var data = JSON.parse(localStorage.getItem('logux:false:leader'))
     expect(data[0]).toEqual(client.id)
@@ -271,9 +267,9 @@ it('replaces dead leader', function () {
   localStorage.setItem('logux:false:leader', '["",' + Date.now() + ']')
   client.start()
 
-  return wait(client.roleTimeout).then(function () {
+  return delay(client.roleTimeout).then(function () {
     expect(client.role).toEqual('follower')
-    return wait(client.leaderTimeout + client.roleTimeout)
+    return delay(client.leaderTimeout + client.roleTimeout)
   }).then(function () {
     expect(client.role).not.toEqual('follower')
   })
@@ -285,7 +281,7 @@ it('disconnects on leader changes', function () {
   client.sync.connection.disconnect = jest.fn()
 
   client.start()
-  return wait(client.electionDelay + 10).then(function () {
+  return delay(client.electionDelay + 10).then(function () {
     client.sync.state = 'connected'
 
     var now = Date.now()
@@ -303,7 +299,7 @@ it('updates state if tab is a leader', function () {
   client.start()
   expect(client.state).toEqual('disconnected')
 
-  return wait(client.electionDelay + 10).then(function () {
+  return delay(client.electionDelay + 10).then(function () {
     client.sync.state = 'synchronized'
     client.sync.emitter.emit('state')
     expect(client.state).toEqual('synchronized')
@@ -359,7 +355,7 @@ it('works on IE storage event', function () {
   client.start()
   emitStorage('logux:false:leader', localStorage.getItem('logux:false:leader'))
 
-  return wait(client.electionDelay + 10).then(function () {
+  return delay(client.electionDelay + 10).then(function () {
     expect(client.role).toEqual('leader')
 
     emitStorage('logux:false:add', '["' + client.id + '",{},{}]')
@@ -372,7 +368,7 @@ it('sends unleader event on tab closing', function () {
   global.localStorage = fakeLocalStorage
   client = createClient()
   client.start()
-  return wait(client.electionDelay + 10).then(function () {
+  return delay(client.electionDelay + 10).then(function () {
     window.dispatchEvent(new Event('unload'))
     expect(localStorage.getItem('logux:false:leader')).toEqual('[]')
   })
@@ -382,7 +378,7 @@ it('sends unleader event on destroy', function () {
   global.localStorage = fakeLocalStorage
   client = createClient()
   client.start()
-  return wait(client.electionDelay + 10).then(function () {
+  return delay(client.electionDelay + 10).then(function () {
     client.destroy()
     expect(localStorage.getItem('logux:false:leader')).toEqual('[]')
   })
@@ -396,7 +392,7 @@ it('does not sends event on tab closing in following mode', function () {
   localStorage.setItem('logux:false:leader', prevLeader)
   client.start()
 
-  return wait(client.electionDelay + 10).then(function () {
+  return delay(client.electionDelay + 10).then(function () {
     expect(localStorage.getItem('logux:false:leader')).toEqual(prevLeader)
   })
 })
@@ -409,7 +405,7 @@ it('starts election on leader unload', function () {
   localStorage.setItem('logux:false:state', '"synchronized"')
 
   client.start()
-  return wait(client.electionDelay + 10).then(function () {
+  return delay(client.electionDelay + 10).then(function () {
     emitStorage('logux:false:leader', '[]')
     expect(client.role).toEqual('candidate')
     expect(client.state).toEqual('disconnected')
@@ -440,7 +436,7 @@ it('changes state on leader death', function () {
   localStorage.setItem('logux:false:state', '"sending"')
 
   client.start()
-  return wait(client.roleTimeout + 20).then(function () {
+  return delay(client.roleTimeout + 20).then(function () {
     expect(client.state).toEqual('disconnected')
     expect(localStorage.getItem('logux:false:state')).toEqual('"disconnected"')
   })
@@ -453,7 +449,7 @@ it('cleans tab-specific action after timeout', function () {
   localStorage.setItem('logux:tab:1', Date.now() - client.tabTimeout - 1)
   return client.log.add({ type: 'A' }, { reasons: ['tab1'] }).then(function () {
     client.start()
-    return wait(1)
+    return Promise.resolve()
   }).then(function () {
     expect(client.log.store.created.length).toEqual(0)
   })
