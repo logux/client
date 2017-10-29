@@ -2,6 +2,7 @@ var CrossTabClient = require('logux-client').CrossTabClient
 var SyncError = require('logux-sync').SyncError
 var TestTime = require('logux-core').TestTime
 var TestPair = require('logux-sync').TestPair
+var delay = require('nanodelay')
 
 var messages = require('../badge/en')
 var styles = require('../badge/default')
@@ -13,12 +14,6 @@ function badgeNode () {
 
 function getBadgeMessage () {
   return badgeNode().childNodes[0].innerHTML
-}
-
-function wait (ms) {
-  return new Promise(function (resolve) {
-    setTimeout(resolve, ms)
-  })
 }
 
 function createTest (override) {
@@ -78,7 +73,7 @@ it('shows synchronized state', function () {
     expect(badgeNode().style.display).toEqual('block')
     expect(badgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
     expect(getBadgeMessage()).toEqual(messages.synchronized)
-    return wait(10)
+    return delay(10)
   }).then(function () {
     expect(badgeNode().style.display).toEqual('none')
   })
@@ -127,7 +122,7 @@ it('shows sending state', function () {
     expect(badgeNode().style.display).toEqual('block')
     expect(badgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
     expect(getBadgeMessage()).toEqual(messages.wait)
-    return wait(105).then(function () {
+    return delay(105).then(function () {
       expect(getBadgeMessage()).toEqual(messages.sending)
 
       test.leftSync.setState('sending')

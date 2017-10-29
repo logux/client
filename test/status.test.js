@@ -3,14 +3,9 @@ var SyncError = require('logux-sync').SyncError
 var TestTime = require('logux-core').TestTime
 var TestPair = require('logux-sync').TestPair
 var BaseSync = require('logux-sync').BaseSync
+var delay = require('nanodelay')
 
 var status = require('../status')
-
-function wait (ms) {
-  return new Promise(function (resolve) {
-    setTimeout(resolve, ms)
-  })
-}
 
 function createTest (options) {
   var pair = new TestPair()
@@ -39,14 +34,12 @@ function createTest (options) {
 }
 
 it('notifies about states', function () {
-  var test
-  return createTest().then(function (created) {
-    test = created
+  return createTest().then(function (test) {
     test.leftSync.connected = false
     test.leftSync.setState('disconnected')
     test.leftSync.setState('connecting')
-    return wait(105)
-  }).then(function () {
+    return delay(105, test)
+  }).then(function (test) {
     test.leftSync.connected = true
     test.leftSync.setState('synchronized')
     expect(test.calls).toEqual([
@@ -64,23 +57,18 @@ it('notifies about other tab states', function () {
 })
 
 it('notifies only about wait for sync actions', function () {
-  var test
-  return createTest({ duration: 10 }).then(function (created) {
-    test = created
-
+  return createTest({ duration: 10 }).then(function (test) {
     test.leftSync.connected = false
     test.leftSync.setState('disconnected')
     expect(test.calls).toEqual(['disconnected'])
-
-    return test.leftSync.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
-  }).then(function () {
+    test.leftSync.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
     test.leftSync.setState('connecting')
-    return wait(105)
-  }).then(function () {
+    return delay(105, test)
+  }).then(function (test) {
     test.leftSync.setState('disconnected')
     test.leftSync.setState('connecting')
-    return wait(105)
-  }).then(function () {
+    return delay(105, test)
+  }).then(function (test) {
     test.leftSync.setState('sending')
     test.leftSync.setState('synchronized')
     expect(test.calls).toEqual([
@@ -92,8 +80,8 @@ it('notifies only about wait for sync actions', function () {
       'sendingAfterWait',
       'synchronizedAfterWait'
     ])
-    return wait(15)
-  }).then(function () {
+    return delay(15, test)
+  }).then(function (test) {
     expect(test.calls).toEqual([
       'disconnected',
       'wait',
