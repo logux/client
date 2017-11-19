@@ -451,7 +451,7 @@ it('cleans tab-specific action after timeout', function () {
     client.start()
     return Promise.resolve()
   }).then(function () {
-    expect(client.log.store.created.length).toEqual(0)
+    expect(client.log.store.created).toHaveLength(0)
   })
 })
 
