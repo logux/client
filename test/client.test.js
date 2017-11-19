@@ -326,7 +326,7 @@ it('cleans own actions on destroy', function () {
     client.destroy()
     return Promise.resolve()
   }).then(function () {
-    expect(client.log.store.created.length).toEqual(0)
+    expect(client.log.store.created).toHaveLength(0)
     expect(localStorage.getItem('test:tab:' + client.id)).not.toBeDefined()
   })
 })
@@ -341,7 +341,7 @@ it('cleans own actions on unload', function () {
     window.dispatchEvent(new Event('unload'))
     return Promise.resolve()
   }).then(function () {
-    expect(client.log.store.created.length).toEqual(0)
+    expect(client.log.store.created).toHaveLength(0)
     expect(localStorage.getItem('test:tab:' + client.id)).not.toBeDefined()
   })
 })
@@ -359,7 +359,7 @@ it('cleans other tab action after timeout', function () {
     client.start()
     return Promise.resolve()
   }).then(function () {
-    expect(client.log.store.created.length).toEqual(1)
+    expect(client.log.store.created).toHaveLength(1)
     expect(client.log.store.created[0][0]).toEqual({ type: 'B' })
     expect(localStorage.getItem('test:tab:2')).not.toBeDefined()
   })
@@ -518,7 +518,7 @@ it('resubscribe to previous subscriptions', function () {
       { type: 'logux/subscribe', channel: 'b', b: 2 }, { sync: true })
   ]).then(function () {
     client.sync.emitter.emit('connect')
-    expect(client.log.store.created.length).toEqual(6)
+    expect(client.log.store.created).toHaveLength(6)
     expect(client.log.store.created[0][0]).toEqual({
       type: 'logux/subscribe', channel: 'b', b: 2
     })
@@ -529,6 +529,6 @@ it('resubscribe to previous subscriptions', function () {
     return Promise.resolve()
   }).then(function () {
     client.sync.emitter.emit('connect')
-    expect(client.log.store.created.length).toEqual(8)
+    expect(client.log.store.created).toHaveLength(8)
   })
 })
