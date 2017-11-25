@@ -1,6 +1,9 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.2.5
+* Fix follower tab’s actions synchronization.
+
 ## 0.2.4
 * Fix `Promise` implementation in `IndexedStore`.
 
