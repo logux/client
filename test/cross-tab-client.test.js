@@ -178,6 +178,8 @@ it('synchronizes actions from follower tabs', function () {
     pair.right.send(['connected', client.sync.localProtocol, 'server', [0, 0]])
     return client.sync.waitFor('synchronized')
   }).then(function () {
+    return Promise.resolve()
+  }).then(function () {
     pair.clear()
     client.sync.timeFix = 0
     var action = JSON.stringify({ type: 'A' })
