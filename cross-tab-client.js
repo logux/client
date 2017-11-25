@@ -277,6 +277,9 @@ CrossTabClient.prototype = {
       if (data[0] !== this.id) {
         if (!data[2].tab || data[2].tab === this.id) {
           this.emitter.emit('add', data[1], data[2])
+          if (this.role === 'leader') {
+            this.sync.onAdd(data[1], data[2])
+          }
         }
       }
     } else if (e.key === storageKey(this, 'clean')) {

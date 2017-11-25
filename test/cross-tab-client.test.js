@@ -1,3 +1,4 @@
+var TestPair = require('logux-sync/test-pair')
 var delay = require('nanodelay')
 
 var CrossTabClient = require('../cross-tab-client')
@@ -33,12 +34,17 @@ afterEach(function () {
   fakeLocalStorage.storage = { }
 })
 
-function createClient () {
-  var result = new CrossTabClient({
+function createClient (overrides) {
+  if (!overrides) overrides = { }
+  var opts = {
     subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
     userId: false
-  })
+  }
+  for (var i in overrides) {
+    opts[i] = overrides[i]
+  }
+  var result = new CrossTabClient(opts)
   result.electionDelay = result.electionDelay / 20
   result.leaderTimeout = result.leaderTimeout / 20
   result.leaderPing = result.leaderPing / 20
@@ -109,7 +115,7 @@ it('does not use broken localStorage', function () {
   return client.log.add({ type: 'A' }, { reasons: ['tab' + client.id] })
 })
 
-it('synchronizes events between tabs', function () {
+it('synchronizes actions between tabs', function () {
   global.localStorage = {
     setItem: function (name, value) {
       emitStorage(name, value)
@@ -160,6 +166,32 @@ it('synchronizes events between tabs', function () {
       ['clean', { type: 'A' }, []],
       ['add', { type: 'C' }, []],
       ['clean', { type: 'C' }, []]
+    ])
+  })
+})
+
+it('synchronizes actions from follower tabs', function () {
+  var pair = new TestPair()
+  client = createClient({ server: pair.left })
+  client.start()
+  return pair.wait('left').then(function () {
+    pair.right.send(['connected', client.sync.localProtocol, 'server', [0, 0]])
+    return client.sync.waitFor('synchronized')
+  }).then(function () {
+    pair.clear()
+    client.sync.timeFix = 0
+    var action = JSON.stringify({ type: 'A' })
+    var meta = JSON.stringify({
+      added: 1,
+      time: 1,
+      sync: true,
+      id: [1, 'false:other', 0]
+    })
+    emitStorage('logux:false:add', '["other",' + action + ',' + meta + ']')
+    return delay(10)
+  }).then(function () {
+    expect(pair.leftSent).toEqual([
+      ['sync', 1, { type: 'A' }, { id: [1, 'false:other', 0], time: 1 }]
     ])
   })
 })
