@@ -99,6 +99,8 @@ function badge (client, options) {
   var widget = document.createElement('div')
   var text = document.createElement('span')
 
+  widget.setAttribute('role', 'alert')
+
   injectStyles(widget, RESET)
   injectStyles(widget, styles.base)
   injectStyles(text, styles.text)
