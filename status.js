@@ -14,6 +14,7 @@ function status (client, callback, options) {
   var observable = client.on ? client : client.sync
   var disconnected = observable.state === 'disconnected'
   var wait = false
+  var old = false
 
   if (!options) options = { }
   if (typeof options.duration === 'undefined') options.duration = 3000
@@ -24,6 +25,7 @@ function status (client, callback, options) {
   unbind.push(observable.on('state', function () {
     clearTimeout(timeout)
 
+    if (old) return
     if (observable.state === 'disconnected') {
       disconnected = true
       callback(wait ? 'wait' : 'disconnected')
@@ -49,6 +51,7 @@ function status (client, callback, options) {
 
   unbind.push(client.sync.on('error', function (error) {
     if (error.type === 'wrong-protocol' || error.type === 'wrong-subprotocol') {
+      old = true
       callback('protocolError')
     } else if (error.type !== 'timeout') {
       callback('syncError', { error: error })

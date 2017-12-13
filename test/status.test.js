@@ -135,6 +135,8 @@ it('notifies about old client', function () {
     var subprotocol = new SyncError(test.leftSync, 'wrong-subprotocol', { })
     test.leftSync.emitter.emit('error', subprotocol)
 
+    test.leftSync.setState('disconnected')
+
     expect(test.calls).toEqual(['protocolError', 'protocolError'])
   })
 })
