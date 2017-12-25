@@ -280,9 +280,11 @@ function Client (options) {
     }
   })
 
-  this.sync.on('connect', function () {
-    for (var i in client.subscriptions) {
-      client.log.add(client.subscriptions[i], { sync: true })
+  this.sync.on('state', function () {
+    if (client.sync.state === 'connected') {
+      for (var i in client.subscriptions) {
+        client.log.add(client.subscriptions[i], { sync: true })
+      }
     }
   })
 
