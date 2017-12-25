@@ -413,12 +413,12 @@ it('sends only special actions', function () {
 
 it('filters data before sending', function () {
   var client
-  return createDialog().then(function (created) {
+  return createDialog({ userId: 'a:b' }).then(function (created) {
     client = created
     client.sync.connection.pair.clear()
     return Promise.all([
       client.log.add({ type: 'a' }, {
-        id: [1, '10:uuid', 0],
+        id: [1, 'a:b:uuid', 0],
         time: 1,
         sync: true,
         users: ['0'],
@@ -439,7 +439,7 @@ it('filters data before sending', function () {
   }).then(function () {
     expect(client.sync.connection.pair.leftSent).toEqual([
       ['sync', 1, { type: 'a' }, {
-        id: [1, '10:uuid', 0],
+        id: [1, 'a:b:uuid', 0],
         time: 1,
         users: ['0'],
         nodeIds: ['0:uuid'],
