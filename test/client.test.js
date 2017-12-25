@@ -502,33 +502,30 @@ it('warns about subscription actions without sync', function () {
   })
 })
 
-it('resubscribe to previous subscriptions', function () {
+it('resubscribes to previous subscriptions', function () {
   var client = createClient()
+  var connected = []
   client.log.on('preadd', function (action, meta) {
     meta.reasons.push('test')
+    if (action.type === 'logux/subscribe') {
+      connected.push(action)
+    }
   })
   return Promise.all([
     client.log.add(
       { type: 'logux/subscribe', channel: 'a' }, { sync: true }),
     client.log.add(
-      { type: 'logux/unsubscribe', channel: 'a' }, { sync: true }),
-    client.log.add(
       { type: 'logux/subscribe', channel: 'b', b: 1 }, { sync: true }),
     client.log.add(
-      { type: 'logux/subscribe', channel: 'b', b: 2 }, { sync: true })
+      { type: 'logux/subscribe', channel: 'b', b: 2 }, { sync: true }),
+    client.log.add(
+      { type: 'logux/unsubscribe', channel: 'b', b: 1 }, { sync: true })
   ]).then(function () {
-    client.sync.emitter.emit('connect')
-    expect(client.log.store.created).toHaveLength(6)
-    expect(client.log.store.created[0][0]).toEqual({
-      type: 'logux/subscribe', channel: 'b', b: 2
-    })
-    expect(client.log.store.created[0][1].sync).toBeTruthy()
-    expect(client.log.store.created[1][0]).toEqual({
-      type: 'logux/subscribe', channel: 'b', b: 1
-    })
-    return Promise.resolve()
-  }).then(function () {
-    client.sync.emitter.emit('connect')
-    expect(client.log.store.created).toHaveLength(8)
+    connected = []
+    client.sync.setState('connected')
+    expect(connected).toEqual([
+      { type: 'logux/subscribe', channel: 'a' },
+      { type: 'logux/subscribe', channel: 'b', b: 2 }
+    ])
   })
 })
