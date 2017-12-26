@@ -202,8 +202,10 @@ function CrossTabClient (options) {
 
   this.onStorage = this.onStorage.bind(this)
   this.onUnload = this.onUnload.bind(this)
-  window.addEventListener('storage', this.onStorage)
-  window.addEventListener('unload', this.onUnload)
+  if (typeof window !== 'undefined') {
+    window.addEventListener('storage', this.onStorage)
+    window.addEventListener('unload', this.onUnload)
+  }
 }
 
 CrossTabClient.prototype = {
@@ -232,7 +234,9 @@ CrossTabClient.prototype = {
     clearTimeout(this.watching)
     clearTimeout(this.elections)
     clearInterval(this.leadership)
-    window.removeEventListener('storage', this.onStorage)
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('storage', this.onStorage)
+    }
   },
 
   clean: function clean () {

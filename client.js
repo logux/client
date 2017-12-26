@@ -289,7 +289,9 @@ function Client (options) {
   })
 
   this.onUnload = this.onUnload.bind(this)
-  window.addEventListener('unload', this.onUnload)
+  if (typeof window !== 'undefined') {
+    window.addEventListener('unload', this.onUnload)
+  }
 }
 
 Client.prototype = {
@@ -321,7 +323,9 @@ Client.prototype = {
     this.onUnload()
     this.sync.destroy()
     clearInterval(this.pinging)
-    window.removeEventListener('unload', this.onUnload)
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('unload', this.onUnload)
+    }
   },
 
   /**
