@@ -26,6 +26,8 @@ beforeEach(function () {
 })
 
 var client
+var originWindow = global.window
+var originNavigator = global.navigator
 var originWebSocket = global.WebSocket
 var originIndexedDB = global.indexedDB
 var originLocalStorage = global.localStorage
@@ -34,6 +36,8 @@ afterEach(function () {
     client.destroy()
     client = undefined
   }
+  global.window = originWindow
+  global.navigator = originNavigator
   global.WebSocket = originWebSocket
   global.indexedDB = originIndexedDB
   global.localStorage = originLocalStorage
@@ -221,6 +225,15 @@ it('becomes leader without localStorage', function () {
   client.start()
   expect(roles).toEqual(['leader'])
   expect(client.sync.connection.connect).toHaveBeenCalled()
+})
+
+it('becomes leader without window', function () {
+  delete global.window
+  delete global.navigator
+  client = createClient()
+  client.start()
+  expect(client.role).toEqual('leader')
+  client.destroy()
 })
 
 it('becomes follower on recent leader ping', function () {
