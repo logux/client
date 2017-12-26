@@ -1,6 +1,12 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.2.6
+* Fix `logux/unsubscribe` detection.
+* Subscribe again only in `connected` state.
+* Allow to have `:` in user ID.
+* Allow to use client without `window`.
+
 ## 0.2.5
 * Fix follower tab’s actions synchronization.
 
