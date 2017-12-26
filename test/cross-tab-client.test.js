@@ -5,6 +5,10 @@ var CrossTabClient = require('../cross-tab-client')
 
 var fakeLocalStorage
 beforeEach(function () {
+  global.WebSocket = function () { }
+  global.WebSocket.prototype = {
+    close: function () { }
+  }
   fakeLocalStorage = {
     storage: { },
     setItem: function (key, value) {
@@ -22,6 +26,7 @@ beforeEach(function () {
 })
 
 var client
+var originWebSocket = global.WebSocket
 var originIndexedDB = global.indexedDB
 var originLocalStorage = global.localStorage
 afterEach(function () {
@@ -29,6 +34,7 @@ afterEach(function () {
     client.destroy()
     client = undefined
   }
+  global.WebSocket = originWebSocket
   global.indexedDB = originIndexedDB
   global.localStorage = originLocalStorage
   fakeLocalStorage.storage = { }
