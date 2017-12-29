@@ -261,7 +261,11 @@ IndexedStore.prototype = {
     return this.init().then(function (store) {
       return promisify(store.os('extra').get('lastSynced'))
     }).then(function (data) {
-      return { sent: data.sent, received: data.received }
+      if (data) {
+        return { sent: data.sent, received: data.received }
+      } else {
+        return { sent: 0, received: 0 }
+      }
     })
   },
 
@@ -269,6 +273,7 @@ IndexedStore.prototype = {
     return this.init().then(function (store) {
       var extra = store.os('extra', 'write')
       return promisify(extra.get('lastSynced')).then(function (data) {
+        if (!data) data = { key: 'lastSynced', sent: 0, received: 0 }
         if (typeof values.sent !== 'undefined') {
           data.sent = values.sent
         }

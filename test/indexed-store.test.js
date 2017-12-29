@@ -10,19 +10,16 @@ beforeEach(function () {
   global.indexedDB = fakeIndexedDB
 })
 
-var store, other
-
-afterEach(function () {
-  return Promise.all([
-    store ? store.clean() : null,
-    other ? other.clean() : null
-  ]).then(function () {
-    store = undefined
-    other = undefined
-    global.indexedDB = originIndexedDB
-    delete global.document.reload
+function promisify (request) {
+  return new Promise(function (resolve, reject) {
+    request.onerror = function (e) {
+      reject(e.target.error)
+    }
+    request.onsuccess = function (e) {
+      resolve(e.target.result)
+    }
   })
-})
+}
 
 function all (request, list) {
   if (!list) list = []
@@ -46,6 +43,20 @@ function check (indexed, created, added) {
     expect(entries).toEqual(added)
   })
 }
+
+var store, other
+
+afterEach(function () {
+  return Promise.all([
+    store ? store.clean() : null,
+    other ? other.clean() : null
+  ]).then(function () {
+    store = undefined
+    other = undefined
+    global.indexedDB = originIndexedDB
+    delete global.document.reload
+  })
+})
 
 eachTest(function (desc, creator) {
   it(desc, creator(function () {
@@ -106,6 +117,18 @@ it('throws a errors', function () {
     throwed = e
   }).then(function () {
     expect(throwed).toBe(error)
+  })
+})
+
+it('works with broken lastSynced', function () {
+  store = new IndexedStore()
+  return store.init().then(function () {
+    return promisify(store.os('extra', 'write').delete('lastSynced'))
+  }).then(function () {
+    return store.getLastSynced()
+  }).then(function (synced) {
+    expect(synced).toEqual({ sent: 0, received: 0 })
+    return store.setLastSynced({ sent: 1, received: 1 })
   })
 })
 
