@@ -302,7 +302,7 @@ it('pings after tab-specific action', function () {
   client.sync.connection.connect = function () { }
 
   client.start()
-  expect(localStorage.getItem('test:tab:' + id)).not.toBeDefined()
+  expect(localStorage.getItem('test:tab:' + id)).toBeUndefined()
 
   var prev
   return client.log.add(
@@ -327,7 +327,7 @@ it('cleans own actions on destroy', function () {
     return Promise.resolve()
   }).then(function () {
     expect(client.log.store.created).toHaveLength(0)
-    expect(localStorage.getItem('test:tab:' + client.id)).not.toBeDefined()
+    expect(localStorage.getItem('test:tab:' + client.id)).toBeUndefined()
   })
 })
 
@@ -342,7 +342,7 @@ it('cleans own actions on unload', function () {
     return Promise.resolve()
   }).then(function () {
     expect(client.log.store.created).toHaveLength(0)
-    expect(localStorage.getItem('test:tab:' + client.id)).not.toBeDefined()
+    expect(localStorage.getItem('test:tab:' + client.id)).toBeUndefined()
   })
 })
 
@@ -361,7 +361,7 @@ it('cleans other tab action after timeout', function () {
   }).then(function () {
     expect(client.log.store.created).toHaveLength(1)
     expect(client.log.store.created[0][0]).toEqual({ type: 'B' })
-    expect(localStorage.getItem('test:tab:2')).not.toBeDefined()
+    expect(localStorage.getItem('test:tab:2')).toBeUndefined()
   })
 })
 
@@ -378,7 +378,7 @@ it('adds current subprotocol only to own actions', function () {
     { type: 'A' },
     { reasons: ['test'], id: [1, '0:other', 0] }
   ).then(function () {
-    expect(client.log.store.created[0][1].subprotocol).not.toBeDefined()
+    expect(client.log.store.created[0][1].subprotocol).toBeUndefined()
   })
 })
 
