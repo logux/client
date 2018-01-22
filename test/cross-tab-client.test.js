@@ -293,7 +293,7 @@ it('pings on leader role', function () {
   expect(client.role).toEqual('candidate')
   return delay(client.electionDelay + 10).then(function () {
     expect(client.role).toEqual('leader')
-    expect(client.watching).not.toBeDefined()
+    expect(client.watching).toBeUndefined()
     return delay(client.leaderPing + 10)
   }).then(function () {
     var data = JSON.parse(localStorage.getItem('logux:false:leader'))
