@@ -238,6 +238,6 @@ it('removes badge from DOM', function () {
 
   unbind()
 
-  expect(badgeNode()).toEqual(null)
+  expect(badgeNode()).toBeNull()
   client.sync.emitter.emit('error', { type: 'wrong-protocol' })
 })
