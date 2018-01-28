@@ -82,12 +82,7 @@ IndexedStore.prototype = {
       log.createIndex('created', 'created', { unique: true })
       log.createIndex('reasons', 'reasons', { multiEntry: true })
 
-      var creating = db.createObjectStore('extra', { keyPath: 'key' })
-      creating.transaction.oncomplete = function () {
-        db.transaction('extra', 'readwrite')
-          .objectStore('extra')
-          .add({ key: 'lastSynced', sent: 0, received: 0 })
-      }
+      db.createObjectStore('extra', { keyPath: 'key' })
     }
 
     this.initing = promisify(opening).then(function (db) {
