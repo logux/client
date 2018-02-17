@@ -522,7 +522,20 @@ it('resubscribes to previous subscriptions', function () {
       { type: 'logux/unsubscribe', channel: 'b', b: 1 }, { sync: true })
   ]).then(function () {
     connected = []
-    client.sync.setState('connected')
+    client.sync.setState('synchronized')
+    expect(connected).toEqual([
+      { type: 'logux/subscribe', channel: 'a' },
+      { type: 'logux/subscribe', channel: 'b', b: 2 }
+    ])
+
+    connected = []
+    client.sync.setState('sending')
+    client.sync.setState('synchronized')
+    expect(connected).toEqual([])
+
+    client.sync.setState('disconnected')
+    client.sync.setState('connecting')
+    client.sync.setState('synchronized')
     expect(connected).toEqual([
       { type: 'logux/subscribe', channel: 'a' },
       { type: 'logux/subscribe', channel: 'b', b: 2 }
