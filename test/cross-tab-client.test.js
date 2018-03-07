@@ -411,8 +411,8 @@ it('works on IE storage event', function () {
   return delay(client.electionDelay + 10).then(function () {
     expect(client.role).toEqual('leader')
 
-    emitStorage('logux:false:add', '["' + client.id + '",{},{}]')
-    emitStorage('logux:false:clean', '["' + client.id + '",{},{}]')
+    emitStorage('logux:false:add', '["' + client.id + '",{},{"id":[0]}]')
+    emitStorage('logux:false:clean', '["' + client.id + '",{},{"id":[0]}]')
     expect(events).toEqual(0)
   })
 })
@@ -512,9 +512,20 @@ it('detects subscriptions from different tabs', function () {
   global.localStorage = fakeLocalStorage
   client = createClient()
   emitStorage('logux:false:add', '["other",' +
-    '{"type":"logux/subscribe","name":"a"},{"sync":true}' +
+    '{"type":"logux/subscribe","name":"a"},{"sync":true,"id":[0,"",0]}' +
   ']')
   expect(client.subscriptions).toEqual([
     { type: 'logux/subscribe', name: 'a' }
   ])
+})
+
+it('copies actions on memory store', function () {
+  global.localStorage = fakeLocalStorage
+  client = createClient()
+
+  emitStorage('logux:false:add', '["other",{"type":"A"},{"id":[1,"A",0]}]')
+  expect(client.log.store.created[0][0]).toEqual({ type: 'A' })
+
+  emitStorage('logux:false:clean', '["other",{"type":"A"},{"id":[1,"A",0]}]')
+  expect(client.log.store.created).toHaveLength(0)
 })
