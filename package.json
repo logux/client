@@ -1,6 +1,6 @@
 {
   "name": "logux-client",
-  "version": "0.2.9",
+  "version": "0.2.10",
   "description": "Low-level Logux client for web browser",
   "keywords": [
     "logux",
