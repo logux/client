@@ -1,6 +1,9 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.2.9
+* Fix `MemoryStore` support in cross-tab client.
+
 ## 0.2.8
 * Fix subscription after offline.
 
