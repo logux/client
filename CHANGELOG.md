@@ -1,6 +1,9 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.2.10
+* Fix cross-tab `add` event with `MemoryStore`.
+
 ## 0.2.9
 * Fix `MemoryStore` support in cross-tab client.
 
