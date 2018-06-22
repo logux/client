@@ -11,34 +11,34 @@
   "repository": "logux/logux-client",
   "dependencies": {
     "logux-core": "logux/logux-core",
-    "nanoevents": "^1.0.2",
-    "nanoid": "^1.0.2",
+    "nanoevents": "^1.0.4",
+    "nanoid": "^1.0.4",
     "promise": "^8.0.1"
   },
   "devDependencies": {
     "docdash": "^0.4.0",
     "eslint": "^4.19.1",
-    "eslint-config-logux": "^21.0.0",
+    "eslint-config-logux": "^23.0.0",
     "eslint-config-standard": "^11.0.0",
     "eslint-plugin-es5": "^1.3.1",
-    "eslint-plugin-import": "^2.11.0",
-    "eslint-plugin-jest": "^21.15.1",
+    "eslint-plugin-import": "^2.12.0",
+    "eslint-plugin-jest": "^21.17.0",
     "eslint-plugin-node": "^6.0.1",
-    "eslint-plugin-promise": "^3.7.0",
+    "eslint-plugin-promise": "^3.8.0",
     "eslint-plugin-security": "^1.4.0",
     "eslint-plugin-standard": "^3.1.0",
     "fake-indexeddb": "^2.0.4",
     "html-webpack-plugin": "^3.2.0",
-    "jest": "^22.4.3",
+    "jest": "^23.1.0",
     "jsdoc": "^3.5.5",
-    "lint-staged": "^7.1.0",
+    "lint-staged": "^7.2.0",
     "logux-store-tests": "^0.1.3",
     "nanodelay": "^0.1.3",
     "pre-commit": "^1.2.2",
     "rimraf": "^2.6.2",
-    "size-limit": "^0.17.1",
-    "webpack": "^4.8.3",
-    "webpack-cli": "^2.1.3",
+    "size-limit": "^0.18.3",
+    "webpack": "^4.12.0",
+    "webpack-cli": "^3.0.8",
     "webpack-dev-server": "^3.1.4",
     "yaspeller-ci": "^1.0.0"
   },
@@ -54,7 +54,7 @@
   "size-limit": [
     {
       "path": "cross-tab-client.js",
-      "limit": "9.5 KB"
+      "limit": "9.4 KB"
     }
   ],
   "jest": {
