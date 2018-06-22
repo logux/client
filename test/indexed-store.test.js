@@ -1,7 +1,7 @@
 /* eslint-disable no-invalid-this */
 
 var fakeIndexedDB = require('fake-indexeddb')
-var eachTest = require('logux-store-tests')
+var eachStoreCheck = require('logux-core').eachStoreCheck
 
 var IndexedStore = require('../indexed-store')
 
@@ -58,7 +58,7 @@ afterEach(function () {
   })
 })
 
-eachTest(function (desc, creator) {
+eachStoreCheck(function (desc, creator) {
   it(desc, creator(function () {
     store = new IndexedStore()
     return store

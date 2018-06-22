@@ -4058,10 +4058,6 @@ logux-core@logux/logux-core:
   dependencies:
     nanoevents "^1.0.4"
 
-logux-store-tests@^0.1.3:
-  version "0.1.3"
-  resolved "https://registry.yarnpkg.com/logux-store-tests/-/logux-store-tests-0.1.3.tgz#765649878b8545b9f89547902a3d0804377c5ef8"
-
 long@^3.2.0:
   version "3.2.0"
   resolved "https://registry.yarnpkg.com/long/-/long-3.2.0.tgz#d821b7138ca1cb581c172990ef14db200b5c474b"
