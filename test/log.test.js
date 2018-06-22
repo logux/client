@@ -1,6 +1,6 @@
 var CrossTabClient = require('logux-client').CrossTabClient
-var SyncError = require('logux-sync').SyncError
-var TestPair = require('logux-sync').TestPair
+var SyncError = require('logux-core').SyncError
+var TestPair = require('logux-core').TestPair
 
 jest.mock('browser-supports-log-styles', function () {
   return function () {

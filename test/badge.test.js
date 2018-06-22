@@ -1,7 +1,7 @@
 var CrossTabClient = require('logux-client').CrossTabClient
-var SyncError = require('logux-sync').SyncError
+var SyncError = require('logux-core').SyncError
 var TestTime = require('logux-core').TestTime
-var TestPair = require('logux-sync').TestPair
+var TestPair = require('logux-core').TestPair
 var delay = require('nanodelay')
 
 var messages = require('../badge/en')

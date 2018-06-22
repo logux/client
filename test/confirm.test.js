@@ -1,5 +1,5 @@
 var CrossTabClient = require('logux-client').CrossTabClient
-var TestPair = require('logux-sync').TestPair
+var TestPair = require('logux-core').TestPair
 
 var confirm = require('../confirm')
 

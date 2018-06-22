@@ -1,8 +1,8 @@
 var CrossTabClient = require('logux-client').CrossTabClient
-var SyncError = require('logux-sync').SyncError
+var SyncError = require('logux-core').SyncError
 var TestTime = require('logux-core').TestTime
-var TestPair = require('logux-sync').TestPair
-var BaseSync = require('logux-sync').BaseSync
+var TestPair = require('logux-core').TestPair
+var BaseSync = require('logux-core').BaseSync
 var delay = require('nanodelay')
 
 var status = require('../status')
