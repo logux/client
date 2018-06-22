@@ -1,4 +1,4 @@
-var TestPair = require('logux-sync/test-pair')
+var TestPair = require('logux-core/test-pair')
 var delay = require('nanodelay')
 
 var CrossTabClient = require('../cross-tab-client')

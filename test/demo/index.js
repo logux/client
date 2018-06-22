@@ -1,7 +1,7 @@
 var MemoryStore = require('logux-core/memory-store')
-var ClientSync = require('logux-sync/client-sync')
-var LocalPair = require('logux-sync/local-pair')
-var BaseSync = require('logux-sync/base-sync')
+var ClientSync = require('logux-core/client-sync')
+var LocalPair = require('logux-core/local-pair')
+var BaseSync = require('logux-core/base-sync')
 var Log = require('logux-core/log')
 
 var CrossTabClient = require('../../cross-tab-client')

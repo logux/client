@@ -1,8 +1,8 @@
-var BrowserConnection = require('logux-sync/browser-connection')
+var BrowserConnection = require('logux-core/browser-connection')
 var MemoryStore = require('logux-core/memory-store')
-var ClientSync = require('logux-sync/client-sync')
+var ClientSync = require('logux-core/client-sync')
 var NanoEvents = require('nanoevents')
-var Reconnect = require('logux-sync/reconnect')
+var Reconnect = require('logux-core/reconnect')
 var nanoid = require('nanoid')
 var Log = require('logux-core/log')
 
@@ -258,7 +258,7 @@ function Client (options) {
   }
 
   /**
-   * Sync instance from `logux-sync` to synchronize logs.
+   * Sync instance to synchronize logs.
    * @type {ClientSync}
    *
    * @example

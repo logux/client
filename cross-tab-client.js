@@ -1,4 +1,4 @@
-var merge = require('logux-sync/merge')
+var merge = require('logux-core/merge')
 
 var Client = require('./client')
 

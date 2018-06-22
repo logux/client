@@ -1,6 +1,6 @@
 var fakeIndexedDB = require('fake-indexeddb')
 var MemoryStore = require('logux-core').MemoryStore
-var TestPair = require('logux-sync').TestPair
+var TestPair = require('logux-core').TestPair
 var TestTime = require('logux-core').TestTime
 var delay = require('nanodelay')
 
