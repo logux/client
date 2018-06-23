@@ -15,3 +15,4 @@ docs/
 .eslintrc
 .lintstagedrc
 jest.config.js
+.size-limit
