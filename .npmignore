@@ -12,3 +12,6 @@ coverage/
 docs/
 .jsdocrc
 .yaspellerrc
+.eslintrc
+.lintstagedrc
+jest.config.js

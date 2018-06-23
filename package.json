@@ -50,26 +50,6 @@
     "test": "jest --coverage && yarn lint && size-limit && yarn spellcheck",
     "start": "webpack-dev-server --config test/demo/webpack.config"
   },
-  "size-limit": [
-    {
-      "path": "cross-tab-client.js",
-      "limit": "9.4 KB"
-    }
-  ],
-  "jest": {
-    "coverageThreshold": {
-      "global": {
-        "statements": 100
-      }
-    }
-  },
-  "eslintConfig": {
-    "extends": "eslint-config-logux/browser"
-  },
-  "lint-staged": {
-    "*.md": "yaspeller-ci",
-    "*.js": "eslint"
-  },
   "pre-commit": [
     "lint-staged"
   ]
