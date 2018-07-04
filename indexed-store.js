@@ -1,12 +1,5 @@
 var isFirstOlder = require('logux-core/is-first-older')
 
-// Firefox has problem between native Promise and IndexedDB
-// https://bugzilla.mozilla.org/show_bug.cgi?id=1383029
-var Promise = require('promise/lib/core')
-Promise.prototype.catch = function (onRejected) {
-  return this.then(null, onRejected)
-}
-
 var VERSION = 1
 
 function rejectify (request, reject) {
