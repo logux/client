@@ -104,8 +104,9 @@ function log (client, messages) {
     unbind.push(client.on('add', function (action, meta) {
       if (meta.tab && meta.tab !== client.id) return
       var message = 'action ' + style(action.type) + ' was added'
-      if (meta.id[1] !== sync.localNodeId) {
-        message += ' by ' + style(meta.id[1])
+      var nodeId = meta.id.split(' ')[1]
+      if (nodeId !== sync.localNodeId) {
+        message += ' by ' + style(nodeId)
       }
       showLog(message, action, meta)
     }))

@@ -25,7 +25,7 @@ function createClient () {
   var lastId = 0
   client.log.generateId = function () {
     lastId += 1
-    return [lastId, '10:uuid', 0]
+    return lastId + ' 10:uuid 0'
   }
 
   return pair.left.connect().then(function () {
@@ -234,14 +234,14 @@ it('shows add and clean event', function () {
         expect(console.log).toBeCalledWith(
           'Logux: action A was added',
           { type: 'A' },
-          { id: [1, '10:uuid', 0], reasons: ['test'], time: 1, added: 1 }
+          { id: '1 10:uuid 0', reasons: ['test'], time: 1, added: 1 }
         )
         return client.sync.log.removeReason('test')
       }).then(function () {
         expect(console.log).toHaveBeenLastCalledWith(
           'Logux: action A was cleaned',
           { type: 'A' },
-          { id: [1, '10:uuid', 0], reasons: [], time: 1, added: 1 }
+          { id: '1 10:uuid 0', reasons: [], time: 1, added: 1 }
         )
       })
   })
@@ -272,7 +272,7 @@ it('shows add and clean event and make action type bold', function () {
           'font-weight: bold',
           '',
           { type: 'A' },
-          { id: [1, '10:uuid', 0], reasons: ['test'], time: 1, added: 1 }
+          { id: '1 10:uuid 0', reasons: ['test'], time: 1, added: 1 }
         )
         return client.sync.log.removeReason('test')
       }).then(function () {
@@ -283,7 +283,7 @@ it('shows add and clean event and make action type bold', function () {
           'font-weight: bold',
           '',
           { type: 'A' },
-          { id: [1, '10:uuid', 0], reasons: [], time: 1, added: 1 }
+          { id: '1 10:uuid 0', reasons: [], time: 1, added: 1 }
         )
       })
   })
@@ -304,7 +304,7 @@ it('shows add event with action and make action type bold', function () {
       'font-weight: bold',
       '',
       { type: 'B' },
-      { id: [1, '10:uuid', 0], reasons: ['test'], time: 1, added: 1 }
+      { id: '1 10:uuid 0', reasons: ['test'], time: 1, added: 1 }
     )
   })
 })
@@ -357,9 +357,9 @@ it('supports cross-tab synchronization', function () {
       'Logux: state was changed to disconnected'
     )
 
-    client.emitter.emit('add', { type: 'A' }, { id: [1, '10:uuid', 0] })
+    client.emitter.emit('add', { type: 'A' }, { id: '1 10:uuid 0' })
     expect(console.log).lastCalledWith(
-      'Logux: action A was added', { type: 'A' }, { id: [1, '10:uuid', 0] }
+      'Logux: action A was added', { type: 'A' }, { id: '1 10:uuid 0' }
     )
   })
 })
