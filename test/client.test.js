@@ -40,6 +40,7 @@ function createDialog (opts, credentials) {
   if (!opts.subprotocol) opts.subprotocol = '1.0.0'
   if (!opts.userId) opts.userId = 10
   if (!opts.server) opts.server = pair.left
+  if (!opts.time) opts.time = new TestTime()
 
   var client = new Client(opts)
 
@@ -83,7 +84,8 @@ function createClient () {
   var client = new Client({
     subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
-    userId: false
+    userId: false,
+    time: new TestTime()
   })
   client.sync.connection.connect = function () { }
   client.tabPing = 50
@@ -177,11 +179,14 @@ it('uses user ID in node ID', function () {
 })
 
 it('uses node ID in ID generator', function () {
-  var client = createClient()
+  var client = new Client({
+    subprotocol: '1.0.0',
+    server: 'wss://localhost:1337',
+    userId: '10',
+    time: new TestTime()
+  })
   var id = client.log.generateId()
-  expect(typeof id[0]).toEqual('number')
-  expect(id[1]).toEqual(client.nodeId)
-  expect(id[2]).toBe(0)
+  expect(id).toContain(' 10:' + client.id + ' 0')
 })
 
 it('uses custom store', function () {
@@ -250,13 +255,8 @@ it('sends options to sync', function () {
 })
 
 it('uses test time', function () {
-  var client = new Client({
-    subprotocol: '1.0.0',
-    server: 'wss://localhost:1337',
-    userId: '10',
-    time: new TestTime()
-  })
-  expect(client.log.generateId()).toEqual([1, '10:' + client.id, 0])
+  var client = createClient()
+  expect(client.log.generateId()).toEqual('1 false:' + client.id + ' 0')
 })
 
 it('connects', function () {
@@ -326,7 +326,7 @@ it('cleans own actions on destroy', function () {
     client.destroy()
     return Promise.resolve()
   }).then(function () {
-    expect(client.log.store.created).toHaveLength(0)
+    expect(client.log.actions()).toHaveLength(0)
     expect(localStorage.getItem('test:tab:' + client.id)).toBeUndefined()
   })
 })
@@ -341,7 +341,7 @@ it('cleans own actions on unload', function () {
     window.dispatchEvent(new Event('unload'))
     return Promise.resolve()
   }).then(function () {
-    expect(client.log.store.created).toHaveLength(0)
+    expect(client.log.actions()).toHaveLength(0)
     expect(localStorage.getItem('test:tab:' + client.id)).toBeUndefined()
   })
 })
@@ -359,8 +359,7 @@ it('cleans other tab action after timeout', function () {
     client.start()
     return Promise.resolve()
   }).then(function () {
-    expect(client.log.store.created).toHaveLength(1)
-    expect(client.log.store.created[0][0]).toEqual({ type: 'B' })
+    expect(client.log.actions()).toEqual([{ type: 'B' }])
     expect(localStorage.getItem('test:tab:2')).toBeUndefined()
   })
 })
@@ -368,7 +367,7 @@ it('cleans other tab action after timeout', function () {
 it('adds current subprotocol to meta', function () {
   var client = createClient()
   return client.log.add({ type: 'A' }, { reasons: ['test'] }).then(function () {
-    expect(client.log.store.created[0][1].subprotocol).toEqual('1.0.0')
+    expect(client.log.entries()[0][1].subprotocol).toEqual('1.0.0')
   })
 })
 
@@ -376,9 +375,9 @@ it('adds current subprotocol only to own actions', function () {
   var client = createClient()
   return client.log.add(
     { type: 'A' },
-    { reasons: ['test'], id: [1, '0:other', 0] }
+    { reasons: ['test'], id: '1 0:other 0' }
   ).then(function () {
-    expect(client.log.store.created[0][1].subprotocol).toBeUndefined()
+    expect(client.log.entries()[0][1].subprotocol).toBeUndefined()
   })
 })
 
@@ -388,7 +387,7 @@ it('allows to override subprotocol in meta', function () {
     { type: 'A' },
     { subprotocol: '0.1.0', reasons: ['test'] }
   ).then(function () {
-    expect(client.log.store.created[0][1].subprotocol).toEqual('0.1.0')
+    expect(client.log.entries()[0][1].subprotocol).toEqual('0.1.0')
   })
 })
 
@@ -398,8 +397,8 @@ it('sends only special actions', function () {
     client = created
     client.sync.connection.pair.clear()
     return Promise.all([
-      client.log.add({ type: 'a' }, { id: [1, '10:uuid', 0], sync: true }),
-      client.log.add({ type: 'c' }, { id: [2, '10:uuid', 0] })
+      client.log.add({ type: 'a' }, { id: '1 10:uuid 0', sync: true }),
+      client.log.add({ type: 'c' }, { id: '2 10:uuid 0' })
     ])
   }).then(function () {
     client.sync.connection.pair.right.send(['synced', 1])
@@ -418,7 +417,7 @@ it('filters data before sending', function () {
     client.sync.connection.pair.clear()
     return Promise.all([
       client.log.add({ type: 'a' }, {
-        id: [1, 'a:b:uuid', 0],
+        id: '1 a:b:uuid 0',
         time: 1,
         sync: true,
         users: ['0'],
@@ -428,7 +427,7 @@ it('filters data before sending', function () {
         channels: ['user:0']
       }),
       client.log.add({ type: 'c' }, {
-        id: [1, '0:uuid', 0],
+        id: '1 0:uuid 0',
         sync: true,
         reasons: ['test']
       })
@@ -458,7 +457,7 @@ it('compresses subprotocol', function () {
       client.log.add(
         { type: 'a' },
         {
-          id: [1, '10:id', 0],
+          id: '1 10:id 0',
           sync: true,
           reasons: ['test'],
           subprotocol: '1.0.0'
@@ -467,7 +466,7 @@ it('compresses subprotocol', function () {
       client.log.add(
         { type: 'a' },
         {
-          id: [2, '10:id', 0],
+          id: '2 10:id 0',
           sync: true,
           reasons: ['test'],
           subprotocol: '2.0.0'

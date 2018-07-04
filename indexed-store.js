@@ -141,13 +141,14 @@ IndexedStore.prototype = {
   },
 
   add: function add (action, meta) {
+    var id = meta.id.split(' ')
     var entry = {
       id: meta.id,
       meta: meta,
       time: meta.time,
       action: action,
       reasons: meta.reasons,
-      created: [meta.time, meta.id[1], meta.id[2], meta.id[0]].join('\t')
+      created: [meta.time, id[1], id[2], id[0]].join(' ')
     }
 
     if (this.adding[entry.created]) {

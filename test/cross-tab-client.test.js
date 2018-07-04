@@ -1,4 +1,5 @@
-var TestPair = require('logux-core/test-pair')
+var TestPair = require('logux-core').TestPair
+var TestTime = require('logux-core').TestTime
 var delay = require('nanodelay')
 
 var CrossTabClient = require('../cross-tab-client')
@@ -49,7 +50,8 @@ function createClient (overrides) {
   var opts = {
     subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
-    userId: false
+    userId: false,
+    time: new TestTime()
   }
   for (var i in overrides) {
     opts[i] = overrides[i]
@@ -197,7 +199,7 @@ it('synchronizes actions from follower tabs', function () {
       added: 1,
       time: 1,
       sync: true,
-      id: [1, 'false:other', 0]
+      id: '1 false:other 0'
     })
     emitStorage('logux:false:add', '["other",' + action + ',' + meta + ']')
     return delay(10)
@@ -411,8 +413,8 @@ it('works on IE storage event', function () {
   return delay(client.electionDelay + 10).then(function () {
     expect(client.role).toEqual('leader')
 
-    emitStorage('logux:false:add', '["' + client.id + '",{},{"id":[0]}]')
-    emitStorage('logux:false:clean', '["' + client.id + '",{},{"id":[0]}]')
+    emitStorage('logux:false:add', '["' + client.id + '",{},{"id":"0 A 0"}]')
+    emitStorage('logux:false:clean', '["' + client.id + '",{},{"id":"0 A 0"}]')
     expect(events).toEqual(0)
   })
 })
@@ -504,7 +506,7 @@ it('cleans tab-specific action after timeout', function () {
     client.start()
     return Promise.resolve()
   }).then(function () {
-    expect(client.log.store.created).toHaveLength(0)
+    expect(client.log.actions()).toHaveLength(0)
   })
 })
 
@@ -512,7 +514,7 @@ it('detects subscriptions from different tabs', function () {
   global.localStorage = fakeLocalStorage
   client = createClient()
   emitStorage('logux:false:add', '["other",' +
-    '{"type":"logux/subscribe","name":"a"},{"sync":true,"id":[0,"",0]}' +
+    '{"type":"logux/subscribe","name":"a"},{"sync":true,"id":"0 A 0"}' +
   ']')
   expect(client.subscriptions).toEqual([
     { type: 'logux/subscribe', name: 'a' }
@@ -523,9 +525,9 @@ it('copies actions on memory store', function () {
   global.localStorage = fakeLocalStorage
   client = createClient()
 
-  emitStorage('logux:false:add', '["other",{"type":"A"},{"id":[1,"A",0]}]')
-  expect(client.log.store.created[0][0]).toEqual({ type: 'A' })
+  emitStorage('logux:false:add', '["other",{"type":"A"},{"id":"1 A 0"}]')
+  expect(client.log.actions()).toEqual([{ type: 'A' }])
 
-  emitStorage('logux:false:clean', '["other",{"type":"A"},{"id":[1,"A",0]}]')
-  expect(client.log.store.created).toHaveLength(0)
+  emitStorage('logux:false:clean', '["other",{"type":"A"},{"id":"1 A 0"}]')
+  expect(client.log.actions()).toHaveLength(0)
 })

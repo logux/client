@@ -174,7 +174,8 @@ function Client (options) {
   var client = this
 
   log.on('preadd', function (action, meta) {
-    if (meta.id[1] === client.nodeId && !meta.subprotocol) {
+    var isOwn = meta.id.indexOf(' ' + client.nodeId + ' ') !== -1
+    if (isOwn && !meta.subprotocol) {
       meta.subprotocol = client.options.subprotocol
     }
   })
@@ -240,7 +241,7 @@ function Client (options) {
   }
 
   function filter (action, meta) {
-    var user = meta.id[1].replace(/:[^:]*$/, '')
+    var user = meta.id.split(' ')[1].replace(/:[^:]*$/, '')
     return Promise.resolve(!!meta.sync && user === client.options.userId)
   }
 
