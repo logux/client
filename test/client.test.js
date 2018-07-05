@@ -45,7 +45,7 @@ function createDialog (opts, credentials) {
   var client = new Client(opts)
 
   if (typeof opts.server === 'string') {
-    var events1 = client.sync.connection.connection.emitter.events
+    var events1 = client.node.connection.connection.emitter.events
     var events2 = pair.left.emitter.events
     for (var i in events1) {
       if (events2[i]) {
@@ -54,28 +54,28 @@ function createDialog (opts, credentials) {
         events2[i] = events1[i].slice(0)
       }
     }
-    client.sync.connection = pair.left
+    client.node.connection = pair.left
   }
 
   client.log.on('preadd', function (action, meta) {
     meta.reasons.push('test')
   })
 
-  return client.sync.connection.connect().then(function () {
+  return client.node.connection.connect().then(function () {
     return pair.wait('right')
   }).then(function () {
-    pair.right.send(['connected', client.sync.localProtocol, 'server', [0, 0], {
+    pair.right.send(['connected', client.node.localProtocol, 'server', [0, 0], {
       credentials: credentials
     }])
     return pair.wait('left')
   }).then(function () {
-    if (client.sync.connected) {
-      return client.sync.waitFor('synchronized')
+    if (client.node.connected) {
+      return client.node.waitFor('synchronized')
     } else {
       return false
     }
   }).then(function () {
-    client.sync.timeFix = 0
+    client.node.timeFix = 0
     return client
   })
 }
@@ -87,7 +87,7 @@ function createClient () {
     userId: false,
     time: new TestTime()
   })
-  client.sync.connection.connect = function () { }
+  client.node.connection.connect = function () { }
   client.tabPing = 50
   return client
 }
@@ -122,7 +122,7 @@ it('throws on missed user ID', function () {
 it('not warns on WSS', function () {
   console.error = jest.fn()
   return createDialog().then(function (client) {
-    expect(client.sync.connected).toBeTruthy()
+    expect(client.node.connected).toBeTruthy()
     expect(console.error).not.toBeCalledWith()
   })
 })
@@ -130,7 +130,7 @@ it('not warns on WSS', function () {
 it('forces to use WSS in production domain', function () {
   console.error = jest.fn()
   return createDialog({ server: 'ws://test.com' }).then(function (client) {
-    expect(client.sync.connected).toBeFalsy()
+    expect(client.node.connected).toBeFalsy()
     expect(console.error).toBeCalledWith(
       'Without SSL, old proxies blocks WebSockets. ' +
       'Use WSS for Logux or set allowDangerousProtocol option.'
@@ -144,7 +144,7 @@ it('ignores WS with allowDangerousProtocol', function () {
     allowDangerousProtocol: true,
     server: 'ws://test.com'
   }).then(function (client) {
-    expect(client.sync.connected).toBeTruthy()
+    expect(client.node.connected).toBeTruthy()
     expect(console.error).not.toBeCalledWith()
   })
 })
@@ -156,7 +156,7 @@ it('ignores WS in development', function () {
   }, {
     env: 'development'
   }).then(function (client) {
-    expect(client.sync.connected).toBeTruthy()
+    expect(client.node.connected).toBeTruthy()
     expect(console.error).not.toBeCalledWith()
   })
 })
@@ -230,16 +230,16 @@ it('sends options to connection', function () {
     server: 'wss://localhost:1337',
     userId: false
   })
-  expect(client.sync.connection.options).toEqual({
+  expect(client.node.connection.options).toEqual({
     minDelay: 100,
     maxDelay: 500,
     attempts: 5
   })
-  expect(client.sync.connection.connection.url).toEqual(
+  expect(client.node.connection.connection.url).toEqual(
     'wss://localhost:1337')
 })
 
-it('sends options to sync', function () {
+it('sends options to node', function () {
   var client = new Client({
     subprotocol: '1.0.0',
     credentials: 'token',
@@ -248,10 +248,10 @@ it('sends options to sync', function () {
     userId: false,
     ping: 1000
   })
-  expect(client.sync.options.subprotocol).toEqual('1.0.0')
-  expect(client.sync.options.credentials).toEqual('token')
-  expect(client.sync.options.timeout).toEqual(2000)
-  expect(client.sync.options.ping).toEqual(1000)
+  expect(client.node.options.subprotocol).toEqual('1.0.0')
+  expect(client.node.options.credentials).toEqual('token')
+  expect(client.node.options.timeout).toEqual(2000)
+  expect(client.node.options.ping).toEqual(1000)
 })
 
 it('uses test time', function () {
@@ -261,15 +261,15 @@ it('uses test time', function () {
 
 it('connects', function () {
   var client = createClient()
-  client.sync.connection.connect = jest.fn()
+  client.node.connection.connect = jest.fn()
   client.start()
-  expect(client.sync.connection.connect).toHaveBeenCalled()
+  expect(client.node.connection.connect).toHaveBeenCalled()
 })
 
 it('display server debug error stacktrace with prefix', function () {
   console.error = jest.fn()
   var client = createClient()
-  client.sync.emitter.emit('debug', 'error', 'Fake stacktrace\n')
+  client.node.emitter.emit('debug', 'error', 'Fake stacktrace\n')
   expect(console.error).toHaveBeenCalledWith(
     'Error on Logux server:\n',
     'Fake stacktrace\n'
@@ -279,17 +279,17 @@ it('display server debug error stacktrace with prefix', function () {
 it('does not display server debug message if type is not error', function () {
   console.error = jest.fn()
   var client = createClient()
-  client.sync.emitter.emit('debug', 'notError', 'Fake stacktrace\n')
+  client.node.emitter.emit('debug', 'notError', 'Fake stacktrace\n')
   expect(console.error).not.toHaveBeenCalled()
 })
 
 it('cleans everything', function () {
   global.indexedDB = fakeIndexedDB
   var client = createClient()
-  client.sync.destroy = jest.fn()
+  client.node.destroy = jest.fn()
   client.log.store.clean = jest.fn(client.log.store.clean)
   return client.clean().then(function () {
-    expect(client.sync.destroy).toHaveBeenCalled()
+    expect(client.node.destroy).toHaveBeenCalled()
     expect(client.log.store.clean).toHaveBeenCalled()
   })
 })
@@ -299,7 +299,7 @@ it('pings after tab-specific action', function () {
   var client = createClient()
   var id = client.id
   client.options.prefix = 'test'
-  client.sync.connection.connect = function () { }
+  client.node.connection.connect = function () { }
 
   client.start()
   expect(localStorage.getItem('test:tab:' + id)).toBeUndefined()
@@ -395,16 +395,16 @@ it('sends only special actions', function () {
   var client
   return createDialog().then(function (created) {
     client = created
-    client.sync.connection.pair.clear()
+    client.node.connection.pair.clear()
     return Promise.all([
       client.log.add({ type: 'a' }, { id: '1 10:uuid 0', sync: true }),
       client.log.add({ type: 'c' }, { id: '2 10:uuid 0' })
     ])
   }).then(function () {
-    client.sync.connection.pair.right.send(['synced', 1])
-    return client.sync.waitFor('synchronized')
+    client.node.connection.pair.right.send(['synced', 1])
+    return client.node.waitFor('synchronized')
   }).then(function () {
-    expect(client.sync.connection.pair.leftSent).toEqual([
+    expect(client.node.connection.pair.leftSent).toEqual([
       ['sync', 1, { type: 'a' }, { id: [1, '10:uuid', 0], time: 1 }]
     ])
   })
@@ -414,7 +414,7 @@ it('filters data before sending', function () {
   var client
   return createDialog({ userId: 'a:b' }).then(function (created) {
     client = created
-    client.sync.connection.pair.clear()
+    client.node.connection.pair.clear()
     return Promise.all([
       client.log.add({ type: 'a' }, {
         id: '1 a:b:uuid 0',
@@ -433,10 +433,10 @@ it('filters data before sending', function () {
       })
     ])
   }).then(function () {
-    client.sync.connection.pair.right.send(['synced', 1])
-    return client.sync.waitFor('synchronized')
+    client.node.connection.pair.right.send(['synced', 1])
+    return client.node.waitFor('synchronized')
   }).then(function () {
-    expect(client.sync.connection.pair.leftSent).toEqual([
+    expect(client.node.connection.pair.leftSent).toEqual([
       ['sync', 1, { type: 'a' }, {
         id: [1, 'a:b:uuid', 0],
         time: 1,
@@ -452,7 +452,7 @@ it('compresses subprotocol', function () {
   var client
   return createDialog().then(function (created) {
     client = created
-    client.sync.connection.pair.clear()
+    client.node.connection.pair.clear()
     return Promise.all([
       client.log.add(
         { type: 'a' },
@@ -474,11 +474,11 @@ it('compresses subprotocol', function () {
       )
     ])
   }).then(function () {
-    client.sync.connection.pair.right.send(['synced', 1])
-    client.sync.connection.pair.right.send(['synced', 2])
-    return client.sync.waitFor('synchronized')
+    client.node.connection.pair.right.send(['synced', 1])
+    client.node.connection.pair.right.send(['synced', 2])
+    return client.node.waitFor('synchronized')
   }).then(function () {
-    expect(client.sync.connection.pair.leftSent).toEqual([
+    expect(client.node.connection.pair.leftSent).toEqual([
       ['sync', 1, { type: 'a' }, { id: [1, '10:id', 0], time: 1 }],
       ['sync', 2, { type: 'a' }, {
         id: [2, '10:id', 0], time: 2, subprotocol: '2.0.0'
@@ -521,20 +521,20 @@ it('resubscribes to previous subscriptions', function () {
       { type: 'logux/unsubscribe', channel: 'b', b: 1 }, { sync: true })
   ]).then(function () {
     connected = []
-    client.sync.setState('synchronized')
+    client.node.setState('synchronized')
     expect(connected).toEqual([
       { type: 'logux/subscribe', channel: 'a' },
       { type: 'logux/subscribe', channel: 'b', b: 2 }
     ])
 
     connected = []
-    client.sync.setState('sending')
-    client.sync.setState('synchronized')
+    client.node.setState('sending')
+    client.node.setState('synchronized')
     expect(connected).toEqual([])
 
-    client.sync.setState('disconnected')
-    client.sync.setState('connecting')
-    client.sync.setState('synchronized')
+    client.node.setState('disconnected')
+    client.node.setState('connecting')
+    client.node.setState('synchronized')
     expect(connected).toEqual([
       { type: 'logux/subscribe', channel: 'a' },
       { type: 'logux/subscribe', channel: 'b', b: 2 }

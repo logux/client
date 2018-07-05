@@ -1,6 +1,6 @@
 var BrowserConnection = require('logux-core/browser-connection')
 var MemoryStore = require('logux-core/memory-store')
-var ClientSync = require('logux-core/client-sync')
+var ClientNode = require('logux-core/client-node')
 var NanoEvents = require('nanoevents')
 var Reconnect = require('logux-core/reconnect')
 var nanoid = require('nanoid')
@@ -259,13 +259,13 @@ function Client (options) {
   }
 
   /**
-   * Sync instance to synchronize logs.
-   * @type {ClientSync}
+   * Node instance to synchronize logs.
+   * @type {ClientNode}
    *
    * @example
-   * if (client.sync.state === 'synchronized')
+   * if (client.node.state === 'synchronized')
    */
-  this.sync = new ClientSync(this.nodeId, this.log, connection, {
+  this.node = new ClientNode(this.nodeId, this.log, connection, {
     credentials: this.options.credentials,
     subprotocol: this.options.subprotocol,
     outFilter: filter,
@@ -275,20 +275,20 @@ function Client (options) {
     auth: auth
   })
 
-  this.sync.on('debug', function (type, stack) {
+  this.node.on('debug', function (type, stack) {
     if (type === 'error') {
       console.error('Error on Logux server:\n', stack)
     }
   })
 
   var disconnected = true
-  this.sync.on('state', function () {
-    if (client.sync.state === 'synchronized' && disconnected) {
+  this.node.on('state', function () {
+    if (client.node.state === 'synchronized' && disconnected) {
       disconnected = false
       for (var i in client.subscriptions) {
         client.log.add(client.subscriptions[i], { sync: true })
       }
-    } else if (client.sync.state === 'disconnected') {
+    } else if (client.node.state === 'disconnected') {
       disconnected = true
     }
   })
@@ -311,7 +311,7 @@ Client.prototype = {
    */
   start: function start () {
     this.cleanPrevActions()
-    this.sync.connection.connect()
+    this.node.connection.connect()
   },
 
   /**
@@ -326,7 +326,7 @@ Client.prototype = {
    */
   destroy: function destroy () {
     this.onUnload()
-    this.sync.destroy()
+    this.node.destroy()
     clearInterval(this.pinging)
     if (typeof window !== 'undefined') {
       window.removeEventListener('unload', this.onUnload)

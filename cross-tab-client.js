@@ -42,7 +42,7 @@ function watchForLeader (client) {
 
 function setRole (client, role) {
   if (client.role !== role) {
-    var sync = client.sync
+    var node = client.node
     client.role = role
 
     clearTimeout(client.watching)
@@ -51,13 +51,13 @@ function setRole (client, role) {
       client.leadership = setInterval(function () {
         if (!client.unloading) leaderPing(client)
       }, client.leaderPing)
-      sync.connection.connect()
+      node.connection.connect()
     } else {
       clearTimeout(client.elections)
       clearInterval(client.leadership)
 
-      if (sync.state !== 'disconnected') {
-        client.sync.connection.disconnect()
+      if (node.state !== 'disconnected') {
+        client.node.connection.disconnect()
       }
     }
 
@@ -170,24 +170,24 @@ function CrossTabClient (options) {
 
   /**
    * Leader tab synchronization state. It can differs
-   * from `Client#sync.state` (because only the leader tab keeps connection).
+   * from `Client#node.state` (because only the leader tab keeps connection).
    *
    * @type {"disconnected"|"connecting"|"sending"|"synchronized"}
    *
    * @example
    * client.on('state', () => {
-   *   if (sync.state === 'disconnected' && sync.state === 'sending') {
+   *   if (client.state === 'disconnected' && client.state === 'sending') {
    *     showCloseWarning()
    *   }
    * })
    */
-  this.state = this.sync.state
+  this.state = this.node.state
 
   var client = this
 
-  this.sync.on('state', function () {
+  this.node.on('state', function () {
     if (client.role === 'leader') {
-      setState(client, client.sync.state)
+      setState(client, client.node.state)
     }
   })
 
@@ -220,7 +220,7 @@ CrossTabClient.prototype = {
     if (!this.isLocalStorage) {
       this.role = 'leader'
       this.emitter.emit('role')
-      this.sync.connection.connect()
+      this.node.connection.connect()
       return
     }
 
@@ -289,7 +289,7 @@ CrossTabClient.prototype = {
           }
           this.emitter.emit('add', data[1], data[2])
           if (this.role === 'leader') {
-            this.sync.onAdd(data[1], data[2])
+            this.node.onAdd(data[1], data[2])
           }
         }
       }

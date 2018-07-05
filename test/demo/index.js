@@ -1,7 +1,7 @@
 var MemoryStore = require('logux-core/memory-store')
-var ClientSync = require('logux-core/client-sync')
+var ClientNode = require('logux-core/client-node')
 var LocalPair = require('logux-core/local-pair')
-var BaseSync = require('logux-core/base-sync')
+var BaseNode = require('logux-core/base-node')
 var Log = require('logux-core/log')
 
 var CrossTabClient = require('../../cross-tab-client')
@@ -12,16 +12,16 @@ var serverLog = new Log({
   store: new MemoryStore(),
   nodeId: 'server:uuid'
 })
-new BaseSync('server:uuid', serverLog, pair.right)
+new BaseNode('server:uuid', serverLog, pair.right)
 
 var client = new CrossTabClient({
   subprotocol: '1.0.0',
   userId: 10,
   url: 'wss://example.com/'
 })
-var old = client.sync
-client.sync = new ClientSync(client.sync.localNodeId, client.log, pair.left)
-client.sync.emitter = old.emitter
+var old = client.node
+client.node = new ClientNode(client.node.localNodeId, client.log, pair.left)
+client.node.emitter = old.emitter
 
 var count = 0
 function emoji (state) {
@@ -69,9 +69,9 @@ client.start()
 
 document.all.connection.onchange = function (e) {
   if (e.target.checked) {
-    client.sync.connection.connect()
+    client.node.connection.connect()
   } else {
-    client.sync.connection.disconnect()
+    client.node.connection.disconnect()
   }
 }
 

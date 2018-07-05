@@ -101,11 +101,11 @@ it('cleans everything', function () {
   global.localStorage = fakeLocalStorage
   client = createClient()
 
-  client.sync.destroy = jest.fn()
+  client.node.destroy = jest.fn()
   global.localStorage.removeItem = jest.fn()
 
   return client.clean().then(function () {
-    expect(client.sync.destroy).toHaveBeenCalled()
+    expect(client.node.destroy).toHaveBeenCalled()
     expect(global.localStorage.removeItem.mock.calls).toEqual([
       ['logux:false:add'], ['logux:false:clean'],
       ['logux:false:state'], ['logux:false:leader']
@@ -187,13 +187,13 @@ it('synchronizes actions from follower tabs', function () {
   client = createClient({ server: pair.left })
   client.start()
   return pair.wait('left').then(function () {
-    pair.right.send(['connected', client.sync.localProtocol, 'server', [0, 0]])
-    return client.sync.waitFor('synchronized')
+    pair.right.send(['connected', client.node.localProtocol, 'server', [0, 0]])
+    return client.node.waitFor('synchronized')
   }).then(function () {
     return delay(1)
   }).then(function () {
     pair.clear()
-    client.sync.timeFix = 0
+    client.node.timeFix = 0
     var action = JSON.stringify({ type: 'A' })
     var meta = JSON.stringify({
       added: 1,
@@ -222,11 +222,11 @@ it('becomes leader without localStorage', function () {
   client.on('role', function () {
     roles.push(client.role)
   })
-  client.sync.connection.connect = jest.fn()
+  client.node.connection.connect = jest.fn()
 
   client.start()
   expect(roles).toEqual(['leader'])
-  expect(client.sync.connection.connect).toHaveBeenCalled()
+  expect(client.node.connection.connect).toHaveBeenCalled()
 })
 
 it('becomes leader without window', function () {
@@ -247,11 +247,11 @@ it('becomes follower on recent leader ping', function () {
   client.on('role', function () {
     roles.push(client.role)
   })
-  client.sync.connection.connect = jest.fn()
+  client.node.connection.connect = jest.fn()
 
   client.start()
   expect(roles).toEqual(['follower'])
-  expect(client.sync.connection.connect).not.toHaveBeenCalled()
+  expect(client.node.connection.connect).not.toHaveBeenCalled()
   expect(client.watching).toBeDefined()
 })
 
@@ -286,7 +286,7 @@ it('stops election in leader check', function () {
 it('pings on leader role', function () {
   global.localStorage = fakeLocalStorage
   client = createClient()
-  client.sync.connection.disconnect = jest.fn()
+  client.node.connection.disconnect = jest.fn()
 
   var last = Date.now() - client.leaderTimeout - 10
   localStorage.setItem('logux:false:leader', '["",' + last + ']')
@@ -333,17 +333,17 @@ it('replaces dead leader', function () {
 it('disconnects on leader changes', function () {
   global.localStorage = fakeLocalStorage
   client = createClient()
-  client.sync.connection.disconnect = jest.fn()
+  client.node.connection.disconnect = jest.fn()
 
   client.start()
   return delay(client.electionDelay + 10).then(function () {
-    client.sync.state = 'connected'
+    client.node.state = 'connected'
 
     var now = Date.now()
     localStorage.setItem('logux:false:leader', '["",' + now + ']')
     emitStorage('logux:false:leader', '["",' + now + ']')
 
-    expect(client.sync.connection.disconnect).toHaveBeenCalled()
+    expect(client.node.connection.disconnect).toHaveBeenCalled()
   })
 })
 
@@ -355,8 +355,8 @@ it('updates state if tab is a leader', function () {
   expect(client.state).toEqual('disconnected')
 
   return delay(client.electionDelay + 10).then(function () {
-    client.sync.state = 'synchronized'
-    client.sync.emitter.emit('state')
+    client.node.state = 'synchronized'
+    client.node.emitter.emit('state')
     expect(client.state).toEqual('synchronized')
     expect(localStorage.getItem('logux:false:state')).toEqual('"synchronized"')
   })

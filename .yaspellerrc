@@ -13,7 +13,7 @@
     "SemVer",
     "UUID",
     "subprotocol",
-    "ClientSync",
+    "ClientNode",
     "Redux",
     "webpack",
     "Browserify",
