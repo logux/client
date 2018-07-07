@@ -3941,7 +3941,7 @@ loglevelnext@^1.0.1:
 
 logux-core@logux/logux-core:
   version "0.2.2"
-  resolved "https://codeload.github.com/logux/logux-core/tar.gz/728e4a0c9c155074abe29b81800b34dad085cde4"
+  resolved "https://codeload.github.com/logux/logux-core/tar.gz/cf009109c11ce254aaab687f244bbbe71ed513ed"
   dependencies:
     nanoevents "^1.0.4"
 
