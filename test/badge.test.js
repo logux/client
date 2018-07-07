@@ -21,7 +21,7 @@ function createTest (override) {
   var client = new CrossTabClient({
     subprotocol: '1.0.0',
     server: pair.left,
-    userId: 10,
+    userId: 1,
     time: new TestTime()
   })
 
@@ -69,9 +69,13 @@ it('shows synchronized state', function () {
   }).then(function () {
     test.leftNode.setState('connecting')
     test.leftNode.connected = true
+    test.leftNode.setState('sending')
     test.leftNode.setState('synchronized')
     expect(badgeNode().style.display).toEqual('block')
     expect(badgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
+    test.leftNode.log.add({ type: 'logux/processed', id: '1 1:test1 0' })
+    return delay(1)
+  }).then(function () {
     expect(getBadgeMessage()).toEqual(messages.synchronized)
     return delay(10)
   }).then(function () {
