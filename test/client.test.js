@@ -168,6 +168,7 @@ it('uses user ID in node ID', function () {
     userId: 10
   })
   expect(client1.id).toBeDefined()
+  expect(client1.id).toMatch(/^[\w\d~-]{8}$/)
   expect(client1.nodeId).toEqual('10:' + client1.id)
 
   var client2 = new Client({
@@ -186,7 +187,7 @@ it('uses node ID in ID generator', function () {
     time: new TestTime()
   })
   var id = client.log.generateId()
-  expect(id).toContain(' 10:' + client.id + ' 0')
+  expect(id).toContain('1 10:test1 0')
 })
 
 it('uses custom store', function () {

@@ -105,14 +105,18 @@ function Client (options) {
     this.options.prefix = 'logux'
   }
 
-  /**
-   * Unique client ID. Can be used to add an action to the specific tab.
-   * @type {string}
-   *
-   * @example
-   * app.log.add(action, { tab: app.id })
-   */
-  this.id = nanoid(8)
+  if (!this.options.time) {
+    /**
+     * Unique client ID. Can be used to add an action to the specific tab.
+     * @type {string}
+     *
+     * @example
+     * app.log.add(action, { tab: app.id })
+     */
+    this.id = nanoid(8)
+  } else {
+    this.id = 'test' + (this.options.time.lastId + 1)
+  }
   this.options.userId = this.options.userId.toString()
 
   this.isLocalStorage = false
