@@ -187,54 +187,76 @@ IndexedStore.prototype = {
   removeReason: function removeReason (reason, criteria, callback) {
     return this.init().then(function (store) {
       var log = store.os('log', 'write')
-      var request = log.index('reasons').openCursor(reason)
-      return new Promise(function (resolve, reject) {
-        rejectify(request, reject)
-        request.onsuccess = function (e) {
-          if (!e.target.result) {
-            resolve()
-            return
-          }
+      if (criteria.id) {
+        return promisify(log.index('id').get(criteria.id))
+          .then(function (entry) {
+            if (!entry) {
+              return Promise.resolve()
+            }
+            var index = entry.meta.reasons.indexOf(reason)
+            if (index !== -1) {
+              entry.meta.reasons.splice(index, 1)
+              entry.reasons = entry.meta.reasons
+              if (entry.meta.reasons.length === 0) {
+                callback(entry.action, entry.meta)
+                return promisify(log.delete(entry.added))
+              } else {
+                return promisify(log.put(entry))
+              }
+            } else {
+              return Promise.resolve()
+            }
+          })
+      } else {
+        var request = log.index('reasons').openCursor(reason)
+        return new Promise(function (resolve, reject) {
+          rejectify(request, reject)
+          request.onsuccess = function (e) {
+            if (!e.target.result) {
+              resolve()
+              return
+            }
 
-          var entry = e.target.result.value
-          var meta = entry.meta
-          var c = criteria
+            var entry = e.target.result.value
+            var m = entry.meta
+            var c = criteria
 
-          if (isDefined(c.olderThan) && !isFirstOlder(meta, c.olderThan)) {
-            e.target.result.continue()
-            return
-          }
-          if (isDefined(c.youngerThan) && !isFirstOlder(c.youngerThan, meta)) {
-            e.target.result.continue()
-            return
-          }
-          if (isDefined(c.minAdded) && entry.added < c.minAdded) {
-            e.target.result.continue()
-            return
-          }
-          if (isDefined(c.maxAdded) && entry.added > c.maxAdded) {
-            e.target.result.continue()
-            return
-          }
+            if (isDefined(c.olderThan) && !isFirstOlder(m, c.olderThan)) {
+              e.target.result.continue()
+              return
+            }
+            if (isDefined(c.youngerThan) && !isFirstOlder(c.youngerThan, m)) {
+              e.target.result.continue()
+              return
+            }
+            if (isDefined(c.minAdded) && entry.added < c.minAdded) {
+              e.target.result.continue()
+              return
+            }
+            if (isDefined(c.maxAdded) && entry.added > c.maxAdded) {
+              e.target.result.continue()
+              return
+            }
 
-          var process
-          if (entry.reasons.length === 1) {
-            entry.meta.reasons = []
-            entry.meta.added = entry.added
-            callback(entry.action, entry.meta)
-            process = log.delete(entry.added)
-          } else {
-            entry.reasons.splice(entry.reasons.indexOf(reason), 1)
-            entry.meta.reasons = entry.reasons
-            process = log.put(entry)
-          }
+            var process
+            if (entry.reasons.length === 1) {
+              entry.meta.reasons = []
+              entry.meta.added = entry.added
+              callback(entry.action, entry.meta)
+              process = log.delete(entry.added)
+            } else {
+              entry.reasons.splice(entry.reasons.indexOf(reason), 1)
+              entry.meta.reasons = entry.reasons
+              process = log.put(entry)
+            }
 
-          rejectify(process, reject)
-          process.onsuccess = function () {
-            e.target.result.continue()
+            rejectify(process, reject)
+            process.onsuccess = function () {
+              e.target.result.continue()
+            }
           }
-        }
-      })
+        })
+      }
     })
   },
 
