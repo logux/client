@@ -12,7 +12,7 @@
   "dependencies": {
     "logux-core": "logux/logux-core",
     "nanoevents": "^1.0.4",
-    "nanoid": "^1.0.4"
+    "nanoid": "^1.0.5"
   },
   "devDependencies": {
     "docdash": "^0.4.0",
@@ -35,7 +35,7 @@
     "pre-commit": "^1.2.2",
     "rimraf": "^2.6.2",
     "size-limit": "^0.18.3",
-    "webpack": "^4.15.0",
+    "webpack": "^4.15.1",
     "webpack-cli": "^3.0.8",
     "webpack-dev-server": "^3.1.4",
     "yaspeller-ci": "^1.0.0"
