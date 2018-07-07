@@ -132,7 +132,7 @@ it('forces to use WSS in production domain', function () {
   return createDialog({ server: 'ws://test.com' }).then(function (client) {
     expect(client.node.connected).toBeFalsy()
     expect(console.error).toBeCalledWith(
-      'Without SSL, old proxies blocks WebSockets. ' +
+      'Without SSL, old proxies block WebSockets. ' +
       'Use WSS for Logux or set allowDangerousProtocol option.'
     )
   })
