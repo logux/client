@@ -12,7 +12,7 @@ function createClient () {
     userId: false
   })
 
-  client.sync.catch(function () { })
+  client.node.catch(function () { })
   client.role = 'leader'
 
   return pair.left.connect().then(function () {
@@ -48,14 +48,14 @@ it('confirms close', function () {
     client = created
     confirm(client)
 
-    client.sync.setState('disconnected')
+    client.node.setState('disconnected')
     expect(beforeunloader).toBeFalsy()
 
     return client.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
   }).then(function () {
     expect(beforeunloader()).toEqual('unsynced')
 
-    client.sync.setState('sending')
+    client.node.setState('sending')
     var e = { }
     beforeunloader(e)
     expect(e.returnValue).toEqual('unsynced')
@@ -71,13 +71,13 @@ it('does not confirm on synchronized state', function () {
   return createClient().then(function (created) {
     client = created
     confirm(client)
-    client.sync.setState('disconnected')
+    client.node.setState('disconnected')
     return client.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
   }).then(function () {
-    client.sync.setState('synchronized')
+    client.node.setState('synchronized')
     expect(beforeunloader).toBeFalsy()
 
-    client.sync.setState('disconnected')
+    client.node.setState('disconnected')
     expect(beforeunloader).toBeFalsy()
   })
 })
@@ -87,7 +87,7 @@ it('does not confirm on follower tab', function () {
   return createClient().then(function (created) {
     client = created
     confirm(client)
-    client.sync.setState('disconnected')
+    client.node.setState('disconnected')
     expect(beforeunloader).toBeFalsy()
     return client.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
   }).then(function () {
@@ -103,7 +103,7 @@ it('returns unbind function', function () {
     client = created
     var unbind = confirm(client)
     unbind()
-    client.sync.setState('disconnected')
+    client.node.setState('disconnected')
     expect(beforeunloader).toBeFalsy()
     return client.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
   }).then(function () {

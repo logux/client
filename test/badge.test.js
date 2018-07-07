@@ -26,12 +26,12 @@ function createTest (override) {
   })
 
   client.role = 'leader'
-  client.sync.catch(function () { })
+  client.node.catch(function () { })
 
   pair.client = client
-  pair.leftSync = client.sync
+  pair.leftNode = client.node
 
-  pair.leftSync.catch(function () {})
+  pair.leftNode.catch(function () {})
   return pair.left.connect().then(function () {
     var opts = { messages: messages, styles: styles }
     for (var i in override) {
@@ -59,17 +59,17 @@ it('shows synchronized state', function () {
   return createTest({ duration: 10 }).then(function (created) {
     test = created
 
-    test.leftSync.connected = true
-    test.leftSync.setState('synchronized')
+    test.leftNode.connected = true
+    test.leftNode.setState('synchronized')
     expect(badgeNode().style.display).toEqual('none')
 
-    test.leftSync.connected = false
-    test.leftSync.setState('disconnected')
-    return test.leftSync.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
+    test.leftNode.connected = false
+    test.leftNode.setState('disconnected')
+    return test.leftNode.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
   }).then(function () {
-    test.leftSync.setState('connecting')
-    test.leftSync.connected = true
-    test.leftSync.setState('synchronized')
+    test.leftNode.setState('connecting')
+    test.leftNode.connected = true
+    test.leftNode.setState('synchronized')
     expect(badgeNode().style.display).toEqual('block')
     expect(badgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
     expect(getBadgeMessage()).toEqual(messages.synchronized)
@@ -81,10 +81,10 @@ it('shows synchronized state', function () {
 
 it('shows disconnected state', function () {
   return createTest().then(function (test) {
-    test.leftSync.connected = true
-    test.leftSync.setState('connected')
-    test.leftSync.connected = false
-    test.leftSync.setState('disconnected')
+    test.leftNode.connected = true
+    test.leftNode.setState('connected')
+    test.leftNode.connected = false
+    test.leftNode.setState('disconnected')
     expect(badgeNode().style.display).toEqual('block')
     expect(badgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
     expect(getBadgeMessage()).toEqual(messages.disconnected)
@@ -93,10 +93,10 @@ it('shows disconnected state', function () {
 
 it('shows wait state', function () {
   return createTest().then(function (test) {
-    test.leftSync.connected = false
-    test.leftSync.setState('disconnected')
-    test.leftSync.setState('wait')
-    return test.leftSync.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
+    test.leftNode.connected = false
+    test.leftNode.setState('disconnected')
+    test.leftNode.setState('wait')
+    return test.leftNode.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
   }).then(function () {
     expect(badgeNode().style.display).toEqual('block')
     expect(badgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
@@ -109,23 +109,23 @@ it('shows sending state', function () {
   return createTest().then(function (created) {
     test = created
 
-    test.leftSync.connected = false
-    test.leftSync.setState('disconnected')
-    test.leftSync.setState('connecting')
+    test.leftNode.connected = false
+    test.leftNode.setState('disconnected')
+    test.leftNode.setState('connecting')
     expect(getBadgeMessage()).toEqual(messages.disconnected)
 
-    test.leftSync.connected = false
-    test.leftSync.setState('wait')
-    return test.leftSync.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
+    test.leftNode.connected = false
+    test.leftNode.setState('wait')
+    return test.leftNode.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
   }).then(function () {
-    test.leftSync.setState('connecting')
+    test.leftNode.setState('connecting')
     expect(badgeNode().style.display).toEqual('block')
     expect(badgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
     expect(getBadgeMessage()).toEqual(messages.wait)
     return delay(105).then(function () {
       expect(getBadgeMessage()).toEqual(messages.sending)
 
-      test.leftSync.setState('sending')
+      test.leftNode.setState('sending')
       expect(getBadgeMessage()).toEqual(messages.sending)
     })
   })
@@ -133,7 +133,7 @@ it('shows sending state', function () {
 
 it('shows error', function () {
   return createTest().then(function (test) {
-    test.leftSync.emitter.emit('error', { type: 'any error' })
+    test.leftNode.emitter.emit('error', { type: 'any error' })
     expect(badgeNode().style.display).toEqual('block')
     expect(badgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
     expect(getBadgeMessage()).toEqual(messages.syncError)
@@ -142,14 +142,14 @@ it('shows error', function () {
 
 it('shows server errors', function () {
   return createTest().then(function (test) {
-    var protocol = new SyncError(test.leftSync, 'wrong-protocol', { })
-    test.leftSync.emitter.emit('error', protocol)
+    var protocol = new SyncError(test.leftNode, 'wrong-protocol', { })
+    test.leftNode.emitter.emit('error', protocol)
     expect(badgeNode().style.display).toEqual('block')
     expect(badgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
     expect(getBadgeMessage()).toEqual(messages.protocolError)
 
-    var subprotocol = new SyncError(test.leftSync, 'wrong-subprotocol', { })
-    test.leftSync.emitter.emit('error', subprotocol)
+    var subprotocol = new SyncError(test.leftNode, 'wrong-subprotocol', { })
+    test.leftNode.emitter.emit('error', subprotocol)
     expect(badgeNode().style.display).toEqual('block')
     expect(badgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
     expect(getBadgeMessage()).toEqual(messages.protocolError)
@@ -158,8 +158,8 @@ it('shows server errors', function () {
 
 it('shows client error', function () {
   return createTest().then(function (test) {
-    var error = new SyncError(test.leftSync, 'test', 'type', true)
-    test.leftSync.emitter.emit('clientError', error)
+    var error = new SyncError(test.leftNode, 'test', 'type', true)
+    test.leftNode.emitter.emit('clientError', error)
 
     expect(badgeNode().style.display).toEqual('block')
     expect(badgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
@@ -169,7 +169,7 @@ it('shows client error', function () {
 
 it('shows error undo actions', function () {
   return createTest().then(function (test) {
-    test.leftSync.log.add({ type: 'logux/undo', reason: 'error' })
+    test.leftNode.log.add({ type: 'logux/undo', reason: 'error' })
     expect(badgeNode().style.display).toEqual('block')
     expect(badgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
     expect(getBadgeMessage()).toEqual(messages.error)
@@ -178,7 +178,7 @@ it('shows error undo actions', function () {
 
 it('shows denied undo actions', function () {
   return createTest().then(function (test) {
-    test.leftSync.log.add({ type: 'logux/undo', reason: 'denied' })
+    test.leftNode.log.add({ type: 'logux/undo', reason: 'denied' })
     expect(badgeNode().style.display).toEqual('block')
     expect(badgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
     expect(getBadgeMessage()).toEqual(messages.denied)
@@ -239,5 +239,5 @@ it('removes badge from DOM', function () {
   unbind()
 
   expect(badgeNode()).toBeNull()
-  client.sync.emitter.emit('error', { type: 'wrong-protocol' })
+  client.node.emitter.emit('error', { type: 'wrong-protocol' })
 })

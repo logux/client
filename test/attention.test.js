@@ -27,7 +27,7 @@ function createClient () {
     userId: false
   })
 
-  client.sync.catch(function () { })
+  client.node.catch(function () { })
   client.role = 'leader'
 
   return pair.left.connect().then(function () {
@@ -45,7 +45,7 @@ afterEach(function () {
 it('receives errors', function () {
   return createClient().then(function (client) {
     attention(client)
-    client.sync.emitter.emit('error', new Error('test'))
+    client.node.emitter.emit('error', new Error('test'))
     expect(document.title).toBe('* title')
   })
 })
@@ -71,7 +71,7 @@ it('returns unbind function', function () {
 it('allows to miss timeout error', function () {
   return createClient().then(function (client) {
     attention(client)
-    client.sync.emitter.emit('error', new SyncError(client.sync, 'timeout'))
+    client.node.emitter.emit('error', new SyncError(client.node, 'timeout'))
     expect(document.title).toBe('title')
   })
 })
@@ -86,7 +86,7 @@ it('sets old title when user open a tab', function () {
   return createClient().then(function (client) {
     attention(client)
 
-    client.sync.emitter.emit('error', new Error('test'))
+    client.node.emitter.emit('error', new Error('test'))
     expect(document.title).toBe('* title')
 
     nextHidden = false
@@ -99,8 +99,8 @@ it('does not double title changes', function () {
   return createClient().then(function (client) {
     attention(client)
 
-    client.sync.emitter.emit('error', new Error('test'))
-    client.sync.emitter.emit('error', new Error('test'))
+    client.node.emitter.emit('error', new Error('test'))
+    client.node.emitter.emit('error', new Error('test'))
     expect(document.title).toBe('* title')
   })
 })
@@ -110,7 +110,7 @@ it('does not change title of visible tab', function () {
     attention(client)
 
     nextHidden = false
-    client.sync.emitter.emit('error', new Error('test'))
+    client.node.emitter.emit('error', new Error('test'))
     expect(document.title).toBe('title')
   })
 })

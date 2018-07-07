@@ -2,8 +2,7 @@
  * Low-level function to show Logux synchronization status with your custom UI.
  * It is used in {@link badge} widget.
  *
- * @param {Syncable|Client} client Observed Client instance
- *                                 or object with `sync` property.
+ * @param {Client} client Observed Client instance.
  * @param {statusReceiver} callback Status callback.
  * @param {object} [options] Options.
  * @param {number} [options.duration=3000] `synchronizedAfterWait` duration.
@@ -11,7 +10,7 @@
  * @return {Function} Unbind status listener.
  */
 function status (client, callback, options) {
-  var observable = client.on ? client : client.sync
+  var observable = client.on ? client : client.node
   var disconnected = observable.state === 'disconnected'
   var wait = false
   var old = false
@@ -49,7 +48,7 @@ function status (client, callback, options) {
     }
   }))
 
-  unbind.push(client.sync.on('error', function (error) {
+  unbind.push(client.node.on('error', function (error) {
     if (error.type === 'wrong-protocol' || error.type === 'wrong-subprotocol') {
       old = true
       callback('protocolError')
@@ -58,7 +57,7 @@ function status (client, callback, options) {
     }
   }))
 
-  unbind.push(client.sync.on('clientError', function (error) {
+  unbind.push(client.node.on('clientError', function (error) {
     callback('syncError', { error: error })
   }))
 

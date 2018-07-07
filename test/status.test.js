@@ -2,7 +2,6 @@ var CrossTabClient = require('logux-client').CrossTabClient
 var SyncError = require('logux-core').SyncError
 var TestTime = require('logux-core').TestTime
 var TestPair = require('logux-core').TestPair
-var BaseSync = require('logux-core').BaseSync
 var delay = require('nanodelay')
 
 var status = require('../status')
@@ -17,10 +16,10 @@ function createTest (options) {
   })
 
   client.role = 'leader'
-  client.sync.catch(function () { })
+  client.node.catch(function () { })
 
   pair.client = client
-  pair.leftSync = client.sync
+  pair.leftNode = client.node
 
   return pair.left.connect().then(function () {
     pair.calls = []
@@ -35,13 +34,13 @@ function createTest (options) {
 
 it('notifies about states', function () {
   return createTest().then(function (test) {
-    test.leftSync.connected = false
-    test.leftSync.setState('disconnected')
-    test.leftSync.setState('connecting')
+    test.leftNode.connected = false
+    test.leftNode.setState('disconnected')
+    test.leftNode.setState('connecting')
     return delay(105, test)
   }).then(function (test) {
-    test.leftSync.connected = true
-    test.leftSync.setState('synchronized')
+    test.leftNode.connected = true
+    test.leftNode.setState('synchronized')
     expect(test.calls).toEqual([
       'disconnected', 'connecting', 'synchronized'
     ])
@@ -58,19 +57,19 @@ it('notifies about other tab states', function () {
 
 it('notifies only about wait for sync actions', function () {
   return createTest({ duration: 10 }).then(function (test) {
-    test.leftSync.connected = false
-    test.leftSync.setState('disconnected')
+    test.leftNode.connected = false
+    test.leftNode.setState('disconnected')
     expect(test.calls).toEqual(['disconnected'])
-    test.leftSync.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
-    test.leftSync.setState('connecting')
+    test.leftNode.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
+    test.leftNode.setState('connecting')
     return delay(105, test)
   }).then(function (test) {
-    test.leftSync.setState('disconnected')
-    test.leftSync.setState('connecting')
+    test.leftNode.setState('disconnected')
+    test.leftNode.setState('connecting')
     return delay(105, test)
   }).then(function (test) {
-    test.leftSync.setState('sending')
-    test.leftSync.setState('synchronized')
+    test.leftNode.setState('sending')
+    test.leftNode.setState('synchronized')
     expect(test.calls).toEqual([
       'disconnected',
       'wait',
@@ -97,11 +96,11 @@ it('notifies only about wait for sync actions', function () {
 
 it('skips connecting notification if it took less than 100ms', function () {
   return createTest().then(function (test) {
-    test.leftSync.connected = false
-    test.leftSync.setState('disconnected')
-    test.leftSync.setState('connecting')
-    test.leftSync.connected = true
-    test.leftSync.setState('synchronized')
+    test.leftNode.connected = false
+    test.leftNode.setState('disconnected')
+    test.leftNode.setState('connecting')
+    test.leftNode.connected = true
+    test.leftNode.setState('synchronized')
     expect(test.calls).toEqual(['disconnected', 'synchronized'])
   })
 })
@@ -109,10 +108,10 @@ it('skips connecting notification if it took less than 100ms', function () {
 it('notifies about synchronization error', function () {
   return createTest().then(function (test) {
     var error1 = { type: 'any error' }
-    test.leftSync.emitter.emit('error', error1)
+    test.leftNode.emitter.emit('error', error1)
 
-    var error2 = new SyncError(test.leftSync, 'test', 'type', true)
-    test.leftSync.emitter.emit('clientError', error2)
+    var error2 = new SyncError(test.leftNode, 'test', 'type', true)
+    test.leftNode.emitter.emit('clientError', error2)
 
     expect(test.calls).toEqual(['syncError', 'syncError'])
     expect(test.args).toEqual([{ error: error1 }, { error: error2 }])
@@ -122,20 +121,20 @@ it('notifies about synchronization error', function () {
 it('ignores timeout error', function () {
   return createTest().then(function (test) {
     var error1 = { type: 'timeout' }
-    test.leftSync.emitter.emit('error', error1)
+    test.leftNode.emitter.emit('error', error1)
     expect(test.calls).toEqual([])
   })
 })
 
 it('notifies about old client', function () {
   return createTest().then(function (test) {
-    var protocol = new SyncError(test.leftSync, 'wrong-protocol', { })
-    test.leftSync.emitter.emit('error', protocol)
+    var protocol = new SyncError(test.leftNode, 'wrong-protocol', { })
+    test.leftNode.emitter.emit('error', protocol)
 
-    var subprotocol = new SyncError(test.leftSync, 'wrong-subprotocol', { })
-    test.leftSync.emitter.emit('error', subprotocol)
+    var subprotocol = new SyncError(test.leftNode, 'wrong-subprotocol', { })
+    test.leftNode.emitter.emit('error', subprotocol)
 
-    test.leftSync.setState('disconnected')
+    test.leftNode.setState('disconnected')
 
     expect(test.calls).toEqual(['protocolError', 'protocolError'])
   })
@@ -143,7 +142,7 @@ it('notifies about old client', function () {
 
 it('notifies about server error', function () {
   return createTest().then(function (test) {
-    test.leftSync.log.add({ type: 'logux/undo', reason: 'error' })
+    test.leftNode.log.add({ type: 'logux/undo', reason: 'error' })
     expect(test.calls).toEqual(['error'])
     expect(test.args[0].action.type).toEqual('logux/undo')
     expect(test.args[0].meta.time).toEqual(1)
@@ -152,24 +151,11 @@ it('notifies about server error', function () {
 
 it('notifies about problem with access', function () {
   return createTest().then(function (test) {
-    test.leftSync.log.add({ type: 'logux/undo', reason: 'denied' })
+    test.leftNode.log.add({ type: 'logux/undo', reason: 'denied' })
     expect(test.calls).toEqual(['denied'])
     expect(test.args[0].action.type).toEqual('logux/undo')
     expect(test.args[0].meta.time).toEqual(1)
   })
-})
-
-it('works with syncable', function () {
-  var pair = new TestPair()
-  pair.leftSync = new BaseSync('client', TestTime.getLog(), pair.left)
-
-  var calls = []
-  status({ sync: pair.leftSync, log: pair.leftSync.log }, function (state) {
-    calls.push(state)
-  })
-
-  pair.leftSync.setState('synchronized')
-  expect(calls).toEqual(['synchronized'])
 })
 
 it('removes listeners', function () {

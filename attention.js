@@ -41,7 +41,7 @@ function attention (client) {
   }
 
   if (doc && typeof doc.hidden !== 'undefined') {
-    unbind.push(client.sync.on('error', function (error) {
+    unbind.push(client.node.on('error', function (error) {
       if (error.type !== 'timeout' && !timeout) {
         blink()
       }

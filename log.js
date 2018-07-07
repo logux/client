@@ -50,7 +50,7 @@ function colorify (color, text, action, meta) {
  */
 function log (client, messages) {
   if (!messages) messages = { }
-  var sync = client.sync
+  var node = client.node
 
   var color = messages.color !== false && browserSupportsLogStyles()
 
@@ -71,11 +71,11 @@ function log (client, messages) {
     unbind.push(client.on('state', function () {
       var postfix = ''
 
-      if (client.state === 'connecting' && sync.connection.url) {
-        postfix = '. ' + style(sync.localNodeId) + ' is connecting to ' +
-                  style(sync.connection.url) + '.'
-      } else if (client.connected && !prevConnected && sync.remoteNodeId) {
-        postfix = '. Client was connected to ' + style(sync.remoteNodeId) + '.'
+      if (client.state === 'connecting' && node.connection.url) {
+        postfix = '. ' + style(node.localNodeId) + ' is connecting to ' +
+                  style(node.connection.url) + '.'
+      } else if (client.connected && !prevConnected && node.remoteNodeId) {
+        postfix = '. Client was connected to ' + style(node.remoteNodeId) + '.'
         prevConnected = true
       } else if (!client.connected) {
         prevConnected = false
@@ -92,10 +92,10 @@ function log (client, messages) {
   }
 
   if (messages.error !== false) {
-    unbind.push(sync.on('error', function (error) {
+    unbind.push(node.on('error', function (error) {
       showError(error)
     }))
-    unbind.push(sync.on('clientError', function (error) {
+    unbind.push(node.on('clientError', function (error) {
       showError(error)
     }))
   }
@@ -105,7 +105,7 @@ function log (client, messages) {
       if (meta.tab && meta.tab !== client.id) return
       var message = 'action ' + style(action.type) + ' was added'
       var nodeId = meta.id.split(' ')[1]
-      if (nodeId !== sync.localNodeId) {
+      if (nodeId !== node.localNodeId) {
         message += ' by ' + style(nodeId)
       }
       showLog(message, action, meta)

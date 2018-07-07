@@ -43,8 +43,7 @@ var RESET = {
 /**
  * Display Logux widget in browser.
  *
- * @param {Syncable|Client} client Observed Client instance
- *                                 or object with `sync` property.
+ * @param {Client} client Observed Client instance.
  * @param {object} options Widget settings.
  * @param {object} options.styles Inline styles for different states.
  * @param {object} options.styles.base Base styles.

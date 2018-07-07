@@ -1,8 +1,8 @@
 var CrossTabClient = require('logux-client/cross-tab-client')
 var MemoryStore = require('logux-core/memory-store')
-var ClientSync = require('logux-core/client-sync')
+var ClientNode = require('logux-core/client-node')
 var LocalPair = require('logux-core/local-pair')
-var BaseSync = require('logux-core/base-sync')
+var BaseNode = require('logux-core/base-node')
 var Log = require('logux-core/log')
 
 // Logux Status features
@@ -15,14 +15,14 @@ var log = require('../../log')
 var badgeMessages = require('../../badge/en')
 var badgeStyles = require('../../badge/default')
 
-var faviconNormal = require('./normal.png')
 var faviconOffline = require('./offline.png')
+var faviconNormal = require('./normal.png')
 var faviconError = require('./error.png')
 
 var pair = new LocalPair(500)
 
 var serverLog = new Log({ store: new MemoryStore(), nodeId: 'server' })
-new BaseSync('server', serverLog, pair.right)
+new BaseNode('server', serverLog, pair.right)
 
 var client = new CrossTabClient({
   subprotocol: '1.0.0',
@@ -30,10 +30,10 @@ var client = new CrossTabClient({
   userId: 10
 })
 
-var sync = new ClientSync(client.sync.localNodeId, client.log, pair.left)
-sync.connection.url = 'wss://example.com/'
-sync.emitter = client.sync.emitter
-client.sync = sync
+var node = new ClientNode(client.node.localNodeId, client.log, pair.left)
+node.connection.url = 'wss://example.com/'
+node.emitter = client.node.emitter
+client.node = node
 
 attention(client)
 confirm(client)
@@ -55,9 +55,9 @@ client.start()
 
 document.all.connection.onchange = function (e) {
   if (e.target.checked) {
-    client.sync.connection.connect()
+    client.node.connection.connect()
   } else {
-    client.sync.connection.disconnect()
+    client.node.connection.disconnect()
   }
 }
 
@@ -80,7 +80,7 @@ document.all.serverError.onclick = function () {
 }
 
 document.all.subprotocolError.onclick = function () {
-  client.sync.syncError('wrong-subprotocol', {
+  client.node.syncError('wrong-subprotocol', {
     supported: '2.x',
     used: '1.0.0'
   })

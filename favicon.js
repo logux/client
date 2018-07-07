@@ -64,7 +64,7 @@ function favicon (client, links) {
       if (action.type === 'logux/undo' && action.reason) setError()
     }))
 
-    unbind.push(client.sync.on('error', function (err) {
+    unbind.push(client.node.on('error', function (err) {
       if (err.type !== 'timeout') setError()
     }))
   }

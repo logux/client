@@ -24,7 +24,7 @@ function createClient () {
     userId: false
   })
 
-  client.sync.catch(function () { })
+  client.node.catch(function () { })
   client.role = 'leader'
 
   return pair.left.connect().then(function () {
@@ -61,10 +61,10 @@ it('changes favicon on state event', function () {
       normal: '/default.ico'
     })
 
-    client.sync.setState('sending')
+    client.node.setState('sending')
     expect(getFavHref()).toBe('/default.ico')
 
-    client.sync.setState('disconnected')
+    client.node.setState('disconnected')
     expect(getFavHref()).toBe('/offline.ico')
   })
 })
@@ -75,7 +75,7 @@ it('works without favicon tag', function () {
     favicon(client, { offline: '/offline.ico' })
     expect(getFavHref()).toBe('/offline.ico')
 
-    client.sync.setState('sending')
+    client.node.setState('sending')
     expect(getFavHref()).toBe('')
   })
 })
@@ -84,7 +84,7 @@ it('uses current favicon as normal', function () {
   getFavNode().href = '/custom.ico'
   return createClient().then(function (client) {
     favicon(client, { offline: '/offline.ico' })
-    client.sync.setState('sending')
+    client.node.setState('sending')
     expect(getFavHref()).toBe('/custom.ico')
   })
 })
@@ -92,11 +92,11 @@ it('uses current favicon as normal', function () {
 it('does not double favicon changes', function () {
   return createClient().then(function (client) {
     favicon(client, { error: '/error.ico' })
-    client.sync.emitter.emit('error', new Error('test'))
+    client.node.emitter.emit('error', new Error('test'))
     expect(getFavHref()).toBe('/error.ico')
 
     setFavHref('')
-    client.sync.emitter.emit('error', new Error('test'))
+    client.node.emitter.emit('error', new Error('test'))
     expect(getFavHref()).toBe('')
   })
 })
@@ -112,7 +112,7 @@ it('uses error icon on undo', function () {
 it('allows to miss timeout error', function () {
   return createClient().then(function (client) {
     favicon(client, { error: '/error.ico' })
-    client.sync.emitter.emit('error', new SyncError(client.sync, 'timeout'))
+    client.node.emitter.emit('error', new SyncError(client.node, 'timeout'))
     expect(getFavHref()).toBe('')
   })
 })
@@ -123,10 +123,10 @@ it('does not override error by offline', function () {
       offline: '/offline.ico',
       error: '/error.ico'
     })
-    client.sync.emitter.emit('error', new Error('test'))
+    client.node.emitter.emit('error', new Error('test'))
     expect(getFavHref()).toBe('/error.ico')
 
-    client.sync.setState('disconnected')
+    client.node.setState('disconnected')
     expect(getFavHref()).toBe('/error.ico')
   })
 })
@@ -149,7 +149,7 @@ it('returns unbind function', function () {
     var unbind = favicon(client, { error: '/error.ico' })
 
     unbind()
-    client.sync.emitter.emit('error', new Error('test'))
+    client.node.emitter.emit('error', new Error('test'))
 
     expect(getFavHref()).not.toBe('/error.ico')
   })

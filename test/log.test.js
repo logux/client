@@ -19,8 +19,8 @@ function createClient () {
   })
 
   client.role = 'leader'
-  client.sync.localNodeId = '10:uuid'
-  client.sync.catch(function () { })
+  client.node.localNodeId = '10:uuid'
+  client.node.catch(function () { })
 
   var lastId = 0
   client.log.generateId = function () {
@@ -48,12 +48,12 @@ afterEach(function () {
 
 it('shows connecting state URL', function () {
   return createClient().then(function (client) {
-    client.sync.setState('disconnected')
+    client.node.setState('disconnected')
     log(client, { color: false })
 
-    client.sync.connected = false
-    client.sync.connection.url = 'ws://ya.ru'
-    client.sync.setState('connecting')
+    client.node.connected = false
+    client.node.connection.url = 'ws://ya.ru'
+    client.node.setState('connecting')
 
     expect(console.log).toBeCalledWith(
       'Logux: state was changed to connecting. ' +
@@ -64,12 +64,12 @@ it('shows connecting state URL', function () {
 
 it('shows Logux prefix with color and make state and nodeId bold', function () {
   return createClient().then(function (client) {
-    client.sync.setState('disconnected')
+    client.node.setState('disconnected')
     log(client, { color: true })
 
-    client.sync.connected = false
-    client.sync.connection.url = 'ws://ya.ru'
-    client.sync.setState('connecting')
+    client.node.connected = false
+    client.node.connection.url = 'ws://ya.ru'
+    client.node.setState('connecting')
 
     expect(console.log).toBeCalledWith(
       '%cLogux:%c state was changed to %cconnecting%c. ' +
@@ -90,17 +90,17 @@ it('shows server node ID', function () {
   return createClient().then(function (client) {
     log(client, { color: false })
 
-    client.sync.remoteNodeId = 'server'
-    client.sync.connected = true
-    client.sync.setState('synchronized')
+    client.node.remoteNodeId = 'server'
+    client.node.connected = true
+    client.node.setState('synchronized')
 
     expect(console.log).toBeCalledWith(
       'Logux: state was changed to synchronized. ' +
       'Client was connected to server.'
     )
 
-    client.sync.connected = false
-    client.sync.setState('disconnected')
+    client.node.connected = false
+    client.node.setState('disconnected')
     expect(console.log).toHaveBeenLastCalledWith(
       'Logux: state was changed to disconnected'
     )
@@ -111,9 +111,9 @@ it('does not shows server node ID in follower role', function () {
   return createClient().then(function (client) {
     log(client, { color: false })
 
-    client.sync.remoteNodeId = undefined
-    client.sync.connected = true
-    client.sync.setState('synchronized')
+    client.node.remoteNodeId = undefined
+    client.node.connected = true
+    client.node.setState('synchronized')
 
     expect(console.log).toBeCalledWith(
       'Logux: state was changed to synchronized'
@@ -125,9 +125,9 @@ it('shows bold server node ID', function () {
   return createClient().then(function (client) {
     log(client, { color: true })
 
-    client.sync.remoteNodeId = 'server'
-    client.sync.connected = true
-    client.sync.setState('synchronized')
+    client.node.remoteNodeId = 'server'
+    client.node.connected = true
+    client.node.setState('synchronized')
 
     expect(console.log).toBeCalledWith(
       '%cLogux:%c state was changed to %csynchronized%c. ' +
@@ -140,8 +140,8 @@ it('shows bold server node ID', function () {
       ''
     )
 
-    client.sync.connected = false
-    client.sync.setState('disconnected')
+    client.node.connected = false
+    client.node.setState('disconnected')
     expect(console.log).toHaveBeenLastCalledWith(
       '%cLogux:%c state was changed to %cdisconnected%c',
       'color: #ffa200',
@@ -156,8 +156,8 @@ it('shows state event', function () {
   return createClient().then(function (client) {
     log(client, { color: false })
 
-    client.sync.connected = false
-    client.sync.emitter.emit('state')
+    client.node.connected = false
+    client.node.emitter.emit('state')
 
     expect(console.log).toBeCalledWith(
       'Logux: state was changed to connecting'
@@ -169,7 +169,7 @@ it('shows role event', function () {
   return createClient().then(function (client) {
     log(client, { color: false })
 
-    client.sync.connected = false
+    client.node.connected = false
     client.emitter.emit('role')
 
     expect(console.log).toBeCalledWith(
@@ -181,8 +181,8 @@ it('shows role event', function () {
 it('shows error event', function () {
   return createClient().then(function (client) {
     log(client, { color: false })
-    var error = new SyncError(client.sync, 'test')
-    client.sync.connection.emitter.emit('error', error)
+    var error = new SyncError(client.node, 'test')
+    client.node.connection.emitter.emit('error', error)
     expect(console.error).toBeCalledWith('Logux: error: test')
   })
 })
@@ -190,8 +190,8 @@ it('shows error event', function () {
 it('shows colorized error event', function () {
   return createClient().then(function (client) {
     log(client, { color: true })
-    var error = new SyncError(client.sync, 'test')
-    client.sync.connection.emitter.emit('error', error)
+    var error = new SyncError(client.node, 'test')
+    client.node.connection.emitter.emit('error', error)
     expect(console.error).toBeCalledWith(
       '%cLogux:%c error: test',
       'color: #ffa200',
@@ -204,8 +204,8 @@ it('shows server error', function () {
   return createClient().then(function (client) {
     log(client, { color: false })
 
-    var error = new SyncError(client.sync, 'test', 'type', true)
-    client.sync.emitter.emit('clientError', error)
+    var error = new SyncError(client.node, 'test', 'type', true)
+    client.node.emitter.emit('clientError', error)
 
     expect(console.error).toBeCalledWith('Logux: server sent error: test')
   })
@@ -215,8 +215,8 @@ it('shows bold server error', function () {
   return createClient().then(function (client) {
     log(client, { color: true })
 
-    var error = new SyncError(client.sync, 'test', 'type', true)
-    client.sync.emitter.emit('clientError', error)
+    var error = new SyncError(client.node, 'test', 'type', true)
+    client.node.emitter.emit('clientError', error)
 
     expect(console.error).toBeCalledWith(
       '%cLogux:%c server sent error: test',
@@ -229,14 +229,14 @@ it('shows bold server error', function () {
 it('shows add and clean event', function () {
   return createClient().then(function (client) {
     log(client, { color: false })
-    return client.sync.log.add({ type: 'A' }, { reasons: ['test'] })
+    return client.node.log.add({ type: 'A' }, { reasons: ['test'] })
       .then(function () {
         expect(console.log).toBeCalledWith(
           'Logux: action A was added',
           { type: 'A' },
           { id: '1 10:uuid 0', reasons: ['test'], time: 1, added: 1 }
         )
-        return client.sync.log.removeReason('test')
+        return client.node.log.removeReason('test')
       }).then(function () {
         expect(console.log).toHaveBeenLastCalledWith(
           'Logux: action A was cleaned',
@@ -250,10 +250,10 @@ it('shows add and clean event', function () {
 it('ignores different tab actions', function () {
   return createClient().then(function (client) {
     log(client, { color: false })
-    return client.sync.log.add({ type: 'A' }, { tab: 'X', reasons: ['test'] })
+    return client.node.log.add({ type: 'A' }, { tab: 'X', reasons: ['test'] })
       .then(function () {
         expect(console.log).not.toBeCalledWith()
-        return client.sync.log.removeReason('test')
+        return client.node.log.removeReason('test')
       }).then(function () {
         expect(console.log).not.toBeCalledWith()
       })
@@ -263,7 +263,7 @@ it('ignores different tab actions', function () {
 it('shows add and clean event and make action type bold', function () {
   return createClient().then(function (client) {
     log(client, { color: true })
-    return client.sync.log.add({ type: 'A' }, { reasons: ['test'] })
+    return client.node.log.add({ type: 'A' }, { reasons: ['test'] })
       .then(function () {
         expect(console.log).toBeCalledWith(
           '%cLogux:%c action %cA%c was added',
@@ -274,7 +274,7 @@ it('shows add and clean event and make action type bold', function () {
           { type: 'A' },
           { id: '1 10:uuid 0', reasons: ['test'], time: 1, added: 1 }
         )
-        return client.sync.log.removeReason('test')
+        return client.node.log.removeReason('test')
       }).then(function () {
         expect(console.log).toHaveBeenLastCalledWith(
           '%cLogux:%c action %cA%c was cleaned',
@@ -291,9 +291,9 @@ it('shows add and clean event and make action type bold', function () {
 
 it('shows add event with action and make action type bold', function () {
   return createClient().then(function (client) {
-    client.sync.localNodeId = 'client'
+    client.node.localNodeId = 'client'
     log(client)
-    return client.sync.log.add({ type: 'B' }, { reasons: ['test'] })
+    return client.node.log.add({ type: 'B' }, { reasons: ['test'] })
   }).then(function () {
     expect(console.log).toBeCalledWith(
       '%cLogux:%c action %cB%c was added by %c10:uuid%c',
@@ -320,14 +320,14 @@ it('allows to disable some message types', function () {
       add: false
     })
 
-    client.sync.emitter.emit('state')
+    client.node.emitter.emit('state')
     client.emitter.emit('role')
 
-    var error = new SyncError(client.sync, 'test', 'type', true)
-    client.sync.emitter.emit('error', error)
-    client.sync.emitter.emit('clientError', error)
+    var error = new SyncError(client.node, 'test', 'type', true)
+    client.node.emitter.emit('error', error)
+    client.node.emitter.emit('clientError', error)
 
-    return client.sync.log.add({ type: 'A' })
+    return client.node.log.add({ type: 'A' })
   }).then(function () {
     expect(console.error).not.toBeCalled()
     expect(console.log).not.toBeCalled()
@@ -339,8 +339,8 @@ it('returns unbind function', function () {
     var unbind = log(client, { color: false })
 
     unbind()
-    var error = new SyncError(client.sync, 'test')
-    client.sync.connection.emitter.emit('error', error)
+    var error = new SyncError(client.node, 'test')
+    client.node.connection.emitter.emit('error', error)
 
     expect(console.error).not.toBeCalled()
   })
