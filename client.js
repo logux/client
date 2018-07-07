@@ -138,7 +138,7 @@ function Client (options) {
     auth = function (cred) {
       if (typeof cred !== 'object' || cred.env !== 'development') {
         console.error(
-          'Without SSL, old proxies blocks WebSockets. ' +
+          'Without SSL, old proxies block WebSockets. ' +
           'Use WSS for Logux or set allowDangerousProtocol option.'
         )
         return Promise.resolve(false)
