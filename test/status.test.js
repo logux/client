@@ -60,6 +60,13 @@ it('notifies only about wait for sync actions', function () {
     test.leftNode.connected = false
     test.leftNode.setState('disconnected')
     expect(test.calls).toEqual(['disconnected'])
+    test.leftNode.log.add(
+      { type: 'logux/subscribe' }, { sync: true, reasons: ['t'] }
+    )
+    test.leftNode.log.add(
+      { type: 'logux/unsubscribe' }, { sync: true, reasons: ['t'] }
+    )
+    expect(test.calls).toEqual(['disconnected'])
     test.leftNode.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
     test.leftNode.log.add({ type: 'B' }, { sync: true, reasons: ['t'] })
     test.leftNode.setState('connecting')
@@ -79,7 +86,7 @@ it('notifies only about wait for sync actions', function () {
       'connectingAfterWait',
       'sendingAfterWait'
     ])
-    test.leftNode.log.add({ type: 'logux/undo', id: '1 10:test1 0' })
+    test.leftNode.log.add({ type: 'logux/undo', id: '3 10:test1 0' })
     return delay(1, test)
   }).then(function (test) {
     expect(test.calls).toEqual([
@@ -90,7 +97,7 @@ it('notifies only about wait for sync actions', function () {
       'connectingAfterWait',
       'sendingAfterWait'
     ])
-    test.leftNode.log.add({ type: 'logux/processed', id: '2 10:test1 0' })
+    test.leftNode.log.add({ type: 'logux/processed', id: '4 10:test1 0' })
     return delay(1, test)
   }).then(function (test) {
     expect(test.calls).toEqual([

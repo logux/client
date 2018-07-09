@@ -70,6 +70,12 @@ function status (client, callback, options) {
 
   var log = client.on ? client : client.log
   unbind.push(log.on('add', function (action, meta) {
+    if (action.type === 'logux/subscribe') {
+      return
+    } else if (action.type === 'logux/unsubscribe') {
+      return
+    }
+
     if (action.type === 'logux/processed') {
       delete processing[action.id]
       synchronized()
