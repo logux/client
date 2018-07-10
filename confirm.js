@@ -40,6 +40,11 @@ function confirm (client) {
   update()
 
   unbind.push(client.log.on('add', function (action, meta) {
+    if (action.type === 'logux/subscribe') {
+      return
+    } else if (action.type === 'logux/unsubscribe') {
+      return
+    }
     if (disconnected && meta.sync && meta.added) {
       wait = true
       update()

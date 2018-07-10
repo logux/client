@@ -51,6 +51,15 @@ it('confirms close', function () {
     client.node.setState('disconnected')
     expect(beforeunloader).toBeFalsy()
 
+    return Promise.all([
+      client.log.add(
+        { type: 'logux/subscribe' }, { sync: true, reasons: ['t'] }),
+      client.log.add(
+        { type: 'logux/unsubscribe' }, { sync: true, reasons: ['t'] })
+    ])
+  }).then(function () {
+    expect(beforeunloader).toBeFalsy()
+
     return client.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
   }).then(function () {
     expect(beforeunloader()).toEqual('unsynced')
