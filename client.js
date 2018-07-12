@@ -285,15 +285,15 @@ function Client (options) {
     }
   })
 
-  var disconnected = true
+  var lost = false
   this.node.on('state', function () {
-    if (client.node.state === 'synchronized' && disconnected) {
-      disconnected = false
+    if (client.node.state === 'synchronized' && lost) {
+      lost = false
       for (var i in client.subscriptions) {
         client.log.add(client.subscriptions[i], { sync: true })
       }
     } else if (client.node.state === 'disconnected') {
-      disconnected = true
+      lost = true
     }
   })
 
