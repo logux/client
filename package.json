@@ -16,7 +16,6 @@
   },
   "devDependencies": {
     "clean-publish": "^1.0.7",
-    "docdash": "^0.4.0",
     "eslint": "^5.1.0",
     "eslint-config-logux": "^23.0.4",
     "eslint-config-standard": "^11.0.0",
@@ -46,11 +45,85 @@
     "spellcheck": "yarn docs && yaspeller-ci *.md docs/*.html",
     "clean": "rimraf docs/ coverage/ test/demo/build/",
     "lint": "eslint *.js test/{**/,}*.js",
-    "docs": "jsdoc --configure .jsdocrc *.js",
+    "docs": "jsdoc -d docs/ *.js",
     "test": "jest --coverage && yarn lint && size-limit && yarn spellcheck",
     "start": "webpack-dev-server --config test/demo/webpack.config"
   },
   "pre-commit": [
     "lint-staged"
-  ]
+  ],
+  "lint-staged": {
+    "*.md": "yaspeller-ci",
+    "*.js": "eslint"
+  },
+  "jest": {
+    "coverageThreshold": {
+      "global": {
+        "statements": 100
+      }
+    }
+  },
+  "eslintConfig": {
+    "extends": "eslint-config-logux/browser"
+  },
+  "size-limit": [
+    {
+      "path": "cross-tab-client.js",
+      "limit": "8.7 KB"
+    }
+  ],
+  "yaspeller": {
+    "lang": "en",
+    "ignoreCapitalization": true,
+    "excludeFiles": [
+      "docs/*.js.html"
+    ],
+    "dictionary": [
+      "Logux",
+      "docdash",
+      "JSDoc",
+      "js",
+      "JS",
+      "SemVer",
+      "UUID",
+      "subprotocol",
+      "ClientNode",
+      "Redux",
+      "webpack",
+      "Browserify",
+      "Gon",
+      "npm",
+      "KB",
+      "Versioning",
+      "IndexedStore",
+      "reconnections",
+      "reconnection",
+      "ws",
+      "UX",
+      "nanoevents",
+      "tabId",
+      "CrossTabClient",
+      "nodeId",
+      "TestTime",
+      "Alexey",
+      "Gaziev",
+      "Fursov",
+      "Hanna",
+      "Stoliar",
+      "Grigoriy",
+      "Beziuk",
+      "Dementyev",
+      "Konstantin",
+      "Mamaev",
+      "Evgeny",
+      "Rodionov",
+      "IndexedDB",
+      "logux",
+      "GMT",
+      "Mon",
+      "Tue",
+      "Thu",
+      "Fri"
+    ]
+  }
 }
