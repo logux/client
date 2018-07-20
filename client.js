@@ -350,11 +350,7 @@ Client.prototype = {
    */
   clean: function clean () {
     this.destroy()
-    if (this.log.store.clean) {
-      return this.log.store.clean()
-    } else {
-      return Promise.resolve()
-    }
+    return this.log.store.clean ? this.log.store.clean() : Promise.resolve()
   },
 
   cleanPrevActions: function cleanPrevActions () {
