@@ -3914,7 +3914,7 @@ loglevelnext@^1.0.1:
 
 logux-core@logux/logux-core:
   version "0.2.2"
-  resolved "https://codeload.github.com/logux/logux-core/tar.gz/0d827833e01cd532069919c87f982640edb38f8c"
+  resolved "https://codeload.github.com/logux/logux-core/tar.gz/30a69609fb344d8b1e84bcafad9d3d9906e4972d"
   dependencies:
     nanoevents "^1.0.5"
 
@@ -4368,8 +4368,8 @@ npm-bundled@^1.0.1:
   resolved "https://registry.yarnpkg.com/npm-bundled/-/npm-bundled-1.0.3.tgz#7e71703d973af3370a9591bafe3a63aca0be2308"
 
 npm-packlist@^1.1.6:
-  version "1.1.10"
-  resolved "https://registry.yarnpkg.com/npm-packlist/-/npm-packlist-1.1.10.tgz#1039db9e985727e464df066f4cf0ab6ef85c398a"
+  version "1.1.11"
+  resolved "https://registry.yarnpkg.com/npm-packlist/-/npm-packlist-1.1.11.tgz#84e8c683cbe7867d34b1d357d893ce29e28a02de"
   dependencies:
     ignore-walk "^3.0.1"
     npm-bundled "^1.0.1"

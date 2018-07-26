@@ -1,4 +1,4 @@
-var BrowserConnection = require('logux-core/browser-connection')
+var WsConnection = require('logux-core/ws-connection')
 var MemoryStore = require('logux-core/memory-store')
 var ClientNode = require('logux-core/client-node')
 var NanoEvents = require('nanoevents')
@@ -234,7 +234,7 @@ function Client (options) {
 
   var connection
   if (typeof this.options.server === 'string') {
-    var ws = new BrowserConnection(this.options.server)
+    var ws = new WsConnection(this.options.server)
     connection = new Reconnect(ws, {
       minDelay: this.options.minDelay,
       maxDelay: this.options.maxDelay,

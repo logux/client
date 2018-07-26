@@ -69,7 +69,7 @@
   "size-limit": [
     {
       "path": "cross-tab-client.js",
-      "limit": "8.7 KB"
+      "limit": "8.8 KB"
     }
   ],
   "yaspeller": {
