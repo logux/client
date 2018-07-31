@@ -11,7 +11,7 @@ module.exports = {
   },
   module: {
     rules: [
-      { test: /\.png$/, use: 'url-loader' }
+      { test: /\.(png|svg)$/, use: 'url-loader' }
     ]
   },
   plugins: [

@@ -1,4 +1,4 @@
-var CrossTabClient = require('logux-client/cross-tab-client')
+var CrossTabClient = require('../../cross-tab-client')
 var MemoryStore = require('logux-core/memory-store')
 var ClientNode = require('logux-core/client-node')
 var LocalPair = require('logux-core/local-pair')

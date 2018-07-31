@@ -2,28 +2,164 @@
 <html>
   <head>
     <meta charset="UTF-8">
-    <title>Starting</title>
+    <title>Logux Client</title>
     <style>
       body {
         font-family: sans-serif;
-        text-align: center;
-        margin: 3em 2em;
+        margin: 2em;
+      }
+      article {
+        max-width: 40em;
+        margin: 0 auto;
+      }
+      img {
+        float: right;
+        margin: 0 0 2em 2em;
+      }
+      h1 {
+        margin: 0 0 0.7em 0;
+      }
+      h2 {
+        margin: 2em 0 0.5em 0;
+      }
+      p {
+        margin: 0 0 1em 0;
       }
       section {
-        margin-top: 1.5em;
+        width: 50%;
+        float: left;
+        padding: 1em 0;
+      }
+      .connection {
+        width: 100%;
+        font-size: 1.1em;
+      }
+      button {
+        height: 2em;
+        min-width: 14em;
+        font-size: 1.1em;
+      }
+      footer {
+        font-size: small;
+        margin-top: 0.5em;
       }
     </style>
   </head>
   <body>
-    <section>
-      <label>
-        <input type="checkbox" id="connection" />
-        Client connected to server
-      </label>
-    </section>
-    <section>
-      <button id="add">Add action</button>
-      <button id="clean">Clean actions</button>
-    </section>
+    <article>
+      <img width="100" height="100" alt="Logux logo"
+           src="https://cdn.rawgit.com/logux/logux/master/logo.svg" />
+      <h1>Logux Client</h1>
+      <p>
+        <a href="https://github.com/logux">Logux</a>
+        is a client-server communication tool.
+        It synchronizes actions between clients and server logs.
+      </p>
+      <p>
+        Provides UX best practices to report Logux synchronization status
+        <a href="https://github.com/logux/logux-status">Logux Status</a>
+        to user.
+      </p>
+      <p>
+        This page tests Logux Client features:
+      </p>
+      <ul>
+        <li>
+          <strong>cross-tab</strong> sends actions between browser tabs.
+        </li>
+        <li>
+          <strong>attention</strong> highlights tab on synchronization error
+          to notify user.
+        </li>
+        <li>
+          <strong>confirm</strong> shows confirm popup, when user close tab
+          with non-synchronized actions.
+        </li>
+        <li>
+          <strong>favicon</strong> changes favicon
+          to show synchronization status.
+        </li>
+        <li>
+          <strong>badge</strong> shows widget to display Logux
+          synchronization status.
+        </li>
+        <li>
+          <strong>log</strong> displays Logux events in browser console.
+        </li>
+      </ul>
+      <h2>Controls</h2>
+      <section class="connection">
+        <label>
+          <input type="checkbox" id="connection" checked />
+          Client connected to server
+          <small id="disabled" style="display: none">
+            (disabled, because this tab is not in leader role)
+          </small>
+        </label>
+        <footer>
+          Tests:
+          <strong>cross-tab</strong>,
+          <strong>favicon</strong>,
+          <strong>badge</strong>,
+          <strong>log</strong>
+        </footer>
+      </section>
+      <section>
+        <button id="add">Add action to log</button>
+        <footer>
+          Tests:
+          <strong>cross-tab</strong>,
+          <strong>confirm</strong>,
+          <strong>badge</strong>,
+          <strong>log</strong>
+        </footer>
+      </section>
+      <section>
+        <button id="clean">Clean actions</button>
+        <footer>
+          Tests:
+          <strong>cross-tab</strong>,
+          <strong>log</strong>
+        </footer>
+      </section>
+      <section>
+        <button id="error">Error after 3 seconds</button>
+        <footer>
+          Tests:
+          <strong>attention</strong>,
+          <strong>badge</strong>,
+          <strong>favicon</strong>
+        </footer>
+      </section>
+      <section>
+        <button id="denied">Denied after 3 seconds</button>
+        <footer>
+          Tests:
+          <strong>attention</strong>,
+          <strong>badge</strong>,
+          <strong>favicon</strong>
+        </footer>
+      </section>
+      <section>
+        <button id="subprotocolError">Subprotocol error</button>
+        <footer>
+          Tests:
+          <strong>attention</strong>,
+          <strong>favicon</strong>,
+          <strong>badge</strong>,
+          <strong>log</strong>
+        </footer>
+      </section>
+      <section>
+        <button id="serverError">Server error after 3 seconds</button>
+        <footer>
+          Tests:
+          <strong>attention</strong>,
+          <strong>favicon</strong>,
+          <strong>badge</strong>,
+          <strong>log</strong>
+        </footer>
+      </section>
+    </article>
   </body>
 </html>

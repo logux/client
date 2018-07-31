@@ -1,4 +1,4 @@
-var CrossTabClient = require('logux-client').CrossTabClient
+var CrossTabClient = require('../cross-tab-client')
 var SyncError = require('logux-core').SyncError
 var TestPair = require('logux-core').TestPair
 var TestTime = require('logux-core').TestTime
