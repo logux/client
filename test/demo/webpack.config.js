@@ -2,7 +2,7 @@ var HtmlWebpackPlugin = require('html-webpack-plugin')
 var path = require('path')
 
 module.exports = {
-  mode: 'development',
+  mode: process.env.NODE_ENV || 'development',
   entry: path.join(__dirname, 'index.js'),
   output: {
     path: path.join(__dirname, 'build'),
@@ -17,7 +17,11 @@ module.exports = {
   plugins: [
     new HtmlWebpackPlugin({
       template: path.join(__dirname, 'index.html'),
-      filename: 'index.html'
+      filename: 'index.html',
+      minify: {
+        collapseWhitespace: true,
+        minifyCSS: true
+      }
     })
   ],
   devServer: {

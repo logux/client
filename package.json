@@ -50,7 +50,7 @@
     "lint": "eslint *.js test/{**/,}*.js",
     "docs": "jsdoc -d docs/ *.js",
     "test": "jest --coverage && yarn lint && size-limit && yarn spellcheck && yarn build",
-    "build": "webpack --config test/demo/webpack.config",
+    "build": "NODE_ENV=production webpack --config test/demo/webpack.config",
     "start": "webpack-dev-server --config test/demo/webpack.config"
   },
   "pre-commit": [
