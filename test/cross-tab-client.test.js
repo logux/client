@@ -202,7 +202,7 @@ it('synchronizes actions from follower tabs', function () {
       id: '1 false:other 0'
     })
     emitStorage('logux:false:add', '["other",' + action + ',' + meta + ']')
-    return delay(10)
+    return delay(50)
   }).then(function () {
     expect(pair.leftSent).toEqual([
       ['sync', 1, { type: 'A' }, { id: [1, 'false:other', 0], time: 1 }]
