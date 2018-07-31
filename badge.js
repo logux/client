@@ -77,9 +77,9 @@ var RESET = {
  * @return {Function} Unbind badge listener and remove widget from DOM.
  *
  * @example
- * import badge from 'logux-status/badge'
- * import messages from 'logux/status/badge/en'
- * import styles from 'logux/status/badge/default'
+ * import badge from 'logux-client/badge'
+ * import styles from 'logux-client/badge/default'
+ * import messages from 'logux-client/badge/en'
  *
  * badge(client, {
  *  messages: messages,

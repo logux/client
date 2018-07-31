@@ -12,7 +12,7 @@ function block (e) {
  * @return {Function} Unbind confirm listener.
  *
  * @example
- * import confirm from 'logux-status/confirm'
+ * import confirm from 'logux-client/confirm'
  * confirm(client, 'Post does not saved to server. Are you sure to leave?')
  */
 function confirm (client) {

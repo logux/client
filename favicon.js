@@ -11,7 +11,7 @@
  * @return {Function} Unbind favicon listener.
  *
  * @example
- * import favicon from 'logux-status/favicon'
+ * import favicon from 'logux-client/favicon'
  * favicon(client, {
  *   normal: '/favicon.ico',
  *   offline: '/offline.ico',

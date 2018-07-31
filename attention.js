@@ -6,7 +6,7 @@
  * @return {Function} Unbind attention listener.
  *
  * @example
- * import attention from 'logux-status/attention'
+ * import attention from 'logux-client/attention'
  * attention(client)
  */
 function attention (client) {
