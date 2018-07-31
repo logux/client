@@ -4,3 +4,10 @@ node_js:
   - node
 git:
   depth: 5
+deploy:
+  provider: pages
+  skip-cleanup: true
+  github-token: $GITHUB_TOKEN
+  local-dir: test/demo/build
+  on:
+    branch: master
