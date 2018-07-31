@@ -71,7 +71,7 @@ it('returns unbind function', function () {
 it('allows to miss timeout error', function () {
   return createClient().then(function (client) {
     attention(client)
-    client.node.emitter.emit('error', new SyncError(client.node, 'timeout'))
+    client.node.emitter.emit('error', new SyncError('timeout'))
     expect(document.title).toBe('title')
   })
 })

@@ -176,7 +176,7 @@ it('shows role event', function () {
 it('shows error event', function () {
   return createClient().then(function (client) {
     log(client, { color: false })
-    var error = new SyncError(client.node, 'test')
+    var error = new SyncError('test')
     client.node.connection.emitter.emit('error', error)
     expect(console.error).toBeCalledWith('Logux: error: test')
   })
@@ -185,7 +185,7 @@ it('shows error event', function () {
 it('shows colorized error event', function () {
   return createClient().then(function (client) {
     log(client, { color: true })
-    var error = new SyncError(client.node, 'test')
+    var error = new SyncError('test')
     client.node.connection.emitter.emit('error', error)
     expect(console.error).toBeCalledWith(
       '%cLogux:%c error: test',
@@ -199,7 +199,7 @@ it('shows server error', function () {
   return createClient().then(function (client) {
     log(client, { color: false })
 
-    var error = new SyncError(client.node, 'test', 'type', true)
+    var error = new SyncError('test', 'type', true)
     client.node.emitter.emit('clientError', error)
 
     expect(console.error).toBeCalledWith('Logux: server sent error: test')
@@ -210,7 +210,7 @@ it('shows bold server error', function () {
   return createClient().then(function (client) {
     log(client, { color: true })
 
-    var error = new SyncError(client.node, 'test', 'type', true)
+    var error = new SyncError('test', 'type', true)
     client.node.emitter.emit('clientError', error)
 
     expect(console.error).toBeCalledWith(
@@ -348,7 +348,7 @@ it('allows to disable some message types', function () {
     client.node.emitter.emit('state')
     client.emitter.emit('role')
 
-    var error = new SyncError(client.node, 'test', 'type', true)
+    var error = new SyncError('test', 'type', true)
     client.node.emitter.emit('error', error)
     client.node.emitter.emit('clientError', error)
 
@@ -364,7 +364,7 @@ it('returns unbind function', function () {
     var unbind = log(client, { color: false })
 
     unbind()
-    var error = new SyncError(client.node, 'test')
+    var error = new SyncError('test')
     client.node.connection.emitter.emit('error', error)
 
     expect(console.error).not.toBeCalled()
