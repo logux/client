@@ -49,7 +49,7 @@
     "clean": "rimraf docs/ coverage/ test/demo/build/",
     "lint": "eslint *.js test/{**/,}*.js",
     "docs": "jsdoc -d docs/ *.js",
-    "test": "jest --coverage && yarn lint && size-limit && yarn spellcheck",
+    "test": "jest --coverage && yarn lint && size-limit && yarn spellcheck && yarn build",
     "build": "webpack --config test/demo/webpack.config",
     "start": "webpack-dev-server --config test/demo/webpack.config"
   },
