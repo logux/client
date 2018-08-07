@@ -254,6 +254,24 @@ it('shows add and clean event', function () {
   })
 })
 
+it('combines add and clean event', function () {
+  return createClient().then(function (client) {
+    log(client, { color: false })
+    return client.node.log.add({ type: 'A' }).then(function () {
+      expect(console.log).toBeCalledWith(
+        'Logux: action A was added and cleaned',
+        { type: 'A' },
+        {
+          id: '1 10:test1 0',
+          subprotocol: '1.0.0',
+          reasons: [],
+          time: 1
+        }
+      )
+    })
+  })
+})
+
 it('ignores different tab actions', function () {
   return createClient().then(function (client) {
     log(client, { color: false })
@@ -382,9 +400,10 @@ it('supports cross-tab synchronization', function () {
       'Logux: state was changed to disconnected'
     )
 
-    client.emitter.emit('add', { type: 'A' }, { id: '1 10:test1 0' })
+    var meta = { id: '1 10:test1 0', reasons: ['test'] }
+    client.emitter.emit('add', { type: 'A' }, meta)
     expect(console.log).lastCalledWith(
-      'Logux: action A was added', { type: 'A' }, { id: '1 10:test1 0' }
+      'Logux: action A was added', { type: 'A' }, meta
     )
   })
 })

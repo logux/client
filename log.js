@@ -100,10 +100,16 @@ function log (client, messages) {
     }))
   }
 
+  var cleaned = { }
+
   if (messages.add !== false) {
     unbind.push(client.on('add', function (action, meta) {
       if (meta.tab && meta.tab !== client.id) return
       var message = 'action ' + style(action.type) + ' was added'
+      if (meta.reasons.length === 0) {
+        cleaned[meta.id] = true
+        message += ' and cleaned'
+      }
       var nodeId = meta.id.split(' ')[1]
       if (nodeId !== node.localNodeId) {
         message += ' by ' + style(nodeId)
@@ -114,6 +120,10 @@ function log (client, messages) {
 
   if (messages.clean !== false) {
     unbind.push(client.on('clean', function (action, meta) {
+      if (cleaned[meta.id]) {
+        delete cleaned[meta.id]
+        return
+      }
       if (meta.tab && meta.tab !== client.id) return
       var message = 'action ' + style(action.type) + ' was cleaned'
       showLog(message, action, meta)
