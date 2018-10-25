@@ -4,26 +4,27 @@ var delay = require('nanodelay')
 
 var CrossTabClient = require('../cross-tab-client')
 
-var fakeLocalStorage
 beforeEach(function () {
   global.WebSocket = function () { }
   global.WebSocket.prototype = {
     close: function () { }
   }
-  fakeLocalStorage = {
-    storage: { },
-    setItem: function (key, value) {
-      this[key] = value
-      this.storage[key] = value
-    },
-    getItem: function (key) {
-      return this.storage[key]
-    },
-    removeItem: function (key) {
-      delete this[key]
-      delete this.storage[key]
+  Object.defineProperty(global, '_localStorage', {
+    value: {
+      storage: { },
+      setItem: function (key, value) {
+        this[key] = value
+        this.storage[key] = value
+      },
+      getItem: function (key) {
+        return this.storage[key]
+      },
+      removeItem: function (key) {
+        delete this[key]
+        delete this.storage[key]
+      }
     }
-  }
+  })
 })
 
 var client
@@ -31,7 +32,6 @@ var originWindow = global.window
 var originNavigator = global.navigator
 var originWebSocket = global.WebSocket
 var originIndexedDB = global.indexedDB
-var originLocalStorage = global.localStorage
 afterEach(function () {
   if (client) {
     client.destroy()
@@ -41,8 +41,6 @@ afterEach(function () {
   global.navigator = originNavigator
   global.WebSocket = originWebSocket
   global.indexedDB = originIndexedDB
-  global.localStorage = originLocalStorage
-  fakeLocalStorage.storage = { }
 })
 
 function createClient (overrides) {
@@ -98,15 +96,14 @@ it('supports nanoevents API', function () {
 })
 
 it('cleans everything', function () {
-  global.localStorage = fakeLocalStorage
   client = createClient()
 
   client.node.destroy = jest.fn()
-  global.localStorage.removeItem = jest.fn()
+  localStorage.removeItem = jest.fn()
 
   return client.clean().then(function () {
     expect(client.node.destroy).toHaveBeenCalled()
-    expect(global.localStorage.removeItem.mock.calls).toEqual([
+    expect(localStorage.removeItem.mock.calls).toEqual([
       ['logux:false:add'], ['logux:false:clean'],
       ['logux:false:state'], ['logux:false:leader']
     ])
@@ -114,10 +111,8 @@ it('cleans everything', function () {
 })
 
 it('does not use broken localStorage', function () {
-  global.localStorage = {
-    setItem: function () {
-      throw new Error('The quota has been exceeded')
-    }
+  localStorage.setItem = function () {
+    throw new Error('The quota has been exceeded')
   }
   client = new CrossTabClient({
     subprotocol: '1.0.0',
@@ -128,11 +123,8 @@ it('does not use broken localStorage', function () {
 })
 
 it('synchronizes actions between tabs', function () {
-  global.localStorage = {
-    setItem: function (name, value) {
-      emitStorage(name, value)
-    },
-    removeItem: function () { }
+  localStorage.setItem = function (name, value) {
+    emitStorage(name, value)
   }
   var client1 = new CrossTabClient({
     subprotocol: '1.0.0',
@@ -216,6 +208,7 @@ it('uses candidate role from beggining', function () {
 })
 
 it('becomes leader without localStorage', function () {
+  Object.defineProperty(global, '_localStorage', { value: undefined })
   client = createClient()
 
   var roles = []
@@ -232,14 +225,16 @@ it('becomes leader without localStorage', function () {
 it('becomes leader without window', function () {
   delete global.window
   delete global.navigator
+  Object.defineProperty(global, '_localStorage', { value: undefined })
+
   client = createClient()
   client.start()
+
   expect(client.role).toEqual('leader')
   client.destroy()
 })
 
 it('becomes follower on recent leader ping', function () {
-  global.localStorage = fakeLocalStorage
   localStorage.setItem('logux:false:leader', '["",' + Date.now() + ']')
   client = createClient()
 
@@ -256,7 +251,6 @@ it('becomes follower on recent leader ping', function () {
 })
 
 it('stops election on second candidate', function () {
-  global.localStorage = fakeLocalStorage
   client = createClient()
 
   client.start()
@@ -270,7 +264,6 @@ it('stops election on second candidate', function () {
 })
 
 it('stops election in leader check', function () {
-  global.localStorage = fakeLocalStorage
   client = createClient()
 
   client.start()
@@ -284,7 +277,6 @@ it('stops election in leader check', function () {
 })
 
 it('pings on leader role', function () {
-  global.localStorage = fakeLocalStorage
   client = createClient()
   client.node.connection.disconnect = jest.fn()
 
@@ -315,7 +307,6 @@ it('has random timeout', function () {
 })
 
 it('replaces dead leader', function () {
-  global.localStorage = fakeLocalStorage
   client = createClient()
   client.roleTimeout = client.leaderTimeout / 2
 
@@ -331,7 +322,6 @@ it('replaces dead leader', function () {
 })
 
 it('disconnects on leader changes', function () {
-  global.localStorage = fakeLocalStorage
   client = createClient()
   client.node.connection.disconnect = jest.fn()
 
@@ -348,7 +338,6 @@ it('disconnects on leader changes', function () {
 })
 
 it('updates state if tab is a leader', function () {
-  global.localStorage = fakeLocalStorage
   client = createClient()
 
   client.start()
@@ -363,7 +352,6 @@ it('updates state if tab is a leader', function () {
 })
 
 it('listens for leader state', function () {
-  global.localStorage = fakeLocalStorage
   localStorage.setItem('logux:false:leader', '["",' + Date.now() + ']')
   localStorage.setItem('logux:false:state', '"connecting"')
 
@@ -396,7 +384,6 @@ it('has connected shortcut', function () {
 })
 
 it('works on IE storage event', function () {
-  global.localStorage = fakeLocalStorage
   client = createClient()
 
   var events = 0
@@ -420,7 +407,6 @@ it('works on IE storage event', function () {
 })
 
 it('sends unleader event on tab closing', function () {
-  global.localStorage = fakeLocalStorage
   client = createClient()
   client.start()
   return delay(client.electionDelay + 10).then(function () {
@@ -430,7 +416,6 @@ it('sends unleader event on tab closing', function () {
 })
 
 it('sends unleader event on destroy', function () {
-  global.localStorage = fakeLocalStorage
   client = createClient()
   client.start()
   return delay(client.electionDelay + 10).then(function () {
@@ -440,7 +425,6 @@ it('sends unleader event on destroy', function () {
 })
 
 it('does not sends event on tab closing in following mode', function () {
-  global.localStorage = fakeLocalStorage
   client = createClient()
 
   var prevLeader = '["",' + Date.now() + ']'
@@ -453,7 +437,6 @@ it('does not sends event on tab closing in following mode', function () {
 })
 
 it('starts election on leader unload', function () {
-  global.localStorage = fakeLocalStorage
   client = createClient()
 
   localStorage.setItem('logux:false:leader', '["",' + Date.now() + ']')
@@ -470,7 +453,6 @@ it('starts election on leader unload', function () {
 })
 
 it('changes state on dead leader', function () {
-  global.localStorage = fakeLocalStorage
   client = createClient()
 
   var last = Date.now() - client.leaderTimeout - 1
@@ -482,7 +464,6 @@ it('changes state on dead leader', function () {
 })
 
 it('changes state on leader death', function () {
-  global.localStorage = fakeLocalStorage
   client = createClient()
   client.roleTimeout = 20
 
@@ -498,7 +479,6 @@ it('changes state on leader death', function () {
 })
 
 it('cleans tab-specific action after timeout', function () {
-  global.localStorage = fakeLocalStorage
   client = createClient()
 
   localStorage.setItem('logux:tab:1', Date.now() - client.tabTimeout - 1)
@@ -511,7 +491,6 @@ it('cleans tab-specific action after timeout', function () {
 })
 
 it('detects subscriptions from different tabs', function () {
-  global.localStorage = fakeLocalStorage
   client = createClient()
   emitStorage('logux:false:add', '["other",' +
     '{"type":"logux/subscribe","name":"a"},{"sync":true,"id":"0 A 0"}' +
@@ -522,7 +501,6 @@ it('detects subscriptions from different tabs', function () {
 })
 
 it('copies actions on memory store', function () {
-  global.localStorage = fakeLocalStorage
   client = createClient()
 
   emitStorage('logux:false:add', '["other",{"type":"A"},{"id":"1 A 0"}]')

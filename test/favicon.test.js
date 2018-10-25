@@ -9,7 +9,7 @@ function getFavNode () {
 }
 
 function getFavHref () {
-  return getFavNode().href
+  return getFavNode().href.replace('http://localhost', '')
 }
 
 function setFavHref (href) {

@@ -6,31 +6,30 @@ var delay = require('nanodelay')
 
 var Client = require('../client')
 
-var fakeLocalStorage
 beforeEach(function () {
-  fakeLocalStorage = {
-    storage: { },
-    setItem: function (key, value) {
-      this[key] = value
-      this.storage[key] = value
-    },
-    getItem: function (key) {
-      return this.storage[key]
-    },
-    removeItem: function (key) {
-      delete this[key]
-      delete this.storage[key]
+  Object.defineProperty(global, '_localStorage', {
+    value: {
+      storage: { },
+      setItem: function (key, value) {
+        this[key] = value
+        this.storage[key] = value
+      },
+      getItem: function (key) {
+        return this.storage[key]
+      },
+      removeItem: function (key) {
+        delete this[key]
+        delete this.storage[key]
+      }
     }
-  }
+  })
 })
 
 var originError = console.error
 var originIndexedDB = global.indexedDB
-var originLocalStorage = global.localStorage
 afterEach(function () {
   console.error = originError
   global.indexedDB = originIndexedDB
-  global.localStorage = originLocalStorage
 })
 
 function createDialog (opts, credentials) {
@@ -296,7 +295,6 @@ it('cleans everything', function () {
 })
 
 it('pings after tab-specific action', function () {
-  global.localStorage = fakeLocalStorage
   var client = createClient()
   var id = client.id
   client.options.prefix = 'test'
@@ -318,7 +316,6 @@ it('pings after tab-specific action', function () {
 })
 
 it('cleans own actions on destroy', function () {
-  global.localStorage = fakeLocalStorage
   var client = createClient()
   var meta = { tab: client.id, reasons: ['tab' + client.id] }
 
@@ -333,7 +330,6 @@ it('cleans own actions on destroy', function () {
 })
 
 it('cleans own actions on unload', function () {
-  global.localStorage = fakeLocalStorage
   var client = createClient()
   var meta = { tab: client.id, reasons: ['tab' + client.id] }
 
@@ -348,7 +344,6 @@ it('cleans own actions on unload', function () {
 })
 
 it('cleans other tab action after timeout', function () {
-  global.localStorage = fakeLocalStorage
   var client = createClient()
 
   return Promise.all([
