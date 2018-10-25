@@ -280,8 +280,26 @@ it('ignores different tab actions', function () {
         expect(console.log).not.toBeCalledWith()
         return client.node.log.removeReason('test')
       }).then(function () {
-        expect(console.log).not.toBeCalledWith()
+        expect(console.log).not.toBeCalled()
       })
+  })
+})
+
+it('ignores actions by request', function () {
+  return createClient().then(function (client) {
+    log(client, { ignoreActions: ['A', 'B'] })
+    return Promise.all([
+      client.node.log.add({ type: 'A' }, { reasons: ['test'] }),
+      client.node.log.add({ type: 'B' })
+    ]).then(function () {
+      expect(console.log).not.toBeCalledWith()
+      return client.node.log.removeReason('test')
+    }).then(function () {
+      expect(console.log).not.toBeCalledWith()
+      return client.node.log.add({ type: 'C' })
+    }).then(function () {
+      expect(console.log).toBeCalled()
+    })
   })
 })
 

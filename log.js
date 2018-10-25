@@ -41,6 +41,8 @@ function colorify (color, text, action, meta) {
  * @param {boolean} [messages.add] Disable action add messages.
  * @param {boolean} [messages.clean] Disable action clean messages.
  * @param {boolean} [messages.color] Disable colors in logs.
+ * @param {string[]} [messages.ignoreActions] Disable action messages
+ *                                            for specific types.
  *
  * @return {Function} Unbind log listener.
  *
@@ -101,10 +103,15 @@ function log (client, messages) {
   }
 
   var cleaned = { }
+  var ignore = (messages.ignoreActions || []).reduce(function (all, i) {
+    all[i] = true
+    return all
+  }, { })
 
   if (messages.add !== false) {
     unbind.push(client.on('add', function (action, meta) {
       if (meta.tab && meta.tab !== client.id) return
+      if (ignore[action.type]) return
       var message = 'action ' + style(action.type) + ' was added'
       if (meta.reasons.length === 0) {
         cleaned[meta.id] = true
@@ -125,6 +132,7 @@ function log (client, messages) {
         return
       }
       if (meta.tab && meta.tab !== client.id) return
+      if (ignore[action.type]) return
       var message = 'action ' + style(action.type) + ' was cleaned'
       showLog(message, action, meta)
     }))
