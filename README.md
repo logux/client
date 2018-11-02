@@ -94,9 +94,9 @@ Add callbacks for new actions coming to the client log
 ```js
 logux.on('add', function (action, meta) {
   if (action.type === 'CHANGE_TITLE') {
-    var user = document.querySelector('.article[data-id=' + action.article + ']')
-    if (user) {
-      document.querySelector('.article__title').innerText = action.title
+    var article = document.querySelector('.article[data-id=' + action.article + ']')
+    if (article) {
+      article.querySelector('.article__title').innerText = action.title
     }
   }
 })
