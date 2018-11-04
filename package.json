@@ -6,6 +6,16 @@
     "logux",
     "client"
   ],
+  "scripts": {
+    "lint-staged": "lint-staged",
+    "spellcheck": "yarn docs && yaspeller-ci *.md docs/*.html",
+    "clean": "rimraf docs/ coverage/ test/demo/build/",
+    "lint": "eslint *.js test/{**/,}*.js",
+    "docs": "jsdoc -d docs/ *.js",
+    "test": "jest --coverage && yarn lint && size-limit && yarn spellcheck && yarn build",
+    "build": "NODE_ENV=production webpack --config test/demo/webpack.config",
+    "start": "webpack-dev-server --config test/demo/webpack.config"
+  },
   "author": "Andrey Sitnik <andrey@sitnik.ru>",
   "license": "MIT",
   "repository": "logux/logux-client",
@@ -42,16 +52,6 @@
     "webpack-cli": "^3.1.2",
     "webpack-dev-server": "^3.1.10",
     "yaspeller-ci": "^1.0.0"
-  },
-  "scripts": {
-    "lint-staged": "lint-staged",
-    "spellcheck": "yarn docs && yaspeller-ci *.md docs/*.html",
-    "clean": "rimraf docs/ coverage/ test/demo/build/",
-    "lint": "eslint *.js test/{**/,}*.js",
-    "docs": "jsdoc -d docs/ *.js",
-    "test": "jest --coverage && yarn lint && size-limit && yarn spellcheck && yarn build",
-    "build": "NODE_ENV=production webpack --config test/demo/webpack.config",
-    "start": "webpack-dev-server --config test/demo/webpack.config"
   },
   "pre-commit": [
     "lint-staged"
