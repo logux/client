@@ -166,16 +166,16 @@ it('uses user ID in node ID', function () {
     server: 'wss://localhost:1337',
     userId: 10
   })
-  expect(client1.clientId).toMatch(/^[\w\d_-]{8}$/)
+  expect(client1.clientId).toMatch(/^10:[\w\d_-]{8}$/)
   expect(client1.id).toMatch(/^[\w\d_-]{8}$/)
-  expect(client1.nodeId).toEqual('10:' + client1.clientId + ':' + client1.id)
+  expect(client1.nodeId).toEqual(client1.clientId + ':' + client1.id)
 
   var client2 = new Client({
     subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
     userId: false
   })
-  expect(client2.nodeId).toEqual('false:' + client2.clientId + ':' + client2.id)
+  expect(client2.nodeId).toEqual(client2.clientId + ':' + client2.id)
 })
 
 it('uses node ID in ID generator', function () {
@@ -370,7 +370,7 @@ it('adds current subprotocol only to own actions', function () {
   var client = createClient()
   return client.log.add(
     { type: 'A' },
-    { reasons: ['test'], id: '1 0:other 0' }
+    { reasons: ['test'], id: '1 0:client:other 0' }
   ).then(function () {
     expect(client.log.entries()[0][1].subprotocol).toBeUndefined()
   })
@@ -392,37 +392,37 @@ it('sends only special actions', function () {
     client = created
     client.node.connection.pair.clear()
     return Promise.all([
-      client.log.add({ type: 'a' }, { id: '1 10:uuid 0', sync: true }),
-      client.log.add({ type: 'c' }, { id: '2 10:uuid 0' })
+      client.log.add({ type: 'a' }, { id: '1 10:client:uuid 0', sync: true }),
+      client.log.add({ type: 'c' }, { id: '2 10:client:uuid 0' })
     ])
   }).then(function () {
     client.node.connection.pair.right.send(['synced', 1])
     return client.node.waitFor('synchronized')
   }).then(function () {
     expect(client.node.connection.pair.leftSent).toEqual([
-      ['sync', 1, { type: 'a' }, { id: [1, '10:uuid', 0], time: 1 }]
+      ['sync', 1, { type: 'a' }, { id: [1, '10:client:uuid', 0], time: 1 }]
     ])
   })
 })
 
 it('filters data before sending', function () {
   var client
-  return createDialog({ userId: 'a:b' }).then(function (created) {
+  return createDialog({ userId: 'a' }).then(function (created) {
     client = created
     client.node.connection.pair.clear()
     return Promise.all([
       client.log.add({ type: 'a' }, {
-        id: '1 a:b:uuid 0',
+        id: '1 a:client:uuid 0',
         time: 1,
         sync: true,
         users: ['0'],
         custom: 1,
         reasons: ['test'],
-        nodeIds: ['0:uuid'],
+        nodeIds: ['0:client:uuid'],
         channels: ['user:0']
       }),
       client.log.add({ type: 'c' }, {
-        id: '1 0:uuid 0',
+        id: '1 0:client:uuid 0',
         sync: true,
         reasons: ['test']
       })
@@ -433,10 +433,10 @@ it('filters data before sending', function () {
   }).then(function () {
     expect(client.node.connection.pair.leftSent).toEqual([
       ['sync', 1, { type: 'a' }, {
-        id: [1, 'a:b:uuid', 0],
+        id: [1, 'a:client:uuid', 0],
         time: 1,
         users: ['0'],
-        nodeIds: ['0:uuid'],
+        nodeIds: ['0:client:uuid'],
         channels: ['user:0']
       }]
     ])
@@ -452,7 +452,7 @@ it('compresses subprotocol', function () {
       client.log.add(
         { type: 'a' },
         {
-          id: '1 10:id 0',
+          id: '1 10:client:id 0',
           sync: true,
           reasons: ['test'],
           subprotocol: '1.0.0'
@@ -461,7 +461,7 @@ it('compresses subprotocol', function () {
       client.log.add(
         { type: 'a' },
         {
-          id: '2 10:id 0',
+          id: '2 10:client:id 0',
           sync: true,
           reasons: ['test'],
           subprotocol: '2.0.0'
@@ -474,9 +474,9 @@ it('compresses subprotocol', function () {
     return client.node.waitFor('synchronized')
   }).then(function () {
     expect(client.node.connection.pair.leftSent).toEqual([
-      ['sync', 1, { type: 'a' }, { id: [1, '10:id', 0], time: 1 }],
+      ['sync', 1, { type: 'a' }, { id: [1, '10:client:id', 0], time: 1 }],
       ['sync', 2, { type: 'a' }, {
-        id: [2, '10:id', 0], time: 2, subprotocol: '2.0.0'
+        id: [2, '10:client:id', 0], time: 2, subprotocol: '2.0.0'
       }]
     ])
   })

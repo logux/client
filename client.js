@@ -118,12 +118,13 @@ function Client (options) {
     } catch (e) {}
   }
 
+  this.options.userId = this.options.userId.toString()
   if (!this.options.time) {
     /**
      * Unique permament client ID. Can be used to track this machine.
      * @type {string}
      */
-    this.clientId = this.getClientId()
+    this.clientId = this.options.userId + ':' + this.getClientId()
     /**
      * Unique tab ID. Can be used to add an action to the specific tab.
      * @type {string}
@@ -133,10 +134,9 @@ function Client (options) {
      */
     this.id = nanoid(8)
   } else {
-    this.clientId = this.options.time.lastId + 1 + ''
-    this.id = this.clientId
+    this.id = this.options.time.lastId + 1 + ''
+    this.clientId = this.options.userId + ':' + this.id
   }
-  this.options.userId = this.options.userId.toString()
 
   /**
    * Unique Logux node ID.
@@ -145,7 +145,7 @@ function Client (options) {
    * @example
    * console.log('Client ID: ', app.nodeId)
    */
-  this.nodeId = this.options.userId + ':' + this.clientId + ':' + this.id
+  this.nodeId = this.clientId + ':' + this.id
 
   var auth
   if (/^ws:\/\//.test(this.options.server) && !options.allowDangerousProtocol) {
@@ -186,7 +186,6 @@ function Client (options) {
   this.log = log
 
   var client = this
-  var clientPrefix = ' ' + this.options.userId + ':' + this.clientId + ':'
 
   log.on('preadd', function (action, meta) {
     var isOwn = meta.id.indexOf(' ' + client.nodeId + ' ') !== -1
@@ -220,7 +219,7 @@ function Client (options) {
         client.last[subscribed] = { id: meta.id, time: meta.time }
       }
     } else if (meta.channels) {
-      if (meta.id.indexOf(clientPrefix) === -1) {
+      if (meta.id.indexOf(' ' + client.clientId + ':') === -1) {
         meta.channels.forEach(function (channel) {
           last = client.last[channel]
           if (!last || isFirstOlder(last, meta)) {
@@ -274,7 +273,7 @@ function Client (options) {
   }
 
   function filter (action, meta) {
-    var user = meta.id.split(' ')[1].replace(/:[^:]*$/, '')
+    var user = meta.id.split(' ')[1].replace(/:.*$/, '')
     return Promise.resolve(!!meta.sync && user === client.options.userId)
   }
 
