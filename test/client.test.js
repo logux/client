@@ -571,8 +571,9 @@ it('tells last action time during resubscription', function () {
     return Promise.all([
       client.log.add({ type: 'logux/processed', id: '1 false:1:1 0' }),
       client.log.add({ type: 'logux/processed', id: '2 false:1:1 0' }),
-      client.log.add({ type: 'A' }, { channels: ['a'] }),
-      client.log.add({ type: 'B' }, { channels: ['b'], id: '0 false:1:1 0' })
+      client.log.add({ type: 'A' }, { channels: ['a'], id: '8 false:2:1 0' }),
+      client.log.add({ type: 'B' }, { channels: ['b'], id: '0 false:2:1 0' }),
+      client.log.add({ type: 'A' }, { channels: ['a'], id: '9 false:1:1 0' })
     ])
   }).then(function () {
     client.node.setState('disconnected')
@@ -582,7 +583,7 @@ it('tells last action time during resubscription', function () {
       {
         type: 'logux/subscribe',
         channel: 'a',
-        since: { time: 5, id: '5 false:1:1 0' }
+        since: { time: 8, id: '8 false:2:1 0' }
       },
       {
         type: 'logux/subscribe',

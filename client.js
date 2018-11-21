@@ -186,6 +186,7 @@ function Client (options) {
   this.log = log
 
   var client = this
+  var clientPrefix = ' ' + this.options.userId + ':' + this.clientId + ':'
 
   log.on('preadd', function (action, meta) {
     var isOwn = meta.id.indexOf(' ' + client.nodeId + ' ') !== -1
@@ -219,12 +220,14 @@ function Client (options) {
         client.last[subscribed] = { id: meta.id, time: meta.time }
       }
     } else if (meta.channels) {
-      meta.channels.forEach(function (channel) {
-        last = client.last[channel]
-        if (!last || isFirstOlder(last, meta)) {
-          client.last[channel] = { id: meta.id, time: meta.time }
-        }
-      })
+      if (meta.id.indexOf(clientPrefix) === -1) {
+        meta.channels.forEach(function (channel) {
+          last = client.last[channel]
+          if (!last || isFirstOlder(last, meta)) {
+            client.last[channel] = { id: meta.id, time: meta.time }
+          }
+        })
+      }
     }
     if (process.env.NODE_ENV !== 'production') {
       if (type === 'logux/subscribe' || type === 'logux/unsubscribe') {
