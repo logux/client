@@ -86,7 +86,7 @@ it('notifies only about wait for sync actions', function () {
       'connectingAfterWait',
       'sendingAfterWait'
     ])
-    test.leftNode.log.add({ type: 'logux/undo', id: '3 10:test1 0' })
+    test.leftNode.log.add({ type: 'logux/undo', id: '3 10:1:1 0' })
     return delay(1, test)
   }).then(function (test) {
     expect(test.calls).toEqual([
@@ -97,7 +97,7 @@ it('notifies only about wait for sync actions', function () {
       'connectingAfterWait',
       'sendingAfterWait'
     ])
-    test.leftNode.log.add({ type: 'logux/processed', id: '4 10:test1 0' })
+    test.leftNode.log.add({ type: 'logux/processed', id: '4 10:1:1 0' })
     return delay(1, test)
   }).then(function (test) {
     expect(test.calls).toEqual([

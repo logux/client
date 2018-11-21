@@ -108,9 +108,24 @@ function Client (options) {
     this.options.prefix = 'logux'
   }
 
+  this.isLocalStorage = false
+  if (typeof localStorage !== 'undefined') {
+    var random = nanoid()
+    try {
+      localStorage.setItem(random, '1')
+      localStorage.removeItem(random)
+      this.isLocalStorage = true
+    } catch (e) {}
+  }
+
   if (!this.options.time) {
     /**
-     * Unique client ID. Can be used to add an action to the specific tab.
+     * Unique permament client ID. Can be used to track this machine.
+     * @type {string}
+     */
+    this.clientId = this.getClientId()
+    /**
+     * Unique tab ID. Can be used to add an action to the specific tab.
      * @type {string}
      *
      * @example
@@ -118,18 +133,10 @@ function Client (options) {
      */
     this.id = nanoid(8)
   } else {
-    this.id = 'test' + (this.options.time.lastId + 1)
+    this.clientId = this.options.time.lastId + 1 + ''
+    this.id = this.clientId
   }
   this.options.userId = this.options.userId.toString()
-
-  this.isLocalStorage = false
-  if (typeof localStorage !== 'undefined') {
-    try {
-      localStorage.setItem(this.id, '1')
-      localStorage.removeItem(this.id)
-      this.isLocalStorage = true
-    } catch (e) {}
-  }
 
   /**
    * Unique Logux node ID.
@@ -138,7 +145,7 @@ function Client (options) {
    * @example
    * console.log('Client ID: ', app.nodeId)
    */
-  this.nodeId = this.options.userId + ':' + this.id
+  this.nodeId = this.options.userId + ':' + this.clientId + ':' + this.id
 
   var auth
   if (/^ws:\/\//.test(this.options.server) && !options.allowDangerousProtocol) {
@@ -391,6 +398,10 @@ Client.prototype = {
 
   onUnload: function onUnload () {
     if (this.pinging) cleanTabActions(this, this.id)
+  },
+
+  getClientId: function getClientId () {
+    return nanoid(8)
   }
 
 }

@@ -248,6 +248,7 @@ CrossTabClient.prototype = {
       localStorage.removeItem(storageKey(this, 'add'))
       localStorage.removeItem(storageKey(this, 'clean'))
       localStorage.removeItem(storageKey(this, 'state'))
+      localStorage.removeItem(storageKey(this, 'client'))
       localStorage.removeItem(storageKey(this, 'leader'))
     }
     return Client.prototype.clean.call(this)
@@ -327,6 +328,19 @@ CrossTabClient.prototype = {
     }
 
     Client.prototype.onUnload.call(this)
+  },
+
+  getClientId: function getClientId () {
+    var key = storageKey(this, 'client')
+    if (!this.isLocalStorage) {
+      return Client.prototype.getClientId.call(this)
+    } else if (localStorage.getItem(key)) {
+      return localStorage.getItem(key)
+    } else {
+      var clientId = Client.prototype.getClientId.call(this)
+      localStorage.setItem(key, clientId)
+      return clientId
+    }
   }
 
 }

@@ -77,6 +77,20 @@ it('saves options', function () {
   expect(client.options.subprotocol).toEqual('1.0.0')
 })
 
+it('saves client ID', function () {
+  client = new CrossTabClient({
+    subprotocol: '1.0.0',
+    server: 'wss://localhost:1337',
+    userId: false
+  })
+  var another = new CrossTabClient({
+    subprotocol: '1.0.0',
+    server: 'wss://localhost:1337',
+    userId: false
+  })
+  expect(client.clientId).toEqual(another.clientId)
+})
+
 it('supports nanoevents API', function () {
   client = createClient()
 
@@ -105,7 +119,7 @@ it('cleans everything', function () {
     expect(client.node.destroy).toHaveBeenCalled()
     expect(localStorage.removeItem.mock.calls).toEqual([
       ['logux:false:add'], ['logux:false:clean'],
-      ['logux:false:state'], ['logux:false:leader']
+      ['logux:false:state'], ['logux:false:client'], ['logux:false:leader']
     ])
   })
 })
@@ -480,9 +494,8 @@ it('changes state on leader death', function () {
 
 it('cleans tab-specific action after timeout', function () {
   client = createClient()
-
-  localStorage.setItem('logux:tab:1', Date.now() - client.tabTimeout - 1)
   return client.log.add({ type: 'A' }, { reasons: ['tab1'] }).then(function () {
+    localStorage.setItem('logux:tab:1', Date.now() - client.tabTimeout - 1)
     client.start()
     return Promise.resolve()
   }).then(function () {

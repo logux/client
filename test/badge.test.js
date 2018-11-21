@@ -73,7 +73,7 @@ it('shows synchronized state', function () {
     test.leftNode.setState('synchronized')
     expect(badgeNode().style.display).toEqual('block')
     expect(badgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
-    test.leftNode.log.add({ type: 'logux/processed', id: '1 1:test1 0' })
+    test.leftNode.log.add({ type: 'logux/processed', id: '1 1:1:1 0' })
     return delay(1)
   }).then(function () {
     expect(getBadgeMessage()).toEqual(messages.synchronized)

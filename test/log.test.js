@@ -52,7 +52,7 @@ it('shows connecting state URL', function () {
 
     expect(console.log).toBeCalledWith(
       'Logux: state was changed to connecting. ' +
-      '10:test1 is connecting to ws://ya.ru.'
+      '10:1:1 is connecting to ws://ya.ru.'
     )
   })
 })
@@ -68,7 +68,7 @@ it('shows Logux prefix with color and make state and nodeId bold', function () {
 
     expect(console.log).toBeCalledWith(
       '%cLogux:%c state was changed to %cconnecting%c. ' +
-      '%c10:test1%c is connecting to %cws://ya.ru%c.',
+      '%c10:1:1%c is connecting to %cws://ya.ru%c.',
       'color: #ffa200',
       '',
       'font-weight: bold',
@@ -230,7 +230,7 @@ it('shows add and clean event', function () {
           'Logux: action A was added',
           { type: 'A' },
           {
-            id: '1 10:test1 0',
+            id: '1 10:1:1 0',
             subprotocol: '1.0.0',
             reasons: ['test'],
             time: 1,
@@ -243,7 +243,7 @@ it('shows add and clean event', function () {
           'Logux: action A was cleaned',
           { type: 'A' },
           {
-            id: '1 10:test1 0',
+            id: '1 10:1:1 0',
             subprotocol: '1.0.0',
             reasons: [],
             time: 1,
@@ -262,7 +262,7 @@ it('combines add and clean event', function () {
         'Logux: action A was added and cleaned',
         { type: 'A' },
         {
-          id: '1 10:test1 0',
+          id: '1 10:1:1 0',
           subprotocol: '1.0.0',
           reasons: [],
           time: 1
@@ -316,7 +316,7 @@ it('shows add and clean event and make action type bold', function () {
           '',
           { type: 'A' },
           {
-            id: '1 10:test1 0',
+            id: '1 10:1:1 0',
             subprotocol: '1.0.0',
             reasons: ['test'],
             time: 1,
@@ -333,7 +333,7 @@ it('shows add and clean event and make action type bold', function () {
           '',
           { type: 'A' },
           {
-            id: '1 10:test1 0',
+            id: '1 10:1:1 0',
             subprotocol: '1.0.0',
             reasons: [],
             time: 1,
@@ -351,7 +351,7 @@ it('shows add event with action and make action type bold', function () {
     return client.node.log.add({ type: 'B' }, { reasons: ['test'] })
   }).then(function () {
     expect(console.log).toBeCalledWith(
-      '%cLogux:%c action %cB%c was added by %c10:test1%c',
+      '%cLogux:%c action %cB%c was added by %c10:1:1%c',
       'color: #ffa200',
       '',
       'font-weight: bold',
@@ -360,7 +360,7 @@ it('shows add event with action and make action type bold', function () {
       '',
       { type: 'B' },
       {
-        id: '1 10:test1 0',
+        id: '1 10:1:1 0',
         subprotocol: '1.0.0',
         reasons: ['test'],
         time: 1,
@@ -418,7 +418,7 @@ it('supports cross-tab synchronization', function () {
       'Logux: state was changed to disconnected'
     )
 
-    var meta = { id: '1 10:test1 0', reasons: ['test'] }
+    var meta = { id: '1 10:1:1 0', reasons: ['test'] }
     client.emitter.emit('add', { type: 'A' }, meta)
     expect(console.log).lastCalledWith(
       'Logux: action A was added', { type: 'A' }, meta

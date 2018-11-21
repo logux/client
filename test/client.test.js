@@ -166,16 +166,16 @@ it('uses user ID in node ID', function () {
     server: 'wss://localhost:1337',
     userId: 10
   })
-  expect(client1.id).toBeDefined()
-  expect(client1.id).toMatch(/^[\w\d~-]{8}$/)
-  expect(client1.nodeId).toEqual('10:' + client1.id)
+  expect(client1.clientId).toMatch(/^[\w\d_-]{8}$/)
+  expect(client1.id).toMatch(/^[\w\d_-]{8}$/)
+  expect(client1.nodeId).toEqual('10:' + client1.clientId + ':' + client1.id)
 
   var client2 = new Client({
     subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
     userId: false
   })
-  expect(client2.nodeId).toEqual('false:' + client2.id)
+  expect(client2.nodeId).toEqual('false:' + client2.clientId + ':' + client2.id)
 })
 
 it('uses node ID in ID generator', function () {
@@ -186,7 +186,7 @@ it('uses node ID in ID generator', function () {
     time: new TestTime()
   })
   var id = client.log.generateId()
-  expect(id).toContain('1 10:test1 0')
+  expect(id).toContain('1 10:1:1 0')
 })
 
 it('uses custom store', function () {
@@ -235,8 +235,7 @@ it('sends options to connection', function () {
     maxDelay: 500,
     attempts: 5
   })
-  expect(client.node.connection.connection.url).toEqual(
-    'wss://localhost:1337')
+  expect(client.node.connection.connection.url).toEqual('wss://localhost:1337')
 })
 
 it('sends options to node', function () {
@@ -256,7 +255,7 @@ it('sends options to node', function () {
 
 it('uses test time', function () {
   var client = createClient()
-  expect(client.log.generateId()).toEqual('1 false:' + client.id + ' 0')
+  expect(client.log.generateId()).toEqual('1 false:1:1 0')
 })
 
 it('connects', function () {
@@ -570,10 +569,10 @@ it('tells last action time during resubscription', function () {
   ]).then(function () {
     connected = []
     return Promise.all([
-      client.log.add({ type: 'logux/processed', id: '1 false:test1 0' }),
-      client.log.add({ type: 'logux/processed', id: '2 false:test1 0' }),
+      client.log.add({ type: 'logux/processed', id: '1 false:1:1 0' }),
+      client.log.add({ type: 'logux/processed', id: '2 false:1:1 0' }),
       client.log.add({ type: 'A' }, { channels: ['a'] }),
-      client.log.add({ type: 'B' }, { channels: ['b'], id: '0 false:test1 0' })
+      client.log.add({ type: 'B' }, { channels: ['b'], id: '0 false:1:1 0' })
     ])
   }).then(function () {
     client.node.setState('disconnected')
@@ -583,12 +582,12 @@ it('tells last action time during resubscription', function () {
       {
         type: 'logux/subscribe',
         channel: 'a',
-        since: { time: 5, id: '5 false:test1 0' }
+        since: { time: 5, id: '5 false:1:1 0' }
       },
       {
         type: 'logux/subscribe',
         channel: 'b',
-        since: { time: 4, id: '4 false:test1 0' }
+        since: { time: 4, id: '4 false:1:1 0' }
       }
     ])
   })
