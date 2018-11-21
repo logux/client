@@ -553,3 +553,43 @@ it('does not subscribing twice during connection', function () {
     expect(connected).toEqual([])
   })
 })
+
+it('tells last action time during resubscription', function () {
+  var client = createClient()
+  var connected = []
+  client.log.on('preadd', function (action, meta) {
+    meta.reasons.push('test')
+    if (action.type === 'logux/subscribe') {
+      connected.push(action)
+    }
+  })
+  client.node.setState('synchronized')
+  return Promise.all([
+    client.log.add({ type: 'logux/subscribe', channel: 'a' }, { sync: true }),
+    client.log.add({ type: 'logux/subscribe', channel: 'b' }, { sync: true })
+  ]).then(function () {
+    connected = []
+    return Promise.all([
+      client.log.add({ type: 'logux/processed', id: '1 false:test1 0' }),
+      client.log.add({ type: 'logux/processed', id: '2 false:test1 0' }),
+      client.log.add({ type: 'A' }, { channels: ['a'] }),
+      client.log.add({ type: 'B' }, { channels: ['b'], id: '0 false:test1 0' })
+    ])
+  }).then(function () {
+    client.node.setState('disconnected')
+    client.node.setState('connecting')
+    client.node.setState('synchronized')
+    expect(connected).toEqual([
+      {
+        type: 'logux/subscribe',
+        channel: 'a',
+        since: { time: 5, id: '5 false:test1 0' }
+      },
+      {
+        type: 'logux/subscribe',
+        channel: 'b',
+        since: { time: 4, id: '4 false:test1 0' }
+      }
+    ])
+  })
+})

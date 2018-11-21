@@ -1,3 +1,4 @@
+var isFirstOlder = require('logux-core/is-first-older')
 var WsConnection = require('logux-core/ws-connection')
 var MemoryStore = require('logux-core/memory-store')
 var ClientNode = require('logux-core/client-node')
@@ -20,19 +21,21 @@ function cleanTabActions (client, id) {
   })
 }
 
-function subscribeAction (action) {
-  var subscribe = { }
-  for (var i in action) {
-    if (i === 'type') {
-      subscribe.type = 'logux/subscribe'
+function merge (a, b) {
+  var result = { }
+  for (var i in a) {
+    if (b[i]) {
+      result[i] = b[i]
     } else {
-      subscribe[i] = action[i]
+      result[i] = a[i]
     }
   }
-  return subscribe
+  return result
 }
 
 var ALLOWED_META = ['id', 'time', 'nodeIds', 'users', 'channels']
+
+var subscribing = { }
 
 /**
  * Base class for browser API to be extended in {@link CrossTabClient}.
@@ -184,20 +187,36 @@ function Client (options) {
     }
   })
 
+  this.last = { }
   this.subscriptions = []
   function listener (action, meta) {
     var type = action.type
-    var json
+    var json, last
     if (type === 'logux/subscribe') {
       json = JSON.stringify(action)
       var already = client.subscriptions.some(function (i) {
         return i.channel === action.channel && JSON.stringify(i) === json
       })
+      subscribing[meta.id] = action.channel
       if (!already) client.subscriptions.push(action)
     } else if (type === 'logux/unsubscribe') {
-      json = JSON.stringify(subscribeAction(action))
+      json = JSON.stringify(merge(action, { type: 'logux/subscribe' }))
       client.subscriptions = client.subscriptions.filter(function (i) {
         return i.channel !== action.channel || JSON.stringify(i) !== json
+      })
+    } else if (type === 'logux/processed' && subscribing[action.id]) {
+      var subscribed = subscribing[action.id]
+      delete subscribing[action.id]
+      last = client.last[subscribed]
+      if (!last || isFirstOlder(last, meta)) {
+        client.last[subscribed] = { id: meta.id, time: meta.time }
+      }
+    } else if (meta.channels) {
+      meta.channels.forEach(function (channel) {
+        last = client.last[channel]
+        if (!last || isFirstOlder(last, meta)) {
+          client.last[channel] = { id: meta.id, time: meta.time }
+        }
       })
     }
     if (process.env.NODE_ENV !== 'production') {
@@ -290,7 +309,10 @@ function Client (options) {
     if (client.node.state === 'synchronized' && lost) {
       lost = false
       for (var i in client.subscriptions) {
-        client.log.add(client.subscriptions[i], { sync: true })
+        var action = merge(client.subscriptions[i], { })
+        var since = client.last[action.channel]
+        if (since) action.since = since
+        client.log.add(action, { sync: true })
       }
     } else if (client.node.state === 'disconnected') {
       lost = true
