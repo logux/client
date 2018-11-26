@@ -416,10 +416,10 @@ it('filters data before sending', function () {
         time: 1,
         sync: true,
         users: ['0'],
+        nodes: ['0:client:uuid'],
         custom: 1,
         reasons: ['test'],
         clients: ['0:client'],
-        nodeIds: ['0:client:uuid'],
         channels: ['user:0']
       }),
       client.log.add({ type: 'c' }, {
@@ -437,8 +437,8 @@ it('filters data before sending', function () {
         id: [1, 'a:client:uuid', 0],
         time: 1,
         users: ['0'],
+        nodes: ['0:client:uuid'],
         clients: ['0:client'],
-        nodeIds: ['0:client:uuid'],
         channels: ['user:0']
       }]
     ])
