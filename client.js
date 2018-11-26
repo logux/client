@@ -121,7 +121,7 @@ function Client (options) {
   this.options.userId = this.options.userId.toString()
   if (!this.options.time) {
     /**
-     * Unique permament client ID. Can be used to track this machine.
+     * Unique permanent client ID. Can be used to track this machine.
      * @type {string}
      */
     this.clientId = this.options.userId + ':' + this.getClientId()

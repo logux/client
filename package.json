@@ -157,7 +157,8 @@
       "synchronizedAfterWait",
       "protocolError",
       "statusReceiver",
-      "syncError"
+      "syncError",
+      "clientId"
     ]
   }
 }
