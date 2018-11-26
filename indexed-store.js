@@ -1,4 +1,4 @@
-var isFirstOlder = require('logux-core/is-first-older')
+var isFirstOlder = require('@logux/core/is-first-older')
 
 var VERSION = 1
 

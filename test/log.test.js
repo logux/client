@@ -1,7 +1,8 @@
+var SyncError = require('@logux/core').SyncError
+var TestPair = require('@logux/core').TestPair
+var TestTime = require('@logux/core').TestTime
+
 var CrossTabClient = require('../cross-tab-client')
-var SyncError = require('logux-core').SyncError
-var TestPair = require('logux-core').TestPair
-var TestTime = require('logux-core').TestTime
 
 jest.mock('browser-supports-log-styles', function () {
   return function () {
@@ -28,17 +29,13 @@ function createClient () {
   })
 }
 
-var originError = console.error
-var originLog = console.log
-
-beforeEach(function () {
-  console.error = jest.fn()
-  console.log = jest.fn()
+beforeAll(function () {
+  jest.spyOn(console, 'error').mockImplementation(function () { })
+  jest.spyOn(console, 'log').mockImplementation(function () { })
 })
 
-afterEach(function () {
-  console.error = originError
-  console.log = originLog
+beforeEach(function () {
+  jest.clearAllMocks()
 })
 
 it('shows connecting state URL', function () {

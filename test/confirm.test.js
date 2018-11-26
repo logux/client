@@ -1,6 +1,6 @@
-var CrossTabClient = require('../cross-tab-client')
-var TestPair = require('logux-core').TestPair
+var TestPair = require('@logux/core').TestPair
 
+var CrossTabClient = require('../cross-tab-client')
 var confirm = require('../confirm')
 
 function createClient () {
@@ -21,25 +21,18 @@ function createClient () {
 }
 
 var beforeunloader
-var originAdd = window.addEventListener
-var originRemove = window.removeEventListener
-
 beforeEach(function () {
   delete window.event
   beforeunloader = false
 
-  window.addEventListener = jest.fn(function (name, callback) {
-    if (name === 'beforeunload') beforeunloader = callback
+  jest.spyOn(window, 'addEventListener').mockImplementation(function (n, c) {
+    if (n === 'beforeunload') beforeunloader = c
   })
-  window.removeEventListener = jest.fn(function (name, callback) {
-    if (name === 'beforeunload' && beforeunloader === callback) {
+  jest.spyOn(window, 'removeEventListener').mockImplementation(function (n, c) {
+    if (n === 'beforeunload' && beforeunloader === c) {
       beforeunloader = false
     }
   })
-})
-afterEach(function () {
-  window.addEventListener = originAdd
-  window.removeEventListener = originRemove
 })
 
 it('confirms close', function () {

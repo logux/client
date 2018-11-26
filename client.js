@@ -1,11 +1,11 @@
-var isFirstOlder = require('logux-core/is-first-older')
-var WsConnection = require('logux-core/ws-connection')
-var MemoryStore = require('logux-core/memory-store')
-var ClientNode = require('logux-core/client-node')
+var isFirstOlder = require('@logux/core/is-first-older')
+var WsConnection = require('@logux/core/ws-connection')
+var MemoryStore = require('@logux/core/memory-store')
+var ClientNode = require('@logux/core/client-node')
 var NanoEvents = require('nanoevents')
-var Reconnect = require('logux-core/reconnect')
+var Reconnect = require('@logux/core/reconnect')
 var nanoid = require('nanoid')
-var Log = require('logux-core/log')
+var Log = require('@logux/core/log')
 
 var IndexedStore = require('./indexed-store')
 

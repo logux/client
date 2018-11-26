@@ -1,9 +1,9 @@
-var CrossTabClient = require('../cross-tab-client')
-var SyncError = require('logux-core').SyncError
-var TestTime = require('logux-core').TestTime
-var TestPair = require('logux-core').TestPair
+var SyncError = require('@logux/core').SyncError
+var TestTime = require('@logux/core').TestTime
+var TestPair = require('@logux/core').TestPair
 var delay = require('nanodelay')
 
+var CrossTabClient = require('../cross-tab-client')
 var status = require('../status')
 
 function createTest (options) {

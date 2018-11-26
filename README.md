@@ -102,9 +102,9 @@ logux.on('add', function (action, meta) {
 })
 ```
 
-Read [`logux-core`] docs for `logux.log` API.
+Read [Logux Core] docs for `logux.log` API.
 
-[`logux-core`]: https://github.com/logux/logux-core
+[Logux Core]: https://github.com/logux/core
 
 
 ### Adding Actions

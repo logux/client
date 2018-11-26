@@ -1,8 +1,8 @@
-var MemoryStore = require('logux-core/memory-store')
-var ClientNode = require('logux-core/client-node')
-var LocalPair = require('logux-core/local-pair')
-var BaseNode = require('logux-core/base-node')
-var Log = require('logux-core/log')
+var MemoryStore = require('@logux/core/memory-store')
+var ClientNode = require('@logux/core/client-node')
+var LocalPair = require('@logux/core/local-pair')
+var BaseNode = require('@logux/core/base-node')
+var Log = require('@logux/core/log')
 
 var CrossTabClient = require('../../cross-tab-client')
 var attention = require('../../attention')

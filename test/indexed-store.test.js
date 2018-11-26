@@ -1,7 +1,7 @@
 /* eslint-disable no-invalid-this */
 
 var fakeIndexedDB = require('fake-indexeddb')
-var eachStoreCheck = require('logux-core').eachStoreCheck
+var eachStoreCheck = require('@logux/core').eachStoreCheck
 
 var IndexedStore = require('../indexed-store')
 
@@ -82,7 +82,8 @@ it('allows to change DB name', function () {
 })
 
 it('reloads page on database update', function () {
-  document.reload = jest.fn()
+  document.reload = function () { }
+  jest.spyOn(document, 'reload')
   store = new IndexedStore()
   return store.init().then(function () {
     var opening = indexedDB.open(store.name, 1000)

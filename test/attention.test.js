@@ -1,7 +1,7 @@
-var CrossTabClient = require('../cross-tab-client')
-var SyncError = require('logux-core').SyncError
-var TestPair = require('logux-core').TestPair
+var SyncError = require('@logux/core').SyncError
+var TestPair = require('@logux/core').TestPair
 
+var CrossTabClient = require('../cross-tab-client')
 var attention = require('../attention')
 
 var nextHidden
@@ -36,10 +36,8 @@ function createClient () {
 }
 
 var originAdd = document.addEventListener
-var originRemove = document.removeEventListener
 afterEach(function () {
   document.addEventListener = originAdd
-  document.removeEventListener = originRemove
 })
 
 it('receives errors', function () {
@@ -59,7 +57,7 @@ it('receives undo', function () {
 })
 
 it('returns unbind function', function () {
-  document.removeEventListener = jest.fn()
+  jest.spyOn(document, 'removeEventListener')
 
   return createClient().then(function (client) {
     var unbind = attention(client)

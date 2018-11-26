@@ -1,7 +1,7 @@
 var fakeIndexedDB = require('fake-indexeddb')
-var MemoryStore = require('logux-core').MemoryStore
-var TestPair = require('logux-core').TestPair
-var TestTime = require('logux-core').TestTime
+var MemoryStore = require('@logux/core').MemoryStore
+var TestPair = require('@logux/core').TestPair
+var TestTime = require('@logux/core').TestTime
 var delay = require('nanodelay')
 
 var Client = require('../client')
@@ -25,11 +25,10 @@ beforeEach(function () {
   })
 })
 
-var originError = console.error
 var originIndexedDB = global.indexedDB
 afterEach(function () {
-  console.error = originError
   global.indexedDB = originIndexedDB
+  jest.clearAllMocks()
 })
 
 function createDialog (opts, credentials) {
@@ -119,7 +118,7 @@ it('throws on missed user ID', function () {
 })
 
 it('not warns on WSS', function () {
-  console.error = jest.fn()
+  jest.spyOn(console, 'error').mockImplementation(function () { })
   return createDialog().then(function (client) {
     expect(client.node.connected).toBeTruthy()
     expect(console.error).not.toBeCalledWith()
@@ -127,7 +126,7 @@ it('not warns on WSS', function () {
 })
 
 it('forces to use WSS in production domain', function () {
-  console.error = jest.fn()
+  jest.spyOn(console, 'error').mockImplementation(function () { })
   return createDialog({ server: 'ws://test.com' }).then(function (client) {
     expect(client.node.connected).toBeFalsy()
     expect(console.error).toBeCalledWith(
@@ -138,7 +137,7 @@ it('forces to use WSS in production domain', function () {
 })
 
 it('ignores WS with allowDangerousProtocol', function () {
-  console.error = jest.fn()
+  jest.spyOn(console, 'error').mockImplementation(function () { })
   return createDialog({
     allowDangerousProtocol: true,
     server: 'ws://test.com'
@@ -149,7 +148,7 @@ it('ignores WS with allowDangerousProtocol', function () {
 })
 
 it('ignores WS in development', function () {
-  console.error = jest.fn()
+  jest.spyOn(console, 'error').mockImplementation(function () { })
   return createDialog({
     server: 'ws://test.com'
   }, {
@@ -260,13 +259,13 @@ it('uses test time', function () {
 
 it('connects', function () {
   var client = createClient()
-  client.node.connection.connect = jest.fn()
+  jest.spyOn(client.node.connection, 'connect')
   client.start()
   expect(client.node.connection.connect).toHaveBeenCalled()
 })
 
 it('display server debug error stacktrace with prefix', function () {
-  console.error = jest.fn()
+  jest.spyOn(console, 'error').mockImplementation(function () { })
   var client = createClient()
   client.node.emitter.emit('debug', 'error', 'Fake stacktrace\n')
   expect(console.error).toHaveBeenCalledWith(
@@ -276,7 +275,7 @@ it('display server debug error stacktrace with prefix', function () {
 })
 
 it('does not display server debug message if type is not error', function () {
-  console.error = jest.fn()
+  jest.spyOn(console, 'error').mockImplementation(function () { })
   var client = createClient()
   client.node.emitter.emit('debug', 'notError', 'Fake stacktrace\n')
   expect(console.error).not.toHaveBeenCalled()
@@ -285,8 +284,8 @@ it('does not display server debug message if type is not error', function () {
 it('cleans everything', function () {
   global.indexedDB = fakeIndexedDB
   var client = createClient()
-  client.node.destroy = jest.fn()
-  client.log.store.clean = jest.fn(client.log.store.clean)
+  jest.spyOn(client.node, 'destroy')
+  jest.spyOn(client.log.store, 'clean')
   return client.clean().then(function () {
     expect(client.node.destroy).toHaveBeenCalled()
     expect(client.log.store.clean).toHaveBeenCalled()
@@ -485,7 +484,7 @@ it('compresses subprotocol', function () {
 })
 
 it('warns about subscription actions without sync', function () {
-  console.error = jest.fn()
+  jest.spyOn(console, 'error').mockImplementation(function () { })
   var client = createClient()
   return Promise.all([
     client.log.add({ type: 'logux/subscribe', name: 'test' }),

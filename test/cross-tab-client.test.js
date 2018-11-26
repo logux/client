@@ -1,5 +1,5 @@
-var TestPair = require('logux-core').TestPair
-var TestTime = require('logux-core').TestTime
+var TestPair = require('@logux/core').TestPair
+var TestTime = require('@logux/core').TestTime
 var delay = require('nanodelay')
 
 var CrossTabClient = require('../cross-tab-client')
@@ -112,8 +112,8 @@ it('supports nanoevents API', function () {
 it('cleans everything', function () {
   client = createClient()
 
-  client.node.destroy = jest.fn()
-  localStorage.removeItem = jest.fn()
+  jest.spyOn(client.node, 'destroy')
+  jest.spyOn(localStorage, 'removeItem')
 
   return client.clean().then(function () {
     expect(client.node.destroy).toHaveBeenCalled()
@@ -229,7 +229,7 @@ it('becomes leader without localStorage', function () {
   client.on('role', function () {
     roles.push(client.role)
   })
-  client.node.connection.connect = jest.fn()
+  jest.spyOn(client.node.connection, 'connect')
 
   client.start()
   expect(roles).toEqual(['leader'])
@@ -256,7 +256,7 @@ it('becomes follower on recent leader ping', function () {
   client.on('role', function () {
     roles.push(client.role)
   })
-  client.node.connection.connect = jest.fn()
+  jest.spyOn(client.node.connection, 'connect')
 
   client.start()
   expect(roles).toEqual(['follower'])
@@ -292,7 +292,7 @@ it('stops election in leader check', function () {
 
 it('pings on leader role', function () {
   client = createClient()
-  client.node.connection.disconnect = jest.fn()
+  jest.spyOn(client.node.connection, 'disconnect')
 
   var last = Date.now() - client.leaderTimeout - 10
   localStorage.setItem('logux:false:leader', '["",' + last + ']')
@@ -337,7 +337,7 @@ it('replaces dead leader', function () {
 
 it('disconnects on leader changes', function () {
   client = createClient()
-  client.node.connection.disconnect = jest.fn()
+  jest.spyOn(client.node.connection, 'disconnect')
 
   client.start()
   return delay(client.electionDelay + 10).then(function () {

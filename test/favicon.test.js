@@ -1,7 +1,7 @@
-var CrossTabClient = require('../cross-tab-client')
-var SyncError = require('logux-core').SyncError
-var TestPair = require('logux-core').TestPair
+var SyncError = require('@logux/core').SyncError
+var TestPair = require('@logux/core').TestPair
 
+var CrossTabClient = require('../cross-tab-client')
 var favicon = require('../favicon')
 
 function getFavNode () {
