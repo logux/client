@@ -418,6 +418,7 @@ it('filters data before sending', function () {
         users: ['0'],
         custom: 1,
         reasons: ['test'],
+        clients: ['0:client'],
         nodeIds: ['0:client:uuid'],
         channels: ['user:0']
       }),
@@ -436,6 +437,7 @@ it('filters data before sending', function () {
         id: [1, 'a:client:uuid', 0],
         time: 1,
         users: ['0'],
+        clients: ['0:client'],
         nodeIds: ['0:client:uuid'],
         channels: ['user:0']
       }]
