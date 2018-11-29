@@ -83,7 +83,7 @@
   "size-limit": [
     {
       "path": "cross-tab-client.js",
-      "limit": "9 KB"
+      "limit": "8 KB"
     },
     {
       "path": [

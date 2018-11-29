@@ -7,8 +7,6 @@ var Reconnect = require('@logux/core/reconnect')
 var nanoid = require('nanoid')
 var Log = require('@logux/core/log')
 
-var IndexedStore = require('./indexed-store')
-
 function tabPing (client) {
   localStorage.setItem(client.options.prefix + ':tab:' + client.id, Date.now())
 }
@@ -161,14 +159,7 @@ function Client (options) {
     }
   }
 
-  var store = this.options.store
-  if (!store) {
-    if (global.indexedDB) {
-      store = new IndexedStore(this.options.prefix + ':' + this.options.userId)
-    } else {
-      store = new MemoryStore()
-    }
-  }
+  var store = this.options.store || new MemoryStore()
 
   var log
   if (this.options.time) {

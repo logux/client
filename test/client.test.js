@@ -1,4 +1,3 @@
-var fakeIndexedDB = require('fake-indexeddb')
 var MemoryStore = require('@logux/core').MemoryStore
 var TestPair = require('@logux/core').TestPair
 var TestTime = require('@logux/core').TestTime
@@ -199,27 +198,6 @@ it('uses custom store', function () {
   expect(client.log.store).toBe(store)
 })
 
-it('uses user ID in store name', function () {
-  global.indexedDB = fakeIndexedDB
-  var client = new Client({
-    subprotocol: '1.0.0',
-    server: 'wss://localhost:1337',
-    userId: 10
-  })
-  expect(client.log.store.name).toEqual('logux:10')
-})
-
-it('uses custom prefix', function () {
-  global.indexedDB = fakeIndexedDB
-  var client = new Client({
-    subprotocol: '1.0.0',
-    server: 'wss://localhost:1337',
-    prefix: 'app',
-    userId: 10
-  })
-  expect(client.log.store.name).toEqual('app:10')
-})
-
 it('sends options to connection', function () {
   var client = new Client({
     subprotocol: '1.0.0',
@@ -282,7 +260,6 @@ it('does not display server debug message if type is not error', function () {
 })
 
 it('cleans everything', function () {
-  global.indexedDB = fakeIndexedDB
   var client = createClient()
   jest.spyOn(client.node, 'destroy')
   jest.spyOn(client.log.store, 'clean')

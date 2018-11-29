@@ -13,7 +13,7 @@ function block (e) {
  *
  * @example
  * import confirm from 'logux-client/confirm'
- * confirm(client, 'Post does not saved to server. Are you sure to leave?')
+ * confirm(client)
  */
 function confirm (client) {
   var disconnected = client.state === 'disconnected'
