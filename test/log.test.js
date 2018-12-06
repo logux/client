@@ -48,7 +48,7 @@ it('shows connecting state URL', function () {
     client.node.setState('connecting')
 
     expect(console.log).toBeCalledWith(
-      'Logux: state was changed to connecting. ' +
+      'Logux state is connecting. ' +
       '10:1:1 is connecting to ws://ya.ru.'
     )
   })
@@ -64,15 +64,15 @@ it('shows Logux prefix with color and make state and nodeId bold', function () {
     client.node.setState('connecting')
 
     expect(console.log).toBeCalledWith(
-      '%cLogux:%c state was changed to %cconnecting%c. ' +
+      '%cLogux%c state is %cconnecting%c. ' +
       '%c10:1:1%c is connecting to %cws://ya.ru%c.',
-      'color: #ffa200',
+      'color:#ffa200;font-weight:bold',
       '',
-      'font-weight: bold',
+      'font-weight:bold',
       '',
-      'font-weight: bold',
+      'font-weight:bold',
       '',
-      'font-weight: bold',
+      'font-weight:bold',
       ''
     )
   })
@@ -87,15 +87,13 @@ it('shows server node ID', function () {
     client.node.setState('synchronized')
 
     expect(console.log).toBeCalledWith(
-      'Logux: state was changed to synchronized. ' +
+      'Logux state is synchronized. ' +
       'Client was connected to server.'
     )
 
     client.node.connected = false
     client.node.setState('disconnected')
-    expect(console.log).toHaveBeenLastCalledWith(
-      'Logux: state was changed to disconnected'
-    )
+    expect(console.log).toHaveBeenLastCalledWith('Logux state is disconnected')
   })
 })
 
@@ -107,9 +105,7 @@ it('does not shows server node ID in follower role', function () {
     client.node.connected = true
     client.node.setState('synchronized')
 
-    expect(console.log).toBeCalledWith(
-      'Logux: state was changed to synchronized'
-    )
+    expect(console.log).toBeCalledWith('Logux state is synchronized')
   })
 })
 
@@ -122,23 +118,23 @@ it('shows bold server node ID', function () {
     client.node.setState('synchronized')
 
     expect(console.log).toBeCalledWith(
-      '%cLogux:%c state was changed to %csynchronized%c. ' +
+      '%cLogux%c state is %csynchronized%c. ' +
       'Client was connected to %cserver%c.',
-      'color: #ffa200',
+      'color:#ffa200;font-weight:bold',
       '',
-      'font-weight: bold',
+      'font-weight:bold',
       '',
-      'font-weight: bold',
+      'font-weight:bold',
       ''
     )
 
     client.node.connected = false
     client.node.setState('disconnected')
     expect(console.log).toHaveBeenLastCalledWith(
-      '%cLogux:%c state was changed to %cdisconnected%c',
-      'color: #ffa200',
+      '%cLogux%c state is %cdisconnected%c',
+      'color:#ffa200;font-weight:bold',
       '',
-      'font-weight: bold',
+      'font-weight:bold',
       ''
     )
   })
@@ -151,9 +147,7 @@ it('shows state event', function () {
     client.node.connected = false
     client.node.emitter.emit('state')
 
-    expect(console.log).toBeCalledWith(
-      'Logux: state was changed to connecting'
-    )
+    expect(console.log).toBeCalledWith('Logux state is connecting')
   })
 })
 
@@ -164,9 +158,7 @@ it('shows role event', function () {
     client.node.connected = false
     client.emitter.emit('role')
 
-    expect(console.log).toBeCalledWith(
-      'Logux: tab role was changed to leader'
-    )
+    expect(console.log).toBeCalledWith('Logux tab role is leader')
   })
 })
 
@@ -175,7 +167,7 @@ it('shows error event', function () {
     log(client, { color: false })
     var error = new SyncError('test')
     client.node.connection.emitter.emit('error', error)
-    expect(console.error).toBeCalledWith('Logux: error: test')
+    expect(console.error).toBeCalledWith('Logux error: test')
   })
 })
 
@@ -185,8 +177,8 @@ it('shows colorized error event', function () {
     var error = new SyncError('test')
     client.node.connection.emitter.emit('error', error)
     expect(console.error).toBeCalledWith(
-      '%cLogux:%c error: test',
-      'color: #ffa200',
+      '%cLogux%c error: test',
+      'color:#ffa200;font-weight:bold',
       ''
     )
   })
@@ -199,7 +191,7 @@ it('shows server error', function () {
     var error = new SyncError('test', 'type', true)
     client.node.emitter.emit('clientError', error)
 
-    expect(console.error).toBeCalledWith('Logux: server sent error: test')
+    expect(console.error).toBeCalledWith('Logux server sent error: test')
   })
 })
 
@@ -211,8 +203,8 @@ it('shows bold server error', function () {
     client.node.emitter.emit('clientError', error)
 
     expect(console.error).toBeCalledWith(
-      '%cLogux:%c server sent error: test',
-      'color: #ffa200',
+      '%cLogux%c server sent error: test',
+      'color:#ffa200;font-weight:bold',
       ''
     )
   })
@@ -221,33 +213,53 @@ it('shows bold server error', function () {
 it('shows add and clean event', function () {
   return createClient().then(function (client) {
     log(client, { color: false })
-    return client.node.log.add({ type: 'A' }, { reasons: ['test'] })
-      .then(function () {
-        expect(console.log).toBeCalledWith(
-          'Logux: action A was added',
-          { type: 'A' },
-          {
-            id: '1 10:1:1 0',
-            subprotocol: '1.0.0',
-            reasons: ['test'],
-            time: 1,
-            added: 1
-          }
-        )
-        return client.node.log.removeReason('test')
-      }).then(function () {
-        expect(console.log).toHaveBeenLastCalledWith(
-          'Logux: action A was cleaned',
-          { type: 'A' },
-          {
-            id: '1 10:1:1 0',
-            subprotocol: '1.0.0',
-            reasons: [],
-            time: 1,
-            added: 1
-          }
-        )
-      })
+    return client.node.log.add(
+      { type: 'A' }, { reasons: ['test'] }
+    ).then(function () {
+      expect(console.log).toBeCalledWith(
+        'Logux added A action',
+        { type: 'A' },
+        {
+          id: '1 10:1:1 0',
+          subprotocol: '1.0.0',
+          reasons: ['test'],
+          time: 1,
+          added: 1
+        }
+      )
+      return client.node.log.removeReason('test')
+    }).then(function () {
+      expect(console.log).toHaveBeenLastCalledWith(
+        'Logux cleaned A action',
+        { type: 'A' },
+        {
+          id: '1 10:1:1 0',
+          subprotocol: '1.0.0',
+          reasons: [],
+          time: 1,
+          added: 1
+        }
+      )
+    })
+  })
+})
+
+it('shows subscription action', function () {
+  return createClient().then(function (client) {
+    log(client, { color: false })
+    return client.node.log.add(
+      { type: 'logux/subscribe', channel: 'A' }
+    ).then(function () {
+      expect(console.log).toBeCalledWith('Logux subscribed to channel A')
+      return client.node.log.add(
+        { type: 'logux/subscribe', channel: 'A', a: 1 }
+      )
+    }).then(function () {
+      expect(console.log).toHaveBeenLastCalledWith(
+        'Logux subscribed to channel A',
+        { type: 'logux/subscribe', channel: 'A', a: 1 }
+      )
+    })
   })
 })
 
@@ -256,7 +268,7 @@ it('combines add and clean event', function () {
     log(client, { color: false })
     return client.node.log.add({ type: 'A' }).then(function () {
       expect(console.log).toBeCalledWith(
-        'Logux: action A was added and cleaned',
+        'Logux added A action and cleaned it',
         { type: 'A' },
         {
           id: '1 10:1:1 0',
@@ -306,10 +318,10 @@ it('shows add and clean event and make action type bold', function () {
     return client.node.log.add({ type: 'A' }, { reasons: ['test'] })
       .then(function () {
         expect(console.log).toBeCalledWith(
-          '%cLogux:%c action %cA%c was added',
-          'color: #ffa200',
+          '%cLogux%c added %cA%c action',
+          'color:#ffa200;font-weight:bold',
           '',
-          'font-weight: bold',
+          'font-weight:bold',
           '',
           { type: 'A' },
           {
@@ -323,10 +335,10 @@ it('shows add and clean event and make action type bold', function () {
         return client.node.log.removeReason('test')
       }).then(function () {
         expect(console.log).toHaveBeenLastCalledWith(
-          '%cLogux:%c action %cA%c was cleaned',
-          'color: #ffa200',
+          '%cLogux%c cleaned %cA%c action',
+          'color:#ffa200;font-weight:bold',
           '',
-          'font-weight: bold',
+          'font-weight:bold',
           '',
           { type: 'A' },
           {
@@ -348,12 +360,12 @@ it('shows add event with action and make action type bold', function () {
     return client.node.log.add({ type: 'B' }, { reasons: ['test'] })
   }).then(function () {
     expect(console.log).toBeCalledWith(
-      '%cLogux:%c action %cB%c was added by %c10:1:1%c',
-      'color: #ffa200',
+      '%cLogux%c added %cB%c action from %c10:1:1%c',
+      'color:#ffa200;font-weight:bold',
       '',
-      'font-weight: bold',
+      'font-weight:bold',
       '',
-      'font-weight: bold',
+      'font-weight:bold',
       '',
       { type: 'B' },
       {
@@ -412,13 +424,13 @@ it('supports cross-tab synchronization', function () {
     client.state = 'disconnected'
     client.emitter.emit('state')
     expect(console.log).lastCalledWith(
-      'Logux: state was changed to disconnected'
+      'Logux state is disconnected'
     )
 
     var meta = { id: '1 10:1:1 0', reasons: ['test'] }
     client.emitter.emit('add', { type: 'A' }, meta)
     expect(console.log).lastCalledWith(
-      'Logux: action A was added', { type: 'A' }, meta
+      'Logux added A action', { type: 'A' }, meta
     )
   })
 })

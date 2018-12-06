@@ -5,7 +5,7 @@ function style (string) {
 }
 
 function colorify (color, text, action, meta) {
-  text = '%cLogux:%c ' + text
+  text = '%cLogux%c ' + text
   if (!color) text = text.replace(/%c/g, '')
 
   var args = [text]
@@ -14,18 +14,16 @@ function colorify (color, text, action, meta) {
     var styles = text.match(/%c[^%]+%c/g)
     for (var i = 0; i < styles.length; i++) {
       if (i === 0) {
-        args.push('color: #ffa200')
+        args.push('color:#ffa200;font-weight:bold')
       } else {
-        args.push('font-weight: bold')
+        args.push('font-weight:bold')
       }
       args.push('')
     }
   }
 
-  if (action && meta) {
-    args.push(action)
-    args.push(meta)
-  }
+  if (action) args.push(action)
+  if (meta) args.push(meta)
 
   return args
 }
@@ -83,13 +81,13 @@ function log (client, messages) {
         prevConnected = false
       }
 
-      showLog('state was changed to ' + style(client.state) + postfix)
+      showLog('state is ' + style(client.state) + postfix)
     }))
   }
 
   if (messages.role !== false) {
     unbind.push(client.on('role', function () {
-      showLog('tab role was changed to ' + style(client.role))
+      showLog('tab role is ' + style(client.role))
     }))
   }
 
@@ -112,16 +110,26 @@ function log (client, messages) {
     unbind.push(client.on('add', function (action, meta) {
       if (meta.tab && meta.tab !== client.id) return
       if (ignore[action.type]) return
-      var message = 'action ' + style(action.type) + ' was added'
-      if (meta.reasons.length === 0) {
-        cleaned[meta.id] = true
-        message += ' and cleaned'
+      var message
+      if (action.type === 'logux/subscribe') {
+        message = 'subscribed to channel ' + style(action.channel)
+        if (Object.keys(action).length === 2) {
+          showLog(message)
+        } else {
+          showLog(message, action)
+        }
+      } else {
+        message = 'added ' + style(action.type) + ' action'
+        if (meta.reasons.length === 0) {
+          cleaned[meta.id] = true
+          message += ' and cleaned it'
+        }
+        var nodeId = meta.id.split(' ')[1]
+        if (nodeId !== node.localNodeId) {
+          message += ' from ' + style(nodeId)
+        }
+        showLog(message, action, meta)
       }
-      var nodeId = meta.id.split(' ')[1]
-      if (nodeId !== node.localNodeId) {
-        message += ' by ' + style(nodeId)
-      }
-      showLog(message, action, meta)
     }))
   }
 
@@ -133,7 +141,8 @@ function log (client, messages) {
       }
       if (meta.tab && meta.tab !== client.id) return
       if (ignore[action.type]) return
-      var message = 'action ' + style(action.type) + ' was cleaned'
+      if (action.type === 'logux/subscribe') return
+      var message = 'cleaned ' + style(action.type) + ' action'
       showLog(message, action, meta)
     }))
   }
