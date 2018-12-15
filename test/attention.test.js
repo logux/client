@@ -1,4 +1,4 @@
-var SyncError = require('@logux/core').SyncError
+var LoguxError = require('@logux/core').LoguxError
 var TestPair = require('@logux/core').TestPair
 
 var CrossTabClient = require('../cross-tab-client')
@@ -69,7 +69,7 @@ it('returns unbind function', function () {
 it('allows to miss timeout error', function () {
   return createClient().then(function (client) {
     attention(client)
-    client.node.emitter.emit('error', new SyncError('timeout'))
+    client.node.emitter.emit('error', new LoguxError('timeout'))
     expect(document.title).toBe('title')
   })
 })

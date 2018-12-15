@@ -1,4 +1,4 @@
-var SyncError = require('@logux/core').SyncError
+var LoguxError = require('@logux/core').LoguxError
 var TestTime = require('@logux/core').TestTime
 var TestPair = require('@logux/core').TestPair
 var delay = require('nanodelay')
@@ -146,13 +146,13 @@ it('shows error', function () {
 
 it('shows server errors', function () {
   return createTest().then(function (test) {
-    var protocol = new SyncError('wrong-protocol', { })
+    var protocol = new LoguxError('wrong-protocol', { })
     test.leftNode.emitter.emit('error', protocol)
     expect(badgeNode().style.display).toEqual('block')
     expect(badgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
     expect(getBadgeMessage()).toEqual(messages.protocolError)
 
-    var subprotocol = new SyncError('wrong-subprotocol', { })
+    var subprotocol = new LoguxError('wrong-subprotocol', { })
     test.leftNode.emitter.emit('error', subprotocol)
     expect(badgeNode().style.display).toEqual('block')
     expect(badgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
@@ -162,7 +162,7 @@ it('shows server errors', function () {
 
 it('shows client error', function () {
   return createTest().then(function (test) {
-    var error = new SyncError('test', 'type', true)
+    var error = new LoguxError('test', 'type', true)
     test.leftNode.emitter.emit('clientError', error)
 
     expect(badgeNode().style.display).toEqual('block')

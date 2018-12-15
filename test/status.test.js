@@ -1,4 +1,4 @@
-var SyncError = require('@logux/core').SyncError
+var LoguxError = require('@logux/core').LoguxError
 var TestTime = require('@logux/core').TestTime
 var TestPair = require('@logux/core').TestPair
 var delay = require('nanodelay')
@@ -140,7 +140,7 @@ it('notifies about synchronization error', function () {
     var error1 = { type: 'any error' }
     test.leftNode.emitter.emit('error', error1)
 
-    var error2 = new SyncError('test', 'type', true)
+    var error2 = new LoguxError('test', 'type', true)
     test.leftNode.emitter.emit('clientError', error2)
 
     expect(test.calls).toEqual(['syncError', 'syncError'])
@@ -158,10 +158,10 @@ it('ignores timeout error', function () {
 
 it('notifies about old client', function () {
   return createTest().then(function (test) {
-    var protocol = new SyncError('wrong-protocol', { })
+    var protocol = new LoguxError('wrong-protocol', { })
     test.leftNode.emitter.emit('error', protocol)
 
-    var subprotocol = new SyncError('wrong-subprotocol', { })
+    var subprotocol = new LoguxError('wrong-subprotocol', { })
     test.leftNode.emitter.emit('error', subprotocol)
 
     test.leftNode.setState('disconnected')
