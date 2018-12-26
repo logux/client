@@ -27,7 +27,7 @@
   "devDependencies": {
     "@logux/eslint-config": "^27.0.0",
     "clean-publish": "^1.1.0",
-    "eslint": "^5.10.0",
+    "eslint": "^5.11.0",
     "eslint-config-standard": "^12.0.0",
     "eslint-plugin-es5": "^1.3.1",
     "eslint-plugin-import": "^2.14.0",
@@ -44,12 +44,12 @@
     "lint-staged": "^8.1.0",
     "nanodelay": "^0.1.4",
     "rimraf": "^2.6.2",
-    "size-limit": "^0.21.0",
+    "size-limit": "^0.21.1",
     "svgo": "^1.1.1",
     "url-loader": "^1.1.2",
-    "webpack": "^4.27.1",
+    "webpack": "^4.28.2",
     "webpack-cli": "^3.1.2",
-    "webpack-dev-server": "^3.1.10",
+    "webpack-dev-server": "^3.1.14",
     "yaspeller-ci": "^1.0.0"
   },
   "husky": {
