@@ -487,11 +487,17 @@ it('resubscribes to previous subscriptions', function () {
     client.log.add(
       { type: 'logux/subscribe', channel: 'a' }, { sync: true }),
     client.log.add(
+      { type: 'logux/subscribe', channel: 'a' }, { sync: true }),
+    client.log.add(
       { type: 'logux/subscribe', channel: 'b', b: 1 }, { sync: true }),
     client.log.add(
       { type: 'logux/subscribe', channel: 'b', b: 2 }, { sync: true }),
     client.log.add(
-      { type: 'logux/unsubscribe', channel: 'b', b: 1 }, { sync: true })
+      { type: 'logux/subscribe', channel: 'b', b: 2 }, { sync: true }),
+    client.log.add(
+      { type: 'logux/unsubscribe', channel: 'b', b: 1 }, { sync: true }),
+    client.log.add(
+      { type: 'logux/unsubscribe', channel: 'b', b: 2 }, { sync: true })
   ]).then(function () {
     connected = []
     client.node.setState('synchronized')

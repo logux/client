@@ -186,22 +186,28 @@ function Client (options) {
   })
 
   this.last = { }
-  this.subscriptions = []
+  this.subscriptions = { }
   function listener (action, meta) {
     var type = action.type
     var json, last
-    if (type === 'logux/subscribe') {
+    if (type === 'logux/subscribe' && !meta.resubscribe) {
       json = JSON.stringify(action)
-      var already = client.subscriptions.some(function (i) {
-        return i.channel === action.channel && JSON.stringify(i) === json
-      })
       subscribing[meta.id] = action.channel
-      if (!already) client.subscriptions.push(action)
-    } else if (type === 'logux/unsubscribe') {
+      if (client.subscriptions[json]) {
+        client.subscriptions[json] += 1
+      } else {
+        client.subscriptions[json] = 1
+      }
+    } else if (type === 'logux/unsubscribe' && !meta.resubscribe) {
       json = JSON.stringify(merge(action, { type: 'logux/subscribe' }))
-      client.subscriptions = client.subscriptions.filter(function (i) {
-        return i.channel !== action.channel || JSON.stringify(i) !== json
-      })
+      var subscribers = client.subscriptions[json]
+      if (subscribers) {
+        if (subscribers === 1) {
+          delete client.subscriptions[json]
+        } else {
+          client.subscriptions[json] = subscribers - 1
+        }
+      }
     } else if (type === 'logux/processed' && subscribing[action.id]) {
       var subscribed = subscribing[action.id]
       delete subscribing[action.id]
@@ -309,10 +315,10 @@ function Client (options) {
     if (client.node.state === 'synchronized' && lost) {
       lost = false
       for (var i in client.subscriptions) {
-        var action = merge(client.subscriptions[i], { })
+        var action = JSON.parse(i)
         var since = client.last[action.channel]
         if (since) action.since = since
-        client.log.add(action, { sync: true })
+        client.log.add(action, { sync: true, resubscribe: true })
       }
     } else if (client.node.state === 'disconnected') {
       lost = true
