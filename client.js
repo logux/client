@@ -198,7 +198,7 @@ function Client (options) {
       } else {
         client.subscriptions[json] = 1
       }
-    } else if (type === 'logux/unsubscribe' && !meta.resubscribe) {
+    } else if (type === 'logux/unsubscribe') {
       json = JSON.stringify(merge(action, { type: 'logux/subscribe' }))
       var subscribers = client.subscriptions[json]
       if (subscribers) {
