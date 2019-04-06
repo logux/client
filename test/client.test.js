@@ -501,16 +501,24 @@ it('resubscribes to previous subscriptions', function () {
   ]).then(function () {
     connected = []
     client.node.setState('synchronized')
-    expect(connected).toEqual([])
+    expect(connected).toEqual([
+      { type: 'logux/subscribe', channel: 'a' },
+      { type: 'logux/subscribe', channel: 'b', b: 2 }
+    ])
 
     client.node.setState('sending')
     client.node.setState('synchronized')
-    expect(connected).toEqual([])
+    expect(connected).toEqual([
+      { type: 'logux/subscribe', channel: 'a' },
+      { type: 'logux/subscribe', channel: 'b', b: 2 }
+    ])
 
     client.node.setState('disconnected')
     client.node.setState('connecting')
     client.node.setState('synchronized')
     expect(connected).toEqual([
+      { type: 'logux/subscribe', channel: 'a' },
+      { type: 'logux/subscribe', channel: 'b', b: 2 },
       { type: 'logux/subscribe', channel: 'a' },
       { type: 'logux/subscribe', channel: 'b', b: 2 }
     ])

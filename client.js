@@ -310,18 +310,21 @@ function Client (options) {
     }
   })
 
-  var lost = false
+  var disconnected = true
   this.node.on('state', function () {
-    if (client.node.state === 'synchronized' && lost) {
-      lost = false
-      for (var i in client.subscriptions) {
-        var action = JSON.parse(i)
-        var since = client.last[action.channel]
-        if (since) action.since = since
-        client.log.add(action, { sync: true, resubscribe: true })
+    var state = client.node.state
+    if (state === 'synchronized' || state === 'sending') {
+      if (disconnected) {
+        for (var i in client.subscriptions) {
+          var action = JSON.parse(i)
+          var since = client.last[action.channel]
+          if (since) action.since = since
+          client.log.add(action, { sync: true, resubscribe: true })
+        }
       }
+      disconnected = false
     } else if (client.node.state === 'disconnected') {
-      lost = true
+      disconnected = true
     }
   })
 
