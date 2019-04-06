@@ -3,14 +3,13 @@ var TestPair = require('@logux/core').TestPair
 var TestTime = require('@logux/core').TestTime
 
 var CrossTabClient = require('../cross-tab-client')
+var log = require('../log')
 
 jest.mock('browser-supports-log-styles', function () {
   return function () {
     return true
   }
 })
-
-var log = require('../log')
 
 function createClient () {
   var pair = new TestPair()

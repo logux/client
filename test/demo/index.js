@@ -5,18 +5,16 @@ var BaseNode = require('@logux/core/base-node')
 var Log = require('@logux/core/log')
 
 var CrossTabClient = require('../../cross-tab-client')
+var faviconOffline = require('./offline.png')
+var badgeMessages = require('../../badge/en')
+var faviconNormal = require('./normal.png')
+var faviconError = require('./error.png')
+var badgeStyles = require('../../badge/default')
 var attention = require('../../attention')
 var confirm = require('../../confirm')
 var favicon = require('../../favicon')
 var badge = require('../../badge')
 var log = require('../../log')
-
-var badgeMessages = require('../../badge/en')
-var badgeStyles = require('../../badge/default')
-
-var faviconOffline = require('./offline.png')
-var faviconNormal = require('./normal.png')
-var faviconError = require('./error.png')
 
 var pair = new LocalPair(500)
 
