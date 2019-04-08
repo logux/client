@@ -267,7 +267,7 @@ it('combines add and clean event', function () {
     log(client, { color: false })
     return client.node.log.add({ type: 'A' }).then(function () {
       expect(console.log).toBeCalledWith(
-        'Logux added A action and cleaned it',
+        'Logux added and cleaned A action',
         { type: 'A' },
         {
           id: '1 10:1:1 0',

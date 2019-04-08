@@ -119,11 +119,12 @@ function log (client, messages) {
           showLog(message, action)
         }
       } else {
-        message = 'added ' + style(action.type) + ' action'
+        message = 'added '
         if (meta.reasons.length === 0) {
           cleaned[meta.id] = true
-          message += ' and cleaned it'
+          message += 'and cleaned '
         }
+        message += style(action.type) + ' action'
         var nodeId = meta.id.split(' ')[1]
         if (nodeId !== node.localNodeId) {
           message += ' from ' + style(nodeId)
