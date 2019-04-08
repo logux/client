@@ -25,6 +25,14 @@ var serverLog = new Log({
 })
 new BaseNode('server:uuid', serverLog, pair.right)
 
+serverLog.on('add', function (action, meta) {
+  if (action.type !== 'logux/processed') {
+    setTimeout(function () {
+      serverLog.add({ type: 'logux/processed', id: meta.id })
+    }, 500)
+  }
+})
+
 var client = new CrossTabClient({
   subprotocol: '1.0.0',
   userId: 10,
