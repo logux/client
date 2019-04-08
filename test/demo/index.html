@@ -30,8 +30,11 @@
         float: left;
         padding: 1em 0;
       }
+      header {
+        display: flex;
+        align-items: baseline;
+      }
       .connection {
-        width: 100%;
         font-size: 1.1em;
       }
       button {
@@ -80,26 +83,35 @@
           synchronization status.
         </li>
         <li>
+          <strong>status</strong> low-level API to get Logux
+          synchronization status.
+        </li>
+        <li>
           <strong>log</strong> displays Logux events in browser console.
         </li>
       </ul>
       <h2>Controls</h2>
-      <section class="connection">
-        <label>
-          <input type="checkbox" id="connection" checked />
-          Client connected to server
-          <small id="disabled" style="display: none">
-            (disabled, because this tab is not in leader role)
-          </small>
-        </label>
-        <footer>
-          Tests:
-          <strong>cross-tab</strong>,
-          <strong>favicon</strong>,
-          <strong>badge</strong>,
-          <strong>log</strong>
-        </footer>
-      </section>
+      <header>
+        <section class="connection">
+          <label>
+            <input type="checkbox" id="connection" checked />
+            Client connected to server
+            <small id="disabled" style="display: none">
+              (disabled, because this tab is not in leader role)
+            </small>
+          </label>
+          <footer>
+            Tests:
+            <strong>cross-tab</strong>,
+            <strong>favicon</strong>,
+            <strong>badge</strong>,
+            <strong>log</strong>
+          </footer>
+        </section>
+        <section>
+          Status: <strong id="status">disconnected</status>
+        </section>
+      </header>
       <section>
         <button id="add">Add action to log</button>
         <footer>

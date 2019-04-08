@@ -13,6 +13,7 @@ var badgeStyles = require('../../badge/default')
 var attention = require('../../attention')
 var confirm = require('../../confirm')
 var favicon = require('../../favicon')
+var status = require('../../status')
 var badge = require('../../badge')
 var log = require('../../log')
 
@@ -44,6 +45,9 @@ favicon(client, {
 })
 badge(client, { messages: badgeMessages, styles: badgeStyles })
 log(client)
+status(client, function (s) {
+  document.all.status.innerText = s
+})
 
 var count = 0
 function emoji (state) {
