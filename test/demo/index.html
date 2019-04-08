@@ -34,9 +34,6 @@
         display: flex;
         align-items: baseline;
       }
-      .connection {
-        font-size: 1.1em;
-      }
       button {
         height: 2em;
         min-width: 14em;
@@ -92,7 +89,7 @@
       </ul>
       <h2>Controls</h2>
       <header>
-        <section class="connection">
+        <section>
           <label>
             <input type="checkbox" id="connection" checked />
             Client connected to server
@@ -100,13 +97,6 @@
               (disabled, because this tab is not in leader role)
             </small>
           </label>
-          <footer>
-            Tests:
-            <strong>cross-tab</strong>,
-            <strong>favicon</strong>,
-            <strong>badge</strong>,
-            <strong>log</strong>
-          </footer>
         </section>
         <section>
           Status: <strong id="status">disconnected</status>
@@ -114,59 +104,21 @@
       </header>
       <section>
         <button id="add">Add action to log</button>
-        <footer>
-          Tests:
-          <strong>cross-tab</strong>,
-          <strong>confirm</strong>,
-          <strong>badge</strong>,
-          <strong>log</strong>
-        </footer>
       </section>
       <section>
         <button id="clean">Clean actions</button>
-        <footer>
-          Tests:
-          <strong>cross-tab</strong>,
-          <strong>log</strong>
-        </footer>
       </section>
       <section>
         <button id="error">Error after 3 seconds</button>
-        <footer>
-          Tests:
-          <strong>attention</strong>,
-          <strong>badge</strong>,
-          <strong>favicon</strong>
-        </footer>
       </section>
       <section>
         <button id="denied">Denied after 3 seconds</button>
-        <footer>
-          Tests:
-          <strong>attention</strong>,
-          <strong>badge</strong>,
-          <strong>favicon</strong>
-        </footer>
       </section>
       <section>
         <button id="subprotocolError">Subprotocol error</button>
-        <footer>
-          Tests:
-          <strong>attention</strong>,
-          <strong>favicon</strong>,
-          <strong>badge</strong>,
-          <strong>log</strong>
-        </footer>
       </section>
       <section>
         <button id="serverError">Server error after 3 seconds</button>
-        <footer>
-          Tests:
-          <strong>attention</strong>,
-          <strong>favicon</strong>,
-          <strong>badge</strong>,
-          <strong>log</strong>
-        </footer>
       </section>
     </article>
   </body>
