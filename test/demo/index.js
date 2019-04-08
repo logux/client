@@ -104,7 +104,7 @@ document.all.connection.onchange = function (e) {
 }
 
 document.all.add.onclick = function () {
-  client.log.add({ type: 'TICK' }, { reasons: ['tick'] })
+  client.log.add({ type: 'TICK' }, { reasons: ['tick'], sync: true })
 }
 
 document.all.clean.onclick = function () {
