@@ -15,7 +15,7 @@
     "lint": "eslint *.js test/{**/,}*.js",
     "docs": "jsdoc -d docs/ *.js",
     "test": "jest --coverage && yarn lint && size-limit && yarn spell && yarn build",
-    "build": "parcel build --experimental-scope-hoisting -d ./test/demo/build --cache-dir ./test/demo/.cache ./test/demo/index.html",
+    "build": "parcel build --experimental-scope-hoisting -d ./test/demo/build --cache-dir ./test/demo/.cache --public-url ./ ./test/demo/index.html",
     "start": "parcel serve -d ./test/demo/build --cache-dir ./test/demo/.cache ./test/demo/index.html --open"
   },
   "author": "Andrey Sitnik <andrey@sitnik.ru>",
