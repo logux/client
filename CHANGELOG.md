@@ -1,6 +1,20 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.3
+* Rename project from `logux-client` to `@logux/client`.
+* Merge with `logux-status`.
+* Use `MemoryStore` by default.
+* Use Logux Core 0.3.
+* Wait for `logux/processed` before switching to `synchronized` state.
+* Add `Client#clientId`.
+* Add `action.since` to `logux/subscribe` action.
+* Add `ignoreActions` to `log()`.
+* Combine add/clean messages in `log()`.
+* Track subscription counts.
+* Clean up code (by Dimitri Nicolas).
+* Remove Promise fix for old Firefox.
+
 ## 0.2.10
 * Fix cross-tab `add` event with `MemoryStore`.
 

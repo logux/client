@@ -1,6 +1,6 @@
 {
   "name": "@logux/client",
-  "version": "0.2.10",
+  "version": "0.3.0",
   "description": "Logux base components to build web client",
   "keywords": [
     "logux",
@@ -150,7 +150,9 @@
       "syncError",
       "clientId",
       "GraphQL",
-      "DevTools"
+      "DevTools",
+      "Dimitri",
+      "Nicolas"
     ]
   }
 }
