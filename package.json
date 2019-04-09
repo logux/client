@@ -19,7 +19,7 @@
   "license": "MIT",
   "repository": "logux/client",
   "dependencies": {
-    "@logux/core": "logux/core",
+    "@logux/core": "^0.3.0",
     "browser-supports-log-styles": "^1.1.7",
     "nanoevents": "^1.0.8",
     "nanoid": "^2.0.1"

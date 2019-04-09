@@ -880,9 +880,10 @@
     "@types/istanbul-lib-coverage" "^2.0.0"
     "@types/yargs" "^12.0.9"
 
-"@logux/core@logux/core":
-  version "0.2.2"
-  resolved "https://codeload.github.com/logux/core/tar.gz/4ced891e52592da9888c3c98bad83ca4a68393ee"
+"@logux/core@^0.3.0":
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/@logux/core/-/core-0.3.0.tgz#b94a3a5ec9d28a41c0db0f5385357b2ed19a813e"
+  integrity sha512-PturxS6tHjJ2uxc97vMmexZHOFesK1dSv+lrZTD9BfEK3yvEMIb3+kUO+lWgo7QK9f28l25RAKvq3czng3aMJw==
   dependencies:
     nanoevents "^1.0.8"
 
