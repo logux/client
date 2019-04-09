@@ -7,11 +7,11 @@
     "client"
   ],
   "scripts": {
-    "spellcheck": "yarn docs && yaspeller-ci *.md docs/*.html",
+    "spell": "yarn docs && yaspeller-ci *.md docs/*.html",
     "clean": "rimraf docs/ coverage/ test/demo/build/ test/demo/.cache",
     "lint": "eslint *.js test/{**/,}*.js",
     "docs": "jsdoc -d docs/ *.js",
-    "test": "jest --coverage && yarn lint && size-limit && yarn spellcheck && yarn build",
+    "test": "jest --coverage && yarn lint && size-limit && yarn spell && yarn build",
     "build": "parcel build -d ./test/demo/build --cache-dir ./test/demo/.cache ./test/demo/index.html",
     "start": "parcel serve -d ./test/demo/build --cache-dir ./test/demo/.cache ./test/demo/index.html --open"
   },
@@ -102,20 +102,12 @@
     ],
     "dictionary": [
       "Logux",
-      "docdash",
       "JSDoc",
       "js",
       "JS",
       "SemVer",
-      "UUID",
       "subprotocol",
       "ClientNode",
-      "Redux",
-      "webpack",
-      "Browserify",
-      "Gon",
-      "npm",
-      "KB",
       "Versioning",
       "IndexedStore",
       "reconnections",
@@ -153,7 +145,9 @@
       "protocolError",
       "statusReceiver",
       "syncError",
-      "clientId"
+      "clientId",
+      "GraphQL",
+      "DevTools"
     ]
   }
 }
