@@ -9,7 +9,7 @@ between client, server, and other clients.
 
 **Documentation: [logux/logux]**
 
-This repository contains Logux core components for JavaScript:
+This repository contains Logux base components to build web client:
 
 * `CrossTabClient` and `Client` to create web client for Logux.
 * `IndexedStore` to store Logux log in `IndexedDB`.
