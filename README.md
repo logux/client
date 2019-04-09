@@ -49,8 +49,8 @@ import styles from 'logux-client/badge/default'
 import badge from 'logux-client/badge'
 import log from '@logux/client/log'
 
-let userId = document.querySelector('meta[name=user-id]').content
-let userToken = document.querySelector('meta[name=user-token]').content
+let userId = document.querySelector('meta[name=user]').content
+let userToken = document.querySelector('meta[name=token]').content
 
 const client = new CrossTabClient({
   credentials: userToken,

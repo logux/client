@@ -45,7 +45,7 @@ function colorify (color, text, action, meta) {
  * @return {Function} Unbind log listener.
  *
  * @example
- * import log from 'logux-client/log'
+ * import log from '@logux/client/log'
  * log(client, { add: false })
  */
 function log (client, messages) {

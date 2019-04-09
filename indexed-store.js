@@ -48,7 +48,7 @@ function isDefined (value) {
  * @extends Store
  *
  * @example
- * import IndexedStore from 'logux-client/indexed-store'
+ * import IndexedStore from '@logux/client/indexed-store'
  * var log = new Log({ store: new IndexedStore(), nodeId })
  */
 function IndexedStore (name) {

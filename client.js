@@ -66,14 +66,16 @@ var subscribing = { }
  *                                                      in production.
  *
  * @example
- * token = document.querySelector('meta[name=token]')
+ * import Client from '@logux/client/client'
  *
- * import Client from 'logux-client/client'
+ * const userId = document.querySelector('meta[name=user]').content
+ * const token = document.querySelector('meta[name=token]').content
+ *
  * const app = new Client({
- *   credentials: token.content,
+ *   credentials: token,
  *   subprotocol: '1.0.0',
  *   server: 'wss://example.com:1337',
- *   userId: 10
+ *   userId: userId
  * })
  * app.start()
  *

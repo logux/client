@@ -8,6 +8,12 @@
  * @param {number} [options.duration=3000] `synchronizedAfterWait` duration.
  *
  * @return {Function} Unbind status listener.
+ *
+ * @example
+ * import status from '@logux/client/status'
+ * status(client, current => {
+ *   updateUI(current)
+ * })
  */
 function status (client, callback, options) {
   var observable = client.on ? client : client.node
