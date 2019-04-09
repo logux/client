@@ -11,9 +11,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 * Add `action.since` to `logux/subscribe` action.
 * Add `ignoreActions` to `log()`.
 * Combine add/clean messages in `log()`.
+* Remove Promise fix for old Firefox.
 * Track subscription counts.
 * Clean up code (by Dimitri Nicolas).
-* Remove Promise fix for old Firefox.
 
 ## 0.2.10
 * Fix cross-tab `add` event with `MemoryStore`.
