@@ -1,6 +1,9 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.3.1
+* Update dependencies.
+
 ## 0.3
 * Rename project from `logux-client` to `@logux/client`.
 * Merge with `logux-status`.
