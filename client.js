@@ -33,8 +33,6 @@ function merge (a, b) {
 
 var ALLOWED_META = ['id', 'time', 'nodes', 'users', 'clients', 'channels']
 
-var subscribing = { }
-
 /**
  * Base class for browser API to be extended in {@link CrossTabClient}.
  *
@@ -185,23 +183,26 @@ function Client (options) {
     if (isOwn && !meta.subprotocol) {
       meta.subprotocol = client.options.subprotocol
     }
+    if (meta.sync) meta.reasons.push('syncing')
   })
 
   this.last = { }
   this.subscriptions = { }
+  var subscribing = { }
+  var unsubscribing = { }
   function listener (action, meta) {
     var type = action.type
     var json, last
+    if (type === 'logux/processed' || type === 'logux/undo') {
+      client.log.removeReason('syncing', { id: action.id })
+    }
     if (type === 'logux/subscribe' && !meta.resubscribe) {
-      json = JSON.stringify(action)
-      subscribing[meta.id] = action.channel
-      if (client.subscriptions[json]) {
-        client.subscriptions[json] += 1
-      } else {
-        client.subscriptions[json] = 1
-      }
+      subscribing[meta.id] = action
     } else if (type === 'logux/unsubscribe') {
-      json = JSON.stringify(merge(action, { type: 'logux/subscribe' }))
+      unsubscribing[meta.id] = action
+    } else if (type === 'logux/processed' && unsubscribing[action.id]) {
+      var unsubscription = unsubscribing[action.id]
+      json = JSON.stringify(merge(unsubscription, { type: 'logux/subscribe' }))
       var subscribers = client.subscriptions[json]
       if (subscribers) {
         if (subscribers === 1) {
@@ -211,12 +212,21 @@ function Client (options) {
         }
       }
     } else if (type === 'logux/processed' && subscribing[action.id]) {
-      var subscribed = subscribing[action.id]
+      var subscription = subscribing[action.id]
       delete subscribing[action.id]
-      last = client.last[subscribed]
-      if (!last || isFirstOlder(last, meta)) {
-        client.last[subscribed] = { id: meta.id, time: meta.time }
+      json = JSON.stringify(subscription)
+      if (client.subscriptions[json]) {
+        client.subscriptions[json] += 1
+      } else {
+        client.subscriptions[json] = 1
       }
+      last = client.last[subscription.channel]
+      if (!last || isFirstOlder(last, meta)) {
+        client.last[subscription.channel] = { id: meta.id, time: meta.time }
+      }
+    } else if (type === 'logux/undo') {
+      delete subscribing[action.id]
+      delete unsubscribing[action.id]
     } else if (meta.channels) {
       if (meta.id.indexOf(' ' + client.clientId + ':') === -1) {
         meta.channels.forEach(function (channel) {

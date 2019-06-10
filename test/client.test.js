@@ -474,13 +474,28 @@ it('warns about subscription actions without sync', function () {
   })
 })
 
+it('keeps synced actions before synchronization', function () {
+  var client = createClient()
+  return Promise.all([
+    client.log.add({ type: 'A' }, { sync: true }),
+    client.log.add({ type: 'B' }, { sync: true })
+  ]).then(function () {
+    expect(client.log.actions()).toEqual([{ type: 'A' }, { type: 'B' }])
+    return Promise.all([
+      client.log.add({ type: 'logux/processed', id: '1 false:1:1 0' }),
+      client.log.add({ type: 'logux/undo', id: '2 false:1:1 0' })
+    ])
+  }).then(function () {
+    expect(client.log.actions()).toHaveLength(0)
+  })
+})
+
 it('resubscribes to previous subscriptions', function () {
   var client = createClient()
-  var connected = []
-  client.log.on('preadd', function (action, meta) {
-    meta.reasons.push('test')
+  var added = []
+  client.log.on('preadd', function (action) {
     if (action.type === 'logux/subscribe') {
-      connected.push(action)
+      added.push(action)
     }
   })
   return Promise.all([
@@ -499,39 +514,51 @@ it('resubscribes to previous subscriptions', function () {
     client.log.add(
       { type: 'logux/unsubscribe', channel: 'b', b: 2 }, { sync: true })
   ]).then(function () {
-    connected = []
+    added = []
+    expect(client.log.actions()).toHaveLength(7)
     client.node.setState('synchronized')
-    expect(connected).toEqual([
-      { type: 'logux/subscribe', channel: 'a' },
-      { type: 'logux/subscribe', channel: 'b', b: 2 }
-    ])
+    expect(added).toHaveLength(0)
+
+    client.log.add({ type: 'logux/processed', id: '1 false:1:1 0' })
+    client.log.add({ type: 'logux/processed', id: '2 false:1:1 0' })
+    client.log.add({ type: 'logux/processed', id: '3 false:1:1 0' })
+    client.log.add({ type: 'logux/processed', id: '4 false:1:1 0' })
+    client.log.add({ type: 'logux/processed', id: '5 false:1:1 0' })
+    client.log.add({ type: 'logux/processed', id: '6 false:1:1 0' })
+    client.log.add({ type: 'logux/processed', id: '7 false:1:1 0' })
+    return delay(1)
+  }).then(function () {
+    expect(client.log.actions()).toHaveLength(0)
 
     client.node.setState('sending')
     client.node.setState('synchronized')
-    expect(connected).toEqual([
-      { type: 'logux/subscribe', channel: 'a' },
-      { type: 'logux/subscribe', channel: 'b', b: 2 }
-    ])
+    expect(added).toHaveLength(0)
 
     client.node.setState('disconnected')
     client.node.setState('connecting')
     client.node.setState('synchronized')
-    expect(connected).toEqual([
-      { type: 'logux/subscribe', channel: 'a' },
-      { type: 'logux/subscribe', channel: 'b', b: 2 },
-      { type: 'logux/subscribe', channel: 'a' },
-      { type: 'logux/subscribe', channel: 'b', b: 2 }
+    expect(added).toEqual([
+      {
+        type: 'logux/subscribe',
+        channel: 'a',
+        since: { id: '9 false:1:1 0', time: 9 }
+      },
+      {
+        type: 'logux/subscribe',
+        channel: 'b',
+        b: 2,
+        since: { id: '12 false:1:1 0', time: 12 }
+      }
     ])
   })
 })
 
 it('does not subscribing twice during connection', function () {
   var client = createClient()
-  var connected = []
-  client.log.on('preadd', function (action, meta) {
-    meta.reasons.push('test')
+  var added = []
+  client.log.on('preadd', function (action) {
     if (action.type === 'logux/subscribe') {
-      connected.push(action)
+      added.push(action)
     }
   })
   client.node.setState('connecting')
@@ -539,19 +566,18 @@ it('does not subscribing twice during connection', function () {
   return client.log.add(
     { type: 'logux/subscribe', channel: 'a' }, { sync: true }
   ).then(function () {
-    connected = []
+    added = []
     client.node.setState('synchronized')
-    expect(connected).toEqual([])
+    expect(added).toEqual([])
   })
 })
 
 it('tells last action time during resubscription', function () {
   var client = createClient()
-  var connected = []
-  client.log.on('preadd', function (action, meta) {
-    meta.reasons.push('test')
+  var added = []
+  client.log.on('preadd', function (action) {
     if (action.type === 'logux/subscribe') {
-      connected.push(action)
+      added.push(action)
     }
   })
   client.node.setState('synchronized')
@@ -559,7 +585,7 @@ it('tells last action time during resubscription', function () {
     client.log.add({ type: 'logux/subscribe', channel: 'a' }, { sync: true }),
     client.log.add({ type: 'logux/subscribe', channel: 'b' }, { sync: true })
   ]).then(function () {
-    connected = []
+    added = []
     return Promise.all([
       client.log.add({ type: 'logux/processed', id: '1 false:1:1 0' }),
       client.log.add({ type: 'logux/processed', id: '2 false:1:1 0' }),
@@ -571,7 +597,7 @@ it('tells last action time during resubscription', function () {
     client.node.setState('disconnected')
     client.node.setState('connecting')
     client.node.setState('synchronized')
-    expect(connected).toEqual([
+    expect(added).toEqual([
       {
         type: 'logux/subscribe',
         channel: 'a',

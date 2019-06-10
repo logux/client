@@ -506,7 +506,11 @@ it('cleans tab-specific action after timeout', function () {
 it('detects subscriptions from different tabs', function () {
   client = createClient()
   emitStorage('logux:false:add', '["other",' +
-    '{"type":"logux/subscribe","name":"a"},{"sync":true,"id":"0 A 0"}' +
+    '{"type":"logux/subscribe","name":"a"},' +
+    '{"sync":true,"id":"0 A 0","reasons":["syncing"]}' +
+  ']')
+  emitStorage('logux:false:add', '["other",' +
+    '{"type":"logux/processed","id":"0 A 0"},{"id":"1 A 0"}' +
   ']')
   expect(client.subscriptions).toEqual({
     '{"type":"logux/subscribe","name":"a"}': 1
