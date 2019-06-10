@@ -1,6 +1,6 @@
 {
   "name": "@logux/client",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Logux base components to build web client",
   "keywords": [
     "logux",
@@ -124,7 +124,8 @@
       "UI",
       "UX",
       "Versioning",
-      "ws"
+      "ws",
+      "resubscribe"
     ]
   }
 }
