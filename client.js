@@ -183,7 +183,7 @@ function Client (options) {
     if (isOwn && !meta.subprotocol) {
       meta.subprotocol = client.options.subprotocol
     }
-    if (meta.sync) meta.reasons.push('syncing')
+    if (meta.sync && !meta.resubscribe) meta.reasons.push('syncing')
   })
 
   this.last = { }

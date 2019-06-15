@@ -550,6 +550,8 @@ it('resubscribes to previous subscriptions', function () {
         since: { id: '12 false:1:1 0', time: 12 }
       }
     ])
+
+    expect(client.log.actions()).toHaveLength(0)
   })
 })
 
