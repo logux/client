@@ -262,6 +262,40 @@ it('shows subscription action', function () {
   })
 })
 
+it('shows processed action', function () {
+  return createClient().then(function (client) {
+    log(client, { color: false })
+    return client.node.log.add(
+      { type: 'logux/processed', id: '1 10:1:1 0' }
+    ).then(function () {
+      expect(console.log).toBeCalledWith(
+        'Logux action 1 10:1:1 0 was processed'
+      )
+    })
+  })
+})
+
+it('shows undo action', function () {
+  return createClient().then(function (client) {
+    log(client, { color: false })
+    return client.node.log.add(
+      { type: 'logux/undo', id: '1 10:1:1 0', reason: 'error' }
+    ).then(function () {
+      expect(console.log).toBeCalledWith(
+        'Logux action 1 10:1:1 0 was undid because of error'
+      )
+      return client.node.log.add(
+        { type: 'logux/undo', id: '1 10:1:1 0', reason: 'error', data: 1 }
+      )
+    }).then(function () {
+      expect(console.log).toHaveBeenLastCalledWith(
+        'Logux action 1 10:1:1 0 was undid because of error',
+        { type: 'logux/undo', id: '1 10:1:1 0', reason: 'error', data: 1 }
+      )
+    })
+  })
+})
+
 it('combines add and clean event', function () {
   return createClient().then(function (client) {
     log(client, { color: false })

@@ -118,6 +118,16 @@ function log (client, messages) {
         } else {
           showLog(message, action)
         }
+      } else if (action.type === 'logux/processed') {
+        showLog('action ' + style(action.id) + ' was processed')
+      } else if (action.type === 'logux/undo') {
+        message = 'action ' + style(action.id) + ' was undid because of ' +
+          style(action.reason)
+        if (Object.keys(action).length === 3) {
+          showLog(message)
+        } else {
+          showLog(message, action)
+        }
       } else {
         message = 'added '
         if (meta.reasons.length === 0) {
@@ -143,6 +153,8 @@ function log (client, messages) {
       if (meta.tab && meta.tab !== client.id) return
       if (ignore[action.type]) return
       if (action.type === 'logux/subscribe') return
+      if (action.type === 'logux/processed') return
+      if (action.type === 'logux/undo') return
       var message = 'cleaned ' + style(action.type) + ' action'
       showLog(message, action, meta)
     }))
