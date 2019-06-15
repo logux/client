@@ -1,6 +1,9 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.3.3
+* Fix log message for `logux/processed` or `logux/undo`.
+
 ## 0.3.2
 * Keep `sync: true` actions in the log until `logux/processed` or `logux/undo`.
 * Add resubscribe action only after origin action was processed.
