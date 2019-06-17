@@ -327,6 +327,7 @@ function Client (options) {
     var state = client.node.state
     if (state === 'synchronized' || state === 'sending') {
       if (disconnected) {
+        disconnected = false
         for (var i in client.subscriptions) {
           var action = JSON.parse(i)
           var since = client.last[action.channel]
@@ -334,7 +335,6 @@ function Client (options) {
           client.log.add(action, { sync: true, resubscribe: true })
         }
       }
-      disconnected = false
     } else if (client.node.state === 'disconnected') {
       disconnected = true
     }
