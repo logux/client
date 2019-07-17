@@ -115,9 +115,8 @@ module.exports = status
 /**
  * @callback statusReceiver
  * @param {
- *          "synchronized"|"synchronizedAfterWait"|"disconnected"|"wait"|
- *          "connecting"|"connectingAfterWait"|"sending"|"syncError"|
- *          "error"|"denied"|"protocolError"
- *        } type Status type.
+ *   "synchronized"|"synchronizedAfterWait"|"disconnected"|"wait"|"error"|
+ *   "connecting"|"connectingAfterWait"|"syncError"|"denied"|"protocolError"
+ * } type Status type.
  * @param {object|undefined} details Status details.
  */
