@@ -260,12 +260,13 @@ CrossTabClient.prototype = {
    * Subscribe for synchronization events. It implements nanoevents API.
    * Supported events:
    *
+   * * `preadd`: action is going to be added (in current tab).
    * * `add`: action has been added to log (by any tab).
    * * `clean`: action has been removed from log (by any tab).
    * * `role`: tab role has been changed.
    * * `state`: leader tab synchronization state has been changed.
    *
-   * @param {"add"|"clean"|"role"|"state"} event The event name.
+   * @param {"preadd"|"add"|"clean"|"role"|"state"} event The event name.
    * @param {listener} listener The listener function.
    *
    * @return {function} Unbind listener from event.
@@ -276,7 +277,11 @@ CrossTabClient.prototype = {
    * })
    */
   on: function on (event, listener) {
-    return this.emitter.on(event, listener)
+    if (event === 'preadd') {
+      return this.log.emitter.on(event, listener)
+    } else {
+      return this.emitter.on(event, listener)
+    }
   },
 
   onStorage: function onStorage (e) {

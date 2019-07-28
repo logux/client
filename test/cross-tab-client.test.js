@@ -95,6 +95,10 @@ it('supports nanoevents API', function () {
   client = createClient()
 
   var twice = []
+  var preadd = []
+  client.on('preadd', function (action) {
+    preadd.push(action.type)
+  })
   var unbind = client.on('add', function (action) {
     twice.push(action.type)
     if (action.type === 'B') unbind()
@@ -105,6 +109,7 @@ it('supports nanoevents API', function () {
   }).then(function () {
     return client.log.add({ type: 'C' })
   }).then(function () {
+    expect(preadd).toEqual(['A', 'B', 'C'])
     expect(twice).toEqual(['A', 'B'])
   })
 })
