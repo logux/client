@@ -1,41 +1,41 @@
-var CrossTabClient = require('../cross-tab-client')
-var attention = require('../attention')
-var confirm = require('../confirm')
-var favicon = require('../favicon')
-var Client = require('../client')
-var status = require('../status')
-var badge = require('../badge')
-var log = require('../log')
-var index = require('../')
+let CrossTabClient = require('../cross-tab-client')
+let attention = require('../attention')
+let confirm = require('../confirm')
+let favicon = require('../favicon')
+let Client = require('../client')
+let status = require('../status')
+let badge = require('../badge')
+let index = require('../')
+let log = require('../log')
 
-it('has CrossTabClient class', function () {
+it('has CrossTabClient class', () => {
   expect(index.CrossTabClient).toBe(CrossTabClient)
 })
 
-it('has Client class', function () {
+it('has Client class', () => {
   expect(index.Client).toBe(Client)
 })
 
-it('has attention function', function () {
+it('has attention function', () => {
   expect(index.attention).toBe(attention)
 })
 
-it('has confirm function', function () {
+it('has confirm function', () => {
   expect(index.confirm).toBe(confirm)
 })
 
-it('has log function', function () {
+it('has log function', () => {
   expect(index.log).toBe(log)
 })
 
-it('has status function', function () {
+it('has status function', () => {
   expect(index.status).toBe(status)
 })
 
-it('has badge function', function () {
+it('has badge function', () => {
   expect(index.badge).toBe(badge)
 })
 
-it('has favicon function', function () {
+it('has favicon function', () => {
   expect(index.favicon).toBe(favicon)
 })

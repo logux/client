@@ -1253,12 +1253,12 @@
   dependencies:
     nanoevents "^2.0.0"
 
-"@logux/eslint-config@^29.1.1":
-  version "29.1.1"
-  resolved "https://registry.yarnpkg.com/@logux/eslint-config/-/eslint-config-29.1.1.tgz#cd217c1827aa3422f37dc7f2a4eb6da870ea61fe"
-  integrity sha512-j2NDALFG8AsFsb2cyS2HQ0VdTQ0+Nb6T+nvFtjYGPewqDhl9WMakCJRe4v6F4IIFoWa7Krcu5UN/PehUlTmseg==
+"@logux/eslint-config@^30.0.1":
+  version "30.0.1"
+  resolved "https://registry.yarnpkg.com/@logux/eslint-config/-/eslint-config-30.0.1.tgz#a370498008a90a5b10bda27aa8b2bce882592668"
+  integrity sha512-H5CMboauLebuusUSB0SjPMnF+kuZV3u1KP7Bz5Rw2usIOvhh1gOaXtgLu7N9ExBF5TEWiN6amAfkWrTsXUlg2Q==
   dependencies:
-    globals "^11.12.0"
+    globals "^12.0.0"
 
 "@mrmlnc/readdir-enhanced@^2.2.1":
   version "2.2.1"
@@ -3761,6 +3761,13 @@ eslint-plugin-node@^9.1.0:
     resolve "^1.10.1"
     semver "^6.1.0"
 
+eslint-plugin-prefer-let@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-prefer-let/-/eslint-plugin-prefer-let-1.0.1.tgz#ef7216bcabf6d4cb0a7b7b5ecf55e85e9ee58067"
+  integrity sha1-73IWvKv21MsKe3tez1XoXp7lgGc=
+  dependencies:
+    requireindex "~1.1.0"
+
 eslint-plugin-promise@^4.2.1:
   version "4.2.1"
   resolved "https://registry.yarnpkg.com/eslint-plugin-promise/-/eslint-plugin-promise-4.2.1.tgz#845fd8b2260ad8f82564c1222fce44ad71d9418a"
@@ -4586,10 +4593,17 @@ globals-docs@^2.4.0:
   resolved "https://registry.yarnpkg.com/globals-docs/-/globals-docs-2.4.0.tgz#f2c647544eb6161c7c38452808e16e693c2dafbb"
   integrity sha512-B69mWcqCmT3jNYmSxRxxOXWfzu3Go8NQXPfl2o0qPd1EEFhwW0dFUg9ztTu915zPQzqwIhWAlw6hmfIcCK4kkQ==
 
-globals@^11.1.0, globals@^11.12.0, globals@^11.7.0:
+globals@^11.1.0, globals@^11.7.0:
   version "11.12.0"
   resolved "https://registry.yarnpkg.com/globals/-/globals-11.12.0.tgz#ab8795338868a0babd8525758018c2a7eb95c42e"
   integrity sha512-WOBp/EEGUiIsJSp7wcv/y6MO+lV9UoncWqxuFfm8eBwzWNgyfBd6Gz+IeKQ9jCmyhoH99g15M3T+QaVHFjizVA==
+
+globals@^12.0.0:
+  version "12.0.0"
+  resolved "https://registry.yarnpkg.com/globals/-/globals-12.0.0.tgz#99c258ace9f3f75a5efe7c01387e2e41890c3dba"
+  integrity sha512-c9xoi32iDwlETiyYfO0pd3M8GcEuytJinSoqq7k3fz4H8p2p31NyfKr7JVd7Y0QvmtWcWXcwqW4L33eeDYgh1A==
+  dependencies:
+    type-fest "^0.6.0"
 
 globby@^10.0.0, globby@^10.0.1:
   version "10.0.1"
@@ -8766,6 +8780,11 @@ require-main-filename@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/require-main-filename/-/require-main-filename-2.0.0.tgz#d0b329ecc7cc0f61649f62215be69af54aa8989b"
   integrity sha512-NKN5kMDylKuldxYLSUfrbo5Tuzh4hd+2E8NPPX02mZtn1VuREQToYe/ZdlJy+J3uCpfaiGF05e7B8W0iXbQHmg==
+
+requireindex@~1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/requireindex/-/requireindex-1.1.0.tgz#e5404b81557ef75db6e49c5a72004893fe03e162"
+  integrity sha1-5UBLgVV+91225JxacgBIk/4D4WI=
 
 resolve-cwd@^2.0.0:
   version "2.0.0"

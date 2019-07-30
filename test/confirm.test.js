@@ -1,114 +1,99 @@
-var TestPair = require('@logux/core').TestPair
+let { TestPair } = require('@logux/core')
 
-var CrossTabClient = require('../cross-tab-client')
-var confirm = require('../confirm')
+let CrossTabClient = require('../cross-tab-client')
+let confirm = require('../confirm')
 
-function createClient () {
-  var pair = new TestPair()
+async function createClient () {
+  let pair = new TestPair()
 
-  var client = new CrossTabClient({
+  let client = new CrossTabClient({
     subprotocol: '1.0.0',
     server: pair.left,
     userId: false
   })
 
-  client.node.catch(function () { })
+  client.node.catch(() => true)
   client.role = 'leader'
 
-  return pair.left.connect().then(function () {
-    return client
-  })
+  await pair.left.connect()
+  return client
 }
 
-var beforeunloader
-beforeEach(function () {
+let beforeunloader
+beforeEach(() => {
   delete window.event
   beforeunloader = false
 
-  jest.spyOn(window, 'addEventListener').mockImplementation(function (n, c) {
+  jest.spyOn(window, 'addEventListener').mockImplementation((n, c) => {
     if (n === 'beforeunload') beforeunloader = c
   })
-  jest.spyOn(window, 'removeEventListener').mockImplementation(function (n, c) {
+  jest.spyOn(window, 'removeEventListener').mockImplementation((n, c) => {
     if (n === 'beforeunload' && beforeunloader === c) {
       beforeunloader = false
     }
   })
 })
 
-it('confirms close', function () {
-  var client
-  return createClient().then(function (created) {
-    client = created
-    confirm(client)
+it('confirms close', async () => {
+  let client = await createClient()
+  confirm(client)
 
-    client.node.setState('disconnected')
-    expect(beforeunloader).toBeFalsy()
+  client.node.setState('disconnected')
+  expect(beforeunloader).toBeFalsy()
 
-    return Promise.all([
-      client.log.add(
-        { type: 'logux/subscribe' }, { sync: true, reasons: ['t'] }),
-      client.log.add(
-        { type: 'logux/unsubscribe' }, { sync: true, reasons: ['t'] })
-    ])
-  }).then(function () {
-    expect(beforeunloader).toBeFalsy()
+  await Promise.all([
+    client.log.add(
+      { type: 'logux/subscribe' }, { sync: true, reasons: ['t'] }),
+    client.log.add(
+      { type: 'logux/unsubscribe' }, { sync: true, reasons: ['t'] })
+  ])
+  expect(beforeunloader).toBeFalsy()
 
-    return client.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
-  }).then(function () {
-    expect(beforeunloader()).toEqual('unsynced')
+  await client.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
+  expect(beforeunloader()).toEqual('unsynced')
 
-    client.node.setState('sending')
-    var e = { }
-    beforeunloader(e)
-    expect(e.returnValue).toEqual('unsynced')
+  client.node.setState('sending')
+  let e = { }
+  beforeunloader(e)
+  expect(e.returnValue).toEqual('unsynced')
 
-    window.event = { }
-    beforeunloader()
-    expect(window.event.returnValue).toEqual('unsynced')
-  })
+  window.event = { }
+  beforeunloader()
+  expect(window.event.returnValue).toEqual('unsynced')
 })
 
-it('does not confirm on synchronized state', function () {
-  var client
-  return createClient().then(function (created) {
-    client = created
-    confirm(client)
-    client.node.setState('disconnected')
-    return client.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
-  }).then(function () {
-    client.node.setState('synchronized')
-    expect(beforeunloader).toBeFalsy()
+it('does not confirm on synchronized state', async () => {
+  let client = await createClient()
+  confirm(client)
+  client.node.setState('disconnected')
+  await client.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
 
-    client.node.setState('disconnected')
-    expect(beforeunloader).toBeFalsy()
-  })
+  client.node.setState('synchronized')
+  expect(beforeunloader).toBeFalsy()
+
+  client.node.setState('disconnected')
+  expect(beforeunloader).toBeFalsy()
 })
 
-it('does not confirm on follower tab', function () {
-  var client
-  return createClient().then(function (created) {
-    client = created
-    confirm(client)
-    client.node.setState('disconnected')
-    expect(beforeunloader).toBeFalsy()
-    return client.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
-  }).then(function () {
-    client.role = 'follower'
-    client.emitter.emit('role')
-    expect(beforeunloader).toBeFalsy()
-  })
+it('does not confirm on follower tab', async () => {
+  let client = await createClient()
+  confirm(client)
+
+  client.node.setState('disconnected')
+  expect(beforeunloader).toBeFalsy()
+
+  await client.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
+  client.role = 'follower'
+  client.emitter.emit('role')
+  expect(beforeunloader).toBeFalsy()
 })
 
-it('returns unbind function', function () {
-  var client
-  return createClient().then(function (created) {
-    client = created
-    var unbind = confirm(client)
-    unbind()
-    client.node.setState('disconnected')
-    expect(beforeunloader).toBeFalsy()
-    return client.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
-  }).then(function () {
-    expect(beforeunloader).toBeFalsy()
-  })
+it('returns unbind function', async () => {
+  let client = await createClient()
+  let unbind = confirm(client)
+  unbind()
+  client.node.setState('disconnected')
+  expect(beforeunloader).toBeFalsy()
+  await client.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
+  expect(beforeunloader).toBeFalsy()
 })

@@ -1,45 +1,45 @@
-var MemoryStore = require('@logux/core/memory-store')
-var ClientNode = require('@logux/core/client-node')
-var LocalPair = require('@logux/core/local-pair')
-var BaseNode = require('@logux/core/base-node')
-var Log = require('@logux/core/log')
+let MemoryStore = require('@logux/core/memory-store')
+let ClientNode = require('@logux/core/client-node')
+let LocalPair = require('@logux/core/local-pair')
+let BaseNode = require('@logux/core/base-node')
+let Log = require('@logux/core/log')
 
-var CrossTabClient = require('../../cross-tab-client')
-var faviconOffline = require('./offline.png')
-var badgeMessages = require('../../badge/en')
-var faviconNormal = require('./normal.png')
-var faviconError = require('./error.png')
-var badgeStyles = require('../../badge/default')
-var attention = require('../../attention')
-var confirm = require('../../confirm')
-var favicon = require('../../favicon')
-var status = require('../../status')
-var badge = require('../../badge')
-var log = require('../../log')
+let CrossTabClient = require('../../cross-tab-client')
+let faviconOffline = require('./offline.png')
+let badgeMessages = require('../../badge/en')
+let faviconNormal = require('./normal.png')
+let faviconError = require('./error.png')
+let badgeStyles = require('../../badge/default')
+let attention = require('../../attention')
+let confirm = require('../../confirm')
+let favicon = require('../../favicon')
+let status = require('../../status')
+let badge = require('../../badge')
+let log = require('../../log')
 
-var pair = new LocalPair(500)
+let pair = new LocalPair(500)
 
-var serverLog = new Log({
+let serverLog = new Log({
   store: new MemoryStore(),
   nodeId: 'server:uuid'
 })
 new BaseNode('server:uuid', serverLog, pair.right)
 
-serverLog.on('add', function (action, meta) {
+serverLog.on('add', (action, meta) => {
   if (action.type !== 'logux/processed') {
-    setTimeout(function () {
+    setTimeout(() => {
       serverLog.add({ type: 'logux/processed', id: meta.id })
     }, 500)
   }
 })
 
-var client = new CrossTabClient({
+let client = new CrossTabClient({
   subprotocol: '1.0.0',
   userId: 10,
   server: 'wss://example.com/'
 })
 
-var node = new ClientNode(client.node.localNodeId, client.log, pair.left)
+let node = new ClientNode(client.node.localNodeId, client.log, pair.left)
 node.connection.url = 'wss://example.com/'
 node.emitter = client.node.emitter
 client.node = node
@@ -51,13 +51,16 @@ favicon(client, {
   offline: faviconOffline,
   error: faviconError
 })
-badge(client, { messages: badgeMessages, styles: badgeStyles })
+badge(client, {
+  messages: badgeMessages,
+  styles: badgeStyles
+})
 log(client)
-status(client, function (s) {
+status(client, s => {
   document.all.status.innerText = s
 })
 
-var count = 0
+let count = 0
 function emoji (state) {
   if (state === 'disconnected') {
     return '😴'
@@ -76,38 +79,38 @@ function updateTitle () {
                    count
 }
 
-client.on('state', function () {
+client.on('state', () => {
   document.all.connection.checked = client.connected
   updateTitle()
 })
-client.on('role', function () {
+client.on('role', () => {
   updateTitle()
   document.all.connection.disabled = client.role !== 'leader'
 })
-client.on('add', function (action) {
+client.on('add', action => {
   if (action.type === 'TICK') count++
   updateTitle()
 })
-client.on('clean', function (action) {
+client.on('clean', action => {
   if (action.type === 'TICK') count--
   updateTitle()
 })
 
-client.log.each(function (action) {
+client.log.each(action => {
   if (action.type === 'TICK') count++
-}).then(function () {
+}).then(() => {
   updateTitle()
 })
 
-client.on('role', function () {
-  var isLeader = client.role === 'leader'
+client.on('role', () => {
+  let isLeader = client.role === 'leader'
   document.all.connection.disabled = !isLeader
   document.all.disabled.style.display = isLeader ? 'none' : 'inline'
 })
 
 client.start()
 
-document.all.connection.onchange = function (e) {
+document.all.connection.onchange = e => {
   if (e.target.checked) {
     client.node.connection.connect()
   } else {
@@ -115,33 +118,33 @@ document.all.connection.onchange = function (e) {
   }
 }
 
-document.all.add.onclick = function () {
+document.all.add.onclick = () => {
   client.log.add({ type: 'TICK' }, { reasons: ['tick'], sync: true })
 }
 
-document.all.clean.onclick = function () {
+document.all.clean.onclick = () => {
   client.log.removeReason('tick')
 }
 
-document.all.error.onclick = function () {
-  setTimeout(function () {
+document.all.error.onclick = () => {
+  setTimeout(() => {
     client.log.add({ type: 'logux/undo', reason: 'error' })
   }, 3000)
 }
 
-document.all.denied.onclick = function () {
-  setTimeout(function () {
+document.all.denied.onclick = () => {
+  setTimeout(() => {
     client.log.add({ type: 'logux/undo', reason: 'denied' })
   }, 3000)
 }
 
-document.all.serverError.onclick = function () {
-  setTimeout(function () {
+document.all.serverError.onclick = () => {
+  setTimeout(() => {
     pair.right.send(['error', 'wrong-format'])
   }, 3000)
 }
 
-document.all.subprotocolError.onclick = function () {
+document.all.subprotocolError.onclick = () => {
   client.node.syncError('wrong-subprotocol', {
     supported: '2.x',
     used: '1.0.0'
