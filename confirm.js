@@ -39,7 +39,7 @@ function confirm (client) {
   unbind.push(client.on('state', update))
   update()
 
-  unbind.push(client.log.on('add', function (action, meta) {
+  unbind.push(client.on('add', function (action, meta) {
     if (action.type === 'logux/subscribe') {
       return
     } else if (action.type === 'logux/unsubscribe') {

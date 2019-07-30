@@ -60,7 +60,7 @@ function favicon (client, links) {
     unbind.push(client.on('state', update))
     update()
 
-    unbind.push(client.log.on('add', function (action) {
+    unbind.push(client.on('add', function (action) {
       if (action.type === 'logux/undo' && action.reason) setError()
     }))
 

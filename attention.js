@@ -47,7 +47,7 @@ function attention (client) {
       }
     }))
 
-    unbind.push(client.log.on('add', function (action) {
+    unbind.push(client.on('add', function (action) {
       if (action.type === 'logux/undo' && action.reason && !timeout) {
         blink()
       }

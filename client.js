@@ -247,12 +247,7 @@ function Client (options) {
   }
 
   this.emitter = new NanoEvents()
-
-  if (this.on) {
-    this.on('add', listener)
-  } else {
-    log.on('add', listener)
-  }
+  this.on('add', listener)
 
   this.tabPing = 60000
   this.tabTimeout = 10 * this.tabPing
@@ -359,6 +354,28 @@ Client.prototype = {
   start: function start () {
     this.cleanPrevActions()
     this.node.connection.connect()
+  },
+
+  /**
+   * Subscribe for synchronization events. It implements Nano Events API.
+   * Supported events:
+   *
+   * * `preadd`: action is going to be added (in current tab).
+   * * `add`: action has been added to log (by any tab).
+   * * `clean`: action has been removed from log (by any tab).
+   *
+   * @param {"preadd"|"add"|"clean"} event The event name.
+   * @param {listener} listener The listener function.
+   *
+   * @return {function} Unbind listener from event.
+   *
+   * @example
+   * app.on('add', (action, meta) => {
+   *   dispatch(action)
+   * })
+   */
+  on: function on (event, listener) {
+    return this.log.emitter.on(event, listener)
   },
 
   /**
