@@ -13,7 +13,7 @@ This repository contains Logux base components to build web client:
 
 * `CrossTabClient` and `Client` to create web client for Logux.
 * `IndexedStore` to store Logux log in `IndexedDB`.
-* `badge` widget to show Logux synchronization status in UI.
+* `badge()` widget to show Logux synchronization status in UI.
 * `status()` to write own UI to show Logux synchronization status in UI.
 * `attention()`, `confirm()`, `favicon()` to improve UX in Logux web app.
 * `log()` to print Logux synchronization status to browser DevTools.
@@ -44,9 +44,9 @@ See [documentation] for Logux API.
 
 ```js
 import CrossTabClient from '@logux/client/cross-tab-client'
-import messages from 'logux-client/badge/en'
-import styles from 'logux-client/badge/default'
-import badge from 'logux-client/badge'
+import messages from '@logux/client/badge/en'
+import styles from '@logux/client/badge/default'
+import badge from '@logux/client/badge'
 import log from '@logux/client/log'
 
 let userId = document.querySelector('meta[name=user]').content
