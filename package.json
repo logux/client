@@ -11,7 +11,7 @@
   ],
   "scripts": {
     "api": "documentation build *.js -f md -o api.md",
-    "spell": "yarn api && yaspeller-ci *.md",
+    "spell": "yarn api && yaspeller *.md",
     "clean": "rimraf api.md coverage/ test/demo/build/ test/demo/.cache",
     "test": "jest --coverage && eslint . && size-limit && yarn spell && yarn build",
     "build": "parcel build --experimental-scope-hoisting -d ./test/demo/build --cache-dir ./test/demo/.cache --public-url ./ ./test/demo/index.html",
@@ -50,7 +50,7 @@
     "parcel-bundler": "^1.12.3",
     "rimraf": "^3.0.0",
     "svgo": "^1.3.0",
-    "yaspeller-ci": "^1.0.1"
+    "yaspeller": "^6.0.0"
   },
   "husky": {
     "hooks": {
