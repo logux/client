@@ -1,12 +1,8 @@
-.editorconfig
-
-node_modules/
-npm-debug.log
 yarn-error.log
 yarn.lock
 
+.editorconfig
 test/
 coverage/
 .travis.yml
-
 api.md

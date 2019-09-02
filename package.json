@@ -13,8 +13,7 @@
     "api": "documentation build *.js -f md -o api.md",
     "spell": "yarn api && yaspeller-ci *.md",
     "clean": "rimraf api.md coverage/ test/demo/build/ test/demo/.cache",
-    "lint": "eslint *.js test/{**/,}*.js",
-    "test": "jest --coverage && yarn lint && size-limit && yarn spell && yarn build",
+    "test": "jest --coverage && eslint . && size-limit && yarn spell && yarn build",
     "build": "parcel build --experimental-scope-hoisting -d ./test/demo/build --cache-dir ./test/demo/.cache --public-url ./ ./test/demo/index.html",
     "start": "parcel serve -d ./test/demo/build --cache-dir ./test/demo/.cache ./test/demo/index.html --open"
   },
@@ -29,6 +28,7 @@
   },
   "devDependencies": {
     "@logux/eslint-config": "^31.0.0",
+    "@logux/sharec-config": "^0.4.3",
     "@size-limit/preset-small-lib": "^2.1.1",
     "clean-publish": "^1.1.2",
     "documentation": "^12.1.1",
@@ -78,6 +78,9 @@
   "eslintConfig": {
     "extends": "@logux/eslint-config/browser"
   },
+  "eslintIgnore": [
+    "test/demo/build"
+  ],
   "size-limit": [
     {
       "path": "cross-tab-client.js",
@@ -128,5 +131,8 @@
       "resubscribe",
       "resubscriptions"
     ]
+  },
+  "sharec": {
+    "version": "0.4.3"
   }
 }
