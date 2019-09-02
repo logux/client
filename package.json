@@ -62,7 +62,7 @@
       "svgo",
       "git add"
     ],
-    "*.md": "yaspeller-ci",
+    "*.md": "yaspeller",
     "*.js": "eslint"
   },
   "jest": {
