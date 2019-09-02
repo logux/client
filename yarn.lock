@@ -1248,10 +1248,10 @@
     "@types/istanbul-reports" "^1.1.1"
     "@types/yargs" "^13.0.0"
 
-"@logux/core@^0.3.1":
-  version "0.3.1"
-  resolved "https://registry.yarnpkg.com/@logux/core/-/core-0.3.1.tgz#6cbbd2a5fbf61208d34f0e9be3a95b9c975c66f2"
-  integrity sha512-5RVp0lWU7mhsvznawSTeJk835wg8sqjhCxEkbwj0mF9OSDbOzTma3EndwT5QRhu3LHp9Zm/cfH5MeMjuNV2AuQ==
+"@logux/core@^0.3.2":
+  version "0.3.2"
+  resolved "https://registry.yarnpkg.com/@logux/core/-/core-0.3.2.tgz#60473354809ddd9ee5e5644cf041c04741698199"
+  integrity sha512-enWsz86Rg0DZcc9noXP/Z4RX9R17nNXUA1ZK2uU2Gxpo0iQUjyhubJT1cCG6+RVEtL7JZjdVzOkHmq5z2NS8WQ==
   dependencies:
     nanoevents "^2.0.0"
 
