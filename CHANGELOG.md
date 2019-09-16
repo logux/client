@@ -1,6 +1,10 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.5
+* Rename `Client#id` to `Client#tabId`.
+* Trim re-send meta keys (`users`, `channels`) during synchronization.
+
 ## 0.4
 * Add `Client#on` method to unify API with `CrossTabClient`.
 * Add `preadd` event as alias to `client.log.on('preadd', cb)`.
