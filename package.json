@@ -21,23 +21,23 @@
   "license": "MIT",
   "repository": "logux/client",
   "dependencies": {
-    "@logux/core": "^0.3.2",
+    "@logux/core": "^0.3.3",
     "browser-supports-log-styles": "^1.1.7",
     "nanoevents": "^2.0.0",
-    "nanoid": "^2.1.0"
+    "nanoid": "^2.1.1"
   },
   "devDependencies": {
-    "@logux/eslint-config": "^31.0.0",
-    "@logux/sharec-config": "^0.4.3",
-    "@size-limit/preset-small-lib": "^2.1.1",
+    "@logux/eslint-config": "^31.0.1",
+    "@logux/sharec-config": "^0.4.4",
+    "@size-limit/preset-small-lib": "^2.1.2",
     "clean-publish": "^1.1.2",
-    "documentation": "^12.1.1",
-    "eslint": "^6.3.0",
+    "documentation": "^12.1.2",
+    "eslint": "^6.4.0",
     "eslint-config-standard": "^14.1.0",
     "eslint-plugin-es5": "^1.4.1",
     "eslint-plugin-import": "^2.18.2",
-    "eslint-plugin-jest": "^22.16.0",
-    "eslint-plugin-node": "^9.2.0",
+    "eslint-plugin-jest": "^22.17.0",
+    "eslint-plugin-node": "^10.0.0",
     "eslint-plugin-prefer-let": "^1.0.1",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-security": "^1.4.0",
@@ -134,6 +134,6 @@
     ]
   },
   "sharec": {
-    "version": "0.4.3"
+    "version": "0.4.4"
   }
 }
