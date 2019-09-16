@@ -374,14 +374,7 @@ it('filters data before sending', async () => {
   client.node.connection.pair.right.send(['synced', 1])
   await client.node.waitFor('synchronized')
   expect(client.node.connection.pair.leftSent).toEqual([
-    ['sync', 1, { type: 'a' }, {
-      id: [1, 'a:client:uuid', 0],
-      time: 1,
-      users: ['0'],
-      nodes: ['0:client:uuid'],
-      clients: ['0:client'],
-      channels: ['user:0']
-    }]
+    ['sync', 1, { type: 'a' }, { id: [1, 'a:client:uuid', 0], time: 1 }]
   ])
 })
 
