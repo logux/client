@@ -31,7 +31,7 @@ function merge (a, b) {
   return result
 }
 
-var ALLOWED_META = ['id', 'time', 'nodes', 'users', 'clients', 'channels']
+var ALLOWED_META = ['id', 'time']
 
 /**
  * Base class for browser API to be extended in {@link CrossTabClient}.
