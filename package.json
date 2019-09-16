@@ -129,7 +129,8 @@
       "Versioning",
       "ws",
       "resubscribe",
-      "resubscriptions"
+      "resubscriptions",
+      "tabId"
     ]
   },
   "sharec": {
