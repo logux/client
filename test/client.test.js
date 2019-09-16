@@ -154,15 +154,15 @@ it('uses user ID in node ID', () => {
     userId: 10
   })
   expect(client1.clientId).toMatch(/^10:[\w\d_-]{8}$/)
-  expect(client1.id).toMatch(/^[\w\d_-]{8}$/)
-  expect(client1.nodeId).toEqual(client1.clientId + ':' + client1.id)
+  expect(client1.tabId).toMatch(/^[\w\d_-]{8}$/)
+  expect(client1.nodeId).toEqual(client1.clientId + ':' + client1.tabId)
 
   let client2 = new Client({
     subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
     userId: false
   })
-  expect(client2.nodeId).toEqual(client2.clientId + ':' + client2.id)
+  expect(client2.nodeId).toEqual(client2.clientId + ':' + client2.tabId)
 })
 
 it('uses node ID in ID generator', () => {
@@ -259,7 +259,7 @@ it('cleans everything', async () => {
 
 it('pings after tab-specific action', async () => {
   let client = createClient()
-  let id = client.id
+  let id = client.tabId
   client.options.prefix = 'test'
   client.node.connection.connect = () => true
 
@@ -278,24 +278,24 @@ it('cleans own actions on destroy', async () => {
   let client = createClient()
   client.start()
   await client.log.add(
-    { type: 'A' }, { tab: client.id, reasons: ['tab' + client.id] }
+    { type: 'A' }, { tab: client.tabId, reasons: ['tab' + client.tabId] }
   )
   client.destroy()
   await delay(1)
   expect(client.log.actions()).toHaveLength(0)
-  expect(localStorage.getItem('test:tab:' + client.id)).toBeUndefined()
+  expect(localStorage.getItem('test:tab:' + client.tabId)).toBeUndefined()
 })
 
 it('cleans own actions on unload', async () => {
   let client = createClient()
   client.start()
   await client.log.add(
-    { type: 'A' }, { tab: client.id, reasons: ['tab' + client.id] }
+    { type: 'A' }, { tab: client.tabId, reasons: ['tab' + client.tabId] }
   )
   window.dispatchEvent(new Event('unload'))
   await delay(1)
   expect(client.log.actions()).toHaveLength(0)
-  expect(localStorage.getItem('test:tab:' + client.id)).toBeUndefined()
+  expect(localStorage.getItem('test:tab:' + client.tabId)).toBeUndefined()
 })
 
 it('cleans other tab action after timeout', async () => {

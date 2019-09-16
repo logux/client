@@ -133,7 +133,7 @@ it('does not use broken localStorage', async () => {
     server: 'wss://localhost:1337',
     userId: 10
   })
-  await client.log.add({ type: 'A' }, { reasons: ['tab' + client.id] })
+  await client.log.add({ type: 'A' }, { reasons: ['tab' + client.tabId] })
 })
 
 it('synchronizes actions between tabs', async () => {
@@ -172,8 +172,8 @@ it('synchronizes actions between tabs', async () => {
 
   await client2.log.add({ type: 'A' })
   await client3.log.add({ type: 'B' })
-  await client2.log.add({ type: 'C' }, { tab: client1.id })
-  await client2.log.add({ type: 'D' }, { tab: client2.id })
+  await client2.log.add({ type: 'C' }, { tab: client1.tabId })
+  await client2.log.add({ type: 'D' }, { tab: client2.tabId })
   await client4.log.add({ type: 'E' })
   expect(events).toEqual([
     ['add', { type: 'A' }, []],
@@ -293,7 +293,7 @@ it('pings on leader role', async () => {
   expect(client.watching).toBeUndefined()
   await delay(client.leaderPing + 10)
   let data = JSON.parse(localStorage.getItem('logux:false:leader'))
-  expect(data[0]).toEqual(client.id)
+  expect(data[0]).toEqual(client.tabId)
   expect(Date.now() - data[1]).toBeLessThan(100)
 
   emitStorage('logux:false:leader', `["",${ Date.now() }]`)
@@ -397,8 +397,8 @@ it('works on IE storage event', async () => {
   await delay(client.electionDelay + 10)
   expect(client.role).toEqual('leader')
 
-  emitStorage('logux:false:add', `["${ client.id }",{},{"id":"0 A 0"}]`)
-  emitStorage('logux:false:clean', `["${ client.id }",{},{"id":"0 A 0"}]`)
+  emitStorage('logux:false:add', `["${ client.tabId }",{},{"id":"0 A 0"}]`)
+  emitStorage('logux:false:clean', `["${ client.tabId }",{},{"id":"0 A 0"}]`)
   expect(events).toEqual(0)
 })
 
@@ -441,7 +441,7 @@ it('starts election on leader unload', async () => {
   expect(client.role).toEqual('candidate')
   expect(client.state).toEqual('disconnected')
   expect(localStorage.getItem('logux:false:state')).toEqual('"disconnected"')
-  expect(localStorage.getItem('logux:false:leader')).toContain(client.id)
+  expect(localStorage.getItem('logux:false:leader')).toContain(client.tabId)
 })
 
 it('changes state on dead leader', () => {

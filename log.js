@@ -108,7 +108,7 @@ function log (client, messages) {
 
   if (messages.add !== false) {
     unbind.push(client.on('add', function (action, meta) {
-      if (meta.tab && meta.tab !== client.id) return
+      if (meta.tab && meta.tab !== client.tabId) return
       if (ignore[action.type]) return
       var message
       if (action.type === 'logux/subscribe') {

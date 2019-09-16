@@ -19,7 +19,7 @@ function getLeader (client) {
 }
 
 function leaderPing (client) {
-  sendToTabs(client, 'leader', [client.id, Date.now()])
+  sendToTabs(client, 'leader', [client.tabId, Date.now()])
 }
 
 function onDeadLeader (client) {
@@ -85,7 +85,7 @@ function startElection (client) {
   setRole(client, 'candidate')
   client.elections = setTimeout(function () {
     var data = getLeader(client, 'leader')
-    if (data[0] === client.id) {
+    if (data[0] === client.tabId) {
       setRole(client, 'leader')
     } else {
       setRole(client, 'follower')
@@ -195,14 +195,14 @@ function CrossTabClient (options) {
 
   this.log.on('add', function (action, meta) {
     client.emitter.emit('add', action, meta)
-    if (meta.tab !== client.id) {
-      sendToTabs(client, 'add', [client.id, action, meta])
+    if (meta.tab !== client.tabId) {
+      sendToTabs(client, 'add', [client.tabId, action, meta])
     }
   })
   this.log.on('clean', function (action, meta) {
     client.emitter.emit('clean', action, meta)
-    if (meta.tab !== client.id) {
-      sendToTabs(client, 'clean', [client.id, action, meta])
+    if (meta.tab !== client.tabId) {
+      sendToTabs(client, 'clean', [client.tabId, action, meta])
     }
   })
 
@@ -290,8 +290,8 @@ CrossTabClient.prototype = {
     var data
     if (e.key === storageKey(this, 'add')) {
       data = JSON.parse(e.newValue)
-      if (data[0] !== this.id) {
-        if (!data[2].tab || data[2].tab === this.id) {
+      if (data[0] !== this.tabId) {
+        if (!data[2].tab || data[2].tab === this.tabId) {
           if (isMemory(this.log.store)) {
             this.log.store.add(data[1], data[2])
           }
@@ -303,8 +303,8 @@ CrossTabClient.prototype = {
       }
     } else if (e.key === storageKey(this, 'clean')) {
       data = JSON.parse(e.newValue)
-      if (data[0] !== this.id) {
-        if (!data[2].tab || data[2].tab === this.id) {
+      if (data[0] !== this.tabId) {
+        if (!data[2].tab || data[2].tab === this.tabId) {
           if (isMemory(this.log.store)) {
             this.log.store.remove(data[2].id)
           }
@@ -315,7 +315,7 @@ CrossTabClient.prototype = {
       data = JSON.parse(e.newValue)
       if (data.length === 0) {
         onDeadLeader(this)
-      } else if (data[0] !== this.id && this.role !== 'candidate') {
+      } else if (data[0] !== this.tabId && this.role !== 'candidate') {
         setRole(this, 'follower')
         watchForLeader(this)
       }

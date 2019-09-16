@@ -7,8 +7,8 @@ var Reconnect = require('@logux/core/reconnect')
 var nanoid = require('nanoid')
 var Log = require('@logux/core/log')
 
-function tabPing (client) {
-  localStorage.setItem(client.options.prefix + ':tab:' + client.id, Date.now())
+function tabPing (c) {
+  localStorage.setItem(c.options.prefix + ':tab:' + c.tabId, Date.now())
 }
 
 function cleanTabActions (client, id) {
@@ -128,12 +128,12 @@ function Client (options) {
      * @type {string}
      *
      * @example
-     * app.log.add(action, { tab: app.id })
+     * app.log.add(action, { tab: app.tabId })
      */
-    this.id = nanoid(8)
+    this.tabId = nanoid(8)
   } else {
-    this.id = this.options.time.lastId + 1 + ''
-    this.clientId = this.options.userId + ':' + this.id
+    this.tabId = this.options.time.lastId + 1 + ''
+    this.clientId = this.options.userId + ':' + this.tabId
   }
 
   /**
@@ -143,7 +143,7 @@ function Client (options) {
    * @example
    * console.log('Client ID: ', app.nodeId)
    */
-  this.nodeId = this.clientId + ':' + this.id
+  this.nodeId = this.clientId + ':' + this.tabId
 
   var auth
   if (/^ws:\/\//.test(this.options.server) && !options.allowDangerousProtocol) {
@@ -251,7 +251,7 @@ function Client (options) {
 
   this.tabPing = 60000
   this.tabTimeout = 10 * this.tabPing
-  var reason = 'tab' + client.id
+  var reason = 'tab' + client.tabId
   if (this.isLocalStorage) {
     var unbind = log.on('add', function (action, meta) {
       if (meta.reasons.indexOf(reason) !== -1) {
@@ -428,7 +428,7 @@ Client.prototype = {
   },
 
   onUnload: function onUnload () {
-    if (this.pinging) cleanTabActions(this, this.id)
+    if (this.pinging) cleanTabActions(this, this.tabId)
   },
 
   getClientId: function getClientId () {
