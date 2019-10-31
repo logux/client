@@ -1,5 +1,6 @@
 module.exports = {
   synchronized: 'Your data has been saved',
+  connecting: 'Connecting to server',
   disconnected: 'No Internet connection',
   wait: 'No Internet connection<br>Your data has not been saved',
   sending: 'Data saving',
