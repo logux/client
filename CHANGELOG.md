@@ -1,6 +1,9 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.5.2
+* Fix React Native and React Server-Side Rendering support (by Can Rau).
+
 ## 0.5.1
 * Fix compatibility with Logux Server 0.4.
 
