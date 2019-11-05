@@ -336,7 +336,7 @@ function Client (options) {
   })
 
   this.onUnload = this.onUnload.bind(this)
-  if (typeof window !== 'undefined') {
+  if (typeof window !== 'undefined' && window.addEventListener) {
     window.addEventListener('unload', this.onUnload)
   }
 }
@@ -392,7 +392,7 @@ Client.prototype = {
     this.onUnload()
     this.node.destroy()
     clearInterval(this.pinging)
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && window.removeEventListener) {
       window.removeEventListener('unload', this.onUnload)
     }
   },

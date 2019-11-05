@@ -208,7 +208,7 @@ function CrossTabClient (options) {
 
   this.onStorage = this.onStorage.bind(this)
   this.onUnload = this.onUnload.bind(this)
-  if (typeof window !== 'undefined') {
+  if (typeof window !== 'undefined' && window.addEventListener) {
     window.addEventListener('storage', this.onStorage)
     window.addEventListener('unload', this.onUnload)
   }
@@ -240,7 +240,7 @@ CrossTabClient.prototype = {
     clearTimeout(this.watching)
     clearTimeout(this.elections)
     clearInterval(this.leadership)
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && window.removeEventListener) {
       window.removeEventListener('storage', this.onStorage)
     }
   },
