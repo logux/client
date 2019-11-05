@@ -27,10 +27,12 @@ function confirm (client) {
       wait = false
     }
 
-    if (client.role !== 'follower' && wait && disconnected) {
-      window.addEventListener('beforeunload', block)
-    } else {
-      window.removeEventListener('beforeunload', block)
+    if (typeof window !== 'undefined' && window.addEventListener) {
+      if (client.role !== 'follower' && wait && disconnected) {
+        window.addEventListener('beforeunload', block)
+      } else {
+        window.removeEventListener('beforeunload', block)
+      }
     }
   }
 
