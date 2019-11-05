@@ -56,7 +56,7 @@ afterEach(async () => {
 })
 
 eachStoreCheck((desc, creator) => {
-  it(desc, creator(() => {
+  it(`${ desc }`, creator(() => {
     store = new IndexedStore()
     return store
   }))
@@ -91,7 +91,7 @@ it('reloads page on database update', async () => {
       reject(e.target.error)
     }
   })
-  expect(document.reload).toHaveBeenCalled()
+  expect(document.reload).toHaveBeenCalledTimes(1)
 })
 
 it('throws a errors', async () => {

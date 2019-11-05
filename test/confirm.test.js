@@ -39,7 +39,7 @@ it('confirms close', async () => {
   confirm(client)
 
   client.node.setState('disconnected')
-  expect(beforeunloader).toBeFalsy()
+  expect(beforeunloader).toBe(false)
 
   await Promise.all([
     client.log.add(
@@ -47,7 +47,7 @@ it('confirms close', async () => {
     client.log.add(
       { type: 'logux/unsubscribe' }, { sync: true, reasons: ['t'] })
   ])
-  expect(beforeunloader).toBeFalsy()
+  expect(beforeunloader).toBe(false)
 
   await client.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
   expect(beforeunloader()).toEqual('unsynced')
@@ -69,10 +69,10 @@ it('does not confirm on synchronized state', async () => {
   await client.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
 
   client.node.setState('synchronized')
-  expect(beforeunloader).toBeFalsy()
+  expect(beforeunloader).toBe(false)
 
   client.node.setState('disconnected')
-  expect(beforeunloader).toBeFalsy()
+  expect(beforeunloader).toBe(false)
 })
 
 it('does not confirm on follower tab', async () => {
@@ -80,12 +80,12 @@ it('does not confirm on follower tab', async () => {
   confirm(client)
 
   client.node.setState('disconnected')
-  expect(beforeunloader).toBeFalsy()
+  expect(beforeunloader).toBe(false)
 
   await client.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
   client.role = 'follower'
   client.emitter.emit('role')
-  expect(beforeunloader).toBeFalsy()
+  expect(beforeunloader).toBe(false)
 })
 
 it('returns unbind function', async () => {
@@ -93,7 +93,7 @@ it('returns unbind function', async () => {
   let unbind = confirm(client)
   unbind()
   client.node.setState('disconnected')
-  expect(beforeunloader).toBeFalsy()
+  expect(beforeunloader).toBe(false)
   await client.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
-  expect(beforeunloader).toBeFalsy()
+  expect(beforeunloader).toBe(false)
 })

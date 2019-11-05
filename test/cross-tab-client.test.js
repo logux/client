@@ -117,7 +117,7 @@ it('cleans everything', async () => {
   jest.spyOn(localStorage, 'removeItem')
 
   await client.clean()
-  expect(client.node.destroy).toHaveBeenCalled()
+  expect(client.node.destroy).toHaveBeenCalledTimes(1)
   expect(localStorage.removeItem.mock.calls).toEqual([
     ['logux:false:add'], ['logux:false:clean'],
     ['logux:false:state'], ['logux:false:client'], ['logux:false:leader']
@@ -224,7 +224,7 @@ it('becomes leader without localStorage', () => {
 
   client.start()
   expect(roles).toEqual(['leader'])
-  expect(client.node.connection.connect).toHaveBeenCalled()
+  expect(client.node.connection.connect).toHaveBeenCalledTimes(1)
 })
 
 it('becomes leader without window', () => {
@@ -332,7 +332,7 @@ it('disconnects on leader changes', async () => {
   localStorage.setItem('logux:false:leader', `["",${ now }]`)
   emitStorage('logux:false:leader', `["",${ now }]`)
 
-  expect(client.node.connection.disconnect).toHaveBeenCalled()
+  expect(client.node.connection.disconnect).toHaveBeenCalledTimes(1)
 })
 
 it('updates state if tab is a leader', async () => {
@@ -373,11 +373,11 @@ it('listens for leader state', () => {
 
 it('has connected shortcut', () => {
   client = createClient()
-  expect(client.connected).toBeFalsy()
+  expect(client.connected).toBe(false)
   client.state = 'connecting'
-  expect(client.connected).toBeFalsy()
+  expect(client.connected).toBe(false)
   client.state = 'sending'
-  expect(client.connected).toBeTruthy()
+  expect(client.connected).toBe(true)
 })
 
 it('works on IE storage event', async () => {

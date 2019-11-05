@@ -57,7 +57,7 @@ it('returns unbind function', async () => {
   let client = await createClient()
   let unbind = attention(client)
   unbind()
-  expect(document.removeEventListener).toBeCalled()
+  expect(document.removeEventListener).toHaveBeenCalledTimes(1)
 })
 
 it('allows to miss timeout error', async () => {

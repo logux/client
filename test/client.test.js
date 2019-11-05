@@ -94,33 +94,33 @@ it('saves options', () => {
 it('throws on missed server', () => {
   expect(() => {
     new Client({ userId: false, subprotocol: '1.0.0' })
-  }).toThrowError(/server/)
+  }).toThrow(/server/)
 })
 
 it('throws on missed subprotocol', () => {
   expect(() => {
     new Client({ userId: false, server: 'wss://localhost:1337' })
-  }).toThrowError(/subprotocol/)
+  }).toThrow(/subprotocol/)
 })
 
 it('throws on missed user ID', () => {
   expect(() => {
     new Client({ subprotocol: '1.0.0', server: 'wss://localhost:1337' })
-  }).toThrowError(/userId/)
+  }).toThrow(/userId/)
 })
 
 it('not warns on WSS', async () => {
   jest.spyOn(console, 'error').mockImplementation(() => { })
   let client = await createDialog()
-  expect(client.node.connected).toBeTruthy()
-  expect(console.error).not.toBeCalledWith()
+  expect(client.node.connected).toBe(true)
+  expect(console.error).not.toHaveBeenCalledWith()
 })
 
 it('forces to use WSS in production domain', async () => {
   jest.spyOn(console, 'error').mockImplementation(() => { })
   let client = await createDialog({ server: 'ws://test.com' })
-  expect(client.node.connected).toBeFalsy()
-  expect(console.error).toBeCalledWith(
+  expect(client.node.connected).toBe(false)
+  expect(console.error).toHaveBeenCalledWith(
     'Without SSL, old proxies block WebSockets. ' +
     'Use WSS for Logux or set allowDangerousProtocol option.'
   )
@@ -132,8 +132,8 @@ it('ignores WS with allowDangerousProtocol', async () => {
     allowDangerousProtocol: true,
     server: 'ws://test.com'
   })
-  expect(client.node.connected).toBeTruthy()
-  expect(console.error).not.toBeCalledWith()
+  expect(client.node.connected).toBe(true)
+  expect(console.error).not.toHaveBeenCalledWith()
 })
 
 it('ignores WS in development', async () => {
@@ -143,8 +143,8 @@ it('ignores WS in development', async () => {
   }, {
     env: 'development'
   })
-  expect(client.node.connected).toBeTruthy()
-  expect(console.error).not.toBeCalledWith()
+  expect(client.node.connected).toBe(true)
+  expect(console.error).not.toHaveBeenCalledWith()
 })
 
 it('uses user ID in node ID', () => {
@@ -228,7 +228,7 @@ it('connects', () => {
   let client = createClient()
   jest.spyOn(client.node.connection, 'connect')
   client.start()
-  expect(client.node.connection.connect).toHaveBeenCalled()
+  expect(client.node.connection.connect).toHaveBeenCalledTimes(1)
 })
 
 it('display server debug error stacktrace with prefix', () => {
@@ -253,8 +253,8 @@ it('cleans everything', async () => {
   jest.spyOn(client.node, 'destroy')
   jest.spyOn(client.log.store, 'clean')
   await client.clean()
-  expect(client.node.destroy).toHaveBeenCalled()
-  expect(client.log.store.clean).toHaveBeenCalled()
+  expect(client.node.destroy).toHaveBeenCalledTimes(1)
+  expect(client.log.store.clean).toHaveBeenCalledTimes(1)
 })
 
 it('pings after tab-specific action', async () => {

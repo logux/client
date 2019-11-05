@@ -41,7 +41,7 @@ it('shows connecting state URL', async () => {
   client.node.connection.url = 'ws://ya.ru'
   client.node.setState('connecting')
 
-  expect(console.log).toBeCalledWith(
+  expect(console.log).toHaveBeenCalledWith(
     'Logux state is connecting. ' +
     '10:1:1 is connecting to ws://ya.ru.'
   )
@@ -56,7 +56,7 @@ it('shows Logux prefix with color and make state and nodeId bold', async () => {
   client.node.connection.url = 'ws://ya.ru'
   client.node.setState('connecting')
 
-  expect(console.log).toBeCalledWith(
+  expect(console.log).toHaveBeenCalledWith(
     '%cLogux%c state is %cconnecting%c. ' +
     '%c10:1:1%c is connecting to %cws://ya.ru%c.',
     'color:#ffa200;font-weight:bold',
@@ -78,7 +78,7 @@ it('shows server node ID', async () => {
   client.node.connected = true
   client.node.setState('synchronized')
 
-  expect(console.log).toBeCalledWith(
+  expect(console.log).toHaveBeenCalledWith(
     'Logux state is synchronized. ' +
     'Client was connected to server.'
   )
@@ -96,7 +96,7 @@ it('does not shows server node ID in follower role', async () => {
   client.node.connected = true
   client.node.setState('synchronized')
 
-  expect(console.log).toBeCalledWith('Logux state is synchronized')
+  expect(console.log).toHaveBeenCalledWith('Logux state is synchronized')
 })
 
 it('shows bold server node ID', async () => {
@@ -107,7 +107,7 @@ it('shows bold server node ID', async () => {
   client.node.connected = true
   client.node.setState('synchronized')
 
-  expect(console.log).toBeCalledWith(
+  expect(console.log).toHaveBeenCalledWith(
     '%cLogux%c state is %csynchronized%c. ' +
     'Client was connected to %cserver%c.',
     'color:#ffa200;font-weight:bold',
@@ -136,7 +136,7 @@ it('shows state event', async () => {
   client.node.connected = false
   client.node.emitter.emit('state')
 
-  expect(console.log).toBeCalledWith('Logux state is connecting')
+  expect(console.log).toHaveBeenCalledWith('Logux state is connecting')
 })
 
 it('shows role event', async () => {
@@ -146,7 +146,7 @@ it('shows role event', async () => {
   client.node.connected = false
   client.emitter.emit('role')
 
-  expect(console.log).toBeCalledWith('Logux tab role is leader')
+  expect(console.log).toHaveBeenCalledWith('Logux tab role is leader')
 })
 
 it('shows error event', async () => {
@@ -154,7 +154,7 @@ it('shows error event', async () => {
   log(client, { color: false })
   let error = new LoguxError('test')
   client.node.connection.emitter.emit('error', error)
-  expect(console.error).toBeCalledWith('Logux error: test')
+  expect(console.error).toHaveBeenCalledWith('Logux error: test')
 })
 
 it('shows colorized error event', async () => {
@@ -162,7 +162,7 @@ it('shows colorized error event', async () => {
   log(client, { color: true })
   let error = new LoguxError('test')
   client.node.connection.emitter.emit('error', error)
-  expect(console.error).toBeCalledWith(
+  expect(console.error).toHaveBeenCalledWith(
     '%cLogux%c error: test',
     'color:#ffa200;font-weight:bold',
     ''
@@ -176,7 +176,7 @@ it('shows server error', async () => {
   let error = new LoguxError('test', 'type', true)
   client.node.emitter.emit('clientError', error)
 
-  expect(console.error).toBeCalledWith('Logux server sent error: test')
+  expect(console.error).toHaveBeenCalledWith('Logux server sent error: test')
 })
 
 it('shows bold server error', async () => {
@@ -186,7 +186,7 @@ it('shows bold server error', async () => {
   let error = new LoguxError('test', 'type', true)
   client.node.emitter.emit('clientError', error)
 
-  expect(console.error).toBeCalledWith(
+  expect(console.error).toHaveBeenCalledWith(
     '%cLogux%c server sent error: test',
     'color:#ffa200;font-weight:bold',
     ''
@@ -197,7 +197,7 @@ it('shows add and clean event', async () => {
   let client = await createClient()
   log(client, { color: false })
   await client.node.log.add({ type: 'A' }, { reasons: ['test'] })
-  expect(console.log).toBeCalledWith(
+  expect(console.log).toHaveBeenCalledWith(
     'Logux added A action',
     { type: 'A' },
     {
@@ -226,7 +226,7 @@ it('shows subscription action', async () => {
   let client = await createClient()
   log(client, { color: false })
   await client.node.log.add({ type: 'logux/subscribe', channel: 'A' })
-  expect(console.log).toBeCalledWith('Logux subscribed to channel A')
+  expect(console.log).toHaveBeenCalledWith('Logux subscribed to channel A')
   await client.node.log.add({ type: 'logux/subscribe', channel: 'A', a: 1 })
   expect(console.log).toHaveBeenLastCalledWith(
     'Logux subscribed to channel A',
@@ -238,7 +238,7 @@ it('shows processed action', async () => {
   let client = await createClient()
   log(client, { color: false })
   await client.node.log.add({ type: 'logux/processed', id: '1 10:1:1 0' })
-  expect(console.log).toBeCalledWith(
+  expect(console.log).toHaveBeenCalledWith(
     'Logux action 1 10:1:1 0 was processed'
   )
 })
@@ -249,7 +249,7 @@ it('shows undo action', async () => {
   await client.node.log.add(
     { type: 'logux/undo', id: '1 10:1:1 0', reason: 'error' }
   )
-  expect(console.log).toBeCalledWith(
+  expect(console.log).toHaveBeenCalledWith(
     'Logux action 1 10:1:1 0 was undid because of error'
   )
   await client.node.log.add(
@@ -265,7 +265,7 @@ it('combines add and clean event', async () => {
   let client = await createClient()
   log(client, { color: false })
   await client.node.log.add({ type: 'A' })
-  expect(console.log).toBeCalledWith(
+  expect(console.log).toHaveBeenCalledWith(
     'Logux added and cleaned A action',
     { type: 'A' },
     {
@@ -281,9 +281,9 @@ it('ignores different tab actions', async () => {
   let client = await createClient()
   log(client, { color: false })
   await client.node.log.add({ type: 'A' }, { tab: 'X', reasons: ['test'] })
-  expect(console.log).not.toBeCalledWith()
+  expect(console.log).not.toHaveBeenCalledWith()
   await client.node.log.removeReason('test')
-  expect(console.log).not.toBeCalled()
+  expect(console.log).not.toHaveBeenCalled()
 })
 
 it('ignores actions by request', async () => {
@@ -293,18 +293,18 @@ it('ignores actions by request', async () => {
     client.node.log.add({ type: 'A' }, { reasons: ['test'] }),
     client.node.log.add({ type: 'B' })
   ])
-  expect(console.log).not.toBeCalledWith()
+  expect(console.log).not.toHaveBeenCalledWith()
   await client.node.log.removeReason('test')
-  expect(console.log).not.toBeCalledWith()
+  expect(console.log).not.toHaveBeenCalledWith()
   await client.node.log.add({ type: 'C' })
-  expect(console.log).toBeCalled()
+  expect(console.log).toHaveBeenCalledTimes(1)
 })
 
 it('shows add and clean event and make action type bold', async () => {
   let client = await createClient()
   log(client, { color: true })
   await client.node.log.add({ type: 'A' }, { reasons: ['test'] })
-  expect(console.log).toBeCalledWith(
+  expect(console.log).toHaveBeenCalledWith(
     '%cLogux%c added %cA%c action',
     'color:#ffa200;font-weight:bold',
     '',
@@ -342,7 +342,7 @@ it('shows add event with action and make action type bold', async () => {
   client.node.localNodeId = 'client'
   log(client)
   await client.node.log.add({ type: 'B' }, { reasons: ['test'] })
-  expect(console.log).toBeCalledWith(
+  expect(console.log).toHaveBeenCalledWith(
     '%cLogux%c added %cB%c action from %c10:1:1%c',
     'color:#ffa200;font-weight:bold',
     '',
@@ -380,8 +380,8 @@ it('allows to disable some message types', async () => {
   client.node.emitter.emit('clientError', error)
 
   await client.node.log.add({ type: 'A' })
-  expect(console.error).not.toBeCalled()
-  expect(console.log).not.toBeCalled()
+  expect(console.error).not.toHaveBeenCalled()
+  expect(console.log).not.toHaveBeenCalled()
 })
 
 it('returns unbind function', async () => {
@@ -392,7 +392,7 @@ it('returns unbind function', async () => {
   let error = new LoguxError('test')
   client.node.connection.emitter.emit('error', error)
 
-  expect(console.error).not.toBeCalled()
+  expect(console.error).not.toHaveBeenCalled()
 })
 
 it('supports cross-tab synchronization', async () => {
@@ -402,13 +402,13 @@ it('supports cross-tab synchronization', async () => {
 
   client.state = 'disconnected'
   client.emitter.emit('state')
-  expect(console.log).lastCalledWith(
+  expect(console.log).toHaveBeenLastCalledWith(
     'Logux state is disconnected'
   )
 
   let meta = { id: '1 10:1:1 0', reasons: ['test'] }
   client.emitter.emit('add', { type: 'A' }, meta)
-  expect(console.log).lastCalledWith(
+  expect(console.log).toHaveBeenLastCalledWith(
     'Logux added A action', { type: 'A' }, meta
   )
 })
