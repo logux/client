@@ -44,35 +44,35 @@ var RESET = {
  * Display Logux widget in browser.
  *
  * @param {Client} client Observed Client instance.
- * @param {object} options Widget settings.
- * @param {object} options.styles Inline styles for different states.
- * @param {object} options.styles.base Base styles.
- * @param {object} options.styles.text Style for text element inside widget.
- * @param {object} options.styles.synchronized Styles for synchronized state.
- * @param {object} options.styles.disconnected Styles for disconnected state.
- * @param {object} options.styles.wait Styles for wait state.
- * @param {object} options.styles.connecting Styles for connecting state.
- * @param {object} options.styles.sending Styles for sending state.
- * @param {object} options.styles.error Error styles.
- * @param {object} options.styles.protocolError Protocol error styles.
- * @param {object} options.styles.icons Icons in URL link or `data:uri`.
- * @param {string} options.styles.icons.synchronized Synchronized state.
- * @param {string} options.styles.icons.disconnected Disconnected state.
- * @param {string} options.styles.icons.wait Wait state.
- * @param {string} options.styles.icons.sending Sending state.
- * @param {string} options.styles.icons.error Error state.
- * @param {string} options.styles.icons.protocolError Protocol error state.
- * @param {object} options.messages Widget text for different states.
- * @param {object} options.messages.synchronized Text for synchronized state.
- * @param {object} options.messages.disconnected Text for disconnected state.
- * @param {object} options.messages.wait Text for wait state.
- * @param {object} options.messages.sending Text for sending state.
- * @param {object} options.messages.syncError Logux error text.
- * @param {object} options.messages.error Error text.
- * @param {object} options.messages.denied Denied text.
- * @param {object} options.messages.protocolError Protocol error text.
- * @param {string} [options.position="bottom-right"] Widget position.
- * @param {number} [options.duration=3000] Synchronized state duration.
+ * @param {object} opts Widget settings.
+ * @param {object} opts.styles Inline styles for different states.
+ * @param {object} opts.styles.base Base styles.
+ * @param {object} opts.styles.text Style for text element inside widget.
+ * @param {object} opts.styles.synchronized Styles for synchronized state.
+ * @param {object} opts.styles.disconnected Styles for disconnected state.
+ * @param {object} opts.styles.wait Styles for wait state.
+ * @param {object} opts.styles.connecting Styles for connecting state.
+ * @param {object} opts.styles.sending Styles for sending state.
+ * @param {object} opts.styles.error Error styles.
+ * @param {object} opts.styles.protocolError Protocol error styles.
+ * @param {object} opts.styles.icons Icons in URL link or `data:uri`.
+ * @param {string} opts.styles.icons.synchronized Synchronized state.
+ * @param {string} opts.styles.icons.disconnected Disconnected state.
+ * @param {string} opts.styles.icons.wait Wait state.
+ * @param {string} opts.styles.icons.sending Sending state.
+ * @param {string} opts.styles.icons.error Error state.
+ * @param {string} opts.styles.icons.protocolError Protocol error state.
+ * @param {object} opts.messages Widget text for different states.
+ * @param {object} opts.messages.synchronized Text for synchronized state.
+ * @param {object} opts.messages.disconnected Text for disconnected state.
+ * @param {object} opts.messages.wait Text for wait state.
+ * @param {object} opts.messages.sending Text for sending state.
+ * @param {object} opts.messages.syncError Logux error text.
+ * @param {object} opts.messages.error Error text.
+ * @param {object} opts.messages.denied Denied text.
+ * @param {object} opts.messages.protocolError Protocol error text.
+ * @param {string} [opts.position="bottom-right"] Widget position.
+ * @param {number} [opts.duration=3000] Synchronized state duration.
  *
  * @return {Function} Unbind badge listener and remove widget from DOM.
  *
@@ -89,11 +89,14 @@ var RESET = {
  *  },
  *  position: 'top-left'
  * })
+ *
+ * @name badge
+ * @function
  */
-function badge (client, options) {
-  var messages = options.messages
-  var position = options.position || 'bottom-right'
-  var styles = options.styles
+function badge (client, opts) {
+  var messages = opts.messages
+  var position = opts.position || 'bottom-right'
+  var styles = opts.styles
 
   var widget = document.createElement('div')
   var text = document.createElement('span')
@@ -135,7 +138,7 @@ function badge (client, options) {
     } else if (state === 'denied') {
       show(styles.error, messages.denied)
     }
-  }, options)
+  }, opts)
 
   widget.appendChild(text)
   document.body.appendChild(widget)
