@@ -42,7 +42,7 @@ function colorify (color, text, action, meta) {
  * @param {string[]} [messages.ignoreActions] Disable action messages
  *                                            for specific types.
  *
- * @return {Function} Unbind log listener.
+ * @return {function} Unbind log listener.
  *
  * @example
  * import log from '@logux/client/log'

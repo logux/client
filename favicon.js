@@ -8,7 +8,7 @@
  * @param {string} [links.offline] Offline favicon link.
  * @param {string} [links.error] Error favicon link.
  *
- * @return {Function} Unbind favicon listener.
+ * @return {function} Unbind favicon listener.
  *
  * @example
  * import favicon from '@logux/client/favicon'

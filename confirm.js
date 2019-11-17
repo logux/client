@@ -9,7 +9,7 @@ function block (e) {
  *
  * @param {CrossTabClient} client Observed Client instance.
  *
- * @return {Function} Unbind confirm listener.
+ * @return {function} Unbind confirm listener.
  *
  * @example
  * import confirm from '@logux/client/confirm'

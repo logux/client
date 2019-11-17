@@ -3,7 +3,7 @@
  *
  * @param {Client} client Observed Client instance.
  *
- * @return {Function} Unbind attention listener.
+ * @return {function} Unbind attention listener.
  *
  * @example
  * import attention from '@logux/client/attention'

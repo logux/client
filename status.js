@@ -7,7 +7,7 @@
  * @param {object} [options] Options.
  * @param {number} [options.duration=3000] `synchronizedAfterWait` duration.
  *
- * @return {Function} Unbind status listener.
+ * @return {function} Unbind status listener.
  *
  * @example
  * import status from '@logux/client/status'

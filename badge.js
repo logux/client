@@ -74,7 +74,7 @@ var RESET = {
  * @param {string} [opts.position="bottom-right"] Widget position.
  * @param {number} [opts.duration=3000] Synchronized state duration.
  *
- * @return {Function} Unbind badge listener and remove widget from DOM.
+ * @return {function} Unbind badge listener and remove widget from DOM.
  *
  * @example
  * import badge from '@logux/client/badge'
