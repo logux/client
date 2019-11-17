@@ -110,26 +110,25 @@ function isMemory (store) {
  * Instead of {@link Client}, this class prevents conflicts
  * between Logux instances in different tabs on single browser.
  *
- * @param {object} options Client options.
- * @param {string|Connection} options.server Server URL.
- * @param {string} options.subprotocol Client subprotocol version
- *                                     in SemVer format.
- * @param {number|string|false} options.userId User ID. Pass `false` if no user.
- * @param {any} [options.credentials] Client credentials for authentication.
- * @param {string} [options.prefix="logux"] Prefix for `IndexedDB` database
- *                                          to run multiple Logux instances
- *                                          in the same browser.
- * @param {number} [options.timeout=20000] Timeout in milliseconds
- *                                         to break connection.
- * @param {number} [options.ping=10000] Milliseconds since last message to test
- *                                      connection by sending ping.
- * @param {Store} [options.store] Store to save log data. `IndexedStore`
- *                                by default (if available)
- * @param {TestTime} [options.time] Test time to test client.
- * @param {number} [options.minDelay=1000] Minimum delay between reconnections.
- * @param {number} [options.maxDelay=5000] Maximum delay between reconnections.
- * @param {number} [options.attempts=Infinity] Maximum reconnection attempts.
- * @param {bool} [options.allowDangerousProtocol=false] Do not show warning
+ * @param {object} opts Client options.
+ * @param {string|Connection} opts.server Server URL.
+ * @param {string} opts.subprotocol Client subprotocol version in SemVer format.
+ * @param {number|string|false} opts.userId User ID. Pass `false` if no user.
+ * @param {any} [opts.credentials] Client credentials for authentication.
+ * @param {string} [opts.prefix="logux"] Prefix for `IndexedDB` database to run
+ *                                       multiple Logux instances
+ *                                       in the same browser.
+ * @param {number} [opts.timeout=20000] Timeout in milliseconds
+ *                                      to break connection.
+ * @param {number} [opts.ping=10000] Milliseconds since last message to test
+ *                                   connection by sending ping.
+ * @param {Store} [opts.store] Store to save log data. `IndexedStore`
+ *                             by default (if available)
+ * @param {TestTime} [opts.time] Test time to test client.
+ * @param {number} [opts.minDelay=1000] Minimum delay between reconnections.
+ * @param {number} [opts.maxDelay=5000] Maximum delay between reconnections.
+ * @param {number} [opts.attempts=Infinity] Maximum reconnection attempts.
+ * @param {boolean} [opts.allowDangerousProtocol=false] Do not show warning
  *                                                      when using 'ws://'
  *                                                      in production.
  *
@@ -150,8 +149,8 @@ function isMemory (store) {
  * @extends Client
  * @class
  */
-function CrossTabClient (options) {
-  Client.call(this, options)
+function CrossTabClient (opts) {
+  Client.call(this, opts)
 
   /**
    * Current tab role. Only `leader` tab connects to server. `followers` just

@@ -40,26 +40,25 @@ var ALLOWED_META = ['id', 'time', 'channels']
  * you should use it only if you are really sure, that application will not
  * be run in different tab (for instance, if you are developing a kiosk app).
  *
- * @param {object} options Client options.
- * @param {string|Connection} options.server Server URL.
- * @param {string} options.subprotocol Client subprotocol version
- *                                     in SemVer format.
- * @param {number|string|false} options.userId User ID. Pass `false` if no user.
- * @param {any} [options.credentials] Client credentials for authentication.
- * @param {string} [options.prefix="logux"] Prefix for `IndexedDB` database
- *                                          to run multiple Logux instances
- *                                          in the same browser.
- * @param {number} [options.timeout=20000] Timeout in milliseconds
- *                                         to break connection.
- * @param {number} [options.ping=10000] Milliseconds since last message to test
- *                                      connection by sending ping.
- * @param {Store} [options.store] Store to save log data. `IndexedStore`
- *                                by default (if available)
- * @param {TestTime} [options.time] Test time to test client.
- * @param {number} [options.minDelay=1000] Minimum delay between reconnections.
- * @param {number} [options.maxDelay=5000] Maximum delay between reconnections.
- * @param {number} [options.attempts=Infinity] Maximum reconnection attempts.
- * @param {bool} [options.allowDangerousProtocol=false] Do not show warning
+ * @param {object} opts Client options.
+ * @param {string|Connection} opts.server Server URL.
+ * @param {string} opts.subprotocol Client subprotocol version in SemVer format.
+ * @param {number|string|false} opts.userId User ID. Pass `false` if no user.
+ * @param {any} [opts.credentials] Client credentials for authentication.
+ * @param {string} [opts.prefix="logux"] Prefix for `IndexedDB` database to run
+ *                                       multiple Logux instances
+ *                                       in the same browser.
+ * @param {number} [opts.timeout=20000] Timeout in milliseconds
+ *                                      to break connection.
+ * @param {number} [opts.ping=10000] Milliseconds since last message to test
+ *                                   connection by sending ping.
+ * @param {Store} [opts.store] Store to save log data. `IndexedStore`
+ *                             by default (if available)
+ * @param {TestTime} [opts.time] Test time to test client.
+ * @param {number} [opts.minDelay=1000] Minimum delay between reconnections.
+ * @param {number} [opts.maxDelay=5000] Maximum delay between reconnections.
+ * @param {number} [opts.attempts=Infinity] Maximum reconnection attempts.
+ * @param {boolean} [opts.allowDangerousProtocol=false] Do not show warning
  *                                                      when using 'ws://'
  *                                                      in production.
  *
@@ -79,7 +78,7 @@ var ALLOWED_META = ['id', 'time', 'channels']
  *
  * @class
  */
-function Client (options) {
+function Client (opts) {
   /**
    * Client options.
    * @type {object}
@@ -87,7 +86,7 @@ function Client (options) {
    * @example
    * console.log('Connecting to ' + app.options.server)
    */
-  this.options = options || { }
+  this.options = opts || { }
 
   if (process.env.NODE_ENV !== 'production') {
     if (typeof this.options.server === 'undefined') {
@@ -146,7 +145,7 @@ function Client (options) {
   this.nodeId = this.clientId + ':' + this.tabId
 
   var auth
-  if (/^ws:\/\//.test(this.options.server) && !options.allowDangerousProtocol) {
+  if (/^ws:\/\//.test(this.options.server) && !opts.allowDangerousProtocol) {
     auth = function (cred) {
       if (typeof cred !== 'object' || cred.env !== 'development') {
         console.error(
