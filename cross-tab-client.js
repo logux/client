@@ -129,7 +129,7 @@ function isMemory (store) {
  * @param {number} [opts.maxDelay=5000] Maximum delay between reconnections.
  * @param {number} [opts.attempts=Infinity] Maximum reconnection attempts.
  * @param {boolean} [opts.allowDangerousProtocol=false] Do not show warning
- *                                                      when using 'ws://'
+ *                                                      when using `ws://`
  *                                                      in production.
  *
  * @example
