@@ -195,6 +195,7 @@ it('synchronizes actions from follower tabs', async () => {
   client.node.timeFix = 0
   let action = JSON.stringify({ type: 'A' })
   let meta = JSON.stringify({
+    reasons: [],
     added: 1,
     time: 1,
     sync: true,
@@ -485,7 +486,7 @@ it('detects subscriptions from different tabs', () => {
     '{"sync":true,"id":"0 A 0","reasons":["syncing"]}' +
   ']')
   emitStorage('logux:false:add', '["other",' +
-    '{"type":"logux/processed","id":"0 A 0"},{"id":"1 A 0"}' +
+    '{"type":"logux/processed","id":"0 A 0"},{"id":"1 A 0","reasons":[]}' +
   ']')
   expect(client.subscriptions).toEqual({
     '{"type":"logux/subscribe","name":"a"}': 1
@@ -494,8 +495,10 @@ it('detects subscriptions from different tabs', () => {
 
 it('copies actions on memory store', () => {
   client = createClient()
-
-  emitStorage('logux:false:add', '["other",{"type":"A"},{"id":"1 A 0"}]')
+  emitStorage(
+    'logux:false:add',
+    '["other",{"type":"A"},{"id":"1 A 0","reasons":[]}]'
+  )
   expect(client.log.actions()).toEqual([{ type: 'A' }])
 
   emitStorage('logux:false:clean', '["other",{"type":"A"},{"id":"1 A 0"}]')
