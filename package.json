@@ -44,7 +44,7 @@
     "eslint-plugin-standard": "^4.0.1",
     "eslint-plugin-unicorn": "^13.0.0",
     "fake-indexeddb": "^3.0.0",
-    "husky": "^3.0.9",
+    "husky": "^3.1.0",
     "jest": "^24.9.0",
     "lint-staged": "^9.4.3",
     "nanodelay": "^0.1.4",
