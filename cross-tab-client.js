@@ -200,9 +200,6 @@ function CrossTabClient (opts) {
   })
   this.log.on('clean', function (action, meta) {
     client.emitter.emit('clean', action, meta)
-    if (meta.tab !== client.tabId) {
-      sendToTabs(client, 'clean', [client.tabId, action, meta])
-    }
   })
 
   this.onStorage = this.onStorage.bind(this)
@@ -247,7 +244,6 @@ CrossTabClient.prototype = {
   clean: function clean () {
     if (this.isLocalStorage) {
       localStorage.removeItem(storageKey(this, 'add'))
-      localStorage.removeItem(storageKey(this, 'clean'))
       localStorage.removeItem(storageKey(this, 'state'))
       localStorage.removeItem(storageKey(this, 'client'))
       localStorage.removeItem(storageKey(this, 'leader'))
@@ -298,16 +294,6 @@ CrossTabClient.prototype = {
           if (this.role === 'leader') {
             this.node.onAdd(data[1], data[2])
           }
-        }
-      }
-    } else if (e.key === storageKey(this, 'clean')) {
-      data = JSON.parse(e.newValue)
-      if (data[0] !== this.tabId) {
-        if (!data[2].tab || data[2].tab === this.tabId) {
-          if (isMemory(this.log.store)) {
-            this.log.store.remove(data[2].id)
-          }
-          this.emitter.emit('clean', data[1], data[2])
         }
       }
     } else if (e.key === storageKey(this, 'leader')) {

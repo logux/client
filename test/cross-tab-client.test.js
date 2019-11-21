@@ -119,8 +119,8 @@ it('cleans everything', async () => {
   await client.clean()
   expect(client.node.destroy).toHaveBeenCalledTimes(1)
   expect(localStorage.removeItem.mock.calls).toEqual([
-    ['logux:false:add'], ['logux:false:clean'],
-    ['logux:false:state'], ['logux:false:client'], ['logux:false:leader']
+    ['logux:false:add'], ['logux:false:state'],
+    ['logux:false:client'], ['logux:false:leader']
   ])
 })
 
@@ -177,9 +177,7 @@ it('synchronizes actions between tabs', async () => {
   await client4.log.add({ type: 'E' })
   expect(events).toEqual([
     ['add', { type: 'A' }, []],
-    ['clean', { type: 'A' }, []],
-    ['add', { type: 'C' }, []],
-    ['clean', { type: 'C' }, []]
+    ['add', { type: 'C' }, []]
   ])
 })
 
@@ -388,9 +386,6 @@ it('works on IE storage event', async () => {
   client.on('add', () => {
     events += 1
   })
-  client.on('clean', () => {
-    events += 1
-  })
 
   client.start()
   emitStorage('logux:false:leader', localStorage.getItem('logux:false:leader'))
@@ -398,8 +393,10 @@ it('works on IE storage event', async () => {
   await delay(client.electionDelay + 10)
   expect(client.role).toEqual('leader')
 
-  emitStorage('logux:false:add', `["${ client.tabId }",{},{"id":"0 A 0"}]`)
-  emitStorage('logux:false:clean', `["${ client.tabId }",{},{"id":"0 A 0"}]`)
+  emitStorage(
+    'logux:false:add',
+    `["${ client.tabId }",{},{"id":"0 A 0","reasons":[]}]`
+  )
   expect(events).toEqual(0)
 })
 
@@ -500,7 +497,4 @@ it('copies actions on memory store', () => {
     '["other",{"type":"A"},{"id":"1 A 0","reasons":[]}]'
   )
   expect(client.log.actions()).toEqual([{ type: 'A' }])
-
-  emitStorage('logux:false:clean', '["other",{"type":"A"},{"id":"1 A 0"}]')
-  expect(client.log.actions()).toHaveLength(0)
 })
