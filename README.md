@@ -1,13 +1,13 @@
 # Logux Client [![Cult Of Martians][cult-img]][cult]
 
-<img align="right" width="95" height="95" title="Logux logo"
-     src="https://cdn.rawgit.com/logux/logux/master/logo.svg">
+<img align="right" width="95" height="148" title="Logux logotype"
+     src="https://logux.io/logotype.svg">
 
 Logux is a new way to connect client and server. Instead of sending
 HTTP requests (e.g., AJAX and GraphQL) it synchronizes log of operations
 between client, server, and other clients.
 
-**Documentation: [logux/logux]**
+**Documentation: [logux.io]**
 
 This repository contains Logux base components to build web client:
 
@@ -25,7 +25,7 @@ Check **[demo page]** for widget UI.
        alt="Sponsored by Evil Martians" width="236" height="54">
 </a>
 
-[logux/logux]: https://github.com/logux/logux
+[logux.io]: https://logux.io/
 [demo page]: https://logux.github.io/client/
 [cult-img]: http://cultofmartians.com/assets/badges/badge.svg
 [cult]: http://cultofmartians.com/done.html

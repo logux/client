@@ -19,6 +19,7 @@
   },
   "author": "Andrey Sitnik <andrey@sitnik.ru>",
   "license": "MIT",
+  "homepage": "https://logux.io/",
   "repository": "logux/client",
   "dependencies": {
     "@logux/core": "^0.3.4",
@@ -131,7 +132,8 @@
       "ws",
       "resubscribe",
       "resubscriptions",
-      "tabId"
+      "tabId",
+      "io"
     ]
   },
   "sharec": {
