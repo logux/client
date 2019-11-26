@@ -28,12 +28,12 @@
     "nanoid": "^2.1.7"
   },
   "devDependencies": {
-    "@logux/eslint-config": "^34.0.1",
+    "@logux/eslint-config": "^35.0.0",
     "@logux/sharec-config": "^0.5.6",
     "@size-limit/preset-small-lib": "^2.2.1",
     "clean-publish": "^1.1.2",
     "documentation": "^12.1.4",
-    "eslint": "^6.6.0",
+    "eslint": "^6.7.1",
     "eslint-config-standard": "^14.1.0",
     "eslint-plugin-es5": "^1.4.1",
     "eslint-plugin-import": "^2.18.2",
