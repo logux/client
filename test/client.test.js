@@ -153,8 +153,8 @@ it('uses user ID in node ID', () => {
     server: 'wss://localhost:1337',
     userId: 10
   })
-  expect(client1.clientId).toMatch(/^10:[\w\d_-]{8}$/)
-  expect(client1.tabId).toMatch(/^[\w\d_-]{8}$/)
+  expect(client1.clientId).toMatch(/^10:[\w-]{8}$/)
+  expect(client1.tabId).toMatch(/^[\w-]{8}$/)
   expect(client1.nodeId).toEqual(client1.clientId + ':' + client1.tabId)
 
   let client2 = new Client({
