@@ -25,18 +25,18 @@
     "@logux/core": "^0.3.4",
     "browser-supports-log-styles": "^1.1.7",
     "nanoevents": "^2.0.0",
-    "nanoid": "^2.1.7"
+    "nanoid": "^2.1.8"
   },
   "devDependencies": {
     "@logux/eslint-config": "^35.0.1",
     "@logux/sharec-config": "^0.5.6",
-    "@size-limit/preset-small-lib": "^2.2.2",
-    "clean-publish": "^1.1.2",
+    "@size-limit/preset-small-lib": "^2.2.3",
+    "clean-publish": "^1.1.4",
     "documentation": "^12.1.4",
     "eslint": "^6.7.2",
     "eslint-config-standard": "^14.1.0",
     "eslint-plugin-es5": "^1.4.1",
-    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-import": "^2.19.1",
     "eslint-plugin-jest": "^23.1.1",
     "eslint-plugin-node": "^10.0.0",
     "eslint-plugin-prefer-let": "^1.0.1",
