@@ -41,11 +41,16 @@ function watchForLeader (client) {
   }, client.roleTimeout)
 }
 
-function areWeOutdates (our, remote) {
-  if (!remote) return false
-  if (our === remote) return false
-  var ourParts = our.split('.')
-  var remoteParts = remote.split('.')
+function areWeOutdates (client, meta) {
+  if (!meta.subprotocol) return false
+  if (client.node.options.subprotocol === meta.subprotocol) return false
+
+  var id = meta.id.split(' ')[1]
+  var prefix = client.clientId + ':'
+  if (id.slice(0, prefix.length) !== prefix) return false
+
+  var ourParts = client.node.options.subprotocol.split('.')
+  var remoteParts = meta.subprotocol.split('.')
   for (var i = 0; i < ourParts.length; i++) {
     var ourNumber = parseInt(ourParts[i])
     var remoteNumber = parseInt(remoteParts[i])
@@ -306,7 +311,7 @@ CrossTabClient.prototype = {
       if (data[0] !== this.tabId) {
         var action = data[1]
         var meta = data[2]
-        if (areWeOutdates(this.node.options.subprotocol, meta.subprotocol)) {
+        if (areWeOutdates(this, meta)) {
           var err = new LoguxError('wrong-subprotocol', {
             supported: meta.subprotocol,
             used: this.node.options.subprotocol
