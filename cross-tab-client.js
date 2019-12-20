@@ -1,3 +1,4 @@
+var LoguxError = require('@logux/core/logux-error')
 var merge = require('@logux/core/merge')
 
 var Client = require('./client')
@@ -38,6 +39,23 @@ function watchForLeader (client) {
       watchForLeader(client)
     }
   }, client.roleTimeout)
+}
+
+function areWeOutdates (our, remote) {
+  if (!remote) return false
+  if (our === remote) return false
+  var ourParts = our.split('.')
+  var remoteParts = remote.split('.')
+  for (var i = 0; i < ourParts.length; i++) {
+    var ourNumber = parseInt(ourParts[i])
+    var remoteNumber = parseInt(remoteParts[i])
+    if (ourNumber > remoteNumber) {
+      return false
+    } else if (ourNumber < remoteNumber) {
+      return true
+    }
+  }
+  return false
 }
 
 function setRole (client, role) {
@@ -286,13 +304,22 @@ CrossTabClient.prototype = {
     if (e.key === storageKey(this, 'add')) {
       data = JSON.parse(e.newValue)
       if (data[0] !== this.tabId) {
-        if (!data[2].tab || data[2].tab === this.tabId) {
+        var action = data[1]
+        var meta = data[2]
+        if (areWeOutdates(this.node.options.subprotocol, meta.subprotocol)) {
+          var err = new LoguxError('wrong-subprotocol', {
+            supported: meta.subprotocol,
+            used: this.node.options.subprotocol
+          }, true)
+          this.node.emitter.emit('error', err)
+        }
+        if (!meta.tab || meta.tab === this.tabId) {
           if (isMemory(this.log.store)) {
-            this.log.store.add(data[1], data[2])
+            this.log.store.add(action, meta)
           }
-          this.emitter.emit('add', data[1], data[2])
+          this.emitter.emit('add', action, meta)
           if (this.role === 'leader') {
-            this.node.onAdd(data[1], data[2])
+            this.node.onAdd(action, meta)
           }
         }
       }

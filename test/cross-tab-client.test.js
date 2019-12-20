@@ -494,7 +494,52 @@ it('copies actions on memory store', () => {
   client = createClient()
   emitStorage(
     'logux:false:add',
-    '["other",{"type":"A"},{"id":"1 A 0","reasons":[]}]'
+    '["other",{"type":"A"},{"id":"1 A 0","reasons":[],"subprotocol":"1.0.0"}]'
   )
   expect(client.log.actions()).toEqual([{ type: 'A' }])
+})
+
+it('handles different subprotocols in tabs', () => {
+  client = createClient()
+  let error
+  client.node.on('error', e => {
+    error = e
+  })
+  emitStorage(
+    'logux:false:add',
+    '["other",{"type":"A"},{"id":"1 A 0","reasons":[],"subprotocol":"1.0.1"}]'
+  )
+  expect(error.toString()).toContain(
+    'Only 1.0.1 application subprotocols are supported, but you use 1.0.0'
+  )
+})
+
+it('does not show alert on higher subprotocol', () => {
+  client = createClient()
+  let error
+  client.node.on('error', e => {
+    error = e
+  })
+  emitStorage(
+    'logux:false:add',
+    '["other",{"type":"A"},{"id":"1 A 0","reasons":[],"subprotocol":"1.0.0"}]'
+  )
+  emitStorage(
+    'logux:false:add',
+    '["other",{"type":"A"},{"id":"1 A 0","reasons":[],"subprotocol":"0.9.0"}]'
+  )
+  expect(error).toBeUndefined()
+})
+
+it('ignores non-digit subprotocols', () => {
+  client = createClient({ subprotocol: '1.0.0-beta' })
+  let error
+  client.node.on('error', e => {
+    error = e
+  })
+  emitStorage(
+    'logux:false:add',
+    '["other",{"type":"A"},{"id":"1 A 0","reasons":[],"subprotocol":"1.0.0"}]'
+  )
+  expect(error).toBeUndefined()
 })
