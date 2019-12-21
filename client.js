@@ -189,7 +189,9 @@ function Client (opts) {
   this.subscriptions = { }
   var subscribing = { }
   var unsubscribing = { }
-  function listener (action, meta) {
+
+  this.emitter = new NanoEvents()
+  this.on('add', function (action, meta) {
     var type = action.type
     var json, last
     if (type === 'logux/processed' || type === 'logux/undo') {
@@ -243,10 +245,7 @@ function Client (opts) {
         }
       }
     }
-  }
-
-  this.emitter = new NanoEvents()
-  this.on('add', listener)
+  })
 
   this.tabPing = 60000
   this.tabTimeout = 10 * this.tabPing
