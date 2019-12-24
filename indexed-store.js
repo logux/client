@@ -49,7 +49,17 @@ function isDefined (value) {
  *
  * @example
  * import IndexedStore from '@logux/client/indexed-store'
- * var log = new Log({ store: new IndexedStore(), nodeId })
+ * const client = new CrossTabClient({
+ *   …,
+ *   store: new IndexedStore()
+ * })
+ *
+ * @example
+ * import IndexedStore from '@logux/client/indexed-store'
+ * const createStore = createLoguxCreator({
+ *   …,
+ *   store: new IndexedStore()
+ * })
  */
 function IndexedStore (name) {
   this.name = name || 'logux'
