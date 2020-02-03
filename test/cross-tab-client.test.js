@@ -561,3 +561,26 @@ it('ignores subprotocols from server', () => {
   )
   expect(error).toBeUndefined()
 })
+
+it('disables cross-tab communication on localStorage error', async () => {
+  client = createClient()
+  client.start()
+
+  localStorage.setItem('logux:false:leader', `["",${ Date.now() - 10 }]`)
+  await delay(client.electionDelay + 10)
+
+  let error = new Error('test')
+  jest.spyOn(console, 'error').mockImplementation(() => true)
+  jest.spyOn(client.node.connection, 'connect')
+  global._localStorage.setItem = () => {
+    throw error
+  }
+  client.log.add({ type: 'A' })
+
+  expect(client.role).toEqual('leader')
+  expect(console.error).toHaveBeenCalledWith(error)
+  expect(client.node.connection.connect).toHaveBeenCalledTimes(1)
+
+  client.log.add({ type: 'B' })
+  expect(console.error).toHaveBeenCalledTimes(1)
+})

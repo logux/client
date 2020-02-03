@@ -9,7 +9,17 @@ function storageKey (client, name) {
 
 function sendToTabs (client, event, data) {
   if (!client.isLocalStorage) return
-  localStorage.setItem(storageKey(client, event), JSON.stringify(data))
+  var key = storageKey(client, event)
+  var json = JSON.stringify(data)
+  try {
+    localStorage.setItem(key, json)
+  } catch (e) {
+    console.error(e)
+    client.isLocalStorage = false
+    client.role = 'leader'
+    client.emitter.emit('role')
+    client.node.connection.connect()
+  }
 }
 
 function getLeader (client) {
