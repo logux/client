@@ -115,7 +115,7 @@ function Client (opts) {
     } catch (e) {}
   }
 
-  this.options.userId = this.options.userId.toString()
+  this.options.userId = this.options.userId ? this.options.userId.toString() : ''
   if (!this.options.time) {
     /**
      * Unique permanent client ID. Can be used to track this machine.
