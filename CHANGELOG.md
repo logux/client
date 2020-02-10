@@ -1,6 +1,12 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.6
+* Do not synchronize event cleaning between tabs.
+* Ask to update page receiving bigger `subprocol` from another tab.
+* Disable cross-tab communication on `localStorage` error.
+* Fix falling on empty `userId` (by @Abdubek).
+
 ## 0.5.2
 * Fix React Native and React Server-Side Rendering support (by Can Rau).
 
