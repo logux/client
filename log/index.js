@@ -28,26 +28,6 @@ function colorify (color, text, action, meta) {
   return args
 }
 
-/**
- * Display Logux events in browser console.
- *
- * @param {CrossTabClient} client Observed Client instance.
- * @param {object} [messages] Disable specific message types.
- * @param {boolean} [messages.state] Disable connection state messages.
- * @param {boolean} [messages.role] Disable tab role messages.
- * @param {boolean} [messages.error] Disable error messages.
- * @param {boolean} [messages.add] Disable action add messages.
- * @param {boolean} [messages.clean] Disable action clean messages.
- * @param {boolean} [messages.color] Disable colors in logs.
- * @param {string[]} [messages.ignoreActions] Disable action messages
- *                                            for specific types.
- *
- * @return {function} Unbind log listener.
- *
- * @example
- * import log from '@logux/client/log'
- * log(client, { add: false })
- */
 function log (client, messages = { }) {
   let node = client.node
 

@@ -21,60 +21,8 @@ function cleanTabActions (client, id) {
 
 let ALLOWED_META = ['id', 'time', 'channels']
 
-/**
- * Base class for browser API to be extended in {@link CrossTabClient}.
- *
- * Because this class could have conflicts between different browser tab,
- * you should use it only if you are really sure, that application will not
- * be run in different tab (for instance, if you are developing a kiosk app).
- *
- * @param {object} opts Client options.
- * @param {string|Connection} opts.server Server URL.
- * @param {string} opts.subprotocol Client subprotocol version in SemVer format.
- * @param {number|string|false} opts.userId User ID. Pass `false` if no user.
- * @param {any} [opts.credentials] Client credentials for authentication.
- * @param {string} [opts.prefix="logux"] Prefix for `IndexedDB` database to run
- *                                       multiple Logux instances
- *                                       in the same browser.
- * @param {number} [opts.timeout=20000] Timeout in milliseconds
- *                                      to break connection.
- * @param {number} [opts.ping=10000] Milliseconds since last message to test
- *                                   connection by sending ping.
- * @param {Store} [opts.store] Store to save log data. `IndexedStore`
- *                             by default (if available)
- * @param {TestTime} [opts.time] Test time to test client.
- * @param {number} [opts.minDelay=1000] Minimum delay between reconnections.
- * @param {number} [opts.maxDelay=5000] Maximum delay between reconnections.
- * @param {number} [opts.attempts=Infinity] Maximum reconnection attempts.
- * @param {boolean} [opts.allowDangerousProtocol=false] Do not show warning
- *                                                      when using `ws://`
- *                                                      in production.
- *
- * @example
- * import { Client } from '@logux/client'
- *
- * const userId = document.querySelector('meta[name=user]').content
- * const token = document.querySelector('meta[name=token]').content
- *
- * const app = new Client({
- *   credentials: token,
- *   subprotocol: '1.0.0',
- *   server: 'wss://example.com:1337',
- *   userId: userId
- * })
- * app.start()
- *
- * @class
- */
 class Client {
   constructor (opts = { }) {
-    /**
-     * Client options.
-     * @type {object}
-     *
-     * @example
-     * console.log('Connecting to ' + app.options.server)
-     */
     this.options = opts
 
     if (process.env.NODE_ENV !== 'production') {
@@ -111,31 +59,13 @@ class Client {
     }
 
     if (!this.options.time) {
-      /**
-       * Unique permanent client ID. Can be used to track this machine.
-       * @type {string}
-       */
       this.clientId = this.options.userId + ':' + this.getClientId()
-      /**
-       * Unique tab ID. Can be used to add an action to the specific tab.
-       * @type {string}
-       *
-       * @example
-       * app.log.add(action, { tab: app.tabId })
-       */
       this.tabId = nanoid(8)
     } else {
       this.tabId = this.options.time.lastId + 1 + ''
       this.clientId = this.options.userId + ':' + this.tabId
     }
 
-    /**
-     * Unique Logux node ID.
-     * @type {string}
-     *
-     * @example
-     * console.log('Client ID: ', app.nodeId)
-     */
     this.nodeId = this.clientId + ':' + this.tabId
 
     let auth
@@ -161,13 +91,6 @@ class Client {
     } else {
       log = new Log({ store, nodeId: this.nodeId })
     }
-    /**
-     * Client events log.
-     * @type {Log}
-     *
-     * @example
-     * app.log.keep(customKeeper)
-     */
     this.log = log
 
     log.on('preadd', (action, meta) => {
@@ -285,13 +208,6 @@ class Client {
       return [action, filtered]
     }
 
-    /**
-     * Node instance to synchronize logs.
-     * @type {ClientNode}
-     *
-     * @example
-     * if (client.node.state === 'synchronized')
-     */
     this.node = new ClientNode(this.nodeId, this.log, connection, {
       credentials: this.options.credentials,
       subprotocol: this.options.subprotocol,
@@ -332,51 +248,15 @@ class Client {
     }
   }
 
-  /**
-   * Connect to server and reconnect on any connection problem.
-   *
-   * @return {undefined}
-   *
-   * @example
-   * app.start()
-   */
   start () {
     this.cleanPrevActions()
     this.node.connection.connect()
   }
 
-  /**
-   * Subscribe for synchronization events. It implements Nano Events API.
-   * Supported events:
-   *
-   * * `preadd`: action is going to be added (in current tab).
-   * * `add`: action has been added to log (by any tab).
-   * * `clean`: action has been removed from log (by any tab).
-   *
-   * @param {"preadd"|"add"|"clean"} event The event name.
-   * @param {listener} listener The listener function.
-   *
-   * @return {function} Unbind listener from event.
-   *
-   * @example
-   * app.on('add', (action, meta) => {
-   *   dispatch(action)
-   * })
-   */
   on (event, listener) {
     return this.log.emitter.on(event, listener)
   }
 
-  /**
-   * Disconnect and stop synchronization.
-   *
-   * @return {undefined}
-   *
-   * @example
-   * shutdown.addEventListener('click', () => {
-   *   app.destroy()
-   * })
-   */
   destroy () {
     this.onUnload()
     this.node.destroy()
@@ -386,17 +266,6 @@ class Client {
     }
   }
 
-  /**
-   * Clear stored data. Removes action log
-   * from `IndexedDB`.
-   *
-   * @return {Promise} Promise when all data will be removed.
-   *
-   * @example
-   * signout.addEventListener('click', () => {
-   *   app.clean()
-   * })
-   */
   clean () {
     this.destroy()
     return this.log.store.clean ? this.log.store.clean() : Promise.resolve()

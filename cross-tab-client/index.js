@@ -137,65 +137,10 @@ function isMemory (store) {
   return store.created && store.added
 }
 
-/**
- * Low-level browser API for Logux.
- *
- * Instead of {@link Client}, this class prevents conflicts
- * between Logux instances in different tabs on single browser.
- *
- * @param {object} opts Client options.
- * @param {string|Connection} opts.server Server URL.
- * @param {string} opts.subprotocol Client subprotocol version in SemVer format.
- * @param {number|string|false} opts.userId User ID. Pass `false` if no user.
- * @param {any} [opts.credentials] Client credentials for authentication.
- * @param {string} [opts.prefix="logux"] Prefix for `IndexedDB` database to run
- *                                       multiple Logux instances
- *                                       in the same browser.
- * @param {number} [opts.timeout=20000] Timeout in milliseconds
- *                                      to break connection.
- * @param {number} [opts.ping=10000] Milliseconds since last message to test
- *                                   connection by sending ping.
- * @param {Store} [opts.store] Store to save log data. `IndexedStore`
- *                             by default (if available)
- * @param {TestTime} [opts.time] Test time to test client.
- * @param {number} [opts.minDelay=1000] Minimum delay between reconnections.
- * @param {number} [opts.maxDelay=5000] Maximum delay between reconnections.
- * @param {number} [opts.attempts=Infinity] Maximum reconnection attempts.
- * @param {boolean} [opts.allowDangerousProtocol=false] Do not show warning
- *                                                      when using `ws://`
- *                                                      in production.
- *
- * @example
- * import CrossTabClient from '@logux/client/cross-tab-client'
- *
- * const userId = document.querySelector('meta[name=user]').content
- * const token = document.querySelector('meta[name=token]').content
- *
- * const client = new CrossTabClient({
- *   credentials: token.content,
- *   subprotocol: '1.0.0',
- *   server: 'wss://example.com:1337',
- *   userId: userId
- * })
- * client.start()
- *
- * @extends Client
- * @class
- */
 class CrossTabClient extends Client {
   constructor (opts = { }) {
     super(opts)
 
-    /**
-     * Current tab role. Only `leader` tab connects to server. `followers` just
-     * listen to events from `leader`.
-     * @type {"leader"|"follower"|"candidate"}
-     *
-     * @example
-     * app.on('role', () => {
-     *   console.log('Tab role:', app.role)
-     * })
-     */
     this.role = 'candidate'
 
     this.roleTimeout = 3000 + Math.floor(Math.random() * 1000)
@@ -203,19 +148,6 @@ class CrossTabClient extends Client {
     this.leaderPing = 2000
     this.electionDelay = 1000
 
-    /**
-     * Leader tab synchronization state. It can differs
-     * from `Client#node.state` (because only the leader tab keeps connection).
-     *
-     * @type {"disconnected"|"connecting"|"sending"|"synchronized"}
-     *
-     * @example
-     * client.on('state', () => {
-     *   if (client.state === 'disconnected' && client.state === 'sending') {
-     *     showCloseWarning()
-     *   }
-     * })
-     */
     this.state = this.node.state
 
     this.node.on('state', () => {
@@ -279,26 +211,6 @@ class CrossTabClient extends Client {
     return super.clean()
   }
 
-  /**
-   * Subscribe for synchronization events. It implements nanoevents API.
-   * Supported events:
-   *
-   * * `preadd`: action is going to be added (in current tab).
-   * * `add`: action has been added to log (by any tab).
-   * * `clean`: action has been removed from log (by any tab).
-   * * `role`: tab role has been changed.
-   * * `state`: leader tab synchronization state has been changed.
-   *
-   * @param {"preadd"|"add"|"clean"|"role"|"state"} event The event name.
-   * @param {listener} listener The listener function.
-   *
-   * @return {function} Unbind listener from event.
-   *
-   * @example
-   * app.on('add', (action, meta) => {
-   *   dispatch(action)
-   * })
-   */
   on (event, listener) {
     if (event === 'preadd') {
       return this.log.emitter.on(event, listener)
@@ -372,13 +284,6 @@ class CrossTabClient extends Client {
     }
   }
 
-  /**
-   * Is leader tab connected to server.
-   *
-   * @name connected
-   * @type {boolean}
-   * @memberof CrossTabClient#
-   */
   get connected () {
     return this.state !== 'disconnected' && this.state !== 'connecting'
   }

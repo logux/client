@@ -40,58 +40,6 @@ const RESET = {
   lineHeight: 'auto'
 }
 
-/**
- * Display Logux widget in browser.
- *
- * @param {Client} client Observed Client instance.
- * @param {object} opts Widget settings.
- * @param {object} opts.styles Inline styles for different states.
- * @param {object} opts.styles.base Base styles.
- * @param {object} opts.styles.text Style for text element inside widget.
- * @param {object} opts.styles.synchronized Styles for synchronized state.
- * @param {object} opts.styles.disconnected Styles for disconnected state.
- * @param {object} opts.styles.wait Styles for wait state.
- * @param {object} opts.styles.connecting Styles for connecting state.
- * @param {object} opts.styles.sending Styles for sending state.
- * @param {object} opts.styles.error Error styles.
- * @param {object} opts.styles.protocolError Protocol error styles.
- * @param {object} opts.styles.icons Icons in URL link or `data:uri`.
- * @param {string} opts.styles.icons.synchronized Synchronized state.
- * @param {string} opts.styles.icons.disconnected Disconnected state.
- * @param {string} opts.styles.icons.wait Wait state.
- * @param {string} opts.styles.icons.sending Sending state.
- * @param {string} opts.styles.icons.error Error state.
- * @param {string} opts.styles.icons.protocolError Protocol error state.
- * @param {object} opts.messages Widget text for different states.
- * @param {object} opts.messages.synchronized Text for synchronized state.
- * @param {object} opts.messages.disconnected Text for disconnected state.
- * @param {object} opts.messages.wait Text for wait state.
- * @param {object} opts.messages.sending Text for sending state.
- * @param {object} opts.messages.syncError Logux error text.
- * @param {object} opts.messages.error Error text.
- * @param {object} opts.messages.denied Denied text.
- * @param {object} opts.messages.protocolError Protocol error text.
- * @param {string} [opts.position="bottom-right"] Widget position.
- * @param {number} [opts.duration=3000] Synchronized state duration.
- *
- * @return {function} Unbind badge listener and remove widget from DOM.
- *
- * @example
- * import { badge, badgeEn } from '@logux/client'
- * import { badgeStyles } from '@logux/client/badge/styles'
- *
- * badge(client, {
- *  messages: badgeEn,
- *  styles: {
- *    ...badgeStyles,
- *    synchronized: { backgroundColor: 'green' }
- *  },
- *  position: 'top-left'
- * })
- *
- * @name badge
- * @function
- */
 function badge (client, opts) {
   let messages = opts.messages
   let position = opts.position || 'bottom-right'

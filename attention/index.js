@@ -1,14 +1,3 @@
-/**
- * Highlight tabs on synchronization errors.
- *
- * @param {Client} client Observed Client instance.
- *
- * @return {function} Unbind attention listener.
- *
- * @example
- * import { attention } from '@logux/client'
- * attention(client)
- */
 function attention (client) {
   let doc = document
   let originTitle = false

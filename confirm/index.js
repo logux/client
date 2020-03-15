@@ -4,17 +4,6 @@ function block (e) {
   return 'unsynced'
 }
 
-/**
- * Show confirm popup, when user close tab with non-synchronized actions.
- *
- * @param {CrossTabClient} client Observed Client instance.
- *
- * @return {function} Unbind confirm listener.
- *
- * @example
- * import confirm from '@logux/client/confirm'
- * confirm(client)
- */
 function confirm (client) {
   let disconnected = client.state === 'disconnected'
   let wait = false

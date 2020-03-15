@@ -38,29 +38,6 @@ function isDefined (value) {
   return typeof value !== 'undefined'
 }
 
-/**
- * `IndexedDB` store for Logux log.
- *
- * @param {string} [name="logux"] Database name to run multiple
- *                                Logux instances on same web page.
- *
- * @class
- * @extends Store
- *
- * @example
- * import IndexedStore from '@logux/client/indexed-store'
- * const client = new CrossTabClient({
- *   …,
- *   store: new IndexedStore()
- * })
- *
- * @example
- * import IndexedStore from '@logux/client/indexed-store'
- * const createStore = createLoguxCreator({
- *   …,
- *   store: new IndexedStore()
- * })
- */
 class IndexedStore {
   constructor (name = 'logux') {
     this.name = name
@@ -284,14 +261,6 @@ class IndexedStore {
     return this.db.transaction(name, mode).objectStore(name)
   }
 
-  /**
-   * Remove all database and data from `IndexedDB`.
-   *
-   * @return {Promise} Promise for end of removing
-   *
-   * @example
-   * afterEach(() => this.store.clean())
-   */
   async clean () {
     let store = await this.init()
     store.db.close()
