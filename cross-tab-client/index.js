@@ -52,13 +52,13 @@ function watchForLeader (client) {
 
 function areWeOutdates (client, meta) {
   if (!meta.subprotocol) return false
-  if (client.node.options.subprotocol === meta.subprotocol) return false
+  if (client.options.subprotocol === meta.subprotocol) return false
 
   let id = meta.id.split(' ')[1]
   let prefix = client.clientId + ':'
   if (id.slice(0, prefix.length) !== prefix) return false
 
-  let ourParts = client.node.options.subprotocol.split('.')
+  let ourParts = client.options.subprotocol.split('.')
   let remoteParts = meta.subprotocol.split('.')
   // eslint-disable-next-line
   for (let i = 0; i < ourParts.length; i++) {
