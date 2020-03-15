@@ -1,4 +1,4 @@
-let status = require('./status')
+let { status } = require('../status')
 
 function injectStyles (element, styles) {
   for (let i in styles) {
@@ -77,14 +77,13 @@ const RESET = {
  * @return {function} Unbind badge listener and remove widget from DOM.
  *
  * @example
- * import badge from '@logux/client/badge'
- * import styles from '@logux/client/badge/default'
- * import messages from '@logux/client/badge/en'
+ * import { badge, badgeEn } from '@logux/client'
+ * import { badgeStyles } from '@logux/client/badge/styles'
  *
  * badge(client, {
- *  messages: messages,
+ *  messages: badgeEn,
  *  styles: {
- *    ...styles,
+ *    ...badgeStyles,
  *    synchronized: { backgroundColor: 'green' }
  *  },
  *  position: 'top-left'
@@ -149,4 +148,26 @@ function badge (client, opts) {
   }
 }
 
-module.exports = badge
+let badgeRu = {
+  synchronized: 'Ваши данные сохранены',
+  disconnected: 'Нет интернета',
+  wait: 'Нет интернета<br>Ваши данные не сохранены',
+  sending: 'Сохраняю ваши данные',
+  syncError: 'Ошибка на сервере<br>Ваши данные не сохранены',
+  error: 'Ошибка на сервере<br>Ваши действия отменены',
+  denied: 'Нет прав<br>Ваши действия отменены',
+  protocolError: 'Сохранение не работает<br>Обновите страницу'
+}
+
+let badgeEn = {
+  synchronized: 'Your data has been saved',
+  disconnected: 'No Internet connection',
+  wait: 'No Internet connection<br>Your data has not been saved',
+  sending: 'Data saving',
+  syncError: 'Server error<br>Your data has not been saved',
+  error: 'Server error<br>You changes was reverted',
+  denied: 'You have no access<br>You changes was reverted',
+  protocolError: 'Saving is not working<br>Refresh the page'
+}
+
+module.exports = { badge, badgeEn, badgeRu }

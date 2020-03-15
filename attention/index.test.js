@@ -1,7 +1,6 @@
 let { LoguxError, TestPair } = require('@logux/core')
 
-let CrossTabClient = require('../cross-tab-client')
-let attention = require('../attention')
+let { CrossTabClient, attention } = require('..')
 
 let nextHidden
 Object.defineProperty(document, 'hidden', {

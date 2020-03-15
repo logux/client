@@ -1,11 +1,11 @@
 let { createNanoEvents } = require('nanoevents')
-let isFirstOlder = require('@logux/core/is-first-older')
-let WsConnection = require('@logux/core/ws-connection')
-let MemoryStore = require('@logux/core/memory-store')
-let ClientNode = require('@logux/core/client-node')
-let Reconnect = require('@logux/core/reconnect')
+let { isFirstOlder } = require('@logux/core/is-first-older')
+let { WsConnection } = require('@logux/core/ws-connection')
+let { MemoryStore } = require('@logux/core/memory-store')
+let { ClientNode } = require('@logux/core/client-node')
+let { Reconnect } = require('@logux/core/reconnect')
+let { Log } = require('@logux/core/log')
 let nanoid = require('nanoid')
-let Log = require('@logux/core/log')
 
 function tabPing (c) {
   localStorage.setItem(c.options.prefix + ':tab:' + c.tabId, Date.now())
@@ -51,7 +51,7 @@ let ALLOWED_META = ['id', 'time', 'channels']
  *                                                      in production.
  *
  * @example
- * import Client from '@logux/client/client'
+ * import { Client } from '@logux/client'
  *
  * const userId = document.querySelector('meta[name=user]').content
  * const token = document.querySelector('meta[name=token]').content
@@ -425,4 +425,4 @@ class Client {
   }
 }
 
-module.exports = Client
+module.exports = { Client }

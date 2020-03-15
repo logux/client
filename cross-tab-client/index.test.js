@@ -1,7 +1,7 @@
 let { TestPair, TestTime } = require('@logux/core')
 let { delay } = require('nanodelay')
 
-let CrossTabClient = require('../cross-tab-client')
+let { CrossTabClient } = require('..')
 
 beforeEach(() => {
   class WebSocket {

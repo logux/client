@@ -1,7 +1,6 @@
 let { LoguxError, TestPair, TestTime } = require('@logux/core')
 
-let CrossTabClient = require('../cross-tab-client')
-let log = require('../log')
+let { CrossTabClient, log } = require('..')
 
 jest.mock('browser-supports-log-styles', () => {
   return () => true

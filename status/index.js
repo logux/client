@@ -107,7 +107,7 @@ function status (client, callback, options = { }) {
   }
 }
 
-module.exports = status
+module.exports = { status }
 
 /**
  * @callback statusReceiver

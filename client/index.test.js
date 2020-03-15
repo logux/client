@@ -1,7 +1,7 @@
 let { MemoryStore, TestPair, TestTime } = require('@logux/core')
 let { delay } = require('nanodelay')
 
-let Client = require('../client')
+let { Client } = require('..')
 
 beforeEach(() => {
   Object.defineProperty(global, '_localStorage', {

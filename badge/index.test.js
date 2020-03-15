@@ -1,10 +1,9 @@
 let { LoguxError, TestPair, TestTime } = require('@logux/core')
 let { delay } = require('nanodelay')
 
-let CrossTabClient = require('../cross-tab-client')
-let messages = require('../badge/en')
-let styles = require('../badge/default')
-let badge = require('../badge')
+let { badgeStyles } = require('./styles')
+
+let { CrossTabClient, badge, badgeEn } = require('..')
 
 function badgeNode () {
   return document.querySelector('div')
@@ -31,7 +30,7 @@ async function createTest (override) {
 
   pair.leftNode.catch(() => true)
   await pair.left.connect()
-  let opts = { messages, styles }
+  let opts = { messages: badgeEn, styles: badgeStyles }
   for (let i in override) {
     opts[i] = override[i]
   }
@@ -70,7 +69,7 @@ it('shows synchronized state', async () => {
   test.leftNode.log.add({ type: 'logux/processed', id: '1 1:1:1 0' })
   await delay(1)
 
-  expect(getBadgeMessage()).toEqual(messages.synchronized)
+  expect(getBadgeMessage()).toEqual(badgeEn.synchronized)
   await delay(10)
 
   expect(badgeNode().style.display).toEqual('none')
@@ -84,7 +83,7 @@ it('shows disconnected state', async () => {
   test.leftNode.setState('disconnected')
   expect(badgeNode().style.display).toEqual('block')
   expect(badgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
-  expect(getBadgeMessage()).toEqual(messages.disconnected)
+  expect(getBadgeMessage()).toEqual(badgeEn.disconnected)
 })
 
 it('shows wait state', async () => {
@@ -95,7 +94,7 @@ it('shows wait state', async () => {
   await test.leftNode.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
   expect(badgeNode().style.display).toEqual('block')
   expect(badgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
-  expect(getBadgeMessage()).toEqual(messages.wait)
+  expect(getBadgeMessage()).toEqual(badgeEn.wait)
 })
 
 it('shows sending state', async () => {
@@ -104,7 +103,7 @@ it('shows sending state', async () => {
   test.leftNode.connected = false
   test.leftNode.setState('disconnected')
   test.leftNode.setState('connecting')
-  expect(getBadgeMessage()).toEqual(messages.disconnected)
+  expect(getBadgeMessage()).toEqual(badgeEn.disconnected)
 
   test.leftNode.connected = false
   test.leftNode.setState('wait')
@@ -113,12 +112,12 @@ it('shows sending state', async () => {
   test.leftNode.setState('connecting')
   expect(badgeNode().style.display).toEqual('block')
   expect(badgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
-  expect(getBadgeMessage()).toEqual(messages.wait)
+  expect(getBadgeMessage()).toEqual(badgeEn.wait)
   await delay(105)
 
-  expect(getBadgeMessage()).toEqual(messages.sending)
+  expect(getBadgeMessage()).toEqual(badgeEn.sending)
   test.leftNode.setState('sending')
-  expect(getBadgeMessage()).toEqual(messages.sending)
+  expect(getBadgeMessage()).toEqual(badgeEn.sending)
 })
 
 it('shows error', async () => {
@@ -126,7 +125,7 @@ it('shows error', async () => {
   test.leftNode.emitter.emit('error', { type: 'any error' })
   expect(badgeNode().style.display).toEqual('block')
   expect(badgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
-  expect(getBadgeMessage()).toEqual(messages.syncError)
+  expect(getBadgeMessage()).toEqual(badgeEn.syncError)
 })
 
 it('shows server errors', async () => {
@@ -135,13 +134,13 @@ it('shows server errors', async () => {
   test.leftNode.emitter.emit('error', protocol)
   expect(badgeNode().style.display).toEqual('block')
   expect(badgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
-  expect(getBadgeMessage()).toEqual(messages.protocolError)
+  expect(getBadgeMessage()).toEqual(badgeEn.protocolError)
 
   let subprotocol = new LoguxError('wrong-subprotocol', { })
   test.leftNode.emitter.emit('error', subprotocol)
   expect(badgeNode().style.display).toEqual('block')
   expect(badgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
-  expect(getBadgeMessage()).toEqual(messages.protocolError)
+  expect(getBadgeMessage()).toEqual(badgeEn.protocolError)
 })
 
 it('shows client error', async () => {
@@ -151,7 +150,7 @@ it('shows client error', async () => {
 
   expect(badgeNode().style.display).toEqual('block')
   expect(badgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
-  expect(getBadgeMessage()).toEqual(messages.syncError)
+  expect(getBadgeMessage()).toEqual(badgeEn.syncError)
 })
 
 it('shows error undo actions', async () => {
@@ -159,7 +158,7 @@ it('shows error undo actions', async () => {
   test.leftNode.log.add({ type: 'logux/undo', reason: 'error' })
   expect(badgeNode().style.display).toEqual('block')
   expect(badgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
-  expect(getBadgeMessage()).toEqual(messages.error)
+  expect(getBadgeMessage()).toEqual(badgeEn.error)
 })
 
 it('shows denied undo actions', async () => {
@@ -167,7 +166,7 @@ it('shows denied undo actions', async () => {
   test.leftNode.log.add({ type: 'logux/undo', reason: 'denied' })
   expect(badgeNode().style.display).toEqual('block')
   expect(badgeNode().style.backgroundImage).toEqual('url(IMAGE_MOCK)')
-  expect(getBadgeMessage()).toEqual(messages.denied)
+  expect(getBadgeMessage()).toEqual(badgeEn.denied)
 })
 
 it('supports bottom and left side of position setting', async () => {
@@ -213,7 +212,7 @@ it('removes badge from DOM', () => {
     time: new TestTime()
   })
 
-  let opts = { messages, styles }
+  let opts = { messages: badgeEn, styles: badgeStyles }
   let unbind = badge(client, opts)
 
   unbind()

@@ -3,7 +3,7 @@
 let { eachStoreCheck } = require('@logux/core')
 let fakeIndexedDB = require('fake-indexeddb')
 
-let IndexedStore = require('../indexed-store')
+let { IndexedStore } = require('..')
 
 let originIndexedDB = global.indexedDB
 beforeEach(() => {

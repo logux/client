@@ -3,7 +3,7 @@ let success = require('./success.svg')
 let offline = require('./offline.svg')
 let error = require('./error.svg')
 
-module.exports = {
+let badgeStyles = {
   base: {
     position: 'fixed',
     width: '15.4em',
@@ -50,3 +50,5 @@ module.exports = {
     backgroundImage: 'url(' + refresh + ')'
   }
 }
+
+module.exports = { badgeStyles }

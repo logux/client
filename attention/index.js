@@ -6,7 +6,7 @@
  * @return {function} Unbind attention listener.
  *
  * @example
- * import attention from '@logux/client/attention'
+ * import { attention } from '@logux/client'
  * attention(client)
  */
 function attention (client) {
@@ -64,4 +64,4 @@ function attention (client) {
   }
 }
 
-module.exports = attention
+module.exports = { attention }

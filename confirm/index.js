@@ -58,4 +58,4 @@ function confirm (client) {
   }
 }
 
-module.exports = confirm
+module.exports = { confirm }

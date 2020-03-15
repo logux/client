@@ -164,4 +164,4 @@ function log (client, messages = { }) {
   }
 }
 
-module.exports = log
+module.exports = { log }

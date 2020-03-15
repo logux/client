@@ -1,21 +1,14 @@
-let MemoryStore = require('@logux/core/memory-store')
-let ClientNode = require('@logux/core/client-node')
-let LocalPair = require('@logux/core/local-pair')
-let BaseNode = require('@logux/core/base-node')
-let Log = require('@logux/core/log')
+let {
+  MemoryStore, ClientNode, LocalPair, BaseNode, Log
+} = require('@logux/core')
 
-let CrossTabClient = require('../../cross-tab-client')
+let {
+  CrossTabClient, attention, confirm, favicon, status, badge, badgeEn, log
+} = require('../..')
+let { badgeStyles } = require('../../badge/styles')
 let faviconOffline = require('./offline.png')
-let badgeMessages = require('../../badge/en')
 let faviconNormal = require('./normal.png')
 let faviconError = require('./error.png')
-let badgeStyles = require('../../badge/default')
-let attention = require('../../attention')
-let confirm = require('../../confirm')
-let favicon = require('../../favicon')
-let status = require('../../status')
-let badge = require('../../badge')
-let log = require('../../log')
 
 let pair = new LocalPair(500)
 
@@ -52,7 +45,7 @@ favicon(client, {
   error: faviconError
 })
 badge(client, {
-  messages: badgeMessages,
+  messages: badgeEn,
   styles: badgeStyles
 })
 log(client)

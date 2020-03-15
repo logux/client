@@ -1,7 +1,6 @@
 let { LoguxError, TestPair } = require('@logux/core')
 
-let CrossTabClient = require('../cross-tab-client')
-let favicon = require('../favicon')
+let { CrossTabClient, favicon } = require('..')
 
 function getFavNode () {
   return document.querySelector('link[rel~="icon"]')

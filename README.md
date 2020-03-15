@@ -43,11 +43,8 @@ npm install @logux/client
 See [documentation] for Logux API.
 
 ```js
-import CrossTabClient from '@logux/client/cross-tab-client'
-import messages from '@logux/client/badge/en'
-import styles from '@logux/client/badge/default'
-import badge from '@logux/client/badge'
-import log from '@logux/client/log'
+import { CrossTabClient, badge, badgeEn, log } from '@logux/client'
+import { badgeStyles } from '@logux/client/badge/style'
 
 let userId = document.querySelector('meta[name=user]').content
 let userToken = document.querySelector('meta[name=token]').content
@@ -59,7 +56,7 @@ const client = new CrossTabClient({
   userId: userToken
 })
 
-badge(client, { messages, styles })
+badge(client, { messages: badgeEn, styles: badgeStyles })
 log(client)
 
 client.start()

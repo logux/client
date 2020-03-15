@@ -1,7 +1,6 @@
 let { TestPair } = require('@logux/core')
 
-let CrossTabClient = require('../cross-tab-client')
-let confirm = require('../confirm')
+let { CrossTabClient, confirm } = require('..')
 
 async function createClient () {
   let pair = new TestPair()

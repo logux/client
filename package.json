@@ -24,7 +24,7 @@
     "node": ">=10.0.0"
   },
   "dependencies": {
-    "@logux/core": "^0.3.5",
+    "@logux/core": "logux/core",
     "browser-supports-log-styles": "^1.1.7",
     "nanoevents": "^5.0.1",
     "nanoid": "^2.1.11"
@@ -32,9 +32,10 @@
   "devDependencies": {
     "@logux/eslint-config": "^36.1.1",
     "@logux/sharec-config": "^0.6.2",
+    "@size-limit/dual-publish": "^4.3.1",
     "@size-limit/preset-small-lib": "^4.0.1",
     "check-dts": "^0.1.3",
-    "dual-publish": "^0.5.1",
+    "dual-publish": "^0.5.2",
     "eslint": "^6.8.0",
     "eslint-ci": "^1.0.0",
     "eslint-config-standard": "^14.1.0",
@@ -84,22 +85,29 @@
   "eslintIgnore": [
     "test/demo/build"
   ],
+  "size-limit2": [
+    {
+      "path": "./client/index.js",
+      "import": "{ Client }",
+      "limit": "9 KB"
+    }
+  ],
   "size-limit": [
     {
-      "path": "cross-tab-client.js",
-      "limit": "9 KB"
+      "path": "./cross-tab-client/index.js",
+      "import": "{ CrossTabClient }",
+      "limit": "8 KB"
     },
     {
-      "path": [
-        "attention.js",
-        "confirm.js",
-        "favicon.js",
-        "status.js",
-        "badge.js",
-        "log.js",
-        "badge/en.js",
-        "badge/default.js"
-      ],
+      "import": {
+        "./attention/index.js": "{ attention }",
+        "./confirm/index.js": "{ confirm }",
+        "./favicon/index.js": "{ favicon }",
+        "./status/index.js": "{ status }",
+        "./log/index.js": "{ log }",
+        "./badge/index.js": "{ badge, badgeEn }",
+        "./badge/styles/index.js": "{ badgeStyles }"
+      },
       "limit": "3 KB"
     }
   ],

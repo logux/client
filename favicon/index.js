@@ -76,4 +76,4 @@ function favicon (client, links) {
   }
 }
 
-module.exports = favicon
+module.exports = { favicon }

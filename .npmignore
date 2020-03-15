@@ -5,3 +5,5 @@ yarn.lock
 test/
 coverage/
 .travis.yml
+
+**/*.test.js

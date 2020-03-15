@@ -1,7 +1,6 @@
-let LoguxError = require('@logux/core/logux-error')
-let merge = require('@logux/core/merge')
+let { LoguxError } = require('@logux/core/logux-error')
 
-let Client = require('./client')
+let { Client } = require('../client')
 
 function storageKey (client, name) {
   return client.options.prefix + ':' + client.options.userId + ':' + name
@@ -372,22 +371,17 @@ class CrossTabClient extends Client {
       return clientId
     }
   }
-}
 
-/**
- * Is leader tab connected to server.
- *
- * @name connected
- * @type {boolean}
- * @memberof CrossTabClient#
- */
-
-CrossTabClient.prototype = merge(CrossTabClient.prototype, Client.prototype)
-
-Object.defineProperty(CrossTabClient.prototype, 'connected', {
-  get: function get () {
+  /**
+   * Is leader tab connected to server.
+   *
+   * @name connected
+   * @type {boolean}
+   * @memberof CrossTabClient#
+   */
+  get connected () {
     return this.state !== 'disconnected' && this.state !== 'connecting'
   }
-})
+}
 
-module.exports = CrossTabClient
+module.exports = { CrossTabClient }
