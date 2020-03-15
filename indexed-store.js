@@ -1,29 +1,29 @@
-var isFirstOlder = require('@logux/core/is-first-older')
+let isFirstOlder = require('@logux/core/is-first-older')
 
-var VERSION = 1
+const VERSION = 1
 
 function rejectify (request, reject) {
-  request.onerror = function (e) {
+  request.onerror = e => {
     reject(e.target.error)
   }
 }
 
 function promisify (request) {
-  return new Promise(function (resolve, reject) {
+  return new Promise((resolve, reject) => {
     rejectify(request, reject)
-    request.onsuccess = function (e) {
+    request.onsuccess = e => {
       resolve(e.target.result)
     }
   })
 }
 
 function nextEntry (request) {
-  return function (cursor) {
+  return cursor => {
     if (cursor) {
       cursor.value.meta.added = cursor.value.added
       return {
         entries: [[cursor.value.action, cursor.value.meta]],
-        next: function () {
+        next () {
           cursor.continue()
           return promisify(request).then(nextEntry(request))
         }
@@ -61,23 +61,22 @@ function isDefined (value) {
  *   store: new IndexedStore()
  * })
  */
-function IndexedStore (name) {
-  this.name = name || 'logux'
-  this.adding = { }
-}
+class IndexedStore {
+  constructor (name = 'logux') {
+    this.name = name
+    this.adding = { }
+  }
 
-IndexedStore.prototype = {
-
-  init: function init () {
+  init () {
     if (this.initing) return this.initing
 
-    var store = this
-    var opening = indexedDB.open(this.name, VERSION)
+    let store = this
+    let opening = indexedDB.open(this.name, VERSION)
 
     opening.onupgradeneeded = function (e) {
-      var db = e.target.result
+      let db = e.target.result
 
-      var log = db.createObjectStore('log', {
+      let log = db.createObjectStore('log', {
         keyPath: 'added',
         autoIncrement: true
       })
@@ -88,7 +87,7 @@ IndexedStore.prototype = {
       db.createObjectStore('extra', { keyPath: 'key' })
     }
 
-    this.initing = promisify(opening).then(function (db) {
+    this.initing = promisify(opening).then(db => {
       store.db = db
       db.onversionchange = function () {
         store.db.close()
@@ -100,12 +99,12 @@ IndexedStore.prototype = {
     })
 
     return this.initing
-  },
+  }
 
-  get: function get (opts) {
-    var request
-    return this.init().then(function (store) {
-      var log = store.os('log')
+  get (opts) {
+    let request
+    return this.init().then(store => {
+      let log = store.os('log')
       if (opts.order === 'created') {
         request = log.index('created').openCursor(null, 'prev')
       } else {
@@ -113,61 +112,61 @@ IndexedStore.prototype = {
       }
       return promisify(request).then(nextEntry(request))
     })
-  },
+  }
 
-  byId: function byId (id) {
-    return this.init().then(function (store) {
+  byId (id) {
+    return this.init().then(store => {
       return promisify(store.os('log').index('id').get(id))
-    }).then(function (result) {
+    }).then(result => {
       if (result) {
         return [result.action, result.meta]
       } else {
         return [null, null]
       }
     })
-  },
+  }
 
-  remove: function remove (id) {
-    return this.init().then(function (store) {
-      var log = store.os('log', 'write')
-      return promisify(log.index('id').get(id)).then(function (entry) {
+  remove (id) {
+    return this.init().then(store => {
+      let log = store.os('log', 'write')
+      return promisify(log.index('id').get(id)).then(entry => {
         if (!entry) {
           return false
         } else {
-          return promisify(log.delete(entry.added)).then(function () {
+          return promisify(log.delete(entry.added)).then(() => {
             entry.meta.added = entry.added
             return [entry.action, entry.meta]
           })
         }
       })
     })
-  },
+  }
 
-  add: function add (action, meta) {
-    var id = meta.id.split(' ')
-    var entry = {
+  add (action, meta) {
+    let id = meta.id.split(' ')
+    let entry = {
       id: meta.id,
-      meta: meta,
+      meta,
       time: meta.time,
-      action: action,
+      action,
       reasons: meta.reasons,
       created: [meta.time, id[1], id[2], id[0]].join(' ')
     }
 
     if (this.adding[entry.created]) {
-      return new Promise(function (resolve) {
+      return new Promise(resolve => {
         resolve(false)
       })
     }
     this.adding[entry.created] = true
 
-    return this.init().then(function (store) {
-      var log = store.os('log', 'write')
-      return promisify(log.index('id').get(meta.id)).then(function (exist) {
+    return this.init().then(store => {
+      let log = store.os('log', 'write')
+      return promisify(log.index('id').get(meta.id)).then(exist => {
         if (exist) {
           return false
         } else {
-          return promisify(log.add(entry)).then(function (added) {
+          return promisify(log.add(entry)).then(added => {
             delete store.adding[entry.created]
             meta.added = added
             return meta
@@ -175,35 +174,35 @@ IndexedStore.prototype = {
         }
       })
     })
-  },
+  }
 
-  changeMeta: function changeMeta (id, diff) {
-    return this.init().then(function (store) {
-      var log = store.os('log', 'write')
-      return promisify(log.index('id').get(id)).then(function (entry) {
+  changeMeta (id, diff) {
+    return this.init().then(store => {
+      let log = store.os('log', 'write')
+      return promisify(log.index('id').get(id)).then(entry => {
         if (!entry) {
           return false
         } else {
-          for (var key in diff) entry.meta[key] = diff[key]
+          for (let key in diff) entry.meta[key] = diff[key]
           if (diff.reasons) entry.reasons = diff.reasons
-          return promisify(log.put(entry)).then(function () {
+          return promisify(log.put(entry)).then(() => {
             return true
           })
         }
       })
     })
-  },
+  }
 
-  removeReason: function removeReason (reason, criteria, callback) {
-    return this.init().then(function (store) {
-      var log = store.os('log', 'write')
+  removeReason (reason, criteria, callback) {
+    return this.init().then(store => {
+      let log = store.os('log', 'write')
       if (criteria.id) {
         return promisify(log.index('id').get(criteria.id))
-          .then(function (entry) {
+          .then(entry => {
             if (!entry) {
               return Promise.resolve()
             }
-            var index = entry.meta.reasons.indexOf(reason)
+            let index = entry.meta.reasons.indexOf(reason)
             if (index !== -1) {
               entry.meta.reasons.splice(index, 1)
               entry.reasons = entry.meta.reasons
@@ -218,8 +217,8 @@ IndexedStore.prototype = {
             }
           })
       } else {
-        var request = log.index('reasons').openCursor(reason)
-        return new Promise(function (resolve, reject) {
+        let request = log.index('reasons').openCursor(reason)
+        return new Promise((resolve, reject) => {
           rejectify(request, reject)
           request.onsuccess = function (e) {
             if (!e.target.result) {
@@ -227,9 +226,9 @@ IndexedStore.prototype = {
               return
             }
 
-            var entry = e.target.result.value
-            var m = entry.meta
-            var c = criteria
+            let entry = e.target.result.value
+            let m = entry.meta
+            let c = criteria
 
             if (isDefined(c.olderThan) && !isFirstOlder(m, c.olderThan)) {
               e.target.result.continue()
@@ -248,7 +247,7 @@ IndexedStore.prototype = {
               return
             }
 
-            var process
+            let process
             if (entry.reasons.length === 1) {
               entry.meta.reasons = []
               entry.meta.added = entry.added
@@ -268,32 +267,32 @@ IndexedStore.prototype = {
         })
       }
     })
-  },
+  }
 
-  getLastAdded: function getLastAdded () {
-    return this.init().then(function (store) {
+  getLastAdded () {
+    return this.init().then(store => {
       return promisify(store.os('log').openCursor(null, 'prev'))
-    }).then(function (cursor) {
+    }).then(cursor => {
       return cursor ? cursor.value.added : 0
     })
-  },
+  }
 
-  getLastSynced: function getLastSynced () {
-    return this.init().then(function (store) {
+  getLastSynced () {
+    return this.init().then(store => {
       return promisify(store.os('extra').get('lastSynced'))
-    }).then(function (data) {
+    }).then(data => {
       if (data) {
         return { sent: data.sent, received: data.received }
       } else {
         return { sent: 0, received: 0 }
       }
     })
-  },
+  }
 
-  setLastSynced: function setLastSynced (values) {
-    return this.init().then(function (store) {
-      var extra = store.os('extra', 'write')
-      return promisify(extra.get('lastSynced')).then(function (data) {
+  setLastSynced (values) {
+    return this.init().then(store => {
+      let extra = store.os('extra', 'write')
+      return promisify(extra.get('lastSynced')).then(data => {
         if (!data) data = { key: 'lastSynced', sent: 0, received: 0 }
         if (typeof values.sent !== 'undefined') {
           data.sent = values.sent
@@ -304,12 +303,12 @@ IndexedStore.prototype = {
         return promisify(extra.put(data))
       })
     })
-  },
+  }
 
-  os: function os (name, write) {
-    var mode = write ? 'readwrite' : 'readonly'
+  os (name, write) {
+    let mode = write ? 'readwrite' : 'readonly'
     return this.db.transaction(name, mode).objectStore(name)
-  },
+  }
 
   /**
    * Remove all database and data from `IndexedDB`.
@@ -319,13 +318,12 @@ IndexedStore.prototype = {
    * @example
    * afterEach(() => this.store.clean())
    */
-  clean: function clean () {
-    return this.init().then(function (store) {
+  clean () {
+    return this.init().then(store => {
       store.db.close()
       return promisify(global.indexedDB.deleteDatabase(store.name))
     })
   }
-
 }
 
 module.exports = IndexedStore

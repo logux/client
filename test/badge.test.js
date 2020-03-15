@@ -1,5 +1,5 @@
 let { LoguxError, TestPair, TestTime } = require('@logux/core')
-let delay = require('nanodelay')
+let { delay } = require('nanodelay')
 
 let CrossTabClient = require('../cross-tab-client')
 let messages = require('../badge/en')

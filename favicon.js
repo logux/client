@@ -19,20 +19,22 @@
  * })
  */
 function favicon (client, links) {
-  var normal = links.normal
-  var offline = links.offline
-  var error = links.error
+  let normal = links.normal
+  let offline = links.offline
+  let error = links.error
 
-  var unbind = []
-  var doc = document
-  var fav = false
-  var prevFav = false
+  let unbind = []
+  let doc = document
+  let fav = false
+  let prevFav = false
 
   function update () {
     if (client.connected && prevFav !== normal) {
       fav.href = prevFav = normal
-    } else if (!client.connected && offline &&
-               prevFav !== offline && prevFav !== error) {
+    } else if (
+      !client.connected && offline &&
+      prevFav !== offline && prevFav !== error
+    ) {
       fav.href = prevFav = offline
     }
   }
@@ -60,19 +62,17 @@ function favicon (client, links) {
     unbind.push(client.on('state', update))
     update()
 
-    unbind.push(client.on('add', function (action) {
+    unbind.push(client.on('add', action => {
       if (action.type === 'logux/undo' && action.reason) setError()
     }))
 
-    unbind.push(client.node.on('error', function (err) {
+    unbind.push(client.node.on('error', err => {
       if (err.type !== 'timeout') setError()
     }))
   }
 
-  return function () {
-    for (var i = 0; i < unbind.length; i++) {
-      unbind[i]()
-    }
+  return () => {
+    for (let i of unbind) i()
   }
 }
 

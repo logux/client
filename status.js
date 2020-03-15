@@ -15,25 +15,24 @@
  *   updateUI(current)
  * })
  */
-function status (client, callback, options) {
-  var observable = client.on ? client : client.node
-  var disconnected = observable.state === 'disconnected'
-  var wait = false
-  var old = false
+function status (client, callback, options = { }) {
+  let observable = client.on ? client : client.node
+  let disconnected = observable.state === 'disconnected'
+  let wait = false
+  let old = false
 
-  if (!options) options = { }
   if (typeof options.duration === 'undefined') options.duration = 3000
 
-  var timeout
-  var unbind = []
-  var processing = { }
+  let timeout
+  let unbind = []
+  let processing = { }
 
-  function synchronized () {
+  let synchronized = () => {
     if (Object.keys(processing).length === 0) {
       if (wait) {
         wait = false
         callback('synchronizedAfterWait')
-        timeout = setTimeout(function () {
+        timeout = setTimeout(() => {
           callback('synchronized')
         }, options.duration)
       } else {
@@ -42,7 +41,7 @@ function status (client, callback, options) {
     }
   }
 
-  unbind.push(observable.on('state', function () {
+  unbind.push(observable.on('state', () => {
     clearTimeout(timeout)
 
     if (old) return
@@ -53,7 +52,7 @@ function status (client, callback, options) {
       disconnected = false
       synchronized()
     } else if (observable.state === 'connecting') {
-      timeout = setTimeout(function () {
+      timeout = setTimeout(() => {
         callback('connecting' + (wait ? 'AfterWait' : ''))
       }, 100)
     } else {
@@ -61,21 +60,21 @@ function status (client, callback, options) {
     }
   }))
 
-  unbind.push(client.node.on('error', function (error) {
+  unbind.push(client.node.on('error', error => {
     if (error.type === 'wrong-protocol' || error.type === 'wrong-subprotocol') {
       old = true
       callback('protocolError')
     } else if (error.type !== 'timeout') {
-      callback('syncError', { error: error })
+      callback('syncError', { error })
     }
   }))
 
-  unbind.push(client.node.on('clientError', function (error) {
-    callback('syncError', { error: error })
+  unbind.push(client.node.on('clientError', error => {
+    callback('syncError', { error })
   }))
 
-  var log = client.on ? client : client.log
-  unbind.push(log.on('add', function (action, meta) {
+  let log = client.on ? client : client.log
+  unbind.push(log.on('add', (action, meta) => {
     if (action.type === 'logux/subscribe') {
       return
     } else if (action.type === 'logux/unsubscribe') {
@@ -93,9 +92,9 @@ function status (client, callback, options) {
 
     if (action.type === 'logux/undo' && action.reason) {
       if (action.reason === 'denied') {
-        callback('denied', { action: action, meta: meta })
+        callback('denied', { action, meta })
       } else {
-        callback('error', { action: action, meta: meta })
+        callback('error', { action, meta })
       }
     } else if (disconnected && meta.sync && meta.added) {
       if (!wait) callback('wait')
@@ -103,10 +102,8 @@ function status (client, callback, options) {
     }
   }))
 
-  return function () {
-    for (var i = 0; i < unbind.length; i++) {
-      unbind[i]()
-    }
+  return () => {
+    for (let i of unbind) i()
   }
 }
 

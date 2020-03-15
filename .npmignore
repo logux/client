@@ -5,4 +5,3 @@ yarn.lock
 test/
 coverage/
 .travis.yml
-api.md

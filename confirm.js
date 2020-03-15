@@ -16,10 +16,10 @@ function block (e) {
  * confirm(client)
  */
 function confirm (client) {
-  var disconnected = client.state === 'disconnected'
-  var wait = false
+  let disconnected = client.state === 'disconnected'
+  let wait = false
 
-  function update () {
+  let update = () => {
     if (client.state === 'disconnected') {
       disconnected = true
     } else if (client.state === 'synchronized') {
@@ -36,12 +36,12 @@ function confirm (client) {
     }
   }
 
-  var unbind = []
+  let unbind = []
   unbind.push(client.on('role', update))
   unbind.push(client.on('state', update))
   update()
 
-  unbind.push(client.on('add', function (action, meta) {
+  unbind.push(client.on('add', (action, meta) => {
     if (action.type === 'logux/subscribe') {
       return
     } else if (action.type === 'logux/unsubscribe') {
@@ -53,10 +53,8 @@ function confirm (client) {
     }
   }))
 
-  return function () {
-    for (var i = 0; i < unbind.length; i++) {
-      unbind[i]()
-    }
+  return () => {
+    for (let i of unbind) i()
   }
 }
 

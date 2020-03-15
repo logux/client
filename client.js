@@ -1,37 +1,25 @@
-var isFirstOlder = require('@logux/core/is-first-older')
-var WsConnection = require('@logux/core/ws-connection')
-var MemoryStore = require('@logux/core/memory-store')
-var ClientNode = require('@logux/core/client-node')
-var NanoEvents = require('nanoevents')
-var Reconnect = require('@logux/core/reconnect')
-var nanoid = require('nanoid')
-var Log = require('@logux/core/log')
+let { createNanoEvents } = require('nanoevents')
+let isFirstOlder = require('@logux/core/is-first-older')
+let WsConnection = require('@logux/core/ws-connection')
+let MemoryStore = require('@logux/core/memory-store')
+let ClientNode = require('@logux/core/client-node')
+let Reconnect = require('@logux/core/reconnect')
+let nanoid = require('nanoid')
+let Log = require('@logux/core/log')
 
 function tabPing (c) {
   localStorage.setItem(c.options.prefix + ':tab:' + c.tabId, Date.now())
 }
 
 function cleanTabActions (client, id) {
-  client.log.removeReason('tab' + id).then(function () {
+  client.log.removeReason('tab' + id).then(() => {
     if (client.isLocalStorage) {
       localStorage.removeItem(client.options.prefix + ':tab:' + id)
     }
   })
 }
 
-function merge (a, b) {
-  var result = { }
-  for (var i in a) {
-    if (b[i]) {
-      result[i] = b[i]
-    } else {
-      result[i] = a[i]
-    }
-  }
-  return result
-}
-
-var ALLOWED_META = ['id', 'time', 'channels']
+let ALLOWED_META = ['id', 'time', 'channels']
 
 /**
  * Base class for browser API to be extended in {@link CrossTabClient}.
@@ -78,273 +66,271 @@ var ALLOWED_META = ['id', 'time', 'channels']
  *
  * @class
  */
-function Client (opts) {
-  /**
-   * Client options.
-   * @type {object}
-   *
-   * @example
-   * console.log('Connecting to ' + app.options.server)
-   */
-  this.options = opts || { }
-
-  if (process.env.NODE_ENV !== 'production') {
-    if (typeof this.options.server === 'undefined') {
-      throw new Error('Missed server option in Logux client')
-    }
-    if (typeof this.options.subprotocol === 'undefined') {
-      throw new Error('Missed subprotocol option in Logux client')
-    }
-    if (typeof this.options.userId === 'undefined') {
-      throw new Error('Missed userId option in Logux client. ' +
-                      'Pass false if you have no users.')
-    }
-  }
-
-  if (typeof this.options.prefix === 'undefined') {
-    this.options.prefix = 'logux'
-  }
-
-  this.isLocalStorage = false
-  if (typeof localStorage !== 'undefined') {
-    var random = nanoid()
-    try {
-      localStorage.setItem(random, '1')
-      localStorage.removeItem(random)
-      this.isLocalStorage = true
-    } catch (e) {}
-  }
-
-  if (this.options.userId) {
-    this.options.userId = this.options.userId.toString()
-  } else {
-    this.options.userId = 'false'
-  }
-
-  if (!this.options.time) {
+class Client {
+  constructor (opts = { }) {
     /**
-     * Unique permanent client ID. Can be used to track this machine.
-     * @type {string}
+     * Client options.
+     * @type {object}
+     *
+     * @example
+     * console.log('Connecting to ' + app.options.server)
      */
-    this.clientId = this.options.userId + ':' + this.getClientId()
+    this.options = opts
+
+    if (process.env.NODE_ENV !== 'production') {
+      if (typeof this.options.server === 'undefined') {
+        throw new Error('Missed server option in Logux client')
+      }
+      if (typeof this.options.subprotocol === 'undefined') {
+        throw new Error('Missed subprotocol option in Logux client')
+      }
+      if (typeof this.options.userId === 'undefined') {
+        throw new Error('Missed userId option in Logux client. ' +
+                        'Pass false if you have no users.')
+      }
+    }
+
+    if (typeof this.options.prefix === 'undefined') {
+      this.options.prefix = 'logux'
+    }
+
+    this.isLocalStorage = false
+    if (typeof localStorage !== 'undefined') {
+      let random = nanoid()
+      try {
+        localStorage.setItem(random, '1')
+        localStorage.removeItem(random)
+        this.isLocalStorage = true
+      } catch (e) {}
+    }
+
+    if (this.options.userId) {
+      this.options.userId = this.options.userId.toString()
+    } else {
+      this.options.userId = 'false'
+    }
+
+    if (!this.options.time) {
+      /**
+       * Unique permanent client ID. Can be used to track this machine.
+       * @type {string}
+       */
+      this.clientId = this.options.userId + ':' + this.getClientId()
+      /**
+       * Unique tab ID. Can be used to add an action to the specific tab.
+       * @type {string}
+       *
+       * @example
+       * app.log.add(action, { tab: app.tabId })
+       */
+      this.tabId = nanoid(8)
+    } else {
+      this.tabId = this.options.time.lastId + 1 + ''
+      this.clientId = this.options.userId + ':' + this.tabId
+    }
+
     /**
-     * Unique tab ID. Can be used to add an action to the specific tab.
+     * Unique Logux node ID.
      * @type {string}
      *
      * @example
-     * app.log.add(action, { tab: app.tabId })
+     * console.log('Client ID: ', app.nodeId)
      */
-    this.tabId = nanoid(8)
-  } else {
-    this.tabId = this.options.time.lastId + 1 + ''
-    this.clientId = this.options.userId + ':' + this.tabId
-  }
+    this.nodeId = this.clientId + ':' + this.tabId
 
-  /**
-   * Unique Logux node ID.
-   * @type {string}
-   *
-   * @example
-   * console.log('Client ID: ', app.nodeId)
-   */
-  this.nodeId = this.clientId + ':' + this.tabId
-
-  var auth
-  if (/^ws:\/\//.test(this.options.server) && !opts.allowDangerousProtocol) {
-    auth = function (cred) {
-      if (typeof cred !== 'object' || cred.env !== 'development') {
-        console.error(
-          'Without SSL, old proxies block WebSockets. ' +
-          'Use WSS for Logux or set allowDangerousProtocol option.'
-        )
-        return Promise.resolve(false)
-      }
-      return Promise.resolve(true)
-    }
-  }
-
-  var store = this.options.store || new MemoryStore()
-
-  var log
-  if (this.options.time) {
-    log = this.options.time.nextLog({ store: store, nodeId: this.nodeId })
-  } else {
-    log = new Log({ store: store, nodeId: this.nodeId })
-  }
-  /**
-   * Client events log.
-   * @type {Log}
-   *
-   * @example
-   * app.log.keep(customKeeper)
-   */
-  this.log = log
-
-  var client = this
-
-  log.on('preadd', function (action, meta) {
-    var isOwn = meta.id.indexOf(' ' + client.nodeId + ' ') !== -1
-    if (isOwn && !meta.subprotocol) {
-      meta.subprotocol = client.options.subprotocol
-    }
-    if (meta.sync && !meta.resubscribe) meta.reasons.push('syncing')
-  })
-
-  this.last = { }
-  this.subscriptions = { }
-  var subscribing = { }
-  var unsubscribing = { }
-
-  this.emitter = new NanoEvents()
-  this.on('add', function (action, meta) {
-    var type = action.type
-    var json, last
-    if (type === 'logux/processed' || type === 'logux/undo') {
-      client.log.removeReason('syncing', { id: action.id })
-    }
-    if (type === 'logux/subscribe' && !meta.resubscribe) {
-      subscribing[meta.id] = action
-    } else if (type === 'logux/unsubscribe') {
-      unsubscribing[meta.id] = action
-    } else if (type === 'logux/processed' && unsubscribing[action.id]) {
-      var unsubscription = unsubscribing[action.id]
-      json = JSON.stringify(merge(unsubscription, { type: 'logux/subscribe' }))
-      var subscribers = client.subscriptions[json]
-      if (subscribers) {
-        if (subscribers === 1) {
-          delete client.subscriptions[json]
+    let auth
+    if (/^ws:\/\//.test(this.options.server) && !opts.allowDangerousProtocol) {
+      auth = async cred => {
+        if (typeof cred !== 'object' || cred.env !== 'development') {
+          console.error(
+            'Without SSL, old proxies block WebSockets. ' +
+            'Use WSS for Logux or set allowDangerousProtocol option.'
+          )
+          return false
         } else {
-          client.subscriptions[json] = subscribers - 1
+          return true
         }
       }
-    } else if (type === 'logux/processed' && subscribing[action.id]) {
-      var subscription = subscribing[action.id]
-      delete subscribing[action.id]
-      json = JSON.stringify(subscription)
-      if (client.subscriptions[json]) {
-        client.subscriptions[json] += 1
-      } else {
-        client.subscriptions[json] = 1
+    }
+
+    let store = this.options.store || new MemoryStore()
+
+    let log
+    if (this.options.time) {
+      log = this.options.time.nextLog({ store, nodeId: this.nodeId })
+    } else {
+      log = new Log({ store, nodeId: this.nodeId })
+    }
+    /**
+     * Client events log.
+     * @type {Log}
+     *
+     * @example
+     * app.log.keep(customKeeper)
+     */
+    this.log = log
+
+    log.on('preadd', (action, meta) => {
+      let isOwn = meta.id.includes(` ${ this.nodeId } `)
+      if (isOwn && !meta.subprotocol) {
+        meta.subprotocol = this.options.subprotocol
       }
-      last = client.last[subscription.channel]
-      if (!last || isFirstOlder(last, meta)) {
-        client.last[subscription.channel] = { id: meta.id, time: meta.time }
+      if (meta.sync && !meta.resubscribe) meta.reasons.push('syncing')
+    })
+
+    this.last = { }
+    this.subscriptions = { }
+    let subscribing = { }
+    let unsubscribing = { }
+
+    this.emitter = createNanoEvents()
+    this.on('add', (action, meta) => {
+      let type = action.type
+      let json, last
+      if (type === 'logux/processed' || type === 'logux/undo') {
+        this.log.removeReason('syncing', { id: action.id })
       }
-    } else if (type === 'logux/undo') {
-      delete subscribing[action.id]
-      delete unsubscribing[action.id]
-    } else if (meta.channels) {
-      if (meta.id.indexOf(' ' + client.clientId + ':') === -1) {
-        meta.channels.forEach(function (channel) {
-          last = client.last[channel]
-          if (!last || isFirstOlder(last, meta)) {
-            client.last[channel] = { id: meta.id, time: meta.time }
+      if (type === 'logux/subscribe' && !meta.resubscribe) {
+        subscribing[meta.id] = action
+      } else if (type === 'logux/unsubscribe') {
+        unsubscribing[meta.id] = action
+      } else if (type === 'logux/processed' && unsubscribing[action.id]) {
+        let unsubscription = unsubscribing[action.id]
+        json = JSON.stringify({ ...unsubscription, type: 'logux/subscribe' })
+        let subscribers = this.subscriptions[json]
+        if (subscribers) {
+          if (subscribers === 1) {
+            delete this.subscriptions[json]
+          } else {
+            this.subscriptions[json] = subscribers - 1
           }
-        })
-      }
-    }
-    if (process.env.NODE_ENV !== 'production') {
-      if (type === 'logux/subscribe' || type === 'logux/unsubscribe') {
-        if (!meta.sync) {
-          console.error(type + ' action without meta.sync')
+        }
+      } else if (type === 'logux/processed' && subscribing[action.id]) {
+        let subscription = subscribing[action.id]
+        delete subscribing[action.id]
+        json = JSON.stringify(subscription)
+        if (this.subscriptions[json]) {
+          this.subscriptions[json] += 1
+        } else {
+          this.subscriptions[json] = 1
+        }
+        last = this.last[subscription.channel]
+        if (!last || isFirstOlder(last, meta)) {
+          this.last[subscription.channel] = { id: meta.id, time: meta.time }
+        }
+      } else if (type === 'logux/undo') {
+        delete subscribing[action.id]
+        delete unsubscribing[action.id]
+      } else if (meta.channels) {
+        if (!meta.id.includes(' ' + this.clientId + ':')) {
+          meta.channels.forEach(channel => {
+            last = this.last[channel]
+            if (!last || isFirstOlder(last, meta)) {
+              this.last[channel] = { id: meta.id, time: meta.time }
+            }
+          })
         }
       }
-    }
-  })
-
-  this.tabPing = 60000
-  this.tabTimeout = 10 * this.tabPing
-  var reason = 'tab' + client.tabId
-  if (this.isLocalStorage) {
-    var unbind = log.on('add', function (action, meta) {
-      if (meta.reasons.indexOf(reason) !== -1) {
-        tabPing(client)
-        client.pinging = setInterval(function () {
-          tabPing(client)
-        }, client.tabPing)
-        unbind()
-      }
-    })
-  }
-
-  var connection
-  if (typeof this.options.server === 'string') {
-    var ws = new WsConnection(this.options.server)
-    connection = new Reconnect(ws, {
-      minDelay: this.options.minDelay,
-      maxDelay: this.options.maxDelay,
-      attempts: this.options.attempts
-    })
-  } else {
-    connection = this.options.server
-  }
-
-  function filter (action, meta) {
-    var user = meta.id.split(' ')[1].replace(/:.*$/, '')
-    return Promise.resolve(!!meta.sync && user === client.options.userId)
-  }
-
-  function map (action, meta) {
-    var filtered = { }
-    for (var i in meta) {
-      if (ALLOWED_META.indexOf(i) !== -1) {
-        filtered[i] = meta[i]
-      }
-      if (meta.subprotocol && meta.subprotocol !== client.options.subprotocol) {
-        filtered.subprotocol = meta.subprotocol
-      }
-    }
-    return Promise.resolve([action, filtered])
-  }
-
-  /**
-   * Node instance to synchronize logs.
-   * @type {ClientNode}
-   *
-   * @example
-   * if (client.node.state === 'synchronized')
-   */
-  this.node = new ClientNode(this.nodeId, this.log, connection, {
-    credentials: this.options.credentials,
-    subprotocol: this.options.subprotocol,
-    outFilter: filter,
-    timeout: this.options.timeout,
-    outMap: map,
-    ping: this.options.ping,
-    auth: auth
-  })
-
-  this.node.on('debug', function (type, stack) {
-    if (type === 'error') {
-      console.error('Error on Logux server:\n', stack)
-    }
-  })
-
-  var disconnected = true
-  this.node.on('state', function () {
-    var state = client.node.state
-    if (state === 'synchronized' || state === 'sending') {
-      if (disconnected) {
-        disconnected = false
-        for (var i in client.subscriptions) {
-          var action = JSON.parse(i)
-          var since = client.last[action.channel]
-          if (since) action.since = since
-          client.log.add(action, { sync: true, resubscribe: true })
+      if (process.env.NODE_ENV !== 'production') {
+        if (type === 'logux/subscribe' || type === 'logux/unsubscribe') {
+          if (!meta.sync) {
+            console.error(type + ' action without meta.sync')
+          }
         }
       }
-    } else if (client.node.state === 'disconnected') {
-      disconnected = true
+    })
+
+    this.tabPing = 60000
+    this.tabTimeout = 10 * this.tabPing
+    let reason = 'tab' + this.tabId
+    if (this.isLocalStorage) {
+      let unbind = log.on('add', (action, meta) => {
+        if (meta.reasons.includes(reason)) {
+          tabPing(this)
+          this.pinging = setInterval(() => {
+            tabPing(this)
+          }, this.tabPing)
+          unbind()
+        }
+      })
     }
-  })
 
-  this.onUnload = this.onUnload.bind(this)
-  if (typeof window !== 'undefined' && window.addEventListener) {
-    window.addEventListener('unload', this.onUnload)
+    let connection
+    if (typeof this.options.server === 'string') {
+      let ws = new WsConnection(this.options.server)
+      connection = new Reconnect(ws, {
+        minDelay: this.options.minDelay,
+        maxDelay: this.options.maxDelay,
+        attempts: this.options.attempts
+      })
+    } else {
+      connection = this.options.server
+    }
+
+    let outFilter = async (action, meta) => {
+      let user = meta.id.split(' ')[1].replace(/:.*$/, '')
+      return !!meta.sync && user === this.options.userId
+    }
+
+    let outMap = async (action, meta) => {
+      let filtered = { }
+      for (let i in meta) {
+        if (ALLOWED_META.includes(i)) {
+          filtered[i] = meta[i]
+        }
+        if (meta.subprotocol && meta.subprotocol !== this.options.subprotocol) {
+          filtered.subprotocol = meta.subprotocol
+        }
+      }
+      return [action, filtered]
+    }
+
+    /**
+     * Node instance to synchronize logs.
+     * @type {ClientNode}
+     *
+     * @example
+     * if (client.node.state === 'synchronized')
+     */
+    this.node = new ClientNode(this.nodeId, this.log, connection, {
+      credentials: this.options.credentials,
+      subprotocol: this.options.subprotocol,
+      outFilter,
+      timeout: this.options.timeout,
+      outMap,
+      ping: this.options.ping,
+      auth
+    })
+
+    this.node.on('debug', (type, stack) => {
+      if (type === 'error') {
+        console.error('Error on Logux server:\n', stack)
+      }
+    })
+
+    let disconnected = true
+    this.node.on('state', () => {
+      let state = this.node.state
+      if (state === 'synchronized' || state === 'sending') {
+        if (disconnected) {
+          disconnected = false
+          for (let i in this.subscriptions) {
+            let action = JSON.parse(i)
+            let since = this.last[action.channel]
+            if (since) action.since = since
+            this.log.add(action, { sync: true, resubscribe: true })
+          }
+        }
+      } else if (this.node.state === 'disconnected') {
+        disconnected = true
+      }
+    })
+
+    this.onUnload = this.onUnload.bind(this)
+    if (typeof window !== 'undefined' && window.addEventListener) {
+      window.addEventListener('unload', this.onUnload)
+    }
   }
-}
-
-Client.prototype = {
 
   /**
    * Connect to server and reconnect on any connection problem.
@@ -354,10 +340,10 @@ Client.prototype = {
    * @example
    * app.start()
    */
-  start: function start () {
+  start () {
     this.cleanPrevActions()
     this.node.connection.connect()
-  },
+  }
 
   /**
    * Subscribe for synchronization events. It implements Nano Events API.
@@ -377,9 +363,9 @@ Client.prototype = {
    *   dispatch(action)
    * })
    */
-  on: function on (event, listener) {
+  on (event, listener) {
     return this.log.emitter.on(event, listener)
-  },
+  }
 
   /**
    * Disconnect and stop synchronization.
@@ -391,14 +377,14 @@ Client.prototype = {
    *   app.destroy()
    * })
    */
-  destroy: function destroy () {
+  destroy () {
     this.onUnload()
     this.node.destroy()
     clearInterval(this.pinging)
     if (typeof window !== 'undefined' && window.removeEventListener) {
       window.removeEventListener('unload', this.onUnload)
     }
-  },
+  }
 
   /**
    * Clear stored data. Removes action log
@@ -411,33 +397,32 @@ Client.prototype = {
    *   app.clean()
    * })
    */
-  clean: function clean () {
+  clean () {
     this.destroy()
     return this.log.store.clean ? this.log.store.clean() : Promise.resolve()
-  },
+  }
 
-  cleanPrevActions: function cleanPrevActions () {
+  cleanPrevActions () {
     if (!this.isLocalStorage) return
 
-    for (var i in localStorage) {
-      var prefix = this.options.prefix + ':tab:'
+    for (let i in localStorage) {
+      let prefix = this.options.prefix + ':tab:'
       if (i.slice(0, prefix.length) === prefix) {
-        var time = parseInt(localStorage.getItem(i))
+        let time = parseInt(localStorage.getItem(i))
         if (Date.now() - time > this.tabTimeout) {
           cleanTabActions(this, i.slice(prefix.length))
         }
       }
     }
-  },
-
-  onUnload: function onUnload () {
-    if (this.pinging) cleanTabActions(this, this.tabId)
-  },
-
-  getClientId: function getClientId () {
-    return nanoid(8)
   }
 
+  onUnload () {
+    if (this.pinging) cleanTabActions(this, this.tabId)
+  }
+
+  getClientId () {
+    return nanoid(8)
+  }
 }
 
 module.exports = Client

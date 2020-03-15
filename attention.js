@@ -10,19 +10,19 @@
  * attention(client)
  */
 function attention (client) {
-  var doc = document
-  var originTitle = false
-  var unbind = []
-  var timeout = false
+  let doc = document
+  let originTitle = false
+  let unbind = []
+  let timeout = false
 
-  function restoreTitle () {
+  let restoreTitle = () => {
     if (originTitle) {
       doc.title = originTitle
       originTitle = false
     }
   }
 
-  function blink () {
+  let blink = () => {
     if (doc.hidden && !originTitle) {
       originTitle = doc.title
       doc.title = '* ' + doc.title
@@ -33,7 +33,7 @@ function attention (client) {
     if (doc.hidden) timeout = setTimeout(blink, 1000)
   }
 
-  function tabListener () {
+  let tabListener = () => {
     if (!doc.hidden && timeout) {
       timeout = clearTimeout(timeout)
       restoreTitle()
@@ -41,28 +41,26 @@ function attention (client) {
   }
 
   if (doc && typeof doc.hidden !== 'undefined') {
-    unbind.push(client.node.on('error', function (error) {
+    unbind.push(client.node.on('error', error => {
       if (error.type !== 'timeout' && !timeout) {
         blink()
       }
     }))
 
-    unbind.push(client.on('add', function (action) {
+    unbind.push(client.on('add', action => {
       if (action.type === 'logux/undo' && action.reason && !timeout) {
         blink()
       }
     }))
 
     document.addEventListener('visibilitychange', tabListener, false)
-    unbind.push(function () {
+    unbind.push(() => {
       document.removeEventListener('visibilitychange', tabListener, false)
     })
   }
 
-  return function () {
-    for (var i = 0; i < unbind.length; i++) {
-      unbind[i]()
-    }
+  return () => {
+    for (let i of unbind) i()
   }
 }
 

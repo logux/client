@@ -1,19 +1,19 @@
-var status = require('./status')
+let status = require('./status')
 
 function injectStyles (element, styles) {
-  for (var i in styles) {
+  for (let i in styles) {
     element.style[i] = styles[i]
   }
 }
 
 function setPosition (element, position) {
-  var style = element.style
+  let style = element.style
   if (position === 'middle-center' || position === 'center-middle') {
     style.top = '50%'
     style.left = '50%'
     style.transform = 'translate(-50%, -50%)'
   } else {
-    position.split('-').forEach(function (pos) {
+    position.split('-').forEach(pos => {
       if (pos === 'middle') {
         style.top = '50%'
         style.transform = 'translateY(-50%)'
@@ -27,7 +27,7 @@ function setPosition (element, position) {
   }
 }
 
-var RESET = {
+const RESET = {
   boxSizing: 'content-box',
   visibility: 'visible',
   textIndent: '0',
@@ -94,12 +94,12 @@ var RESET = {
  * @function
  */
 function badge (client, opts) {
-  var messages = opts.messages
-  var position = opts.position || 'bottom-right'
-  var styles = opts.styles
+  let messages = opts.messages
+  let position = opts.position || 'bottom-right'
+  let styles = opts.styles
 
-  var widget = document.createElement('div')
-  var text = document.createElement('span')
+  let widget = document.createElement('div')
+  let text = document.createElement('span')
 
   widget.setAttribute('role', 'alert')
 
@@ -108,17 +108,17 @@ function badge (client, opts) {
   injectStyles(text, styles.text)
   setPosition(widget, position)
 
-  function show (style, msg) {
+  let show = (style, msg) => {
     text.innerHTML = msg
     injectStyles(widget, style)
     widget.style.display = 'block'
   }
 
-  function hide () {
+  let hide = () => {
     widget.style.display = 'none'
   }
 
-  var unbind = status(client, function (state) {
+  let unbind = status(client, state => {
     if (state === 'sendingAfterWait' || state === 'connectingAfterWait') {
       show(styles.sending, messages.sending)
     } else if (state === 'synchronizedAfterWait') {
@@ -143,7 +143,7 @@ function badge (client, opts) {
   widget.appendChild(text)
   document.body.appendChild(widget)
 
-  return function () {
+  return () => {
     unbind()
     document.body.removeChild(widget)
   }

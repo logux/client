@@ -1,7 +1,7 @@
-var refresh = require('./refresh.svg')
-var success = require('./success.svg')
-var offline = require('./offline.svg')
-var error = require('./error.svg')
+let refresh = require('./refresh.svg')
+let success = require('./success.svg')
+let offline = require('./offline.svg')
+let error = require('./error.svg')
 
 module.exports = {
   base: {

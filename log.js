@@ -1,4 +1,4 @@
-var browserSupportsLogStyles = require('browser-supports-log-styles')
+let browserSupportsLogStyles = require('browser-supports-log-styles')
 
 function style (string) {
   return '%c' + string + '%c'
@@ -8,11 +8,11 @@ function colorify (color, text, action, meta) {
   text = '%cLogux%c ' + text
   if (!color) text = text.replace(/%c/g, '')
 
-  var args = [text]
+  let args = [text]
 
   if (color) {
-    var styles = text.match(/%c[^%]+%c/g)
-    for (var i = 0; i < styles.length; i++) {
+    let styles = text.match(/%c[^%]+%c/g)
+    for (let i = 0; i < styles.length; i++) {
       if (i === 0) {
         args.push('color:#ffa200;font-weight:bold')
       } else {
@@ -48,28 +48,27 @@ function colorify (color, text, action, meta) {
  * import log from '@logux/client/log'
  * log(client, { add: false })
  */
-function log (client, messages) {
-  if (!messages) messages = { }
-  var node = client.node
+function log (client, messages = { }) {
+  let node = client.node
 
-  var color = messages.color !== false && browserSupportsLogStyles()
+  let color = messages.color !== false && browserSupportsLogStyles()
 
-  function showLog (text, action, meta) {
+  let showLog = (text, action, meta) => {
     console.log.apply(console, colorify(color, text, action, meta))
   }
 
-  function showError (error) {
-    var text = 'error: ' + error.description
+  let showError = error => {
+    let text = 'error: ' + error.description
     if (error.received) text = 'server sent ' + text
     console.error.apply(console, colorify(color, text))
   }
 
-  var unbind = []
-  var prevConnected = false
+  let unbind = []
+  let prevConnected = false
 
   if (messages.state !== false) {
-    unbind.push(client.on('state', function () {
-      var postfix = ''
+    unbind.push(client.on('state', () => {
+      let postfix = ''
 
       if (client.state === 'connecting' && node.connection.url) {
         postfix = '. ' + style(node.localNodeId) + ' is connecting to ' +
@@ -86,31 +85,31 @@ function log (client, messages) {
   }
 
   if (messages.role !== false) {
-    unbind.push(client.on('role', function () {
+    unbind.push(client.on('role', () => {
       showLog('tab role is ' + style(client.role))
     }))
   }
 
   if (messages.error !== false) {
-    unbind.push(node.on('error', function (error) {
+    unbind.push(node.on('error', error => {
       showError(error)
     }))
-    unbind.push(node.on('clientError', function (error) {
+    unbind.push(node.on('clientError', error => {
       showError(error)
     }))
   }
 
-  var cleaned = { }
-  var ignore = (messages.ignoreActions || []).reduce(function (all, i) {
+  let cleaned = { }
+  let ignore = (messages.ignoreActions || []).reduce((all, i) => {
     all[i] = true
     return all
   }, { })
 
   if (messages.add !== false) {
-    unbind.push(client.on('add', function (action, meta) {
+    unbind.push(client.on('add', (action, meta) => {
       if (meta.tab && meta.tab !== client.tabId) return
       if (ignore[action.type]) return
-      var message
+      let message
       if (action.type === 'logux/subscribe') {
         message = 'subscribed to channel ' + style(action.channel)
         if (Object.keys(action).length === 2) {
@@ -135,7 +134,7 @@ function log (client, messages) {
           message += 'and cleaned '
         }
         message += style(action.type) + ' action'
-        var nodeId = meta.id.split(' ')[1]
+        let nodeId = meta.id.split(' ')[1]
         if (nodeId !== node.localNodeId) {
           message += ' from ' + style(nodeId)
         }
@@ -145,7 +144,7 @@ function log (client, messages) {
   }
 
   if (messages.clean !== false) {
-    unbind.push(client.on('clean', function (action, meta) {
+    unbind.push(client.on('clean', (action, meta) => {
       if (cleaned[meta.id]) {
         delete cleaned[meta.id]
         return
@@ -155,15 +154,13 @@ function log (client, messages) {
       if (action.type === 'logux/subscribe') return
       if (action.type === 'logux/processed') return
       if (action.type === 'logux/undo') return
-      var message = 'cleaned ' + style(action.type) + ' action'
+      let message = 'cleaned ' + style(action.type) + ' action'
       showLog(message, action, meta)
     }))
   }
 
-  return function () {
-    for (var i = 0; i < unbind.length; i++) {
-      unbind[i]()
-    }
+  return () => {
+    for (let i of unbind) i()
   }
 }
 

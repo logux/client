@@ -1,5 +1,5 @@
 let { MemoryStore, TestPair, TestTime } = require('@logux/core')
-let delay = require('nanodelay')
+let { delay } = require('nanodelay')
 
 let Client = require('../client')
 

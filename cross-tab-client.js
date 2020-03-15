@@ -1,7 +1,7 @@
-var LoguxError = require('@logux/core/logux-error')
-var merge = require('@logux/core/merge')
+let LoguxError = require('@logux/core/logux-error')
+let merge = require('@logux/core/merge')
 
-var Client = require('./client')
+let Client = require('./client')
 
 function storageKey (client, name) {
   return client.options.prefix + ':' + client.options.userId + ':' + name
@@ -9,8 +9,8 @@ function storageKey (client, name) {
 
 function sendToTabs (client, event, data) {
   if (!client.isLocalStorage) return
-  var key = storageKey(client, event)
-  var json = JSON.stringify(data)
+  let key = storageKey(client, event)
+  let json = JSON.stringify(data)
   try {
     localStorage.setItem(key, json)
   } catch (e) {
@@ -23,8 +23,8 @@ function sendToTabs (client, event, data) {
 }
 
 function getLeader (client) {
-  var data = localStorage.getItem(storageKey(client, 'leader'))
-  var json = []
+  let data = localStorage.getItem(storageKey(client, 'leader'))
+  let json = []
   if (typeof data === 'string') json = JSON.parse(data)
   return json
 }
@@ -42,7 +42,7 @@ function onDeadLeader (client) {
 
 function watchForLeader (client) {
   clearTimeout(client.watching)
-  client.watching = setTimeout(function () {
+  client.watching = setTimeout(() => {
     if (!isActiveLeader(client)) {
       onDeadLeader(client)
     } else {
@@ -55,15 +55,16 @@ function areWeOutdates (client, meta) {
   if (!meta.subprotocol) return false
   if (client.node.options.subprotocol === meta.subprotocol) return false
 
-  var id = meta.id.split(' ')[1]
-  var prefix = client.clientId + ':'
+  let id = meta.id.split(' ')[1]
+  let prefix = client.clientId + ':'
   if (id.slice(0, prefix.length) !== prefix) return false
 
-  var ourParts = client.node.options.subprotocol.split('.')
-  var remoteParts = meta.subprotocol.split('.')
-  for (var i = 0; i < ourParts.length; i++) {
-    var ourNumber = parseInt(ourParts[i])
-    var remoteNumber = parseInt(remoteParts[i])
+  let ourParts = client.node.options.subprotocol.split('.')
+  let remoteParts = meta.subprotocol.split('.')
+  // eslint-disable-next-line
+  for (let i = 0; i < ourParts.length; i++) {
+    let ourNumber = parseInt(ourParts[i])
+    let remoteNumber = parseInt(remoteParts[i])
     if (ourNumber > remoteNumber) {
       return false
     } else if (ourNumber < remoteNumber) {
@@ -75,13 +76,13 @@ function areWeOutdates (client, meta) {
 
 function setRole (client, role) {
   if (client.role !== role) {
-    var node = client.node
+    let node = client.node
     client.role = role
 
     clearTimeout(client.watching)
     if (role === 'leader') {
       localStorage.removeItem(storageKey(client, 'state'))
-      client.leadership = setInterval(function () {
+      client.leadership = setInterval(() => {
         if (!client.unloading) leaderPing(client)
       }, client.leaderPing)
       node.connection.connect()
@@ -95,8 +96,8 @@ function setRole (client, role) {
     }
 
     if (role === 'follower') {
-      var state = 'disconnected'
-      var json = localStorage.getItem(storageKey(client, 'state'))
+      let state = 'disconnected'
+      let json = localStorage.getItem(storageKey(client, 'state'))
       if (json && json !== null) state = JSON.parse(json)
       if (state !== client.state) {
         client.state = state
@@ -109,15 +110,15 @@ function setRole (client, role) {
 }
 
 function isActiveLeader (client) {
-  var leader = getLeader(client)
+  let leader = getLeader(client)
   return leader[1] && leader[1] >= Date.now() - client.leaderTimeout
 }
 
 function startElection (client) {
   leaderPing(client)
   setRole(client, 'candidate')
-  client.elections = setTimeout(function () {
-    var data = getLeader(client, 'leader')
+  client.elections = setTimeout(() => {
+    let data = getLeader(client, 'leader')
     if (data[0] === client.tabId) {
       setRole(client, 'leader')
     } else {
@@ -182,70 +183,65 @@ function isMemory (store) {
  * @extends Client
  * @class
  */
-function CrossTabClient (opts) {
-  Client.call(this, opts)
+class CrossTabClient extends Client {
+  constructor (opts = { }) {
+    super(opts)
 
-  /**
-   * Current tab role. Only `leader` tab connects to server. `followers` just
-   * listen to events from `leader`.
-   * @type {"leader"|"follower"|"candidate"}
-   *
-   * @example
-   * app.on('role', () => {
-   *   console.log('Tab role:', app.role)
-   * })
-   */
-  this.role = 'candidate'
+    /**
+     * Current tab role. Only `leader` tab connects to server. `followers` just
+     * listen to events from `leader`.
+     * @type {"leader"|"follower"|"candidate"}
+     *
+     * @example
+     * app.on('role', () => {
+     *   console.log('Tab role:', app.role)
+     * })
+     */
+    this.role = 'candidate'
 
-  this.roleTimeout = 3000 + Math.floor(Math.random() * 1000)
-  this.leaderTimeout = 5000
-  this.leaderPing = 2000
-  this.electionDelay = 1000
+    this.roleTimeout = 3000 + Math.floor(Math.random() * 1000)
+    this.leaderTimeout = 5000
+    this.leaderPing = 2000
+    this.electionDelay = 1000
 
-  /**
-   * Leader tab synchronization state. It can differs
-   * from `Client#node.state` (because only the leader tab keeps connection).
-   *
-   * @type {"disconnected"|"connecting"|"sending"|"synchronized"}
-   *
-   * @example
-   * client.on('state', () => {
-   *   if (client.state === 'disconnected' && client.state === 'sending') {
-   *     showCloseWarning()
-   *   }
-   * })
-   */
-  this.state = this.node.state
+    /**
+     * Leader tab synchronization state. It can differs
+     * from `Client#node.state` (because only the leader tab keeps connection).
+     *
+     * @type {"disconnected"|"connecting"|"sending"|"synchronized"}
+     *
+     * @example
+     * client.on('state', () => {
+     *   if (client.state === 'disconnected' && client.state === 'sending') {
+     *     showCloseWarning()
+     *   }
+     * })
+     */
+    this.state = this.node.state
 
-  var client = this
+    this.node.on('state', () => {
+      if (this.role === 'leader') {
+        setState(this, this.node.state)
+      }
+    })
 
-  this.node.on('state', function () {
-    if (client.role === 'leader') {
-      setState(client, client.node.state)
+    this.log.on('add', (action, meta) => {
+      this.emitter.emit('add', action, meta)
+      if (meta.tab !== this.tabId) {
+        sendToTabs(this, 'add', [this.tabId, action, meta])
+      }
+    })
+    this.log.on('clean', (action, meta) => {
+      this.emitter.emit('clean', action, meta)
+    })
+
+    if (typeof window !== 'undefined' && window.addEventListener) {
+      window.addEventListener('storage', e => this.onStorage(e))
+      window.addEventListener('unload', e => this.onUnload(e))
     }
-  })
-
-  this.log.on('add', function (action, meta) {
-    client.emitter.emit('add', action, meta)
-    if (meta.tab !== client.tabId) {
-      sendToTabs(client, 'add', [client.tabId, action, meta])
-    }
-  })
-  this.log.on('clean', function (action, meta) {
-    client.emitter.emit('clean', action, meta)
-  })
-
-  this.onStorage = this.onStorage.bind(this)
-  this.onUnload = this.onUnload.bind(this)
-  if (typeof window !== 'undefined' && window.addEventListener) {
-    window.addEventListener('storage', this.onStorage)
-    window.addEventListener('unload', this.onUnload)
   }
-}
 
-CrossTabClient.prototype = {
-
-  start: function start () {
+  start () {
     this.cleanPrevActions()
 
     if (!this.isLocalStorage) {
@@ -261,10 +257,10 @@ CrossTabClient.prototype = {
     } else {
       startElection(this)
     }
-  },
+  }
 
-  destroy: function destroy () {
-    Client.prototype.destroy.call(this)
+  destroy () {
+    super.destroy()
 
     clearTimeout(this.watching)
     clearTimeout(this.elections)
@@ -272,17 +268,17 @@ CrossTabClient.prototype = {
     if (typeof window !== 'undefined' && window.removeEventListener) {
       window.removeEventListener('storage', this.onStorage)
     }
-  },
+  }
 
-  clean: function clean () {
+  clean () {
     if (this.isLocalStorage) {
       localStorage.removeItem(storageKey(this, 'add'))
       localStorage.removeItem(storageKey(this, 'state'))
       localStorage.removeItem(storageKey(this, 'client'))
       localStorage.removeItem(storageKey(this, 'leader'))
     }
-    return Client.prototype.clean.call(this)
-  },
+    return super.clean()
+  }
 
   /**
    * Subscribe for synchronization events. It implements nanoevents API.
@@ -304,25 +300,25 @@ CrossTabClient.prototype = {
    *   dispatch(action)
    * })
    */
-  on: function on (event, listener) {
+  on (event, listener) {
     if (event === 'preadd') {
       return this.log.emitter.on(event, listener)
     } else {
       return this.emitter.on(event, listener)
     }
-  },
+  }
 
-  onStorage: function onStorage (e) {
+  onStorage (e) {
     if (e.newValue === null) return
 
-    var data
+    let data
     if (e.key === storageKey(this, 'add')) {
       data = JSON.parse(e.newValue)
       if (data[0] !== this.tabId) {
-        var action = data[1]
-        var meta = data[2]
+        let action = data[1]
+        let meta = data[2]
         if (areWeOutdates(this, meta)) {
-          var err = new LoguxError('wrong-subprotocol', {
+          let err = new LoguxError('wrong-subprotocol', {
             supported: meta.subprotocol,
             used: this.node.options.subprotocol
           }, true)
@@ -347,36 +343,35 @@ CrossTabClient.prototype = {
         watchForLeader(this)
       }
     } else if (e.key === storageKey(this, 'state')) {
-      var state = JSON.parse(localStorage.getItem(e.key))
+      let state = JSON.parse(localStorage.getItem(e.key))
       if (this.state !== state) {
         this.state = state
         this.emitter.emit('state')
       }
     }
-  },
+  }
 
-  onUnload: function onUnload () {
+  onUnload () {
     if (this.role === 'leader') {
       this.unloading = true
       sendToTabs(this, 'leader', [])
     }
 
-    Client.prototype.onUnload.call(this)
-  },
+    super.onUnload()
+  }
 
-  getClientId: function getClientId () {
-    var key = storageKey(this, 'client')
+  getClientId () {
+    let key = storageKey(this, 'client')
     if (!this.isLocalStorage) {
-      return Client.prototype.getClientId.call(this)
+      return super.getClientId()
     } else if (localStorage.getItem(key)) {
       return localStorage.getItem(key)
     } else {
-      var clientId = Client.prototype.getClientId.call(this)
+      let clientId = super.getClientId()
       localStorage.setItem(key, clientId)
       return clientId
     }
   }
-
 }
 
 /**
