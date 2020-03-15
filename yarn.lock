@@ -957,7 +957,7 @@
 
 "@logux/core@logux/core":
   version "0.3.5"
-  resolved "https://codeload.github.com/logux/core/tar.gz/78a914dc72d0bfb6bd77ddb92d7b292b088f42d7"
+  resolved "https://codeload.github.com/logux/core/tar.gz/bb744e738d5b96b2e66b708fdee3680a9a60ee16"
   dependencies:
     nanoevents "^5.0.1"
 

@@ -8,10 +8,6 @@ export interface clientActionListener {
   (action: Action, meta: ClientMeta): void
 }
 
-interface clientActionIterator {
-  (action: Action, meta: ClientMeta): boolean | void
-}
-
 export type ClientMeta = Meta & {
   /**
    * Action should be visible only for browser tab with the same `client.tabId`.
@@ -31,20 +27,6 @@ export type ClientMeta = Meta & {
 
 type GetOptions = {
   order?: 'created' | 'added'
-}
-
-export class ClientLog extends Log {
-  add (action: Action, meta?: Partial<ClientMeta>): Promise<ClientMeta|false>
-
-  on (
-    event: 'preadd' | 'add' | 'clean', listener: clientActionListener
-  ): () => void
-
-  changeMeta (id: ID, diff: Partial<ClientMeta>): Promise<boolean>
-
-  each (opts: GetOptions, callback: clientActionIterator): Promise<void>
-
-  byId (id: ID): Promise<[Action, ClientMeta]|[null, null]>
 }
 
 type ClientOptions = {
@@ -183,7 +165,7 @@ export class Client {
    * app.log.add(action)
    * ```
    */
-  log: ClientLog
+  log: Log<ClientMeta>
 
   /**
    * Node instance to synchronize logs.
@@ -192,7 +174,7 @@ export class Client {
    * if (client.node.state === 'synchronized')
    * ```
    */
-  node: ClientNode
+  node: ClientNode<ClientMeta>
 
   /**
    * Connect to server and reconnect on any connection problem.
