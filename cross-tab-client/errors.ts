@@ -13,7 +13,7 @@ app.on('preadd', (action, meta) => {
   meta.tab = 1
 })
 
-// THROWS '(action: any) => void' is not assignable to parameter
+// THROWS No overload matches this call.
 app.on('state', action => {
   console.log(action.type)
 })
