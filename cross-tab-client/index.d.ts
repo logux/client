@@ -1,17 +1,5 @@
 import { Client, clientActionListener } from '../client'
 
-interface listener {
-  (): void
-}
-
-type CrossTabListeners = {
-  preadd: clientActionListener
-  add: clientActionListener
-  clean: clientActionListener
-  role: listener
-  state: listener
-}
-
 /**
  * Low-level browser API for Logux.
  *
@@ -86,8 +74,10 @@ export class CrossTabClient extends Client {
    * @param listener The listener function.
    * @returns Unbind listener from event.
    */
-  on<K extends keyof CrossTabListeners> (
-    event: K,
-    listener: CrossTabListeners[K]
+  on (
+    event: 'role' | 'state', listener: () => void
+  ): () => void
+  on (
+    event: 'preadd' | 'add' | 'clean', listener: clientActionListener
   ): () => void
 }
