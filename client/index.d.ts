@@ -29,7 +29,7 @@ type GetOptions = {
   order?: 'created' | 'added'
 }
 
-type ClientOptions = {
+export type ClientOptions = {
   /**
    * Server URL.
    */

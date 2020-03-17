@@ -1,5 +1,5 @@
 export { badge, badgeEn, badgeRu, BadgeMessages, BadgeStyles } from './badge'
-export { Client, ClientMeta } from './client'
+export { Client, ClientMeta, ClientOptions } from './client'
 export { CrossTabClient } from './cross-tab-client'
 export { IndexedStore } from './indexed-store'
 export { attention } from './attention'
