@@ -1,3 +1,5 @@
+import { Unsubscribe } from 'nanoevents'
+
 import { Client, clientActionListener } from '../client'
 
 /**
@@ -76,8 +78,8 @@ export class CrossTabClient extends Client {
    */
   on (
     event: 'role' | 'state', listener: () => void
-  ): () => void
+  ): Unsubscribe
   on (
     event: 'preadd' | 'add' | 'clean', listener: clientActionListener
-  ): () => void
+  ): Unsubscribe
 }

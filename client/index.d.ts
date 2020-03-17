@@ -1,3 +1,5 @@
+import { Unsubscribe } from 'nanoevents'
+
 import {
   Connection, Store, TestTime, Log, ClientNode, Action, Meta, ID
 } from '@logux/core'
@@ -205,7 +207,7 @@ export class Client {
    */
   on (
     event: 'preadd' | 'add' | 'clean', listener: clientActionListener
-  ): () => void
+  ): Unsubscribe
 
   /**
    * Disconnect and stop synchronization.
