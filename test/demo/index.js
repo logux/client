@@ -1,14 +1,20 @@
-let {
-  MemoryStore, ClientNode, LocalPair, BaseNode, Log
-} = require('@logux/core')
+import { MemoryStore } from '@logux/core/memory-store'
+import { ClientNode } from '@logux/core/client-node'
+import { LocalPair } from '@logux/core/local-pair'
+import { BaseNode } from '@logux/core/base-node'
+import { Log } from '@logux/core/log'
 
-let {
-  CrossTabClient, attention, confirm, favicon, status, badge, badgeEn, log
-} = require('../..')
-let { badgeStyles } = require('../../badge/styles')
-let faviconOffline = require('./offline.png')
-let faviconNormal = require('./normal.png')
-let faviconError = require('./error.png')
+import { CrossTabClient } from '../../cross-tab-client'
+import { badge, badgeEn } from '../../badge'
+import { badgeStyles } from '../../badge/styles'
+import { attention } from '../../attention'
+import { confirm } from '../../confirm'
+import { favicon } from '../../favicon'
+import { status } from '../../status'
+import { log } from '../../log'
+import faviconOffline from './offline.png'
+import faviconNormal from './normal.png'
+import faviconError from './error.png'
 
 let pair = new LocalPair(500)
 
