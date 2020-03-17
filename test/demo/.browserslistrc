@@ -1,2 +1,8 @@
-defaults
+last 2 versions
+firefox esr
+not dead
 not ie 11
+not op_mini all
+not op_mob > 0
+not and_qq > 0
+not android > 0
