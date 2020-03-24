@@ -27,10 +27,6 @@ export type ClientMeta = Meta & {
   noAutoReason?: boolean
 }
 
-type GetOptions = {
-  order?: 'created' | 'added'
-}
-
 export type ClientOptions = {
   /**
    * Server URL.
