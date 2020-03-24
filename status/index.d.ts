@@ -2,7 +2,7 @@ import { Action } from '@logux/core'
 
 import { Client, ClientMeta } from '../client'
 
-interface statusListener {
+interface StatusListener {
   (
     current: 'synchronized' | 'synchronizedAfterWait' | 'disconnected' |
              'connecting' | 'connectingAfterWait' | 'protocolError' |
@@ -34,7 +34,7 @@ type StatusOptions = {
  * @returns Unbind listener.
  */
 export function status (
-  client: Client, callback: statusListener, options?: StatusOptions
+  client: Client, callback: StatusListener, options?: StatusOptions
 ): () => void
 
 /**

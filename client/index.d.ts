@@ -6,7 +6,7 @@ import {
 
 type TabID = string
 
-export interface clientActionListener {
+export interface ClientActionListener {
   (action: Action, meta: ClientMeta): void
 }
 
@@ -202,7 +202,7 @@ export class Client {
    * @returns Unbind listener from event.
    */
   on (
-    event: 'preadd' | 'add' | 'clean', listener: clientActionListener
+    event: 'preadd' | 'add' | 'clean', listener: ClientActionListener
   ): Unsubscribe
 
   /**
