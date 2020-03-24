@@ -1,6 +1,6 @@
 import { Unsubscribe } from 'nanoevents'
 
-import { Client, clientActionListener } from '../client'
+import { Client, ClientActionListener } from '../client'
 
 /**
  * Low-level browser API for Logux.
@@ -80,6 +80,6 @@ export class CrossTabClient extends Client {
     event: 'role' | 'state', listener: () => void
   ): Unsubscribe
   on (
-    event: 'preadd' | 'add' | 'clean', listener: clientActionListener
+    event: 'preadd' | 'add' | 'clean', listener: ClientActionListener
   ): Unsubscribe
 }
