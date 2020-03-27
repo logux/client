@@ -4,8 +4,8 @@ let { WsConnection } = require('@logux/core/ws-connection')
 let { MemoryStore } = require('@logux/core/memory-store')
 let { ClientNode } = require('@logux/core/client-node')
 let { Reconnect } = require('@logux/core/reconnect')
+let { nanoid } = require('nanoid')
 let { Log } = require('@logux/core/log')
-let nanoid = require('nanoid')
 
 function tabPing (c) {
   localStorage.setItem(c.options.prefix + ':tab:' + c.tabId, Date.now())
