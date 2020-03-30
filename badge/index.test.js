@@ -1,9 +1,8 @@
 let { LoguxError, TestPair, TestTime } = require('@logux/core')
 let { delay } = require('nanodelay')
 
-let { badgeStyles } = require('./styles')
-
 let { CrossTabClient, badge, badgeEn } = require('..')
+let { badgeStyles } = require('./styles')
 
 function badgeNode () {
   return document.querySelector('div')
