@@ -101,12 +101,7 @@
     },
     {
       "import": {
-        "./attention/index.js": "{ attention }",
-        "./confirm/index.js": "{ confirm }",
-        "./favicon/index.js": "{ favicon }",
-        "./status/index.js": "{ status }",
-        "./log/index.js": "{ log }",
-        "./badge/index.js": "{ badge, badgeEn }",
+        "./index.js": "{ attention, confirm, favicon, status, log, badge, badgeEn }",
         "./badge/styles/index.js": "{ badgeStyles }"
       },
       "limit": "3 KB"
