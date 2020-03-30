@@ -1,6 +1,6 @@
 {
   "name": "@logux/client",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Logux base components to build web client",
   "keywords": [
     "logux",
@@ -122,7 +122,10 @@
       "UI",
       "UX",
       "DevTools",
-      "io"
+      "io",
+      "ES",
+      "JSDoc",
+      "TypeDoc"
     ]
   },
   "sharec": {
