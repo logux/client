@@ -41,7 +41,7 @@ export type ClientOptions = {
   /**
    * User ID. Pass `false` if no user.
    */
-  userId: string | false
+  userId: number | string | false
 
   /**
    * Client credentials for authentication.
