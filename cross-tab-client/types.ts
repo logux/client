@@ -3,7 +3,7 @@ import { CrossTabClient } from '..'
 let app = new CrossTabClient({
   subprotocol: '1.0.0',
   server: 'ws://localhost',
-  userId: false
+  userId: '10'
 })
 
 app.on('preadd', (action, meta) => {

@@ -19,7 +19,7 @@ async function createClient () {
   let client = new CrossTabClient({
     subprotocol: '1.0.0',
     server: pair.left,
-    userId: false
+    userId: '10'
   })
 
   client.node.catch(() => { })

@@ -36,7 +36,13 @@ class Client {
         throw new Error('Missed userId option in Logux client. ' +
                         'Pass false if you have no users.')
       }
-      if (this.options.userId.includes && this.options.userId.includes(':')) {
+      if (this.options.userId === false) {
+        throw new Error('Replace userId: false to userId: "false"')
+      }
+      if (typeof this.options.userId !== 'string') {
+        throw new Error('userId must be a string')
+      }
+      if (this.options.userId.includes(':')) {
         throw new Error('userId can’t contain colon character')
       }
     }
@@ -53,12 +59,6 @@ class Client {
         localStorage.removeItem(random)
         this.isLocalStorage = true
       } catch (e) {}
-    }
-
-    if (this.options.userId) {
-      this.options.userId = this.options.userId.toString()
-    } else {
-      this.options.userId = 'false'
     }
 
     if (!this.options.time) {

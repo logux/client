@@ -17,7 +17,7 @@ async function createTest (override) {
   let client = new CrossTabClient({
     subprotocol: '1.0.0',
     server: pair.left,
-    userId: 1,
+    userId: '1',
     time: new TestTime()
   })
 
@@ -207,7 +207,7 @@ it('removes badge from DOM', () => {
   let client = new CrossTabClient({
     subprotocol: '1.0.0',
     server: pair.left,
-    userId: 10,
+    userId: '10',
     time: new TestTime()
   })
 

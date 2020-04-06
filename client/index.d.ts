@@ -39,9 +39,9 @@ export type ClientOptions = {
   subprotocol: string
 
   /**
-   * User ID. Pass `false` if no user.
+   * User ID.
    */
-  userId: string | false
+  userId: string
 
   /**
    * Client credentials for authentication.

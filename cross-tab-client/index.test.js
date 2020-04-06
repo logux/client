@@ -47,7 +47,7 @@ function createClient (overrides) {
   let opts = {
     subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
-    userId: false,
+    userId: '10',
     time: new TestTime()
   }
   for (let i in overrides) {
@@ -71,7 +71,7 @@ it('saves options', () => {
   client = new CrossTabClient({
     subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
-    userId: false
+    userId: '10'
   })
   expect(client.options.subprotocol).toEqual('1.0.0')
 })
@@ -80,12 +80,12 @@ it('saves client ID', () => {
   client = new CrossTabClient({
     subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
-    userId: false
+    userId: '10'
   })
   let another = new CrossTabClient({
     subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
-    userId: false
+    userId: '10'
   })
   expect(client.clientId).toEqual(another.clientId)
 })
@@ -119,8 +119,8 @@ it('cleans everything', async () => {
   await client.clean()
   expect(client.node.destroy).toHaveBeenCalledTimes(1)
   expect(localStorage.removeItem.mock.calls).toEqual([
-    ['logux:false:add'], ['logux:false:state'],
-    ['logux:false:client'], ['logux:false:leader']
+    ['logux:10:add'], ['logux:10:state'],
+    ['logux:10:client'], ['logux:10:leader']
   ])
 })
 
@@ -131,7 +131,7 @@ it('does not use broken localStorage', async () => {
   client = new CrossTabClient({
     subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
-    userId: 10
+    userId: '10'
   })
   await client.log.add({ type: 'A' }, { reasons: ['tab' + client.tabId] })
 })
@@ -143,23 +143,23 @@ it('synchronizes actions between tabs', async () => {
   let client1 = new CrossTabClient({
     subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
-    userId: 10
+    userId: '10'
   })
   let client2 = new CrossTabClient({
     subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
-    userId: 10
+    userId: '10'
   })
   let client3 = new CrossTabClient({
     subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
     prefix: 'other',
-    userId: 10
+    userId: '10'
   })
   let client4 = new CrossTabClient({
     subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
-    userId: 20
+    userId: '20'
   })
 
   let events = []
@@ -197,12 +197,12 @@ it('synchronizes actions from follower tabs', async () => {
     added: 1,
     time: 1,
     sync: true,
-    id: '1 false:other 0'
+    id: '1 10:other 0'
   })
-  emitStorage('logux:false:add', `["other",${ action },${ meta }]`)
+  emitStorage('logux:10:add', `["other",${ action },${ meta }]`)
   await delay(50)
   expect(pair.leftSent).toEqual([
-    ['sync', 1, { type: 'A' }, { id: [1, 'false:other', 0], time: 1 }]
+    ['sync', 1, { type: 'A' }, { id: [1, '10:other', 0], time: 1 }]
   ])
 })
 
@@ -239,7 +239,7 @@ it('becomes leader without window', () => {
 })
 
 it('becomes follower on recent leader ping', () => {
-  localStorage.setItem('logux:false:leader', `["",${ Date.now() }]`)
+  localStorage.setItem('logux:10:leader', `["",${ Date.now() }]`)
   client = createClient()
 
   let roles = []
@@ -260,7 +260,7 @@ it('stops election on second candidate', async () => {
   client.start()
   expect(client.role).toEqual('candidate')
 
-  localStorage.setItem('logux:false:leader', `["",${ Date.now() - 10 }]`)
+  localStorage.setItem('logux:10:leader', `["",${ Date.now() - 10 }]`)
   await delay(client.electionDelay + 10)
   expect(client.role).toEqual('follower')
   expect(client.watching).toBeDefined()
@@ -272,7 +272,7 @@ it('stops election in leader check', async () => {
   client.start()
   expect(client.role).toEqual('candidate')
 
-  localStorage.setItem('logux:false:leader', `["",${ Date.now() }]`)
+  localStorage.setItem('logux:10:leader', `["",${ Date.now() }]`)
   await delay(client.electionDelay + 10)
   expect(client.role).toEqual('follower')
   expect(client.watching).toBeDefined()
@@ -283,7 +283,7 @@ it('pings on leader role', async () => {
   jest.spyOn(client.node.connection, 'disconnect')
 
   let last = Date.now() - client.leaderTimeout - 10
-  localStorage.setItem('logux:false:leader', `["",${ last }]`)
+  localStorage.setItem('logux:10:leader', `["",${ last }]`)
 
   client.start()
   expect(client.role).toEqual('candidate')
@@ -291,11 +291,11 @@ it('pings on leader role', async () => {
   expect(client.role).toEqual('leader')
   expect(client.watching).toBeUndefined()
   await delay(client.leaderPing + 10)
-  let data = JSON.parse(localStorage.getItem('logux:false:leader'))
+  let data = JSON.parse(localStorage.getItem('logux:10:leader'))
   expect(data[0]).toEqual(client.tabId)
   expect(Date.now() - data[1]).toBeLessThan(100)
 
-  emitStorage('logux:false:leader', `["",${ Date.now() }]`)
+  emitStorage('logux:10:leader', `["",${ Date.now() }]`)
   expect(client.role).toEqual('follower')
   expect(client.watching).toBeDefined()
 })
@@ -310,7 +310,7 @@ it('replaces dead leader', async () => {
   client = createClient()
   client.roleTimeout = client.leaderTimeout / 2
 
-  localStorage.setItem('logux:false:leader', `["",${ Date.now() }]`)
+  localStorage.setItem('logux:10:leader', `["",${ Date.now() }]`)
   client.start()
 
   await delay(client.roleTimeout)
@@ -328,8 +328,8 @@ it('disconnects on leader changes', async () => {
   client.node.state = 'connected'
 
   let now = Date.now()
-  localStorage.setItem('logux:false:leader', `["",${ now }]`)
-  emitStorage('logux:false:leader', `["",${ now }]`)
+  localStorage.setItem('logux:10:leader', `["",${ now }]`)
+  emitStorage('logux:10:leader', `["",${ now }]`)
 
   expect(client.node.connection.disconnect).toHaveBeenCalledTimes(1)
 })
@@ -344,12 +344,12 @@ it('updates state if tab is a leader', async () => {
   client.node.state = 'synchronized'
   client.node.emitter.emit('state')
   expect(client.state).toEqual('synchronized')
-  expect(localStorage.getItem('logux:false:state')).toEqual('"synchronized"')
+  expect(localStorage.getItem('logux:10:state')).toEqual('"synchronized"')
 })
 
 it('listens for leader state', () => {
-  localStorage.setItem('logux:false:leader', `["",${ Date.now() }]`)
-  localStorage.setItem('logux:false:state', '"connecting"')
+  localStorage.setItem('logux:10:leader', `["",${ Date.now() }]`)
+  localStorage.setItem('logux:10:state', '"connecting"')
 
   client = createClient()
   let states = []
@@ -359,14 +359,14 @@ it('listens for leader state', () => {
   client.start()
   expect(states).toEqual(['connecting'])
 
-  localStorage.removeItem('logux:false:state')
-  emitStorage('logux:false:state', null)
+  localStorage.removeItem('logux:10:state')
+  emitStorage('logux:10:state', null)
   expect(states).toEqual(['connecting'])
 
-  localStorage.setItem('logux:false:state', '"synchronized"')
-  emitStorage('logux:false:state', null)
-  emitStorage('logux:false:state', '"sending"')
-  emitStorage('logux:false:state', '"synchronized"')
+  localStorage.setItem('logux:10:state', '"synchronized"')
+  emitStorage('logux:10:state', null)
+  emitStorage('logux:10:state', '"sending"')
+  emitStorage('logux:10:state', '"synchronized"')
   expect(states).toEqual(['connecting', 'synchronized'])
 })
 
@@ -388,13 +388,13 @@ it('works on IE storage event', async () => {
   })
 
   client.start()
-  emitStorage('logux:false:leader', localStorage.getItem('logux:false:leader'))
+  emitStorage('logux:10:leader', localStorage.getItem('logux:10:leader'))
 
   await delay(client.electionDelay + 10)
   expect(client.role).toEqual('leader')
 
   emitStorage(
-    'logux:false:add',
+    'logux:10:add',
     `["${ client.tabId }",{},{"id":"0 A 0","reasons":[]}]`
   )
   expect(events).toEqual(0)
@@ -405,7 +405,7 @@ it('sends unleader event on tab closing', async () => {
   client.start()
   await delay(client.electionDelay + 10)
   window.dispatchEvent(new Event('unload'))
-  expect(localStorage.getItem('logux:false:leader')).toEqual('[]')
+  expect(localStorage.getItem('logux:10:leader')).toEqual('[]')
 })
 
 it('sends unleader event on destroy', async () => {
@@ -413,41 +413,41 @@ it('sends unleader event on destroy', async () => {
   client.start()
   await delay(client.electionDelay + 10)
   client.destroy()
-  expect(localStorage.getItem('logux:false:leader')).toEqual('[]')
+  expect(localStorage.getItem('logux:10:leader')).toEqual('[]')
 })
 
 it('does not sends event on tab closing in following mode', async () => {
   client = createClient()
 
   let prevLeader = `["",${ Date.now() }]`
-  localStorage.setItem('logux:false:leader', prevLeader)
+  localStorage.setItem('logux:10:leader', prevLeader)
   client.start()
 
   await delay(client.electionDelay + 10)
-  expect(localStorage.getItem('logux:false:leader')).toEqual(prevLeader)
+  expect(localStorage.getItem('logux:10:leader')).toEqual(prevLeader)
 })
 
 it('starts election on leader unload', async () => {
   client = createClient()
 
-  localStorage.setItem('logux:false:leader', `["",${ Date.now() }]`)
-  localStorage.setItem('logux:false:state', '"synchronized"')
+  localStorage.setItem('logux:10:leader', `["",${ Date.now() }]`)
+  localStorage.setItem('logux:10:state', '"synchronized"')
 
   client.start()
   await delay(client.electionDelay + 10)
-  emitStorage('logux:false:leader', '[]')
+  emitStorage('logux:10:leader', '[]')
   expect(client.role).toEqual('candidate')
   expect(client.state).toEqual('disconnected')
-  expect(localStorage.getItem('logux:false:state')).toEqual('"disconnected"')
-  expect(localStorage.getItem('logux:false:leader')).toContain(client.tabId)
+  expect(localStorage.getItem('logux:10:state')).toEqual('"disconnected"')
+  expect(localStorage.getItem('logux:10:leader')).toContain(client.tabId)
 })
 
 it('changes state on dead leader', () => {
   client = createClient()
 
   let last = Date.now() - client.leaderTimeout - 1
-  localStorage.setItem('logux:false:leader', `["",${ last }]`)
-  localStorage.setItem('logux:false:state', '"connecting"')
+  localStorage.setItem('logux:10:leader', `["",${ last }]`)
+  localStorage.setItem('logux:10:state', '"connecting"')
 
   client.start()
   expect(client.state).toEqual('disconnected')
@@ -458,13 +458,13 @@ it('changes state on leader death', async () => {
   client.roleTimeout = 20
 
   let last = Date.now() - client.leaderTimeout + 10
-  localStorage.setItem('logux:false:leader', `["",${ last }]`)
-  localStorage.setItem('logux:false:state', '"sending"')
+  localStorage.setItem('logux:10:leader', `["",${ last }]`)
+  localStorage.setItem('logux:10:state', '"sending"')
 
   client.start()
   await delay(client.roleTimeout + 20)
   expect(client.state).toEqual('disconnected')
-  expect(localStorage.getItem('logux:false:state')).toEqual('"disconnected"')
+  expect(localStorage.getItem('logux:10:state')).toEqual('"disconnected"')
 })
 
 it('cleans tab-specific action after timeout', async () => {
@@ -478,11 +478,11 @@ it('cleans tab-specific action after timeout', async () => {
 
 it('detects subscriptions from different tabs', () => {
   client = createClient()
-  emitStorage('logux:false:add', '["other",' +
+  emitStorage('logux:10:add', '["other",' +
     '{"type":"logux/subscribe","name":"a"},' +
     '{"sync":true,"id":"0 A 0","reasons":["syncing"]}' +
   ']')
-  emitStorage('logux:false:add', '["other",' +
+  emitStorage('logux:10:add', '["other",' +
     '{"type":"logux/processed","id":"0 A 0"},{"id":"1 A 0","reasons":[]}' +
   ']')
   expect(client.subscriptions).toEqual({
@@ -493,7 +493,7 @@ it('detects subscriptions from different tabs', () => {
 it('copies actions on memory store', () => {
   client = createClient()
   emitStorage(
-    'logux:false:add',
+    'logux:10:add',
     '["other",{"type":"A"},{"id":"1 A 0","reasons":[]}]'
   )
   expect(client.log.actions()).toEqual([{ type: 'A' }])
@@ -506,7 +506,7 @@ it('handles different subprotocols in tabs', () => {
     error = e
   })
   emitStorage(
-    'logux:false:add',
+    'logux:10:add',
     '["other",{"type":"A"},' +
     '{"id":"1 ' + client.nodeId + ' 0","reasons":[],"subprotocol":"1.0.1"}]'
   )
@@ -522,12 +522,12 @@ it('does not show alert on higher subprotocol', () => {
     error = e
   })
   emitStorage(
-    'logux:false:add',
+    'logux:10:add',
     '["other",{"type":"A"},' +
     '{"id":"1 ' + client.nodeId + ' 0","reasons":[],"subprotocol":"1.0.0"}]'
   )
   emitStorage(
-    'logux:false:add',
+    'logux:10:add',
     '["other",{"type":"A"},' +
     '{"id":"1 ' + client.nodeId + ' 0","reasons":[],"subprotocol":"0.9.0"}]'
   )
@@ -541,7 +541,7 @@ it('ignores non-digit subprotocols', () => {
     error = e
   })
   emitStorage(
-    'logux:false:add',
+    'logux:10:add',
     '["other",{"type":"A"},' +
     '{"id":"1 ' + client.nodeId + ' 0","reasons":[],"subprotocol":"1.0.0"}]'
   )
@@ -555,9 +555,9 @@ it('ignores subprotocols from server', () => {
     error = e
   })
   emitStorage(
-    'logux:false:add',
+    'logux:10:add',
     '["other",{"type":"A"},' +
-    '{"id":"1 false:other 0","reasons":[],"subprotocol":"2.0.0"}]'
+    '{"id":"1 10:other 0","reasons":[],"subprotocol":"2.0.0"}]'
   )
   expect(error).toBeUndefined()
 })
@@ -566,7 +566,7 @@ it('disables cross-tab communication on localStorage error', async () => {
   client = createClient()
   client.start()
 
-  localStorage.setItem('logux:false:leader', `["",${ Date.now() - 10 }]`)
+  localStorage.setItem('logux:10:leader', `["",${ Date.now() - 10 }]`)
   await delay(client.electionDelay + 10)
 
   let error = new Error('test')
