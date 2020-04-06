@@ -109,6 +109,16 @@ it('throws on missed user ID', () => {
   }).toThrow(/userId/)
 })
 
+it('throws on colon in user ID', () => {
+  expect(() => {
+    new Client({
+      subprotocol: '1.0.0',
+      server: 'wss://localhost:1337',
+      userId: 'admin:1'
+    })
+  }).toThrow(/colon/)
+})
+
 it('not warns on WSS', async () => {
   jest.spyOn(console, 'error').mockImplementation(() => { })
   let client = await createDialog()

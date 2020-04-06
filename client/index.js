@@ -36,6 +36,9 @@ class Client {
         throw new Error('Missed userId option in Logux client. ' +
                         'Pass false if you have no users.')
       }
+      if (this.options.userId.includes && this.options.userId.includes(':')) {
+        throw new Error('userId can’t contain colon character')
+      }
     }
 
     if (typeof this.options.prefix === 'undefined') {
