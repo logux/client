@@ -73,7 +73,7 @@ class Client {
 
     let auth
     if (/^ws:\/\//.test(this.options.server) && !opts.allowDangerousProtocol) {
-      auth = async cred => {
+      auth = async (nodeId, cred) => {
         if (typeof cred !== 'object' || cred.env !== 'development') {
           console.error(
             'Without SSL, old proxies block WebSockets. ' +
@@ -212,11 +212,11 @@ class Client {
     }
 
     this.node = new ClientNode(this.nodeId, this.log, connection, {
-      credentials: this.options.credentials,
       subprotocol: this.options.subprotocol,
       outFilter,
       timeout: this.options.timeout,
       outMap,
+      token: this.options.token,
       ping: this.options.ping,
       auth
     })

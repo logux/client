@@ -15,10 +15,10 @@ import { Client, ClientActionListener } from '../client'
  * const token = document.querySelector('meta[name=token]').content
  *
  * const client = new CrossTabClient({
- *   credentials: token.content,
  *   subprotocol: '1.0.0',
  *   server: 'wss://example.com:1337',
- *   userId: userId
+ *   userId,
+ *   token
  * })
  * client.start()
  * ```

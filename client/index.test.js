@@ -28,7 +28,7 @@ afterEach(() => {
   jest.clearAllMocks()
 })
 
-async function createDialog (opts, credentials) {
+async function createDialog (opts, token) {
   let pair = new TestPair()
 
   if (!opts) opts = { }
@@ -59,7 +59,7 @@ async function createDialog (opts, credentials) {
   await client.node.connection.connect()
   await pair.wait('right')
   pair.right.send(
-    ['connected', client.node.localProtocol, 'server', [0, 0], { credentials }]
+    ['connected', client.node.localProtocol, 'server', [0, 0], { token }]
   )
   await pair.wait('left')
   await Promise.resolve()
@@ -237,14 +237,14 @@ it('sends options to connection', () => {
 it('sends options to node', () => {
   let client = new Client({
     subprotocol: '1.0.0',
-    credentials: 'token',
     timeout: 2000,
     server: 'wss://localhost:1337',
     userId: '10',
+    token: 'token',
     ping: 1000
   })
   expect(client.node.options.subprotocol).toEqual('1.0.0')
-  expect(client.node.options.credentials).toEqual('token')
+  expect(client.node.options.token).toEqual('token')
   expect(client.node.options.timeout).toEqual(2000)
   expect(client.node.options.ping).toEqual(1000)
 })

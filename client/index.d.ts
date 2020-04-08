@@ -46,7 +46,7 @@ export type ClientOptions = {
   /**
    * Client credentials for authentication.
    */
-  credentials?: string
+  token?: string
 
   /**
    * Prefix for `IndexedDB` database to run multiple Logux instances

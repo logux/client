@@ -47,13 +47,13 @@ import { CrossTabClient, badge, badgeEn, log } from '@logux/client'
 import { badgeStyles } from '@logux/client/badge/style'
 
 let userId = document.querySelector('meta[name=user]').content
-let userToken = document.querySelector('meta[name=token]').content
+let token = document.querySelector('meta[name=token]').content
 
 const client = new CrossTabClient({
-  credentials: userToken,
   subprotocol: '1.0.0',
   server: 'wss://example.com:1337',
-  userId: userToken
+  userId,
+  token
 })
 
 badge(client, { messages: badgeEn, styles: badgeStyles })
