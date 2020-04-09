@@ -1,6 +1,14 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.8
+* Use Logux Core 0.5 and WebSocket Protocol 3.
+* Rename `credentials` option to `token`.
+* User ID must be always a string without `:`.
+* Token must be a string.
+* Add `Client#changeUser()` method.
+* Add support for dynamic tokens.
+
 ## 0.7
 * Add ES modules support.
 * Add TypeScript definitions.
