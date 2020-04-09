@@ -194,8 +194,7 @@ class Client {
     }
 
     let outFilter = async (action, meta) => {
-      let user = meta.id.split(' ')[1].replace(/:.*$/, '')
-      return !!meta.sync && user === this.options.userId
+      return !!meta.sync && meta.id.includes(` ${ this.options.userId }:`)
     }
 
     let outMap = async (action, meta) => {
