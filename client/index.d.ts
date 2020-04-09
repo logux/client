@@ -109,13 +109,13 @@ export type ClientOptions = {
  * const userId = document.querySelector('meta[name=user]').content
  * const token = document.querySelector('meta[name=token]').content
  *
- * const app = new Client({
+ * const client = new Client({
  *   credentials: token,
  *   subprotocol: '1.0.0',
  *   server: 'wss://example.com:1337',
  *   userId: userId
  * })
- * app.start()
+ * client.start()
  * ```
  */
 export class Client {
@@ -128,7 +128,7 @@ export class Client {
    * Client options.
    *
    * ```js
-   * console.log('Connecting to ' + app.options.server)
+   * console.log('Connecting to ' + client.options.server)
    * ````
    */
   options: ClientOptions
@@ -142,7 +142,7 @@ export class Client {
    * Unique tab ID. Can be used to add an action to the specific tab.
    *
    * ```js
-   * app.log.add(action, { tab: app.tabId })
+   * client.log.add(action, { tab: client.tabId })
    * ```
    */
   tabId: TabID
@@ -151,7 +151,7 @@ export class Client {
    * Unique Logux node ID.
    *
    * ```js
-   * console.log('Client ID: ', app.nodeId)
+   * console.log('Client ID: ', client.nodeId)
    * ```
    */
   nodeId: string
@@ -160,7 +160,7 @@ export class Client {
    * Client events log.
    *
    * ```js
-   * app.log.add(action)
+   * client.log.add(action)
    * ```
    */
   log: Log<ClientMeta>
@@ -178,7 +178,7 @@ export class Client {
    * Connect to server and reconnect on any connection problem.
    *
    * ```js
-   * app.start()
+   * client.start()
    * ```
    */
   start (): void
@@ -192,7 +192,7 @@ export class Client {
    * * `clean`: action has been removed from log (by any tab).
    *
    * ```js
-   * app.on('add', (action, meta) => {
+   * client.on('add', (action, meta) => {
    *   dispatch(action)
    * })
    * ```
@@ -210,7 +210,7 @@ export class Client {
    *
    * ```js
    * shutdown.addEventListener('click', () => {
-   *   app.destroy()
+   *   client.destroy()
    * })
    * ```
    */
@@ -221,7 +221,7 @@ export class Client {
    *
    * ```js
    * signout.addEventListener('click', () => {
-   *   app.clean()
+   *   client.clean()
    * })
    * ```
    *

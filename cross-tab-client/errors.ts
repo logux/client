@@ -1,12 +1,12 @@
 import { CrossTabClient } from '..'
 
-let app = new CrossTabClient({
+let client = new CrossTabClient({
   subprotocol: '1.0.0',
   server: 'ws://localhost',
   userId: '10'
 })
 
-app.on('preadd', (action, meta) => {
+client.on('preadd', (action, meta) => {
   // THROWS Type '1' is not assignable to type 'string'.
   action.type = 1
   // THROWS Type '1' is not assignable to type 'string | undefined'.
@@ -14,6 +14,6 @@ app.on('preadd', (action, meta) => {
 })
 
 // THROWS No overload matches this call.
-app.on('state', action => {
+client.on('state', action => {
   console.log(action.type)
 })

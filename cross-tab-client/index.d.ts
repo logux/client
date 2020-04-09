@@ -30,8 +30,8 @@ export class CrossTabClient extends Client {
    * listen to events from `leader`.
    *
    * ```js
-   * app.on('role', () => {
-   *   console.log('Tab role:', app.role)
+   * client.on('role', () => {
+   *   console.log('Tab role:', client.role)
    * })
    * ```
    */
@@ -67,7 +67,7 @@ export class CrossTabClient extends Client {
    * * `state`: leader tab synchronization state has been changed.
    *
    * ```js
-   * app.on('add', (action, meta) => {
+   * client.on('add', (action, meta) => {
    *   dispatch(action)
    * })
    * ```
