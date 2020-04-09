@@ -25,7 +25,7 @@
     "node": ">=10.0.0"
   },
   "dependencies": {
-    "@logux/core": "logux/core#next",
+    "@logux/core": "^0.5.1",
     "browser-supports-log-styles": "^1.1.7",
     "nanoevents": "^5.1.5",
     "nanoid": "^3.0.2"
