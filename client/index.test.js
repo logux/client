@@ -170,9 +170,7 @@ it('ignores WS in development', async () => {
   jest.spyOn(console, 'error').mockImplementation(() => { })
   let client = await createDialog({
     server: 'ws://test.com'
-  }, {
-    env: 'development'
-  })
+  }, 'development')
   expect(client.node.connected).toBe(true)
   expect(console.error).not.toHaveBeenCalledWith()
 })

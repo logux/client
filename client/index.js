@@ -73,8 +73,8 @@ class Client {
 
     let auth
     if (/^ws:\/\//.test(this.options.server) && !opts.allowDangerousProtocol) {
-      auth = async (nodeId, cred) => {
-        if (typeof cred !== 'object' || cred.env !== 'development') {
+      auth = async (nodeId, env) => {
+        if (env !== 'development') {
           console.error(
             'Without SSL, old proxies block WebSockets. ' +
             'Use WSS for Logux or set allowDangerousProtocol option.'
