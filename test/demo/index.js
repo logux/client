@@ -1,6 +1,6 @@
 import {
   MemoryStore, ClientNode, LocalPair, BaseNode, Log
-} from '@logux/core/memory-store'
+} from '@logux/core'
 
 import { CrossTabClient } from '../../cross-tab-client'
 import { badge, badgeEn } from '../../badge'
@@ -32,7 +32,7 @@ serverLog.on('add', (action, meta) => {
 
 let client = new CrossTabClient({
   subprotocol: '1.0.0',
-  userId: 10,
+  userId: '10',
   server: 'wss://example.com/'
 })
 
