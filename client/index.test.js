@@ -590,3 +590,30 @@ it('tells last action time during resubscription', async () => {
     }
   ])
 })
+
+it('changes user ID', async () => {
+  let client = await createDialog()
+  client.changeUser('20', 'token')
+  expect(client.node.state).toEqual('connecting')
+  client.node.connection.pair.right.send(
+    ['connected', client.node.localProtocol, 'server', [0, 0]]
+  )
+  await client.node.waitFor('synchronized')
+})
+
+it('changes user ID of disconnected node', async () => {
+  let client = await createDialog()
+  client.node.connection.disconnect()
+  client.changeUser('20', 'token')
+  expect(client.node.state).toEqual('disconnected')
+})
+
+it('checks user ID during changing', async () => {
+  let client = await createDialog()
+  expect(() => {
+    client.changeUser(20, 'token')
+  }).toThrow(/userId must be a string/)
+  expect(() => {
+    client.changeUser('admin:20', 'token')
+  }).toThrow(/colon/)
+})

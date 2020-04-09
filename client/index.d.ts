@@ -206,6 +206,24 @@ export class Client {
   ): Unsubscribe
 
   /**
+   * Disconnect from the server, update user, and connect again
+   * with new credentials.
+   *
+   * ```js
+   * onAuth(async (userId, token) => {
+   *   showLoader()
+   *   client.changeUser(userId, token)
+   *   await client.waitFor('synchronized')
+   *   hideLoader()
+   * })
+   * ```
+   *
+   * @param userId The new user ID.
+   * @param token Credentials for new user.
+   */
+  changeUser (userId: string, token: string): void
+
+  /**
    * Disconnect and stop synchronization.
    *
    * ```js

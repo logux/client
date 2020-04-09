@@ -7,6 +7,8 @@ let { Reconnect } = require('@logux/core/reconnect')
 let { nanoid } = require('nanoid')
 let { Log } = require('@logux/core/log')
 
+let ALLOWED_META = ['id', 'time', 'channels']
+
 function tabPing (c) {
   localStorage.setItem(c.options.prefix + ':tab:' + c.tabId, Date.now())
 }
@@ -18,8 +20,6 @@ function cleanTabActions (client, id) {
     }
   })
 }
-
-let ALLOWED_META = ['id', 'time', 'channels']
 
 class Client {
   constructor (opts = { }) {
@@ -257,6 +257,35 @@ class Client {
 
   on (event, listener) {
     return this.log.emitter.on(event, listener)
+  }
+
+  changeUser (userId, token) {
+    if (process.env.NODE_ENV !== 'production') {
+      if (typeof userId !== 'string') {
+        throw new Error('userId must be a string')
+      }
+      if (userId.includes(':')) {
+        throw new Error('userId can’t contain colon character')
+      }
+    }
+
+    let wasConnected = this.node.connected
+    if (wasConnected) this.node.connection.disconnect('freeze')
+
+    this.options.userId = userId
+    this.options.token = token
+    this.clientId = userId + this.clientId.split(':')[1]
+    this.nodeId = this.clientId + ':' + this.tabId
+
+    let events = this.node.emitter.events
+    this.node.connection.emitter.events = { }
+    this.node = new ClientNode(this.nodeId, this.log, this.node.connection, {
+      ...this.node.options,
+      token: this.options.token
+    })
+    this.node.emitter.events = events
+
+    if (wasConnected) this.node.connection.connect()
   }
 
   destroy () {
