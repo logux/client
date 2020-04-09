@@ -15,7 +15,7 @@ type UserRenameAction = Action & {
   name: string
 }
 
-function isUserRename (action): action is UserRenameAction {
+function isUserRename (action: Action): action is UserRenameAction {
   return action.type === 'user/rename'
 }
 

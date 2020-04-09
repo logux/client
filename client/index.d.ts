@@ -1,7 +1,7 @@
 import { Unsubscribe } from 'nanoevents'
 
 import {
-  Connection, Store, TestTime, Log, ClientNode, Action, Meta, ID
+  Connection, Store, TestTime, Log, ClientNode, Action, Meta, TokenGenerator
 } from '@logux/core'
 
 type TabID = string
@@ -46,7 +46,7 @@ export type ClientOptions = {
   /**
    * Client credentials for authentication.
    */
-  token?: string
+  token?: string | TokenGenerator
 
   /**
    * Prefix for `IndexedDB` database to run multiple Logux instances

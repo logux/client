@@ -12,8 +12,3 @@ client.on('preadd', (action, meta) => {
   // THROWS Type '1' is not assignable to type 'string | undefined'.
   meta.tab = 1
 })
-
-// THROWS No overload matches this call.
-client.on('state', action => {
-  console.log(action.type)
-})
