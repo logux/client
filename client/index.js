@@ -274,7 +274,7 @@ class Client {
 
     this.options.userId = userId
     this.options.token = token
-    this.clientId = userId + this.clientId.split(':')[1]
+    this.clientId = userId + ':' + this.clientId.split(':')[1]
     this.nodeId = this.clientId + ':' + this.tabId
 
     let events = this.node.emitter.events

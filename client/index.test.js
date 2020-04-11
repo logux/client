@@ -605,6 +605,7 @@ it('changes user ID of disconnected node', async () => {
   let client = await createDialog()
   client.node.connection.disconnect()
   client.changeUser('20', 'token')
+  expect(client.node.localNodeId).toEqual('20:1:1')
   expect(client.node.state).toEqual('disconnected')
 })
 
