@@ -1,6 +1,9 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.8.1
+* Fix node ID generation in `Client#changeUser()`.
+
 ## 0.8
 * Use Logux Core 0.5 and WebSocket Protocol 3.
 * Rename `credentials` option to `token`.
