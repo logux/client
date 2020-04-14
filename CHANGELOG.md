@@ -1,6 +1,9 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.8.2
+* Remove support of old servers.
+
 ## 0.8.1
 * Fix node ID generation in `Client#changeUser()`.
 
