@@ -406,7 +406,7 @@ it('filters data before sending', async () => {
       'sync',
       1,
       { type: 'a' },
-      { id: [1, 'a:client:uuid', 0], time: 1, channels: ['user:0'] }
+      { id: [1, 'a:client:uuid', 0], time: 1 }
     ]
   ])
 })

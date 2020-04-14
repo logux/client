@@ -200,11 +200,12 @@ class Client {
     let outMap = async (action, meta) => {
       let filtered = { }
       for (let i in meta) {
-        if (ALLOWED_META.includes(i)) {
+        if (i === 'subprotocol') {
+          if (meta.subprotocol !== this.options.subprotocol) {
+            filtered.subprotocol = meta.subprotocol
+          }
+        } else if (ALLOWED_META.includes(i)) {
           filtered[i] = meta[i]
-        }
-        if (meta.subprotocol && meta.subprotocol !== this.options.subprotocol) {
-          filtered.subprotocol = meta.subprotocol
         }
       }
       return [action, filtered]
