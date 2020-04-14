@@ -7,7 +7,7 @@ let { Reconnect } = require('@logux/core/reconnect')
 let { nanoid } = require('nanoid')
 let { Log } = require('@logux/core/log')
 
-let ALLOWED_META = ['id', 'time', 'channels']
+let ALLOWED_META = ['id', 'time', 'subprotocol']
 
 function tabPing (c) {
   localStorage.setItem(c.options.prefix + ':tab:' + c.tabId, Date.now())
