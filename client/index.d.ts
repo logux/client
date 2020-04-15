@@ -213,7 +213,7 @@ export class Client {
    * onAuth(async (userId, token) => {
    *   showLoader()
    *   client.changeUser(userId, token)
-   *   await client.waitFor('synchronized')
+   *   await client.node.waitFor('synchronized')
    *   hideLoader()
    * })
    * ```
