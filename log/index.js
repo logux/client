@@ -97,6 +97,13 @@ function log (client, messages = { }) {
         } else {
           showLog(message, action)
         }
+      } else if (action.type === 'logux/unsubscribe') {
+        message = 'unsubscribed from channel ' + style(action.channel)
+        if (Object.keys(action).length === 2) {
+          showLog(message)
+        } else {
+          showLog(message, action)
+        }
       } else if (action.type === 'logux/processed') {
         showLog('action ' + style(action.id) + ' was processed')
       } else if (action.type === 'logux/undo') {
@@ -132,6 +139,7 @@ function log (client, messages = { }) {
       if (meta.tab && meta.tab !== client.id) return
       if (ignore[action.type]) return
       if (action.type === 'logux/subscribe') return
+      if (action.type === 'logux/unsubscribe') return
       if (action.type === 'logux/processed') return
       if (action.type === 'logux/undo') return
       let message = 'cleaned ' + style(action.type) + ' action'

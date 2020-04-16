@@ -231,6 +231,13 @@ it('shows subscription action', async () => {
     'Logux subscribed to channel A',
     { type: 'logux/subscribe', channel: 'A', a: 1 }
   )
+  await client.node.log.add({ type: 'logux/unsubscribe', channel: 'A' })
+  expect(console.log).toHaveBeenCalledWith('Logux unsubscribed from channel A')
+  await client.node.log.add({ type: 'logux/unsubscribe', channel: 'A', a: 1 })
+  expect(console.log).toHaveBeenLastCalledWith(
+    'Logux unsubscribed from channel A',
+    { type: 'logux/unsubscribe', channel: 'A', a: 1 }
+  )
 })
 
 it('shows processed action', async () => {
