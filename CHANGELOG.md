@@ -1,6 +1,9 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.8.4
+* Fix `log()` for `logux/unsubscribe` actions.
+
 ## 0.8.3
 * Update log’s node ID on `Client#changeUser()` call.
 
