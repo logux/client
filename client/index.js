@@ -280,6 +280,7 @@ class Client {
 
     let events = this.node.emitter.events
     this.node.connection.emitter.events = { }
+    this.log.nodeId = this.nodeId
     this.node = new ClientNode(this.nodeId, this.log, this.node.connection, {
       ...this.node.options,
       token: this.options.token

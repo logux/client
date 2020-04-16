@@ -6,7 +6,7 @@ let { Client } = require('..')
 beforeEach(() => {
   Object.defineProperty(global, '_localStorage', {
     value: {
-      storage: { },
+      storage: {},
       setItem (key, value) {
         this[key] = value
         this.storage[key] = value
@@ -31,7 +31,7 @@ afterEach(() => {
 async function createDialog (opts, token) {
   let pair = new TestPair()
 
-  if (!opts) opts = { }
+  if (!opts) opts = {}
   if (!opts.subprotocol) opts.subprotocol = '1.0.0'
   if (!opts.userId) opts.userId = '10'
   if (!opts.server) opts.server = pair.left
@@ -607,6 +607,8 @@ it('changes user ID of disconnected node', async () => {
   client.changeUser('20', 'token')
   expect(client.node.localNodeId).toEqual('20:1:1')
   expect(client.node.state).toEqual('disconnected')
+  let meta = await client.log.add({ type: 'test' })
+  expect(meta.id).toContain(' 20:1:1 ')
 })
 
 it('checks user ID during changing', async () => {
