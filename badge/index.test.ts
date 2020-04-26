@@ -195,13 +195,6 @@ it('supports middle-center position setting', async () => {
   expect(badgeNode().style.transform).toEqual('translate(-50%, -50%)')
 })
 
-it('supports center-middle position setting', async () => {
-  await createTest({ position: 'center-middle' })
-  expect(badgeNode().style.top).toEqual('50%')
-  expect(badgeNode().style.left).toEqual('50%')
-  expect(badgeNode().style.transform).toEqual('translate(-50%, -50%)')
-})
-
 it('removes badge from DOM', () => {
   let pair = new TestPair()
   let client = new CrossTabClient({

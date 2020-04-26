@@ -46,7 +46,7 @@ type BadgeOptions = {
    * Widget position. Default is `bottom-right`.
    */
   position?: 'top-left' | 'top-center' | 'top-right' |
-             'middle-left' | 'middle-center' | 'center-middle' | 'middle-right' |
+             'middle-left' | 'middle-center' | 'middle-right' |
              'bottom-left' | 'bottom-center' | 'bottom-right'
 
   /**
