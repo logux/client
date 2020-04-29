@@ -44,7 +44,7 @@ See [documentation] for Logux API.
 
 ```js
 import { CrossTabClient, badge, badgeEn, log } from '@logux/client'
-import { badgeStyles } from '@logux/client/badge/style'
+import { badgeStyles } from '@logux/client/badge/styles'
 
 let userId = document.querySelector('meta[name=user]').content
 let token = document.querySelector('meta[name=token]').content
