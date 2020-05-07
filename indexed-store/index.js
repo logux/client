@@ -1,6 +1,6 @@
 let { isFirstOlder } = require('@logux/core')
 
-if ( !global )  // global is undefined in the Browser. NF 7/05/2020
+if ( typeof document !== 'undefined' && !global )  // global is undefined in the Browser. NF 7/05/2020
     global = window
 
 const VERSION = 1
