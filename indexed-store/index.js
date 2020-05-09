@@ -1,7 +1,7 @@
 let { isFirstOlder } = require('@logux/core')
 
 // global is undefined in the Browser. NF 7/05/2020
-const _global = (typeof document !== 'undefined' && !global) ? window : global    
+const _global = (typeof document !== 'undefined' && !global) ? window : global
 
 const VERSION = 1
 
