@@ -1,8 +1,5 @@
 let { isFirstOlder } = require('@logux/core')
 
-// global is undefined in the Browser. NF 7/05/2020
-const _global = (typeof document !== 'undefined' && !global) ? window : global
-
 const VERSION = 1
 
 function rejectify (request, reject) {
@@ -71,8 +68,8 @@ class IndexedStore {
       store.db = db
       db.onversionchange = function () {
         store.db.close()
-        if (_global.document && _global.document.reload) {
-          _global.document.reload()
+        if (typeof document !== 'undefined' && document.reload) {
+          document.reload()
         }
       }
       return store
@@ -267,7 +264,7 @@ class IndexedStore {
   async clean () {
     let store = await this.init()
     store.db.close()
-    await promisify(_global.indexedDB.deleteDatabase(store.name))
+    await promisify(indexedDB.deleteDatabase(store.name))
   }
 }
 
