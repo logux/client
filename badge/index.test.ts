@@ -1,18 +1,20 @@
+import { BadgeOptions } from "./index";
+
 let { LoguxError, TestPair, TestTime } = require('@logux/core')
 let { delay } = require('nanodelay')
 
 let { CrossTabClient, badge, badgeEn } = require('..')
 let { badgeStyles } = require('./styles')
 
-function badgeNode () {
-  return document.querySelector('div')
+function badgeNode (): HTMLElement {
+  return document.querySelector('div')!
 }
 
 function getBadgeMessage () {
-  return badgeNode().childNodes[0].innerHTML
+  return badgeNode().children[0].innerHTML
 }
 
-async function createTest (override) {
+async function createTest (override?: Partial<BadgeOptions>) {
   let pair = new TestPair()
   let client = new CrossTabClient({
     subprotocol: '1.0.0',
@@ -29,10 +31,8 @@ async function createTest (override) {
 
   pair.leftNode.catch(() => true)
   await pair.left.connect()
-  let opts = { messages: badgeEn, styles: badgeStyles }
-  for (let i in override) {
-    opts[i] = override[i]
-  }
+  let opts: BadgeOptions = { messages: badgeEn, styles: badgeStyles }
+  Object.assign(opts, override);
   badge(client, opts)
   return pair
 }
@@ -45,7 +45,7 @@ afterEach(() => {
 it('injects base widget styles', async () => {
   await createTest()
   expect(badgeNode().style.position).toEqual('fixed')
-  expect(badgeNode().childNodes[0].style.display).toEqual('table-cell')
+  expect((badgeNode().children[0] as HTMLElement).style.display).toEqual('table-cell')
 })
 
 it('shows synchronized state', async () => {
@@ -190,13 +190,6 @@ it('supports bottom and center side of position setting', async () => {
 
 it('supports middle-center position setting', async () => {
   await createTest({ position: 'middle-center' })
-  expect(badgeNode().style.top).toEqual('50%')
-  expect(badgeNode().style.left).toEqual('50%')
-  expect(badgeNode().style.transform).toEqual('translate(-50%, -50%)')
-})
-
-it('supports center-middle position setting', async () => {
-  await createTest({ position: 'center-middle' })
   expect(badgeNode().style.top).toEqual('50%')
   expect(badgeNode().style.left).toEqual('50%')
   expect(badgeNode().style.transform).toEqual('translate(-50%, -50%)')
