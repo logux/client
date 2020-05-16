@@ -1,6 +1,7 @@
 import { Unsubscribe } from 'nanoevents'
+import { Log } from '@logux/core'
 
-import { Client, ClientActionListener } from '../client'
+import { Client, ClientActionListener, ClientMeta } from '../client'
 
 /**
  * Low-level browser API for Logux.
@@ -23,8 +24,10 @@ import { Client, ClientActionListener } from '../client'
  * client.start()
  * ```
  */
-export class CrossTabClient extends Client {
-
+export class CrossTabClient<
+  H extends object = {},
+  L extends Log = Log<ClientMeta>
+> extends Client<H, L> {
   /**
    * Current tab role. Only `leader` tab connects to server. `followers` just
    * listen to events from `leader`.
@@ -76,10 +79,9 @@ export class CrossTabClient extends Client {
    * @param listener The listener function.
    * @returns Unbind listener from event.
    */
+  on (event: 'role' | 'state', listener: () => void): Unsubscribe
   on (
-    event: 'role' | 'state', listener: () => void
-  ): Unsubscribe
-  on (
-    event: 'preadd' | 'add' | 'clean', listener: ClientActionListener
+    event: 'preadd' | 'add' | 'clean',
+    listener: ClientActionListener
   ): Unsubscribe
 }

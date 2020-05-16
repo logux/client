@@ -30,17 +30,21 @@ function attention (client) {
   }
 
   if (doc && typeof doc.hidden !== 'undefined') {
-    unbind.push(client.node.on('error', error => {
-      if (error.type !== 'timeout' && !timeout) {
-        blink()
-      }
-    }))
+    unbind.push(
+      client.node.on('error', error => {
+        if (error.type !== 'timeout' && !timeout) {
+          blink()
+        }
+      })
+    )
 
-    unbind.push(client.on('add', action => {
-      if (action.type === 'logux/undo' && action.reason && !timeout) {
-        blink()
-      }
-    }))
+    unbind.push(
+      client.on('add', action => {
+        if (action.type === 'logux/undo' && action.reason && !timeout) {
+          blink()
+        }
+      })
+    )
 
     document.addEventListener('visibilitychange', tabListener, false)
     unbind.push(() => {

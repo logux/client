@@ -7,5 +7,5 @@ deploy:
   skip-cleanup: true
   github-token: $GITHUB_TOKEN
   local-dir: test/demo/build
-  on:
+  "on":
     branch: master

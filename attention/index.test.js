@@ -25,7 +25,7 @@ async function createClient () {
     userId: '10'
   })
 
-  client.node.catch(() => { })
+  client.node.catch(() => {})
   client.role = 'leader'
 
   await pair.left.connect()

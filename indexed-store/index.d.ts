@@ -1,4 +1,4 @@
-import { Store } from '@logux/core'
+import { LogStore } from '@logux/core'
 
 /**
  * `IndexedDB` store for Logux log.
@@ -19,7 +19,7 @@ import { Store } from '@logux/core'
  * })
  * ```
  */
-export class IndexedStore extends Store {
+export class IndexedStore extends LogStore {
   /**
    * @param name Database name to run multiple Logux instances on same web page.
    */

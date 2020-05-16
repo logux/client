@@ -1,4 +1,5 @@
 import { Action } from '@logux/core'
+
 import { Client } from '..'
 
 let client = new Client({
@@ -10,8 +11,8 @@ let client = new Client({
 client.log.add({ type: 'A' }, { extra: 1 })
 
 type UserRenameAction = Action & {
-  type: 'user/rename',
-  userId: string,
+  type: 'user/rename'
+  userId: string
   name: string
 }
 

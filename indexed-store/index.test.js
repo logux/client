@@ -56,10 +56,13 @@ afterEach(async () => {
 })
 
 eachStoreCheck((desc, creator) => {
-  it(`${ desc }`, creator(() => {
-    store = new IndexedStore()
-    return store
-  }))
+  it(
+    `${desc}`,
+    creator(() => {
+      store = new IndexedStore()
+      return store
+    })
+  )
 })
 
 it('use logux as default name', async () => {
@@ -98,7 +101,7 @@ it('throws a errors', async () => {
   let error = new Error('test')
   global.indexedDB = {
     open () {
-      let request = { }
+      let request = {}
       setTimeout(() => {
         request.onerror({ target: { error } })
       }, 1)
@@ -126,10 +129,10 @@ it('works with broken lastSynced', async () => {
 
 it('updates reasons cache', async () => {
   store = new IndexedStore()
-  await store.add({ }, { id: '1', time: 1, reasons: ['a'] })
+  await store.add({}, { id: '1', time: 1, reasons: ['a'] })
   await store.changeMeta('1', { reasons: ['a', 'b', 'c'] })
-  await store.removeReason('b', { }, () => { })
+  await store.removeReason('b', {}, () => {})
   await check(store, [
-    [{ }, { added: 1, id: '1', time: 1, reasons: ['a', 'c'] }]
+    [{}, { added: 1, id: '1', time: 1, reasons: ['a', 'c'] }]
   ])
 })

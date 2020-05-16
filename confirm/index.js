@@ -30,17 +30,19 @@ function confirm (client) {
   unbind.push(client.on('state', update))
   update()
 
-  unbind.push(client.on('add', (action, meta) => {
-    if (action.type === 'logux/subscribe') {
-      return
-    } else if (action.type === 'logux/unsubscribe') {
-      return
-    }
-    if (disconnected && meta.sync && meta.added) {
-      wait = true
-      update()
-    }
-  }))
+  unbind.push(
+    client.on('add', (action, meta) => {
+      if (action.type === 'logux/subscribe') {
+        return
+      } else if (action.type === 'logux/unsubscribe') {
+        return
+      }
+      if (disconnected && meta.sync && meta.added) {
+        wait = true
+        update()
+      }
+    })
+  )
 
   return () => {
     for (let i of unbind) i()

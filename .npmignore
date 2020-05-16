@@ -1,11 +1,9 @@
 yarn-error.log
 yarn.lock
 
-.editorconfig
 test/
 coverage/
-.travis.yml
-
-**/*.test.js
 **/types.ts
 **/errors.ts
+**/*.test.ts
+tsconfig.json

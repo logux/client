@@ -134,11 +134,11 @@ function setState (client, state) {
 }
 
 function isMemory (store) {
-  return store.created && store.added
+  return Array.isArray(store.entries) && Array.isArray(store.added)
 }
 
 class CrossTabClient extends Client {
-  constructor (opts = { }) {
+  constructor (opts = {}) {
     super(opts)
 
     this.role = 'candidate'
@@ -229,10 +229,14 @@ class CrossTabClient extends Client {
         let action = data[1]
         let meta = data[2]
         if (areWeOutdates(this, meta)) {
-          let err = new LoguxError('wrong-subprotocol', {
-            supported: meta.subprotocol,
-            used: this.node.options.subprotocol
-          }, true)
+          let err = new LoguxError(
+            'wrong-subprotocol',
+            {
+              supported: meta.subprotocol,
+              used: this.node.options.subprotocol
+            },
+            true
+          )
           this.node.emitter.emit('error', err)
         }
         if (!meta.tab || meta.tab === this.tabId) {

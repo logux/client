@@ -65,27 +65,31 @@ function badge (client, opts) {
     widget.style.display = 'none'
   }
 
-  let unbind = status(client, state => {
-    if (state === 'sendingAfterWait' || state === 'connectingAfterWait') {
-      show(styles.sending, messages.sending)
-    } else if (state === 'synchronizedAfterWait') {
-      show(styles.synchronized, messages.synchronized)
-    } else if (state === 'synchronized') {
-      hide(widget)
-    } else if (state === 'disconnected') {
-      show(styles.disconnected, messages.disconnected)
-    } else if (state === 'wait') {
-      show(styles.wait, messages.wait)
-    } else if (state === 'protocolError') {
-      show(styles.protocolError, messages.protocolError)
-    } else if (state === 'syncError') {
-      show(styles.error, messages.syncError)
-    } else if (state === 'error') {
-      show(styles.error, messages.error)
-    } else if (state === 'denied') {
-      show(styles.error, messages.denied)
-    }
-  }, opts)
+  let unbind = status(
+    client,
+    state => {
+      if (state === 'sendingAfterWait' || state === 'connectingAfterWait') {
+        show(styles.sending, messages.sending)
+      } else if (state === 'synchronizedAfterWait') {
+        show(styles.synchronized, messages.synchronized)
+      } else if (state === 'synchronized') {
+        hide(widget)
+      } else if (state === 'disconnected') {
+        show(styles.disconnected, messages.disconnected)
+      } else if (state === 'wait') {
+        show(styles.wait, messages.wait)
+      } else if (state === 'protocolError') {
+        show(styles.protocolError, messages.protocolError)
+      } else if (state === 'syncError') {
+        show(styles.error, messages.syncError)
+      } else if (state === 'error') {
+        show(styles.error, messages.error)
+      } else if (state === 'denied') {
+        show(styles.error, messages.denied)
+      }
+    },
+    opts
+  )
 
   widget.appendChild(text)
   document.body.appendChild(widget)

@@ -12,8 +12,10 @@ function favicon (client, links) {
     if (client.connected && prevFav !== normal) {
       fav.href = prevFav = normal
     } else if (
-      !client.connected && offline &&
-      prevFav !== offline && prevFav !== error
+      !client.connected &&
+      offline &&
+      prevFav !== offline &&
+      prevFav !== error
     ) {
       fav.href = prevFav = offline
     }
@@ -42,13 +44,17 @@ function favicon (client, links) {
     unbind.push(client.on('state', update))
     update()
 
-    unbind.push(client.on('add', action => {
-      if (action.type === 'logux/undo' && action.reason) setError()
-    }))
+    unbind.push(
+      client.on('add', action => {
+        if (action.type === 'logux/undo' && action.reason) setError()
+      })
+    )
 
-    unbind.push(client.node.on('error', err => {
-      if (err.type !== 'timeout') setError()
-    }))
+    unbind.push(
+      client.node.on('error', err => {
+        if (err.type !== 'timeout') setError()
+      })
+    )
   }
 
   return () => {

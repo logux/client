@@ -58,9 +58,13 @@ async function createDialog (opts, token) {
 
   await client.node.connection.connect()
   await pair.wait('right')
-  pair.right.send(
-    ['connected', client.node.localProtocol, 'server', [0, 0], { token }]
-  )
+  pair.right.send([
+    'connected',
+    client.node.localProtocol,
+    'server',
+    [0, 0],
+    { token }
+  ])
   await pair.wait('left')
   await Promise.resolve()
   if (client.node.connected) {
@@ -140,24 +144,24 @@ it('throws on non-string in user ID', () => {
 })
 
 it('not warns on WSS', async () => {
-  jest.spyOn(console, 'error').mockImplementation(() => { })
+  jest.spyOn(console, 'error').mockImplementation(() => {})
   let client = await createDialog()
   expect(client.node.connected).toBe(true)
   expect(console.error).not.toHaveBeenCalledWith()
 })
 
 it('forces to use WSS in production domain', async () => {
-  jest.spyOn(console, 'error').mockImplementation(() => { })
+  jest.spyOn(console, 'error').mockImplementation(() => {})
   let client = await createDialog({ server: 'ws://test.com' })
   expect(client.node.connected).toBe(false)
   expect(console.error).toHaveBeenCalledWith(
     'Without SSL, old proxies block WebSockets. ' +
-    'Use WSS for Logux or set allowDangerousProtocol option.'
+      'Use WSS for Logux or set allowDangerousProtocol option.'
   )
 })
 
 it('ignores WS with allowDangerousProtocol', async () => {
-  jest.spyOn(console, 'error').mockImplementation(() => { })
+  jest.spyOn(console, 'error').mockImplementation(() => {})
   let client = await createDialog({
     allowDangerousProtocol: true,
     server: 'ws://test.com'
@@ -167,10 +171,13 @@ it('ignores WS with allowDangerousProtocol', async () => {
 })
 
 it('ignores WS in development', async () => {
-  jest.spyOn(console, 'error').mockImplementation(() => { })
-  let client = await createDialog({
-    server: 'ws://test.com'
-  }, 'development')
+  jest.spyOn(console, 'error').mockImplementation(() => {})
+  let client = await createDialog(
+    {
+      server: 'ws://test.com'
+    },
+    'development'
+  )
   expect(client.node.connected).toBe(true)
   expect(console.error).not.toHaveBeenCalledWith()
 })
@@ -260,7 +267,7 @@ it('connects', () => {
 })
 
 it('display server debug error stacktrace with prefix', () => {
-  jest.spyOn(console, 'error').mockImplementation(() => { })
+  jest.spyOn(console, 'error').mockImplementation(() => {})
   let client = createClient()
   client.node.emitter.emit('debug', 'error', 'Fake stacktrace\n')
   expect(console.error).toHaveBeenCalledWith(
@@ -270,7 +277,7 @@ it('display server debug error stacktrace with prefix', () => {
 })
 
 it('does not display server debug message if type is not error', () => {
-  jest.spyOn(console, 'error').mockImplementation(() => { })
+  jest.spyOn(console, 'error').mockImplementation(() => {})
   let client = createClient()
   client.node.emitter.emit('debug', 'notError', 'Fake stacktrace\n')
   expect(console.error).not.toHaveBeenCalled()
@@ -306,7 +313,8 @@ it('cleans own actions on destroy', async () => {
   let client = createClient()
   client.start()
   await client.log.add(
-    { type: 'A' }, { tab: client.tabId, reasons: ['tab' + client.tabId] }
+    { type: 'A' },
+    { tab: client.tabId, reasons: ['tab' + client.tabId] }
   )
   client.destroy()
   await delay(1)
@@ -318,7 +326,8 @@ it('cleans own actions on unload', async () => {
   let client = createClient()
   client.start()
   await client.log.add(
-    { type: 'A' }, { tab: client.tabId, reasons: ['tab' + client.tabId] }
+    { type: 'A' },
+    { tab: client.tabId, reasons: ['tab' + client.tabId] }
   )
   window.dispatchEvent(new Event('unload'))
   await delay(1)
@@ -382,32 +391,33 @@ it('filters data before sending', async () => {
   let client = await createDialog({ userId: 'a' })
   client.node.connection.pair.clear()
   await Promise.all([
-    client.log.add({ type: 'a' }, {
-      id: '1 a:client:uuid 0',
-      time: 1,
-      sync: true,
-      users: ['0'],
-      nodes: ['0:client:uuid'],
-      custom: 1,
-      reasons: ['test'],
-      clients: ['0:client'],
-      channels: ['user:0']
-    }),
-    client.log.add({ type: 'c' }, {
-      id: '1 0:client:uuid 0',
-      sync: true,
-      reasons: ['test']
-    })
+    client.log.add(
+      { type: 'a' },
+      {
+        id: '1 a:client:uuid 0',
+        time: 1,
+        sync: true,
+        users: ['0'],
+        nodes: ['0:client:uuid'],
+        custom: 1,
+        reasons: ['test'],
+        clients: ['0:client'],
+        channels: ['user:0']
+      }
+    ),
+    client.log.add(
+      { type: 'c' },
+      {
+        id: '1 0:client:uuid 0',
+        sync: true,
+        reasons: ['test']
+      }
+    )
   ])
   client.node.connection.pair.right.send(['synced', 1])
   await client.node.waitFor('synchronized')
   expect(client.node.connection.pair.leftSent).toEqual([
-    [
-      'sync',
-      1,
-      { type: 'a' },
-      { id: [1, 'a:client:uuid', 0], time: 1 }
-    ]
+    ['sync', 1, { type: 'a' }, { id: [1, 'a:client:uuid', 0], time: 1 }]
   ])
 })
 
@@ -439,14 +449,21 @@ it('compresses subprotocol', async () => {
   await client.node.waitFor('synchronized')
   expect(client.node.connection.pair.leftSent).toEqual([
     ['sync', 1, { type: 'a' }, { id: [1, '10:client:id', 0], time: 1 }],
-    ['sync', 2, { type: 'a' }, {
-      id: [2, '10:client:id', 0], time: 2, subprotocol: '2.0.0'
-    }]
+    [
+      'sync',
+      2,
+      { type: 'a' },
+      {
+        id: [2, '10:client:id', 0],
+        time: 2,
+        subprotocol: '2.0.0'
+      }
+    ]
   ])
 })
 
 it('warns about subscription actions without sync', async () => {
-  jest.spyOn(console, 'error').mockImplementation(() => { })
+  jest.spyOn(console, 'error').mockImplementation(() => {})
   let client = createClient()
   await Promise.all([
     client.log.add({ type: 'logux/subscribe', name: 'test' }),
@@ -481,20 +498,28 @@ it('resubscribes to previous subscriptions', async () => {
     }
   })
   await Promise.all([
+    client.log.add({ type: 'logux/subscribe', channel: 'a' }, { sync: true }),
+    client.log.add({ type: 'logux/subscribe', channel: 'a' }, { sync: true }),
     client.log.add(
-      { type: 'logux/subscribe', channel: 'a' }, { sync: true }),
+      { type: 'logux/subscribe', channel: 'b', b: 1 },
+      { sync: true }
+    ),
     client.log.add(
-      { type: 'logux/subscribe', channel: 'a' }, { sync: true }),
+      { type: 'logux/subscribe', channel: 'b', b: 2 },
+      { sync: true }
+    ),
     client.log.add(
-      { type: 'logux/subscribe', channel: 'b', b: 1 }, { sync: true }),
+      { type: 'logux/subscribe', channel: 'b', b: 2 },
+      { sync: true }
+    ),
     client.log.add(
-      { type: 'logux/subscribe', channel: 'b', b: 2 }, { sync: true }),
+      { type: 'logux/unsubscribe', channel: 'b', b: 1 },
+      { sync: true }
+    ),
     client.log.add(
-      { type: 'logux/subscribe', channel: 'b', b: 2 }, { sync: true }),
-    client.log.add(
-      { type: 'logux/unsubscribe', channel: 'b', b: 1 }, { sync: true }),
-    client.log.add(
-      { type: 'logux/unsubscribe', channel: 'b', b: 2 }, { sync: true })
+      { type: 'logux/unsubscribe', channel: 'b', b: 2 },
+      { sync: true }
+    )
   ])
   added = []
   expect(client.log.actions()).toHaveLength(7)
@@ -546,7 +571,8 @@ it('does not subscribing twice during connection', async () => {
   client.node.setState('connecting')
   client.node.setState('sending')
   await client.log.add(
-    { type: 'logux/subscribe', channel: 'a' }, { sync: true }
+    { type: 'logux/subscribe', channel: 'a' },
+    { sync: true }
   )
   added = []
   client.node.setState('synchronized')
@@ -595,9 +621,12 @@ it('changes user ID', async () => {
   let client = await createDialog()
   client.changeUser('20', 'token')
   expect(client.node.state).toEqual('connecting')
-  client.node.connection.pair.right.send(
-    ['connected', client.node.localProtocol, 'server', [0, 0]]
-  )
+  client.node.connection.pair.right.send([
+    'connected',
+    client.node.localProtocol,
+    'server',
+    [0, 0]
+  ])
   await client.node.waitFor('synchronized')
 })
 

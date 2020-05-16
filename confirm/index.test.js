@@ -41,10 +41,11 @@ it('confirms close', async () => {
   expect(beforeunloader).toBe(false)
 
   await Promise.all([
+    client.log.add({ type: 'logux/subscribe' }, { sync: true, reasons: ['t'] }),
     client.log.add(
-      { type: 'logux/subscribe' }, { sync: true, reasons: ['t'] }),
-    client.log.add(
-      { type: 'logux/unsubscribe' }, { sync: true, reasons: ['t'] })
+      { type: 'logux/unsubscribe' },
+      { sync: true, reasons: ['t'] }
+    )
   ])
   expect(beforeunloader).toBe(false)
 
@@ -52,11 +53,11 @@ it('confirms close', async () => {
   expect(beforeunloader()).toEqual('unsynced')
 
   client.node.setState('sending')
-  let e = { }
+  let e = {}
   beforeunloader(e)
   expect(e.returnValue).toEqual('unsynced')
 
-  window.event = { }
+  window.event = {}
   beforeunloader()
   expect(window.event.returnValue).toEqual('unsynced')
 })

@@ -13,7 +13,7 @@ async function createTest (options) {
   })
 
   client.role = 'leader'
-  client.node.catch(() => { })
+  client.node.catch(() => {})
 
   pair.client = client
   pair.leftNode = client.node
@@ -21,10 +21,14 @@ async function createTest (options) {
   await pair.left.connect()
   pair.calls = []
   pair.args = []
-  status(client, (state, details) => {
-    pair.calls.push(state)
-    pair.args.push(details)
-  }, options)
+  status(
+    client,
+    (state, details) => {
+      pair.calls.push(state)
+      pair.args.push(details)
+    },
+    options
+  )
   return pair
 }
 
@@ -52,10 +56,12 @@ it('notifies only about wait for sync actions', async () => {
   test.leftNode.setState('disconnected')
   expect(test.calls).toEqual(['disconnected'])
   test.leftNode.log.add(
-    { type: 'logux/subscribe' }, { sync: true, reasons: ['t'] }
+    { type: 'logux/subscribe' },
+    { sync: true, reasons: ['t'] }
   )
   test.leftNode.log.add(
-    { type: 'logux/unsubscribe' }, { sync: true, reasons: ['t'] }
+    { type: 'logux/unsubscribe' },
+    { sync: true, reasons: ['t'] }
   )
   expect(test.calls).toEqual(['disconnected'])
   test.leftNode.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
@@ -140,10 +146,10 @@ it('ignores timeout error', async () => {
 
 it('notifies about old client', async () => {
   let test = await createTest()
-  let protocol = new LoguxError('wrong-protocol', { })
+  let protocol = new LoguxError('wrong-protocol', {})
   test.leftNode.emitter.emit('error', protocol)
 
-  let subprotocol = new LoguxError('wrong-subprotocol', { })
+  let subprotocol = new LoguxError('wrong-subprotocol', {})
   test.leftNode.emitter.emit('error', subprotocol)
 
   test.leftNode.setState('disconnected')

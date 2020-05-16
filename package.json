@@ -25,42 +25,46 @@
     "node": ">=10.0.0"
   },
   "dependencies": {
-    "@logux/core": "^0.5.3",
+    "@logux/core": "logux/core#next",
+    "@types/ws": "^7.2.4",
     "browser-supports-log-styles": "^1.1.7",
-    "nanoevents": "^5.1.5",
-    "nanoid": "^3.1.3"
+    "nanoevents": "^5.1.7",
+    "nanoid": "^3.1.7"
   },
   "devDependencies": {
-    "@logux/eslint-config": "^36.1.2",
-    "@logux/sharec-config": "^0.6.2",
-    "@size-limit/dual-publish": "^4.4.5",
-    "@size-limit/preset-small-lib": "^4.4.5",
-    "@types/jest": "^25.2.1",
-    "@types/node": "^13.13.3",
+    "@logux/eslint-config": "^39.0.2",
+    "@logux/sharec-config": "^0.7.2",
+    "@size-limit/dual-publish": "^4.5.0",
+    "@size-limit/preset-small-lib": "^4.5.0",
+    "@types/jest": "^25.2.2",
+    "@types/node": "^14.0.1",
+    "@typescript-eslint/eslint-plugin": "^2.32.0",
+    "@typescript-eslint/parser": "^2.32.0",
     "check-dts": "^0.3.0",
-    "dual-publish": "^0.10.0",
-    "eslint": "^6.8.0",
-    "eslint-ci": "^1.0.0",
+    "dual-publish": "^0.10.2",
+    "eslint": "^7.0.0",
     "eslint-config-standard": "^14.1.1",
     "eslint-plugin-es5": "^1.5.0",
     "eslint-plugin-import": "^2.20.2",
-    "eslint-plugin-jest": "^23.7.0",
+    "eslint-plugin-jest": "^23.11.0",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-prefer-let": "^1.0.1",
+    "eslint-plugin-prettierx": "^0.12.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-security": "^1.4.0",
     "eslint-plugin-standard": "^4.0.1",
-    "eslint-plugin-unicorn": "^18.0.1",
+    "eslint-plugin-unicorn": "^20.0.0",
     "fake-indexeddb": "^3.0.0",
     "husky": "^4.2.5",
-    "jest": "^25.3.0",
-    "lint-staged": "^10.1.3",
-    "nanodelay": "^1.0.1",
+    "jest": "^26.0.1",
+    "lint-staged": "^10.2.2",
+    "nanodelay": "^1.0.2",
     "parcel-bundler": "^1.12.4",
     "rimraf": "^3.0.2",
-    "size-limit": "^4.4.5",
+    "size-limit": "^4.5.0",
     "svgo": "^1.3.2",
-    "ts-jest": "^25.4.0",
+    "ts-jest": "^26.0.0",
+    "typescript": "^3.9.2",
     "yaspeller": "^7.0.0"
   },
   "husky": {
@@ -70,7 +74,7 @@
   },
   "lint-staged": {
     "*.md": "yaspeller",
-    "*.js": "eslint",
+    "*.js": "eslint --fix",
     "*.svg": "svgo"
   },
   "jest": {
@@ -85,10 +89,11 @@
     }
   },
   "eslintConfig": {
-    "extends": "@logux/eslint-config"
+    "extends": "@logux/eslint-config/ts"
   },
   "eslintIgnore": [
-    "test/demo/build"
+    "test/demo/build",
+    "**/errors.ts"
   ],
   "size-limit2": [
     {
@@ -101,7 +106,7 @@
     {
       "path": "./cross-tab-client/index.js",
       "import": "{ CrossTabClient }",
-      "limit": "8 KB"
+      "limit": "9 KB"
     },
     {
       "import": {
@@ -136,6 +141,6 @@
   },
   "sharec": {
     "config": "@logux/sharec-config",
-    "version": "0.6.2"
+    "version": "0.7.2"
   }
 }

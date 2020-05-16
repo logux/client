@@ -22,7 +22,7 @@ function cleanTabActions (client, id) {
 }
 
 class Client {
-  constructor (opts = { }) {
+  constructor (opts = {}) {
     this.options = opts
 
     if (process.env.NODE_ENV !== 'production') {
@@ -33,8 +33,10 @@ class Client {
         throw new Error('Missed subprotocol option in Logux client')
       }
       if (typeof this.options.userId === 'undefined') {
-        throw new Error('Missed userId option in Logux client. ' +
-                        'Pass false if you have no users.')
+        throw new Error(
+          'Missed userId option in Logux client. ' +
+            'Pass false if you have no users.'
+        )
       }
       if (this.options.userId === false) {
         throw new Error('Replace userId: false to userId: "false"')
@@ -58,7 +60,7 @@ class Client {
         localStorage.setItem(random, '1')
         localStorage.removeItem(random)
         this.isLocalStorage = true
-      } catch (e) {}
+      } catch {}
     }
 
     if (!this.options.time) {
@@ -77,7 +79,7 @@ class Client {
         if (env !== 'development') {
           console.error(
             'Without SSL, old proxies block WebSockets. ' +
-            'Use WSS for Logux or set allowDangerousProtocol option.'
+              'Use WSS for Logux or set allowDangerousProtocol option.'
           )
           return false
         } else {
@@ -97,17 +99,17 @@ class Client {
     this.log = log
 
     log.on('preadd', (action, meta) => {
-      let isOwn = meta.id.includes(` ${ this.nodeId } `)
+      let isOwn = meta.id.includes(` ${this.nodeId} `)
       if (isOwn && !meta.subprotocol) {
         meta.subprotocol = this.options.subprotocol
       }
       if (meta.sync && !meta.resubscribe) meta.reasons.push('syncing')
     })
 
-    this.last = { }
-    this.subscriptions = { }
-    let subscribing = { }
-    let unsubscribing = { }
+    this.last = {}
+    this.subscriptions = {}
+    let subscribing = {}
+    let unsubscribing = {}
 
     this.emitter = createNanoEvents()
     this.on('add', (action, meta) => {
@@ -194,11 +196,11 @@ class Client {
     }
 
     let outFilter = async (action, meta) => {
-      return !!meta.sync && meta.id.includes(` ${ this.options.userId }:`)
+      return !!meta.sync && meta.id.includes(` ${this.options.userId}:`)
     }
 
     let outMap = async (action, meta) => {
-      let filtered = { }
+      let filtered = {}
       for (let i in meta) {
         if (i === 'subprotocol') {
           if (meta.subprotocol !== this.options.subprotocol) {
@@ -279,7 +281,7 @@ class Client {
     this.nodeId = this.clientId + ':' + this.tabId
 
     let events = this.node.emitter.events
-    this.node.connection.emitter.events = { }
+    this.node.connection.emitter.events = {}
     this.log.nodeId = this.nodeId
     this.node = new ClientNode(this.nodeId, this.log, this.node.connection, {
       ...this.node.options,

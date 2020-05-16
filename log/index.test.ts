@@ -1,14 +1,26 @@
-let { LoguxError, TestPair, TestTime } = require('@logux/core')
+import { LoguxError, TestPair, TestTime, TestLog } from '@logux/core'
 
-let { CrossTabClient, log } = require('..')
+import { CrossTabClient, ClientMeta, log } from '..'
 
 jest.mock('browser-supports-log-styles', () => {
   return () => true
 })
 
+function setState (client: any, state: string) {
+  client.node.setState(state)
+}
+
+function emit (obj: any, event: string, ...args: any[]) {
+  obj.emitter.emit(event, ...args)
+}
+
+function privateMethods (obj: object): any {
+  return obj
+}
+
 async function createClient () {
   let pair = new TestPair()
-  let client = new CrossTabClient({
+  let client = new CrossTabClient<{}, TestLog<ClientMeta>>({
     subprotocol: '1.0.0',
     server: pair.left,
     userId: '10',
@@ -16,15 +28,15 @@ async function createClient () {
   })
 
   client.role = 'leader'
-  client.node.catch(() => { })
+  client.node.catch(() => {})
 
   await pair.left.connect()
   return client
 }
 
 beforeAll(() => {
-  jest.spyOn(console, 'error').mockImplementation(() => { })
-  jest.spyOn(console, 'log').mockImplementation(() => { })
+  jest.spyOn(console, 'error').mockImplementation(() => {})
+  jest.spyOn(console, 'log').mockImplementation(() => {})
 })
 
 beforeEach(() => {
@@ -33,31 +45,30 @@ beforeEach(() => {
 
 it('shows connecting state URL', async () => {
   let client = await createClient()
-  client.node.setState('disconnected')
+  setState(client, 'disconnected')
   log(client, { color: false })
 
   client.node.connected = false
-  client.node.connection.url = 'ws://ya.ru'
-  client.node.setState('connecting')
+  privateMethods(client.node.connection).url = 'ws://ya.ru'
+  setState(client, 'connecting')
 
   expect(console.log).toHaveBeenCalledWith(
-    'Logux state is connecting. ' +
-    '10:1:1 is connecting to ws://ya.ru.'
+    'Logux state is connecting. ' + '10:1:1 is connecting to ws://ya.ru.'
   )
 })
 
 it('shows Logux prefix with color and make state and nodeId bold', async () => {
   let client = await createClient()
-  client.node.setState('disconnected')
+  setState(client, 'disconnected')
   log(client, { color: true })
 
   client.node.connected = false
-  client.node.connection.url = 'ws://ya.ru'
-  client.node.setState('connecting')
+  privateMethods(client.node.connection).url = 'ws://ya.ru'
+  setState(client, 'connecting')
 
   expect(console.log).toHaveBeenCalledWith(
     '%cLogux%c state is %cconnecting%c. ' +
-    '%c10:1:1%c is connecting to %cws://ya.ru%c.',
+      '%c10:1:1%c is connecting to %cws://ya.ru%c.',
     'color:#ffa200;font-weight:bold',
     '',
     'font-weight:bold',
@@ -75,15 +86,14 @@ it('shows server node ID', async () => {
 
   client.node.remoteNodeId = 'server'
   client.node.connected = true
-  client.node.setState('synchronized')
+  setState(client, 'synchronized')
 
   expect(console.log).toHaveBeenCalledWith(
-    'Logux state is synchronized. ' +
-    'Client was connected to server.'
+    'Logux state is synchronized. ' + 'Client was connected to server.'
   )
 
   client.node.connected = false
-  client.node.setState('disconnected')
+  setState(client, 'disconnected')
   expect(console.log).toHaveBeenLastCalledWith('Logux state is disconnected')
 })
 
@@ -93,7 +103,7 @@ it('does not shows server node ID in follower role', async () => {
 
   client.node.remoteNodeId = undefined
   client.node.connected = true
-  client.node.setState('synchronized')
+  setState(client, 'synchronized')
 
   expect(console.log).toHaveBeenCalledWith('Logux state is synchronized')
 })
@@ -104,11 +114,11 @@ it('shows bold server node ID', async () => {
 
   client.node.remoteNodeId = 'server'
   client.node.connected = true
-  client.node.setState('synchronized')
+  setState(client, 'synchronized')
 
   expect(console.log).toHaveBeenCalledWith(
     '%cLogux%c state is %csynchronized%c. ' +
-    'Client was connected to %cserver%c.',
+      'Client was connected to %cserver%c.',
     'color:#ffa200;font-weight:bold',
     '',
     'font-weight:bold',
@@ -118,7 +128,7 @@ it('shows bold server node ID', async () => {
   )
 
   client.node.connected = false
-  client.node.setState('disconnected')
+  setState(client, 'disconnected')
   expect(console.log).toHaveBeenLastCalledWith(
     '%cLogux%c state is %cdisconnected%c',
     'color:#ffa200;font-weight:bold',
@@ -133,7 +143,7 @@ it('shows state event', async () => {
   log(client, { color: false })
 
   client.node.connected = false
-  client.node.emitter.emit('state')
+  emit(client.node, 'state')
 
   expect(console.log).toHaveBeenCalledWith('Logux state is connecting')
 })
@@ -143,7 +153,7 @@ it('shows role event', async () => {
   log(client, { color: false })
 
   client.node.connected = false
-  client.emitter.emit('role')
+  emit(client, 'role')
 
   expect(console.log).toHaveBeenCalledWith('Logux tab role is leader')
 })
@@ -151,18 +161,20 @@ it('shows role event', async () => {
 it('shows error event', async () => {
   let client = await createClient()
   log(client, { color: false })
-  let error = new LoguxError('test')
-  client.node.connection.emitter.emit('error', error)
-  expect(console.error).toHaveBeenCalledWith('Logux error: test')
+  let error = new LoguxError('timeout', 1)
+  emit(client.node.connection, 'error', error)
+  expect(console.error).toHaveBeenCalledWith(
+    'Logux error: A timeout was reached (1 ms)'
+  )
 })
 
 it('shows colorized error event', async () => {
   let client = await createClient()
   log(client, { color: true })
-  let error = new LoguxError('test')
-  client.node.connection.emitter.emit('error', error)
+  let error = new LoguxError('timeout', 1)
+  emit(client.node.connection, 'error', error)
   expect(console.error).toHaveBeenCalledWith(
-    '%cLogux%c error: test',
+    '%cLogux%c error: A timeout was reached (1 ms)',
     'color:#ffa200;font-weight:bold',
     ''
   )
@@ -172,21 +184,23 @@ it('shows server error', async () => {
   let client = await createClient()
   log(client, { color: false })
 
-  let error = new LoguxError('test', 'type', true)
-  client.node.emitter.emit('clientError', error)
+  let error = new LoguxError('timeout', 1, true)
+  emit(client.node, 'clientError', error)
 
-  expect(console.error).toHaveBeenCalledWith('Logux server sent error: test')
+  expect(console.error).toHaveBeenCalledWith(
+    'Logux server sent error: A timeout was reached (1 ms)'
+  )
 })
 
 it('shows bold server error', async () => {
   let client = await createClient()
   log(client, { color: true })
 
-  let error = new LoguxError('test', 'type', true)
-  client.node.emitter.emit('clientError', error)
+  let error = new LoguxError('timeout', 1, true)
+  emit(client.node, 'clientError', error)
 
   expect(console.error).toHaveBeenCalledWith(
-    '%cLogux%c server sent error: test',
+    '%cLogux%c server sent error: A timeout was reached (1 ms)',
     'color:#ffa200;font-weight:bold',
     ''
   )
@@ -252,15 +266,20 @@ it('shows processed action', async () => {
 it('shows undo action', async () => {
   let client = await createClient()
   log(client, { color: false })
-  await client.node.log.add(
-    { type: 'logux/undo', id: '1 10:1:1 0', reason: 'error' }
-  )
+  await client.node.log.add({
+    type: 'logux/undo',
+    id: '1 10:1:1 0',
+    reason: 'error'
+  })
   expect(console.log).toHaveBeenCalledWith(
     'Logux action 1 10:1:1 0 was undid because of error'
   )
-  await client.node.log.add(
-    { type: 'logux/undo', id: '1 10:1:1 0', reason: 'error', data: 1 }
-  )
+  await client.node.log.add({
+    type: 'logux/undo',
+    id: '1 10:1:1 0',
+    reason: 'error',
+    data: 1
+  })
   expect(console.log).toHaveBeenLastCalledWith(
     'Logux action 1 10:1:1 0 was undid because of error',
     { type: 'logux/undo', id: '1 10:1:1 0', reason: 'error', data: 1 }
@@ -378,12 +397,12 @@ it('allows to disable some message types', async () => {
     add: false
   })
 
-  client.node.emitter.emit('state')
-  client.emitter.emit('role')
+  emit(client.node, 'state')
+  emit(client, 'role')
 
-  let error = new LoguxError('test', 'type', true)
-  client.node.emitter.emit('error', error)
-  client.node.emitter.emit('clientError', error)
+  let error = new LoguxError('timeout', 1, true)
+  emit(client.node, 'error', error)
+  emit(client.node, 'clientError', error)
 
   await client.node.log.add({ type: 'A' })
   expect(console.error).not.toHaveBeenCalled()
@@ -395,8 +414,8 @@ it('returns unbind function', async () => {
   let unbind = log(client, { color: false })
 
   unbind()
-  let error = new LoguxError('test')
-  client.node.connection.emitter.emit('error', error)
+  let error = new LoguxError('timeout', 1)
+  emit(client.node.connection, 'error', error)
 
   expect(console.error).not.toHaveBeenCalled()
 })
@@ -407,14 +426,14 @@ it('supports cross-tab synchronization', async () => {
   log(client, { color: false })
 
   client.state = 'disconnected'
-  client.emitter.emit('state')
-  expect(console.log).toHaveBeenLastCalledWith(
-    'Logux state is disconnected'
-  )
+  emit(client, 'state')
+  expect(console.log).toHaveBeenLastCalledWith('Logux state is disconnected')
 
   let meta = { id: '1 10:1:1 0', reasons: ['test'] }
-  client.emitter.emit('add', { type: 'A' }, meta)
+  emit(client, 'add', { type: 'A' }, meta)
   expect(console.log).toHaveBeenLastCalledWith(
-    'Logux added A action', { type: 'A' }, meta
+    'Logux added A action',
+    { type: 'A' },
+    meta
   )
 })

@@ -4,15 +4,9 @@
     "module": "commonjs",
     "allowJs": true,
     "strict": true,
-    "strictFunctionTypes": false,
-    "noUnusedParameters": true,
-    "noImplicitReturns": true,
-    "noUnusedLocals": true,
-    "stripInternal": true,
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
     "noEmit": true
   },
-  "exclude": ["**/errors.ts"]
+  "exclude": [
+    "**/errors.ts"
+  ]
 }

@@ -1,6 +1,4 @@
-import {
-  MemoryStore, ClientNode, LocalPair, BaseNode, Log
-} from '@logux/core'
+import { MemoryStore, ClientNode, LocalPair, BaseNode, Log } from '@logux/core'
 
 import { CrossTabClient } from '../../cross-tab-client'
 import { badge, badgeEn } from '../../badge'
@@ -71,9 +69,7 @@ function role (value) {
   return value.slice(0, 1).toUpperCase()
 }
 function updateTitle () {
-  document.title = emoji(client.state) + ' ' +
-                   role(client.role) + ' ' +
-                   count
+  document.title = emoji(client.state) + ' ' + role(client.role) + ' ' + count
 }
 
 client.on('state', () => {
@@ -93,11 +89,13 @@ client.on('clean', action => {
   updateTitle()
 })
 
-client.log.each(action => {
-  if (action.type === 'TICK') count++
-}).then(() => {
-  updateTitle()
-})
+client.log
+  .each(action => {
+    if (action.type === 'TICK') count++
+  })
+  .then(() => {
+    updateTitle()
+  })
 
 client.on('role', () => {
   let isLeader = client.role === 'leader'

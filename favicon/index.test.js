@@ -22,7 +22,7 @@ async function createClient () {
     userId: '10'
   })
 
-  client.node.catch(() => { })
+  client.node.catch(() => {})
   client.role = 'leader'
 
   await pair.left.connect()
@@ -71,7 +71,7 @@ it('works without favicon tag', async () => {
   expect(getFavHref()).toBe('/offline.ico')
 
   client.node.setState('sending')
-  expect(getFavHref()).toBe('')
+  expect(getFavHref()).toBe('/')
 })
 
 it('uses current favicon as normal', async () => {
@@ -90,7 +90,7 @@ it('does not double favicon changes', async () => {
 
   setFavHref('')
   client.node.emitter.emit('error', new Error('test'))
-  expect(getFavHref()).toBe('')
+  expect(getFavHref()).toBe('/')
 })
 
 it('uses error icon on undo', async () => {
@@ -104,7 +104,7 @@ it('allows to miss timeout error', async () => {
   let client = await createClient()
   favicon(client, { error: '/error.ico' })
   client.node.emitter.emit('error', new LoguxError('timeout'))
-  expect(getFavHref()).toBe('')
+  expect(getFavHref()).toBe('/')
 })
 
 it('does not override error by offline', async () => {

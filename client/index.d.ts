@@ -1,7 +1,13 @@
 import { Unsubscribe } from 'nanoevents'
-
 import {
-  Connection, Store, TestTime, Log, ClientNode, Action, Meta, TokenGenerator
+  Connection,
+  LogStore,
+  TestTime,
+  Log,
+  ClientNode,
+  Action,
+  Meta,
+  TokenGenerator
 } from '@logux/core'
 
 type TabID = string
@@ -68,7 +74,7 @@ export type ClientOptions = {
   /**
    * Store to save log data. Default is `MemoryStore`.
    */
-  store?: Store
+  store?: LogStore
 
   /**
    * Test time to test client.
@@ -118,7 +124,7 @@ export type ClientOptions = {
  * client.start()
  * ```
  */
-export class Client {
+export class Client<H extends object = {}, L extends Log = Log<ClientMeta>> {
   /**
    * @param opts Client options.
    */
@@ -163,7 +169,7 @@ export class Client {
    * client.log.add(action)
    * ```
    */
-  log: Log<ClientMeta>
+  log: L
 
   /**
    * Node instance to synchronize logs.
@@ -172,7 +178,7 @@ export class Client {
    * if (client.node.state === 'synchronized')
    * ```
    */
-  node: ClientNode<ClientMeta>
+  node: ClientNode<H, L>
 
   /**
    * Connect to server and reconnect on any connection problem.
@@ -202,7 +208,8 @@ export class Client {
    * @returns Unbind listener from event.
    */
   on (
-    event: 'preadd' | 'add' | 'clean', listener: ClientActionListener
+    event: 'preadd' | 'add' | 'clean',
+    listener: ClientActionListener
   ): Unsubscribe
 
   /**
