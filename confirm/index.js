@@ -1,6 +1,5 @@
 function block (e) {
-  if (typeof e === 'undefined') e = window.event
-  if (e) e.returnValue = 'unsynced'
+  e.returnValue = 'unsynced'
   return 'unsynced'
 }
 

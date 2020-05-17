@@ -7,3 +7,5 @@ coverage/
 **/errors.ts
 **/*.test.ts
 tsconfig.json
+
+global.d.ts

@@ -23,5 +23,10 @@ export class IndexedStore extends LogStore {
   /**
    * @param name Database name to run multiple Logux instances on same web page.
    */
-  constructor (name: string)
+  constructor (name?: string)
+
+  /**
+   * Database name.
+   */
+  name: string
 }

@@ -1,8 +1,8 @@
-let { LoguxError, TestPair } = require('@logux/core')
+import { LoguxError, TestPair } from '@logux/core'
 
-let { CrossTabClient, attention } = require('..')
+import { CrossTabClient, attention } from '..'
 
-let nextHidden
+let nextHidden: boolean | undefined
 Object.defineProperty(document, 'hidden', {
   get () {
     if (typeof nextHidden !== 'undefined') {
@@ -14,6 +14,10 @@ Object.defineProperty(document, 'hidden', {
     }
   }
 })
+
+function emit (obj: any, event: string, ...args: any[]) {
+  obj.emitter.emit(event, ...args)
+}
 
 async function createClient () {
   document.title = 'title'
@@ -40,7 +44,7 @@ afterEach(() => {
 it('receives errors', async () => {
   let client = await createClient()
   attention(client)
-  client.node.emitter.emit('error', new Error('test'))
+  emit(client.node, 'error', new Error('test'))
   expect(document.title).toEqual('* title')
 })
 
@@ -62,13 +66,13 @@ it('returns unbind function', async () => {
 it('allows to miss timeout error', async () => {
   let client = await createClient()
   attention(client)
-  client.node.emitter.emit('error', new LoguxError('timeout'))
+  emit(client.node, 'error', new LoguxError('timeout'))
   expect(document.title).toEqual('title')
 })
 
 it('sets old title when user open a tab', async () => {
-  let listener
-  document.addEventListener = (name, callback) => {
+  let listener: undefined | (() => void)
+  document.addEventListener = (name: string, callback: any) => {
     expect(name).toEqual('visibilitychange')
     listener = callback
   }
@@ -76,10 +80,11 @@ it('sets old title when user open a tab', async () => {
   let client = await createClient()
   attention(client)
 
-  client.node.emitter.emit('error', new Error('test'))
+  emit(client.node, 'error', new Error('test'))
   expect(document.title).toEqual('* title')
 
   nextHidden = false
+  if (typeof listener === 'undefined') throw new Error('lister was not set')
   listener()
   expect(document.title).toEqual('title')
 })
@@ -88,8 +93,8 @@ it('does not double title changes', async () => {
   let client = await createClient()
   attention(client)
 
-  client.node.emitter.emit('error', new Error('test'))
-  client.node.emitter.emit('error', new Error('test'))
+  emit(client.node, 'error', new Error('test'))
+  emit(client.node, 'error', new Error('test'))
   expect(document.title).toEqual('* title')
 })
 
@@ -98,6 +103,6 @@ it('does not change title of visible tab', async () => {
   attention(client)
 
   nextHidden = false
-  client.node.emitter.emit('error', new Error('test'))
+  emit(client.node, 'error', new Error('test'))
   expect(document.title).toEqual('title')
 })

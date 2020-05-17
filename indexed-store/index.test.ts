@@ -1,58 +1,66 @@
-/* eslint-disable no-invalid-this */
+import { eachStoreCheck, Action, Meta, Page } from '@logux/core'
 
-let { eachStoreCheck } = require('@logux/core')
-let fakeIndexedDB = require('fake-indexeddb')
+import { IndexedStore } from '..'
+import fakeIndexedDB = require('fake-indexeddb')
 
-let { IndexedStore } = require('..')
+type Entry = [Action, Meta]
+
+declare global {
+  interface Document {
+    reload: () => void
+  }
+  namespace NodeJS {
+    interface Global {
+      indexedDB: IDBFactory
+    }
+  }
+}
 
 let originIndexedDB = global.indexedDB
 beforeEach(() => {
   global.indexedDB = fakeIndexedDB
 })
 
-function promisify (request) {
+function privateMethods (obj: object): any {
+  return obj
+}
+
+function promisify (request: IDBRequest) {
   return new Promise((resolve, reject) => {
-    request.onerror = e => {
+    request.onerror = (e: any) => {
       reject(e.target.error)
     }
-    request.onsuccess = e => {
-      resolve(e.target.result)
-    }
+    request.onsuccess = resolve
   })
 }
 
-async function all (request, list) {
-  if (!list) list = []
+async function all (
+  request: Promise<Page>,
+  list: Entry[] = []
+): Promise<Entry[]> {
   let page = await request
   list = list.concat(page.entries)
-  if (page.next) {
+  if (typeof page.next !== 'undefined') {
     return all(page.next(), list)
   } else {
     return list
   }
 }
 
-async function check (indexed, created, added) {
-  if (!added) added = created
-  let entriesCreated = await all(indexed.get({ order: 'created' }))
+async function check (db: IndexedStore, created: Entry[], added = created) {
+  let entriesCreated = await all(db.get({ order: 'created' }))
   expect(entriesCreated).toEqual(created)
-  let entriesAdded = await all(indexed.get({ order: 'added' }))
+  let entriesAdded = await all(db.get({ order: 'added' }))
   expect(entriesAdded).toEqual(added)
 }
 
-let store, other
+let store: IndexedStore | undefined
 
 afterEach(async () => {
-  if (store) {
-    await store.clean()
-    store = undefined
-  }
-  if (other) {
-    await other.clean()
-    other = undefined
-  }
+  await store?.clean()
+  store = undefined
   global.indexedDB = originIndexedDB
-  delete global.document.reload
+  delete document.reload
 })
 
 eachStoreCheck((desc, creator) => {
@@ -67,15 +75,15 @@ eachStoreCheck((desc, creator) => {
 
 it('use logux as default name', async () => {
   store = new IndexedStore()
-  await store.init()
-  expect(store.db.name).toEqual('logux')
+  await privateMethods(store).init()
+  expect(privateMethods(store).db.name).toEqual('logux')
   expect(store.name).toEqual('logux')
 })
 
 it('allows to change DB name', async () => {
   store = new IndexedStore('custom')
-  await store.init()
-  expect(store.db.name).toEqual('custom')
+  await privateMethods(store).init()
+  expect(privateMethods(store).db.name).toEqual('custom')
   expect(store.name).toEqual('custom')
 })
 
@@ -83,25 +91,26 @@ it('reloads page on database update', async () => {
   document.reload = () => true
   jest.spyOn(document, 'reload')
   store = new IndexedStore()
-  await store.init()
+  await privateMethods(store).init()
   let opening = indexedDB.open(store.name, 1000)
   await new Promise((resolve, reject) => {
-    opening.onsuccess = e => {
+    opening.onsuccess = (e: any) => {
       e.target.result.close()
       resolve()
     }
-    opening.onerror = e => {
+    opening.onerror = (e: any) => {
       reject(e.target.error)
     }
   })
   expect(document.reload).toHaveBeenCalledTimes(1)
 })
 
-it('throws a errors', async () => {
+it('throws init error', async () => {
   let error = new Error('test')
   global.indexedDB = {
-    open () {
-      let request = {}
+    ...indexedDB,
+    open: () => {
+      let request: any = {}
       setTimeout(() => {
         request.onerror({ target: { error } })
       }, 1)
@@ -111,7 +120,7 @@ it('throws a errors', async () => {
   let broken = new IndexedStore()
   let throwed
   try {
-    await broken.init()
+    await privateMethods(broken).init()
   } catch (e) {
     throwed = e
   }
@@ -120,8 +129,12 @@ it('throws a errors', async () => {
 
 it('works with broken lastSynced', async () => {
   store = new IndexedStore()
-  await store.init()
-  await promisify(store.os('extra', 'write').delete('lastSynced'))
+  await privateMethods(store).init()
+  await promisify(
+    privateMethods(store)
+      .os('extra', 'write')
+      .delete('lastSynced')
+  )
   let synced = await store.getLastSynced()
   expect(synced).toEqual({ sent: 0, received: 0 })
   await store.setLastSynced({ sent: 1, received: 1 })
@@ -129,10 +142,10 @@ it('works with broken lastSynced', async () => {
 
 it('updates reasons cache', async () => {
   store = new IndexedStore()
-  await store.add({}, { id: '1', time: 1, reasons: ['a'] })
+  await store.add({ type: 'A' }, { added: 1, id: '1', time: 1, reasons: ['a'] })
   await store.changeMeta('1', { reasons: ['a', 'b', 'c'] })
   await store.removeReason('b', {}, () => {})
   await check(store, [
-    [{}, { added: 1, id: '1', time: 1, reasons: ['a', 'c'] }]
+    [{ type: 'A' }, { added: 1, id: '1', time: 1, reasons: ['a', 'c'] }]
   ])
 })

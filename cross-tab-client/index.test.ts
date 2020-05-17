@@ -1,7 +1,16 @@
-let { TestPair, TestTime } = require('@logux/core')
-let { delay } = require('nanodelay')
+import { TestLog, TestPair, TestTime, Action } from '@logux/core'
+import { delay } from 'nanodelay'
 
-let { CrossTabClient } = require('..')
+import { CrossTabClient, ClientOptions } from '..'
+
+declare global {
+  namespace NodeJS {
+    interface Global {
+      WebSocket: any
+      _localStorage: any
+    }
+  }
+}
 
 beforeEach(() => {
   class WebSocket {
@@ -11,14 +20,14 @@ beforeEach(() => {
   Object.defineProperty(global, '_localStorage', {
     value: {
       storage: {},
-      setItem (key, value) {
+      setItem (key: string, value: string) {
         this[key] = value
         this.storage[key] = value
       },
-      getItem (key) {
+      getItem (key: string) {
         return this.storage[key]
       },
-      removeItem (key) {
+      removeItem (key: string) {
         delete this[key]
         delete this.storage[key]
       }
@@ -26,42 +35,41 @@ beforeEach(() => {
   })
 })
 
-let client
-let originWindow = global.window
-let originNavigator = global.navigator
+const ELECTION_DELAY = 1000 / 20
+const LEADER_TIMEOUT = 5000 / 20
+const LEADER_PING = 2000 / 20
+
+let client: CrossTabClient<{}, TestLog>
 let originWebSocket = global.WebSocket
-let originIndexedDB = global.indexedDB
 afterEach(() => {
-  if (client) {
-    client.destroy()
-    client = undefined
-  }
-  global.window = originWindow
-  global.navigator = originNavigator
+  client.destroy()
   global.WebSocket = originWebSocket
-  global.indexedDB = originIndexedDB
 })
 
-function createClient (overrides) {
-  if (!overrides) overrides = {}
-  let opts = {
+function privateMethods (obj: object): any {
+  return obj
+}
+
+function emit (obj: any, event: string, ...args: any[]) {
+  obj.emitter.emit(event, ...args)
+}
+
+function createClient (overrides: Partial<ClientOptions> = {}) {
+  let result = new CrossTabClient<{}, TestLog>({
     subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
     userId: '10',
-    time: new TestTime()
-  }
-  for (let i in overrides) {
-    opts[i] = overrides[i]
-  }
-  let result = new CrossTabClient(opts)
-  result.electionDelay = result.electionDelay / 20
-  result.leaderTimeout = result.leaderTimeout / 20
-  result.leaderPing = result.leaderPing / 20
+    time: new TestTime(),
+    ...overrides
+  })
+  privateMethods(result).electionDelay = ELECTION_DELAY
+  privateMethods(result).leaderTimeout = LEADER_TIMEOUT
+  privateMethods(result).leaderPing = LEADER_PING
   return result
 }
 
-function emitStorage (name, value) {
-  let event = new Event('storage')
+function emitStorage (name: string, value: string | null) {
+  let event: any = new CustomEvent('storage')
   event.key = name
   event.newValue = value
   window.dispatchEvent(event)
@@ -93,8 +101,8 @@ it('saves client ID', () => {
 it('supports nanoevents API', async () => {
   client = createClient()
 
-  let twice = []
-  let preadd = []
+  let twice: string[] = []
+  let preadd: string[] = []
   client.on('preadd', action => {
     preadd.push(action.type)
   })
@@ -118,12 +126,11 @@ it('cleans everything', async () => {
 
   await client.clean()
   expect(client.node.destroy).toHaveBeenCalledTimes(1)
-  expect(localStorage.removeItem.mock.calls).toEqual([
-    ['logux:10:add'],
-    ['logux:10:state'],
-    ['logux:10:client'],
-    ['logux:10:leader']
-  ])
+  expect(localStorage.removeItem).toHaveBeenCalledTimes(4)
+  expect(localStorage.removeItem).toHaveBeenNthCalledWith(1, 'logux:10:add')
+  expect(localStorage.removeItem).toHaveBeenNthCalledWith(2, 'logux:10:state')
+  expect(localStorage.removeItem).toHaveBeenNthCalledWith(3, 'logux:10:client')
+  expect(localStorage.removeItem).toHaveBeenNthCalledWith(4, 'logux:10:leader')
 })
 
 it('does not use broken localStorage', async () => {
@@ -164,7 +171,7 @@ it('synchronizes actions between tabs', async () => {
     userId: '20'
   })
 
-  let events = []
+  let events: ['add' | 'clean', Action, string[]][] = []
   client1.on('add', (action, meta) => {
     events.push(['add', action, meta.reasons])
   })
@@ -217,7 +224,7 @@ it('becomes leader without localStorage', () => {
   Object.defineProperty(global, '_localStorage', { value: undefined })
   client = createClient()
 
-  let roles = []
+  let roles: string[] = []
   client.on('role', () => {
     roles.push(client.role)
   })
@@ -228,23 +235,11 @@ it('becomes leader without localStorage', () => {
   expect(client.node.connection.connect).toHaveBeenCalledTimes(1)
 })
 
-it('becomes leader without window', () => {
-  delete global.window
-  delete global.navigator
-  Object.defineProperty(global, '_localStorage', { value: undefined })
-
-  client = createClient()
-  client.start()
-
-  expect(client.role).toEqual('leader')
-  client.destroy()
-})
-
 it('becomes follower on recent leader ping', () => {
   localStorage.setItem('logux:10:leader', `["",${Date.now()}]`)
   client = createClient()
 
-  let roles = []
+  let roles: string[] = []
   client.on('role', () => {
     roles.push(client.role)
   })
@@ -253,7 +248,7 @@ it('becomes follower on recent leader ping', () => {
   client.start()
   expect(roles).toEqual(['follower'])
   expect(client.node.connection.connect).not.toHaveBeenCalled()
-  expect(client.watching).toBeDefined()
+  expect(privateMethods(client).watching).toBeDefined()
 })
 
 it('stops election on second candidate', async () => {
@@ -263,9 +258,9 @@ it('stops election on second candidate', async () => {
   expect(client.role).toEqual('candidate')
 
   localStorage.setItem('logux:10:leader', `["",${Date.now() - 10}]`)
-  await delay(client.electionDelay + 10)
+  await delay(ELECTION_DELAY + 10)
   expect(client.role).toEqual('follower')
-  expect(client.watching).toBeDefined()
+  expect(privateMethods(client).watching).toBeDefined()
 })
 
 it('stops election in leader check', async () => {
@@ -275,49 +270,53 @@ it('stops election in leader check', async () => {
   expect(client.role).toEqual('candidate')
 
   localStorage.setItem('logux:10:leader', `["",${Date.now()}]`)
-  await delay(client.electionDelay + 10)
+  await delay(ELECTION_DELAY + 10)
   expect(client.role).toEqual('follower')
-  expect(client.watching).toBeDefined()
+  expect(privateMethods(client).watching).toBeDefined()
 })
 
 it('pings on leader role', async () => {
   client = createClient()
   jest.spyOn(client.node.connection, 'disconnect')
 
-  let last = Date.now() - client.leaderTimeout - 10
+  let last = Date.now() - LEADER_TIMEOUT - 10
   localStorage.setItem('logux:10:leader', `["",${last}]`)
 
   client.start()
   expect(client.role).toEqual('candidate')
-  await delay(client.electionDelay + 10)
+  await delay(ELECTION_DELAY + 10)
   expect(client.role).toEqual('leader')
-  expect(client.watching).toBeUndefined()
-  await delay(client.leaderPing + 10)
-  let data = JSON.parse(localStorage.getItem('logux:10:leader'))
+  expect(privateMethods(client).watching).toBeUndefined()
+  await delay(LEADER_PING + 10)
+  let leader = localStorage.getItem('logux:10:leader')
+  if (leader === null) throw new Error('Leader key was not set')
+  let data = JSON.parse(leader)
   expect(data[0]).toEqual(client.tabId)
   expect(Date.now() - data[1]).toBeLessThan(100)
 
   emitStorage('logux:10:leader', `["",${Date.now()}]`)
   expect(client.role).toEqual('follower')
-  expect(client.watching).toBeDefined()
+  expect(privateMethods(client).watching).toBeDefined()
 })
 
 it('has random timeout', () => {
   let client1 = createClient()
   let client2 = createClient()
-  expect(client1.roleTimeout).not.toEqual(client2.roleTimeout)
+  expect(privateMethods(client1).roleTimeout).not.toEqual(
+    privateMethods(client2).roleTimeout
+  )
 })
 
 it('replaces dead leader', async () => {
   client = createClient()
-  client.roleTimeout = client.leaderTimeout / 2
+  privateMethods(client).roleTimeout = LEADER_TIMEOUT / 2
 
   localStorage.setItem('logux:10:leader', `["",${Date.now()}]`)
   client.start()
 
-  await delay(client.roleTimeout)
+  await delay(LEADER_TIMEOUT / 2)
   expect(client.role).toEqual('follower')
-  await delay(client.leaderTimeout + client.roleTimeout)
+  await delay(1.5 * LEADER_TIMEOUT)
   expect(client.role).not.toEqual('follower')
 })
 
@@ -326,8 +325,8 @@ it('disconnects on leader changes', async () => {
   jest.spyOn(client.node.connection, 'disconnect')
 
   client.start()
-  await delay(client.electionDelay + 10)
-  client.node.state = 'connected'
+  await delay(ELECTION_DELAY + 10)
+  client.node.state = 'synchronized'
 
   let now = Date.now()
   localStorage.setItem('logux:10:leader', `["",${now}]`)
@@ -342,9 +341,9 @@ it('updates state if tab is a leader', async () => {
   client.start()
   expect(client.state).toEqual('disconnected')
 
-  await delay(client.electionDelay + 10)
+  await delay(ELECTION_DELAY + 10)
   client.node.state = 'synchronized'
-  client.node.emitter.emit('state')
+  emit(client.node, 'state')
   expect(client.state).toEqual('synchronized')
   expect(localStorage.getItem('logux:10:state')).toEqual('"synchronized"')
 })
@@ -354,7 +353,7 @@ it('listens for leader state', () => {
   localStorage.setItem('logux:10:state', '"connecting"')
 
   client = createClient()
-  let states = []
+  let states: string[] = []
   client.on('state', () => {
     states.push(client.state)
   })
@@ -392,7 +391,7 @@ it('works on IE storage event', async () => {
   client.start()
   emitStorage('logux:10:leader', localStorage.getItem('logux:10:leader'))
 
-  await delay(client.electionDelay + 10)
+  await delay(ELECTION_DELAY + 10)
   expect(client.role).toEqual('leader')
 
   emitStorage(
@@ -405,7 +404,7 @@ it('works on IE storage event', async () => {
 it('sends unleader event on tab closing', async () => {
   client = createClient()
   client.start()
-  await delay(client.electionDelay + 10)
+  await delay(ELECTION_DELAY + 10)
   window.dispatchEvent(new Event('unload'))
   expect(localStorage.getItem('logux:10:leader')).toEqual('[]')
 })
@@ -413,7 +412,7 @@ it('sends unleader event on tab closing', async () => {
 it('sends unleader event on destroy', async () => {
   client = createClient()
   client.start()
-  await delay(client.electionDelay + 10)
+  await delay(ELECTION_DELAY + 10)
   client.destroy()
   expect(localStorage.getItem('logux:10:leader')).toEqual('[]')
 })
@@ -425,7 +424,7 @@ it('does not sends event on tab closing in following mode', async () => {
   localStorage.setItem('logux:10:leader', prevLeader)
   client.start()
 
-  await delay(client.electionDelay + 10)
+  await delay(ELECTION_DELAY + 10)
   expect(localStorage.getItem('logux:10:leader')).toEqual(prevLeader)
 })
 
@@ -436,7 +435,7 @@ it('starts election on leader unload', async () => {
   localStorage.setItem('logux:10:state', '"synchronized"')
 
   client.start()
-  await delay(client.electionDelay + 10)
+  await delay(ELECTION_DELAY + 10)
   emitStorage('logux:10:leader', '[]')
   expect(client.role).toEqual('candidate')
   expect(client.state).toEqual('disconnected')
@@ -447,7 +446,7 @@ it('starts election on leader unload', async () => {
 it('changes state on dead leader', () => {
   client = createClient()
 
-  let last = Date.now() - client.leaderTimeout - 1
+  let last = Date.now() - LEADER_TIMEOUT - 1
   localStorage.setItem('logux:10:leader', `["",${last}]`)
   localStorage.setItem('logux:10:state', '"connecting"')
 
@@ -457,22 +456,23 @@ it('changes state on dead leader', () => {
 
 it('changes state on leader death', async () => {
   client = createClient()
-  client.roleTimeout = 20
+  privateMethods(client).roleTimeout = 20
 
-  let last = Date.now() - client.leaderTimeout + 10
+  let last = Date.now() - LEADER_TIMEOUT + 10
   localStorage.setItem('logux:10:leader', `["",${last}]`)
   localStorage.setItem('logux:10:state', '"sending"')
 
   client.start()
-  await delay(client.roleTimeout + 20)
+  await delay(40)
   expect(client.state).toEqual('disconnected')
   expect(localStorage.getItem('logux:10:state')).toEqual('"disconnected"')
 })
 
 it('cleans tab-specific action after timeout', async () => {
   client = createClient()
+  let tabTimeout = privateMethods(client).tabTimeout
   await client.log.add({ type: 'A' }, { reasons: ['tab1'] })
-  localStorage.setItem('logux:tab:1', Date.now() - client.tabTimeout - 1)
+  localStorage.setItem('logux:tab:1', `${Date.now() - tabTimeout - 1}`)
   client.start()
   await delay(1)
   expect(client.log.actions()).toHaveLength(0)
@@ -493,7 +493,7 @@ it('detects subscriptions from different tabs', () => {
       '{"type":"logux/processed","id":"0 A 0"},{"id":"1 A 0","reasons":[]}' +
       ']'
   )
-  expect(client.subscriptions).toEqual({
+  expect(privateMethods(client).subscriptions).toEqual({
     '{"type":"logux/subscribe","name":"a"}': 1
   })
 })
@@ -509,7 +509,7 @@ it('copies actions on memory store', () => {
 
 it('handles different subprotocols in tabs', () => {
   client = createClient()
-  let error
+  let error: Error | undefined
   client.node.on('error', e => {
     error = e
   })
@@ -520,6 +520,7 @@ it('handles different subprotocols in tabs', () => {
       client.nodeId +
       ' 0","reasons":[],"subprotocol":"1.0.1"}]'
   )
+  if (typeof error === 'undefined') throw new Error('Error was not catched')
   expect(error.toString()).toContain(
     'Only 1.0.1 application subprotocols are supported, but you use 1.0.0'
   )
@@ -583,7 +584,7 @@ it('disables cross-tab communication on localStorage error', async () => {
   client.start()
 
   localStorage.setItem('logux:10:leader', `["",${Date.now() - 10}]`)
-  await delay(client.electionDelay + 10)
+  await delay(ELECTION_DELAY + 10)
 
   let error = new Error('test')
   jest.spyOn(console, 'error').mockImplementation(() => true)
