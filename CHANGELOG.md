@@ -1,6 +1,9 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.8.5
+* Remove `global` from `IndexedStore` (by Neville Franks).
+
 ## 0.8.4
 * Fix `log()` for `logux/unsubscribe` actions.
 
