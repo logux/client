@@ -105,11 +105,13 @@
   ],
   "size-limit": [
     {
+      "name": "CrossTabClient",
       "path": "./cross-tab-client/index.js",
       "import": "{ CrossTabClient }",
       "limit": "9 KB"
     },
     {
+      "name": "Helpers",
       "import": {
         "./index.js": "{ attention, confirm, favicon, status, log, badge, badgeEn }",
         "./badge/styles/index.js": "{ badgeStyles }"
