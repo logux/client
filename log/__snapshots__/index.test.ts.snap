@@ -48,10 +48,9 @@ exports[`prints log 1`] = `
 [33m[1mLogux[22m[39m unsubscribed from channel [1musers[22m
   Action {\\"type\\":\\"logux/unsubscribe\\",\\"channel\\":\\"users\\",\\"bad\\":true}
 [33m[1mLogux[22m[39m action [1m200 10:1:1 0[22m was processed
-[33m[1mLogux[22m[39m added and cleaned [1mlogux/uno[22m action
-  Action {\\"type\\":\\"logux/uno\\",\\"id\\":\\"201 10:1:1 0\\",\\"reason\\":\\"error\\"}
-  Meta {\\"id\\":\\"5 server:uuid 0\\",\\"time\\":5,\\"reasons\\":[]}
-  From: [1mserver:uuid[22m
+[33m[1mLogux[22m[39m action [1m201 10:1:1 0[22m was undid because of [1merror[22m
+[33m[1mLogux[22m[39m user ID was changed to [1m20[22m
+  Node ID: [1m20:2:2[22m
 "
 `;
 

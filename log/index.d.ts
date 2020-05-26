@@ -30,6 +30,11 @@ type LogMessages = {
    * Disable action cleaned messages.
    */
   clean?: boolean
+
+  /**
+   * Disable user ID changing.
+   */
+  user?: boolean
 }
 
 /**

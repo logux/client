@@ -137,6 +137,15 @@ function log (client, messages = {}) {
     )
   }
 
+  if (messages.user !== false) {
+    unbind.push(
+      client.on('user', userId => {
+        let message = 'user ID was changed to ' + bold(userId)
+        showLog(message, { 'Node ID': client.nodeId })
+      })
+    )
+  }
+
   if (messages.clean !== false) {
     unbind.push(
       client.on('clean', (action, meta) => {

@@ -160,12 +160,15 @@ it('prints log', async () => {
 
   await client.node.log.add(
     {
-      type: 'logux/uno',
+      type: 'logux/undo',
       id: '201 10:1:1 0',
       reason: 'error'
     },
     { id: '5 server:uuid 0' }
   )
+
+  client.nodeId = '20:2:2'
+  emit(client, 'user', '20')
 
   expect(out).toMatchSnapshot()
 })
