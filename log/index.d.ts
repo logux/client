@@ -7,11 +7,6 @@ type LogMessages = {
   ignoreActions?: string[]
 
   /**
-   * Disable colors in logs.
-   */
-  color?: boolean
-
-  /**
    * Disable connection state messages.
    */
   state?: boolean

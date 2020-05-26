@@ -1,72 +1,61 @@
-let browserSupportsLogStyles = require('browser-supports-log-styles')
+let { parseId } = require('@logux/core/parse-id')
 
-function style (string) {
+function bold (string) {
   return '%c' + string + '%c'
 }
 
-function colorify (color, text, action, meta) {
+function showLog (text, details) {
   text = '%cLogux%c ' + text
-  if (!color) text = text.replace(/%c/g, '')
-
-  let args = [text]
-
-  if (color) {
-    let styles = text.match(/%c[^%]+%c/g)
-    for (let i = 0; i < styles.length; i++) {
-      if (i === 0) {
-        args.push('color:#ffa200;font-weight:bold')
-      } else {
-        args.push('font-weight:bold')
-      }
-      args.push('')
+  let args = Array.from(text.match(/%c/g)).map((_, i) => {
+    if (i === 0) {
+      return 'color:#ffa200;font-weight:bold'
+    } else if (i % 2 === 0) {
+      return 'font-weight:bold'
+    } else {
+      return 'font-weight:normal'
     }
+  })
+
+  if (details) {
+    console.groupCollapsed(text, ...args)
+    for (let name in details) {
+      if (typeof details[name] === 'string') {
+        console.log(name + ': %c' + details[name], 'font-weight:bold')
+      } else {
+        console.log(name, details[name])
+      }
+    }
+    console.groupEnd()
+  } else {
+    console.log(text, ...args)
   }
-
-  if (action) args.push(action)
-  if (meta) args.push(meta)
-
-  return args
 }
 
 function log (client, messages = {}) {
   let node = client.node
 
-  let color = messages.color !== false && browserSupportsLogStyles()
-
-  let showLog = (text, action, meta) => {
-    console.log.apply(console, colorify(color, text, action, meta))
-  }
-
-  let showError = error => {
-    let text = 'error: ' + error.description
-    if (error.received) text = 'server sent ' + text
-    console.error.apply(console, colorify(color, text))
-  }
-
+  let sent = {}
   let unbind = []
   let prevConnected = false
 
   if (messages.state !== false) {
     unbind.push(
       client.on('state', () => {
-        let postfix = ''
-
+        let details
         if (client.state === 'connecting' && node.connection.url) {
-          postfix =
-            '. ' +
-            style(node.localNodeId) +
-            ' is connecting to ' +
-            style(node.connection.url) +
-            '.'
+          details = {
+            'Node ID': node.localNodeId,
+            'Server': node.connection.url
+          }
         } else if (client.connected && !prevConnected && node.remoteNodeId) {
-          postfix =
-            '. Client was connected to ' + style(node.remoteNodeId) + '.'
           prevConnected = true
+          details = {
+            'Server ID': node.remoteNodeId
+          }
         } else if (!client.connected) {
           prevConnected = false
         }
-
-        showLog('state is ' + style(client.state) + postfix)
+        showLog('state is ' + bold(client.state), details)
       })
     )
   }
@@ -74,20 +63,7 @@ function log (client, messages = {}) {
   if (messages.role !== false) {
     unbind.push(
       client.on('role', () => {
-        showLog('tab role is ' + style(client.role))
-      })
-    )
-  }
-
-  if (messages.error !== false) {
-    unbind.push(
-      node.on('error', error => {
-        showError(error)
-      })
-    )
-    unbind.push(
-      node.on('clientError', error => {
-        showError(error)
+        showLog('tab role is ' + bold(client.role))
       })
     )
   }
@@ -103,46 +79,59 @@ function log (client, messages = {}) {
       client.on('add', (action, meta) => {
         if (meta.tab && meta.tab !== client.tabId) return
         if (ignore[action.type]) return
+        if (meta.sync) sent[meta.id] = action
         let message
         if (action.type === 'logux/subscribe') {
-          message = 'subscribed to channel ' + style(action.channel)
+          message = 'subscribed to channel ' + bold(action.channel)
           if (Object.keys(action).length === 2) {
             showLog(message)
           } else {
-            showLog(message, action)
+            showLog(message, { Action: action })
           }
         } else if (action.type === 'logux/unsubscribe') {
-          message = 'unsubscribed from channel ' + style(action.channel)
+          message = 'unsubscribed from channel ' + bold(action.channel)
           if (Object.keys(action).length === 2) {
             showLog(message)
           } else {
-            showLog(message, action)
+            showLog(message, { Action: action })
           }
         } else if (action.type === 'logux/processed') {
-          showLog('action ' + style(action.id) + ' was processed')
+          if (sent[action.id]) {
+            showLog('action ' + bold(sent[action.id].type) + ' was processed', {
+              Action: sent[action.id]
+            })
+            delete sent[action.id]
+          } else {
+            showLog('action ' + bold(action.id) + ' was processed')
+          }
         } else if (action.type === 'logux/undo') {
           message =
             'action ' +
-            style(action.id) +
+            bold(action.id) +
             ' was undid because of ' +
-            style(action.reason)
-          if (Object.keys(action).length === 3) {
-            showLog(message)
-          } else {
-            showLog(message, action)
+            bold(action.reason)
+          let details = {}
+          if (sent[action.id]) {
+            details.Action = sent[action.id]
+            delete sent[action.id]
           }
+          if (Object.keys(action).length > 3) {
+            details.Undo = action
+          }
+          showLog(message, details)
         } else {
+          let details = { Action: action, Meta: meta }
           message = 'added '
           if (meta.reasons.length === 0) {
             cleaned[meta.id] = true
             message += 'and cleaned '
           }
-          message += style(action.type) + ' action'
-          let nodeId = meta.id.split(' ')[1]
+          message += bold(action.type) + ' action'
+          let { nodeId } = parseId(meta.id)
           if (nodeId !== node.localNodeId) {
-            message += ' from ' + style(nodeId)
+            details.From = nodeId
           }
-          showLog(message, action, meta)
+          showLog(message, details)
         }
       })
     )
@@ -157,12 +146,9 @@ function log (client, messages = {}) {
         }
         if (meta.tab && meta.tab !== client.id) return
         if (ignore[action.type]) return
-        if (action.type === 'logux/subscribe') return
-        if (action.type === 'logux/unsubscribe') return
-        if (action.type === 'logux/processed') return
-        if (action.type === 'logux/undo') return
-        let message = 'cleaned ' + style(action.type) + ' action'
-        showLog(message, action, meta)
+        if (action.type.startsWith('logux/')) return
+        let message = 'cleaned ' + bold(action.type) + ' action'
+        showLog(message, { Action: action, Meta: meta })
       })
     )
   }

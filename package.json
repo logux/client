@@ -26,7 +26,6 @@
   },
   "dependencies": {
     "@logux/core": "logux/core#next",
-    "browser-supports-log-styles": "^1.1.7",
     "nanoevents": "^5.1.7",
     "nanoid": "^3.1.9"
   },
@@ -40,6 +39,7 @@
     "@types/ws": "^7.2.4",
     "@typescript-eslint/eslint-plugin": "^3.0.1",
     "@typescript-eslint/parser": "^3.0.1",
+    "chalk": "^4.0.0",
     "check-dts": "^0.3.0",
     "dual-publish": "^0.10.2",
     "eslint": "^7.1.0",
@@ -60,6 +60,7 @@
     "lint-staged": "^10.2.6",
     "nanodelay": "^1.0.2",
     "parcel-bundler": "^1.12.4",
+    "print-snapshots": "^0.3.0",
     "rimraf": "^3.0.2",
     "size-limit": "^4.5.0",
     "svgo": "^1.3.2",
