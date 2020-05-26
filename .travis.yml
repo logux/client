@@ -9,3 +9,5 @@ deploy:
   local-dir: test/demo/build
   "on":
     branch: master
+env:
+  - FORCE_COLOR=1

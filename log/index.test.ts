@@ -3,8 +3,6 @@ import { yellow, bold } from 'chalk'
 
 import { CrossTabClient, ClientMeta, log } from '..'
 
-process.env.FORCE_COLOR = '1'
-
 function setState (client: any, state: string) {
   client.node.setState(state)
 }
