@@ -601,3 +601,26 @@ it('disables cross-tab communication on localStorage error', async () => {
   client.log.add({ type: 'B' })
   expect(console.error).toHaveBeenCalledTimes(1)
 })
+
+it('notifies other tabs on user change', () => {
+  client = createClient()
+  let users: string[] = []
+  client.on('user', userId => {
+    users.push(userId)
+  })
+  client.changeUser('20')
+  expect(localStorage.getItem('logux:10:user')).toEqual(
+    `["${client.tabId}","20"]`
+  )
+  expect(users).toEqual(['20'])
+})
+
+it('sends event on user changing in other tab', () => {
+  client = createClient()
+  let users: string[] = []
+  client.on('user', userId => {
+    users.push(userId)
+  })
+  emitStorage('logux:10:user', `["other","20"]`)
+  expect(users).toEqual(['20'])
+})

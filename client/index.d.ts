@@ -196,6 +196,7 @@ export class Client<H extends object = {}, L extends Log = Log<ClientMeta>> {
    * * `preadd`: action is going to be added (in current tab).
    * * `add`: action has been added to log (by any tab).
    * * `clean`: action has been removed from log (by any tab).
+   * * `user`: user ID was changed.
    *
    * ```js
    * client.on('add', (action, meta) => {
@@ -211,6 +212,7 @@ export class Client<H extends object = {}, L extends Log = Log<ClientMeta>> {
     event: 'preadd' | 'add' | 'clean',
     listener: ClientActionListener
   ): Unsubscribe
+  on (event: 'user', listener: (userId: string) => void): Unsubscribe
 
   /**
    * Disconnect from the server, update user, and connect again
@@ -225,10 +227,12 @@ export class Client<H extends object = {}, L extends Log = Log<ClientMeta>> {
    * })
    * ```
    *
+   * You need manually chang user ID in all browser tabs.
+   *
    * @param userId The new user ID.
    * @param token Credentials for new user.
    */
-  changeUser (userId: string, token: string): void
+  changeUser (userId: string, token?: string): void
 
   /**
    * Disconnect and stop synchronization.

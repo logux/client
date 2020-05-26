@@ -211,6 +211,11 @@ class CrossTabClient extends Client {
     return super.clean()
   }
 
+  changeUser (userId, token) {
+    sendToTabs(this, 'user', [this.tabId, userId])
+    super.changeUser(userId, token)
+  }
+
   on (event, listener) {
     if (event === 'preadd') {
       return this.log.emitter.on(event, listener)
@@ -263,6 +268,11 @@ class CrossTabClient extends Client {
         this.state = state
         this.emitter.emit('state')
       }
+    } else if (e.key === storageKey(this, 'user')) {
+      data = JSON.parse(e.newValue)
+      if (data[0] !== this.tabId) {
+        this.emitter.emit('user', data[1])
+      }
     }
   }
 
@@ -271,7 +281,6 @@ class CrossTabClient extends Client {
       this.unloading = true
       sendToTabs(this, 'leader', [])
     }
-
     super.onUnload()
   }
 

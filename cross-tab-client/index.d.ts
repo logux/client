@@ -68,6 +68,7 @@ export class CrossTabClient<
    * * `clean`: action has been removed from log (by any tab).
    * * `role`: tab role has been changed.
    * * `state`: leader tab synchronization state has been changed.
+   * * `user`: user ID was changed.
    *
    * ```js
    * client.on('add', (action, meta) => {
@@ -80,6 +81,7 @@ export class CrossTabClient<
    * @returns Unbind listener from event.
    */
   on (event: 'role' | 'state', listener: () => void): Unsubscribe
+  on (event: 'user', listener: (userId: string) => void): Unsubscribe
   on (
     event: 'preadd' | 'add' | 'clean',
     listener: ClientActionListener

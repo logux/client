@@ -671,7 +671,12 @@ it('tells last action time during resubscription', async () => {
 it('changes user ID', async () => {
   let client = await createDialog()
   let pair = getPair(client)
+  let users: string[] = []
+  client.on('user', userId => {
+    users.push(userId)
+  })
   client.changeUser('20', 'token')
+  expect(users).toEqual(['20'])
   expect(client.node.state).toEqual('connecting')
   pair.right.send(['connected', client.node.localProtocol, 'server', [0, 0]])
   await client.node.waitFor('synchronized')

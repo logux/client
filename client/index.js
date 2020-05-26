@@ -259,7 +259,11 @@ class Client {
   }
 
   on (event, listener) {
-    return this.log.emitter.on(event, listener)
+    if (event === 'user') {
+      return this.emitter.on(event, listener)
+    } else {
+      return this.log.emitter.on(event, listener)
+    }
   }
 
   changeUser (userId, token) {
@@ -289,6 +293,7 @@ class Client {
     })
     this.node.emitter.events = events
 
+    this.emitter.emit('user', userId)
     if (wasConnected) this.node.connection.connect()
   }
 
