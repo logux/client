@@ -27,6 +27,10 @@ exports[`prints log 1`] = `
 [33m[1mLogux[22m[39m subscribed to channel [1musers[22m
 [33m[1mLogux[22m[39m state is [1msending[22m
 [33m[1mLogux[22m[39m state is [1msynchronized[22m
+[33m[1mLogux[22m[39m added [1mA[22m action
+  Action {\\"type\\":\\"A\\"}
+  Meta {\\"sync\\":true,\\"id\\":\\"2 server:uuid 1\\",\\"time\\":2,\\"reasons\\":[\\"syncing\\"],\\"added\\":3}
+  From: [1mserver:uuid[22m
 [33m[1mLogux[22m[39m action [1mlogux/subscribe[22m was processed
   Action {\\"type\\":\\"logux/subscribe\\",\\"channel\\":\\"users\\"}
 [33m[1mLogux[22m[39m state is [1mdisconnected[22m

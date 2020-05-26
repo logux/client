@@ -108,6 +108,10 @@ it('prints log', async () => {
   setState(client, 'sending')
   setState(client, 'synchronized')
   await client.node.log.add(
+    { type: 'A' },
+    { sync: true, id: '2 server:uuid 1' }
+  )
+  await client.node.log.add(
     {
       type: 'logux/processed',
       id: '2 10:1:1 0'
