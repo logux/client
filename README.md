@@ -7,7 +7,11 @@ Logux is a new way to connect client and server. Instead of sending
 HTTP requests (e.g., AJAX and GraphQL) it synchronizes log of operations
 between client, server, and other clients.
 
-**Documentation: [logux.io]**
+* **[Guide, recipes, and API](https://logux.io/)**
+* **[Chat](https://gitter.im/logux/logux)** for any questions
+* **[Issues](https://github.com/logux/logux/issues)**
+  and **[roadmap](https://github.com/logux/logux/projects/1)**
+* **[Projects](https://logux.io/architecture/parts/)** inside Logux ecosystem
 
 This repository contains Logux base components to build web client:
 
