@@ -10,7 +10,7 @@ function status (client, callback, options = {}) {
   let unbind = []
   let processing = {}
 
-  let synchronized = () => {
+  function setSynchronized () {
     if (Object.keys(processing).length === 0) {
       if (wait) {
         wait = false
@@ -24,26 +24,26 @@ function status (client, callback, options = {}) {
     }
   }
 
-  unbind.push(
-    observable.on('state', () => {
-      clearTimeout(timeout)
+  function changeState () {
+    clearTimeout(timeout)
 
-      if (old) return
-      if (observable.state === 'disconnected') {
-        disconnected = true
-        callback(wait ? 'wait' : 'disconnected')
-      } else if (observable.state === 'synchronized') {
-        disconnected = false
-        synchronized()
-      } else if (observable.state === 'connecting') {
-        timeout = setTimeout(() => {
-          callback('connecting' + (wait ? 'AfterWait' : ''))
-        }, 100)
-      } else {
-        callback(client.state + (wait ? 'AfterWait' : ''))
-      }
-    })
-  )
+    if (old) return
+    if (observable.state === 'disconnected') {
+      disconnected = true
+      callback(wait ? 'wait' : 'disconnected')
+    } else if (observable.state === 'synchronized') {
+      disconnected = false
+      setSynchronized()
+    } else if (observable.state === 'connecting') {
+      timeout = setTimeout(() => {
+        callback('connecting' + (wait ? 'AfterWait' : ''))
+      }, 100)
+    } else {
+      callback(client.state + (wait ? 'AfterWait' : ''))
+    }
+  }
+
+  unbind.push(observable.on('state', changeState))
 
   unbind.push(
     client.node.on('error', error => {
@@ -76,7 +76,7 @@ function status (client, callback, options = {}) {
 
       if (action.type === 'logux/processed') {
         delete processing[action.id]
-        synchronized()
+        setSynchronized()
       } else if (action.type === 'logux/undo') {
         delete processing[action.id]
       } else if (meta.sync) {
@@ -95,6 +95,8 @@ function status (client, callback, options = {}) {
       }
     })
   )
+
+  changeState()
 
   return () => {
     for (let i of unbind) i()

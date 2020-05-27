@@ -1,19 +1,7 @@
-import {
-  LoguxError,
-  TestTime,
-  TestPair,
-  TestLog,
-  ClientNode
-} from '@logux/core'
+import { LoguxError, TestTime, TestPair, TestLog } from '@logux/core'
 import { delay } from 'nanodelay'
 
-import { CrossTabClient, status, ClientMeta } from '..'
-
-type ClientTest = {
-  client: CrossTabClient<{}, TestLog>
-  calls: string[]
-  args: any[]
-}
+import { CrossTabClient, status } from '..'
 
 function setState (node: any, state: string) {
   node.setState(state)
@@ -35,28 +23,23 @@ async function createTest (options?: { duration?: number }) {
   client.role = 'leader'
   client.node.catch(() => {})
 
-  let test: ClientTest = {
-    client,
-    calls: [],
-    args: []
-  }
+  let calls: string[] = []
+  let args: any[] = []
 
-  await pair.left.connect()
   status(
     client,
     (state, details) => {
-      test.calls.push(state)
-      test.args.push(details)
+      calls.push(state)
+      args.push(details)
     },
     options
   )
-  return test
+
+  return { client, calls, args }
 }
 
 it('notifies about states', async () => {
   let test = await createTest()
-  test.client.node.connected = false
-  setState(test.client.node, 'disconnected')
   setState(test.client.node, 'connecting')
   await delay(105)
   test.client.node.connected = true
@@ -66,16 +49,13 @@ it('notifies about states', async () => {
 
 it('notifies about other tab states', async () => {
   let test = await createTest()
-  test.client.state = 'disconnected'
+  test.client.state = 'synchronized'
   emit(test.client, 'state')
-  expect(test.calls).toEqual(['disconnected'])
+  expect(test.calls).toEqual(['disconnected', 'synchronized'])
 })
 
 it('notifies only about wait for sync actions', async () => {
   let test = await createTest({ duration: 10 })
-  test.client.node.connected = false
-  setState(test.client.node, 'disconnected')
-  expect(test.calls).toEqual(['disconnected'])
   test.client.node.log.add(
     { type: 'logux/subscribe' },
     { sync: true, reasons: ['t'] }
@@ -138,8 +118,6 @@ it('notifies only about wait for sync actions', async () => {
 
 it('skips connecting notification if it took less than 100ms', async () => {
   let test = await createTest()
-  test.client.node.connected = false
-  setState(test.client.node, 'disconnected')
   setState(test.client.node, 'connecting')
   test.client.node.connected = true
   setState(test.client.node, 'synchronized')
@@ -148,25 +126,29 @@ it('skips connecting notification if it took less than 100ms', async () => {
 
 it('notifies about synchronization error', async () => {
   let test = await createTest()
+  await test.client.node.connection.connect()
+
   let error1 = { type: 'any error' }
   emit(test.client.node, 'error', error1)
 
   let error2 = new LoguxError('timeout', 10, true)
   emit(test.client.node, 'clientError', error2)
 
-  expect(test.calls).toEqual(['syncError', 'syncError'])
-  expect(test.args).toEqual([{ error: error1 }, { error: error2 }])
+  expect(test.calls).toEqual(['disconnected', 'syncError', 'syncError'])
+  expect(test.args).toEqual([undefined, { error: error1 }, { error: error2 }])
 })
 
 it('ignores timeout error', async () => {
   let test = await createTest()
+  await test.client.node.connection.connect()
   let error1 = { type: 'timeout' }
   emit(test.client.node, 'error', error1)
-  expect(test.calls).toEqual([])
+  expect(test.calls).toEqual(['disconnected'])
 })
 
 it('notifies about old client', async () => {
   let test = await createTest()
+  await test.client.node.connection.connect()
   let protocol = new LoguxError('wrong-protocol', {
     supported: '1.0.0',
     used: '0.1.0'
@@ -181,23 +163,25 @@ it('notifies about old client', async () => {
 
   setState(test.client.node, 'disconnected')
 
-  expect(test.calls).toEqual(['protocolError', 'protocolError'])
+  expect(test.calls).toEqual(['disconnected', 'protocolError', 'protocolError'])
 })
 
 it('notifies about server error', async () => {
   let test = await createTest()
+  await test.client.node.connection.connect()
   test.client.node.log.add({ type: 'logux/undo', reason: 'error' })
-  expect(test.calls).toEqual(['error'])
-  expect(test.args[0].action.type).toEqual('logux/undo')
-  expect(test.args[0].meta.time).toEqual(1)
+  expect(test.calls).toEqual(['disconnected', 'error'])
+  expect(test.args[1].action.type).toEqual('logux/undo')
+  expect(test.args[1].meta.time).toEqual(1)
 })
 
 it('notifies about problem with access', async () => {
   let test = await createTest()
+  await test.client.node.connection.connect()
   test.client.node.log.add({ type: 'logux/undo', reason: 'denied' })
-  expect(test.calls).toEqual(['denied'])
-  expect(test.args[0].action.type).toEqual('logux/undo')
-  expect(test.args[0].meta.time).toEqual(1)
+  expect(test.calls).toEqual(['disconnected', 'denied'])
+  expect(test.args[1].action.type).toEqual('logux/undo')
+  expect(test.args[1].meta.time).toEqual(1)
 })
 
 it('removes listeners', () => {
