@@ -73,22 +73,6 @@ class Client {
     }
 
     this.nodeId = this.clientId + ':' + this.tabId
-
-    let auth
-    if (/^ws:\/\//.test(this.options.server) && !opts.allowDangerousProtocol) {
-      auth = async (nodeId, env) => {
-        if (env !== 'development') {
-          console.error(
-            'Without SSL, old proxies block WebSockets. ' +
-              'Use WSS for Logux or set allowDangerousProtocol option.'
-          )
-          return false
-        } else {
-          return true
-        }
-      }
-    }
-
     let store = this.options.store || new MemoryStore()
 
     let log
@@ -219,8 +203,17 @@ class Client {
       timeout: this.options.timeout,
       outMap,
       token: this.options.token,
-      ping: this.options.ping,
-      auth
+      ping: this.options.ping
+    })
+
+    this.node.on('headers', headers => {
+      if (headers.env === 'development') {
+        console.error(
+          'Without SSL, old proxies block WebSockets. ' +
+            'Use WSS for Logux or set allowDangerousProtocol option.'
+        )
+        this.destroy()
+      }
     })
 
     this.node.on('debug', (type, stack) => {
