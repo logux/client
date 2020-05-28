@@ -4,6 +4,7 @@ let { WsConnection } = require('@logux/core/ws-connection')
 let { MemoryStore } = require('@logux/core/memory-store')
 let { ClientNode } = require('@logux/core/client-node')
 let { Reconnect } = require('@logux/core/reconnect')
+let { parseId } = require('@logux/core/parse-id')
 let { nanoid } = require('nanoid')
 let { Log } = require('@logux/core/log')
 
@@ -99,8 +100,7 @@ class Client {
     this.log = log
 
     log.on('preadd', (action, meta) => {
-      let isOwn = meta.id.includes(` ${this.nodeId} `)
-      if (isOwn && !meta.subprotocol) {
+      if (parseId(meta.id).nodeId === this.nodeId && !meta.subprotocol) {
         meta.subprotocol = this.options.subprotocol
       }
       if (meta.sync && !meta.resubscribe) meta.reasons.push('syncing')
@@ -196,7 +196,7 @@ class Client {
     }
 
     let outFilter = async (action, meta) => {
-      return !!meta.sync && meta.id.includes(` ${this.options.userId}:`)
+      return !!meta.sync && parseId(meta.id).userId === this.options.userId
     }
 
     let outMap = async (action, meta) => {
