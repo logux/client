@@ -270,7 +270,7 @@ class Client {
     }
 
     let wasConnected = this.node.connected
-    if (wasConnected) this.node.connection.disconnect('freeze')
+    if (wasConnected) this.node.connection.disconnect('destroy')
 
     this.options.userId = userId
     this.options.token = token
