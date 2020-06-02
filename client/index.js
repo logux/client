@@ -277,14 +277,9 @@ class Client {
     this.clientId = userId + ':' + this.clientId.split(':')[1]
     this.nodeId = this.clientId + ':' + this.tabId
 
-    let events = this.node.emitter.events
-    this.node.connection.emitter.events = {}
     this.log.nodeId = this.nodeId
-    this.node = new ClientNode(this.nodeId, this.log, this.node.connection, {
-      ...this.node.options,
-      token: this.options.token
-    })
-    this.node.emitter.events = events
+    this.node.localNodeId = this.nodeId
+    this.node.options.token = token
 
     this.emitter.emit('user', userId)
     if (wasConnected) this.node.connection.connect()
