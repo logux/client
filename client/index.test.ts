@@ -103,9 +103,6 @@ async function createDialog (
   ])
   await pair.wait('left')
   await Promise.resolve()
-  if (client.node.connected) {
-    await client.node.waitFor('synchronized')
-  }
   client.node.timeFix = 0
   return client
 }
@@ -194,7 +191,7 @@ it('not warns on WSS', async () => {
 it('forces to use WSS in production domain', async () => {
   jest.spyOn(console, 'error').mockImplementation(() => {})
   let client = await createDialog({ server: 'ws://test.com' })
-  emit(client.node, 'headers', { env: 'development' })
+  await delay(10)
   expect(client.node.connected).toBe(false)
   expect(console.error).toHaveBeenCalledWith(
     'Without SSL, old proxies block WebSockets. ' +

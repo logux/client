@@ -206,15 +206,20 @@ class Client {
       ping: this.options.ping
     })
 
-    this.node.on('headers', headers => {
-      if (headers.env === 'development') {
-        console.error(
-          'Without SSL, old proxies block WebSockets. ' +
-            'Use WSS for Logux or set allowDangerousProtocol option.'
-        )
-        this.destroy()
-      }
-    })
+    if (/^ws:\/\//.test(this.options.server) && !opts.allowDangerousProtocol) {
+      let unbindEnvTest = this.node.on('state', () => {
+        if (this.node.state === 'synchronized') {
+          unbindEnvTest()
+          if (this.node.remoteHeaders.env !== 'development') {
+            console.error(
+              'Without SSL, old proxies block WebSockets. ' +
+                'Use WSS for Logux or set allowDangerousProtocol option.'
+            )
+            this.destroy()
+          }
+        }
+      })
+    }
 
     this.node.on('debug', (type, stack) => {
       if (type === 'error') {
