@@ -57,7 +57,7 @@
     "fake-indexeddb": "^3.0.1",
     "husky": "^4.2.5",
     "jest": "^26.0.1",
-    "lint-staged": "^10.2.7",
+    "lint-staged": "^10.2.8",
     "nanodelay": "^1.0.2",
     "parcel-bundler": "^1.12.4",
     "print-snapshots": "^0.3.0",
