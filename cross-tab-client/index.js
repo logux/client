@@ -224,6 +224,20 @@ class CrossTabClient extends Client {
     }
   }
 
+  waitFor (state) {
+    if (this.state === state) {
+      return Promise.resolve()
+    }
+    return new Promise(resolve => {
+      let unbind = this.on('state', () => {
+        if (this.state === state) {
+          unbind()
+          resolve()
+        }
+      })
+    })
+  }
+
   onStorage (e) {
     if (e.newValue === null) return
 

@@ -86,4 +86,13 @@ export class CrossTabClient<
     event: 'preadd' | 'add' | 'clean',
     listener: ClientActionListener
   ): Unsubscribe
+
+  /**
+   * Wait for specific state of the leader tab.
+   *
+   * @param state State name
+   */
+  waitFor (
+    state: 'disconnected' | 'connecting' | 'sending' | 'synchronized'
+  ): Promise<void>
 }

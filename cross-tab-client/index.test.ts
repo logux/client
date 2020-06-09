@@ -371,6 +371,19 @@ it('listens for leader state', () => {
   expect(states).toEqual(['connecting', 'synchronized'])
 })
 
+it('waits for specific state', async () => {
+  localStorage.setItem('logux:10:leader', `["",${Date.now()}]`)
+  localStorage.setItem('logux:10:state', '"connecting"')
+
+  client = createClient()
+  setTimeout(() => {
+    localStorage.setItem('logux:10:state', '"synchronized"')
+    emitStorage('logux:10:state', '"synchronized"')
+  }, 10)
+  await client.waitFor('synchronized')
+  await client.waitFor('synchronized')
+})
+
 it('has connected shortcut', () => {
   client = createClient()
   expect(client.connected).toBe(false)
