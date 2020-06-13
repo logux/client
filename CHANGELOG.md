@@ -1,6 +1,14 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.9
+* Use Logux Core 0.6 and WebSocket Protocol 4.
+* Add `CrossTabClient#waitFor()`.
+* Add `user` event.
+* Improve `log()` output with collapsed groups.
+* Show offline in the badge from the beginning.
+* Fix `Client#changeUser()`.
+
 ## 0.8.5
 * Remove `global` from `IndexedStore` (by Neville Franks).
 
