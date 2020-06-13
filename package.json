@@ -90,7 +90,15 @@
     }
   },
   "eslintConfig": {
-    "extends": "@logux/eslint-config/ts"
+    "extends": "@logux/eslint-config/ts",
+    "overrides": [
+      {
+        "files": "indexed-store/index.test.ts",
+        "rules": {
+          "import/order": "off"
+        }
+      }
+    ]
   },
   "eslintIgnore": [
     "test/demo/build",
