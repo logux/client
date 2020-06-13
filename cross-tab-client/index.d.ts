@@ -90,6 +90,11 @@ export class CrossTabClient<
   /**
    * Wait for specific state of the leader tab.
    *
+   * ```js
+   * await client.waitFor('synchronized')
+   * hideLoader()
+   * ```
+   *
    * @param state State name
    */
   waitFor (
