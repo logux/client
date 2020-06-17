@@ -98,7 +98,7 @@ function log (client, messages = {}) {
         } else if (action.type === 'logux/processed') {
           if (sent[action.id]) {
             showLog('action ' + bold(sent[action.id].type) + ' was processed', {
-              Action: sent[action.id]
+              'Processed Action': sent[action.id]
             })
             delete sent[action.id]
           } else {
