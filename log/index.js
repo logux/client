@@ -82,7 +82,7 @@ function log (client, messages = {}) {
         if (meta.sync) sent[meta.id] = action
         let message
         if (action.type === 'logux/subscribe') {
-          message = 'subscribed to channel ' + bold(action.channel)
+          message = 'subscribing to ' + bold(action.channel) + ' channel'
           if (Object.keys(action).length === 2) {
             showLog(message)
           } else {
@@ -97,9 +97,21 @@ function log (client, messages = {}) {
           }
         } else if (action.type === 'logux/processed') {
           if (sent[action.id]) {
-            showLog('action ' + bold(sent[action.id].type) + ' was processed', {
-              'Processed Action': sent[action.id]
-            })
+            let processed = sent[action.id]
+            let details = {
+              'Processed Action': processed
+            }
+            if (processed.type === 'logux/subscribe') {
+              showLog(
+                'subscribed to ' + bold(processed.channel) + ' was channel',
+                details
+              )
+            } else {
+              showLog(
+                'action ' + bold(processed.type) + ' was processed',
+                details
+              )
+            }
             delete sent[action.id]
           } else {
             showLog('action ' + bold(action.id) + ' was processed')
