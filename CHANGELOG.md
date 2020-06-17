@@ -1,6 +1,9 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.9.1
+* Improve log messages for subscribing.
+
 ## 0.9
 * Use Logux Core 0.6 and WebSocket Protocol 4.
 * Add `CrossTabClient#waitFor()`.
