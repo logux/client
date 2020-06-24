@@ -1,5 +1,5 @@
 import { TestPair, TestTime, TestLog } from '@logux/core'
-import { yellow, bold } from 'kleur'
+import { yellow, bold } from 'colorette'
 
 import { CrossTabClient, ClientMeta, log } from '..'
 
