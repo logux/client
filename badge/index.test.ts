@@ -1,9 +1,9 @@
 import { LoguxError, TestPair, TestTime, TestLog } from '@logux/core'
 import { delay } from 'nanodelay'
 
-import { CrossTabClient, badge, badgeEn, ClientMeta } from '..'
-import { BadgeOptions } from './index'
-import { badgeStyles } from './styles'
+import { CrossTabClient, badge, badgeEn, ClientMeta } from '../index.js'
+import { BadgeOptions } from './index.js'
+import { badgeStyles } from './styles/index.js'
 
 function badgeNode (): HTMLElement | null {
   return document.querySelector('div')!

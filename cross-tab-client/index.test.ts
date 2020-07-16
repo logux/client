@@ -1,7 +1,7 @@
 import { TestLog, TestPair, TestTime, Action } from '@logux/core'
 import { delay } from 'nanodelay'
 
-import { CrossTabClient, ClientOptions } from '..'
+import { CrossTabClient, ClientOptions } from '../index.js'
 
 declare global {
   namespace NodeJS {

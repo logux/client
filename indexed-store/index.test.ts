@@ -1,6 +1,6 @@
 import { eachStoreCheck, Action, Meta, Page } from '@logux/core'
 
-import { IndexedStore } from '..'
+import { IndexedStore } from '../index.js'
 import fakeIndexedDB = require('fake-indexeddb')
 
 type Entry = [Action, Meta]

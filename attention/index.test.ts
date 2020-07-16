@@ -1,6 +1,6 @@
 import { LoguxError, TestPair } from '@logux/core'
 
-import { CrossTabClient, attention } from '..'
+import { CrossTabClient, attention } from '../index.js'
 
 let nextHidden: boolean | undefined
 Object.defineProperty(document, 'hidden', {

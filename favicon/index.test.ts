@@ -1,6 +1,6 @@
 import { LoguxError, TestPair } from '@logux/core'
 
-import { CrossTabClient, favicon } from '..'
+import { CrossTabClient, favicon } from '../index.js'
 
 function getFavNode (): HTMLLinkElement {
   let node = document.querySelector('link[rel~="icon"]')

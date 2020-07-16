@@ -1,7 +1,7 @@
 import { LoguxError, TestTime, TestPair, TestLog } from '@logux/core'
 import { delay } from 'nanodelay'
 
-import { CrossTabClient, status } from '..'
+import { CrossTabClient, status } from '../index.js'
 
 function setState (node: any, state: string) {
   node.setState(state)

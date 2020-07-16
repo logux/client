@@ -1,4 +1,4 @@
-import { Client } from '../client'
+import { Client } from '../client/index.js'
 
 type LogMessages = {
   /**

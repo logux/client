@@ -1,6 +1,6 @@
 import { Action } from '@logux/core'
 
-import { Client } from '..'
+import { Client } from '../index.js'
 
 let client = new Client({
   subprotocol: '1.0.0',

@@ -1,7 +1,7 @@
 import { TestPair, TestTime, TestLog } from '@logux/core'
 import { yellow, bold } from 'colorette'
 
-import { CrossTabClient, ClientMeta, log } from '..'
+import { CrossTabClient, ClientMeta, log } from '../index.js'
 
 function setState (client: any, state: string) {
   client.node.setState(state)

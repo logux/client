@@ -1,7 +1,7 @@
 import { MemoryStore, TestPair, TestTime, TestLog, Action } from '@logux/core'
 import { delay } from 'nanodelay'
 
-import { Client, ClientOptions } from '..'
+import { Client, ClientOptions } from '../index.js'
 
 type Events = {
   [key: string]: (() => void)[]

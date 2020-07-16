@@ -1,6 +1,6 @@
 import { Action } from '@logux/core'
 
-import { Client, ClientMeta } from '../client'
+import { Client, ClientMeta } from '../client/index.js'
 
 interface StatusListener {
   (

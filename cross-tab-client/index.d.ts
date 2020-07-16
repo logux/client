@@ -1,7 +1,7 @@
 import { Unsubscribe } from 'nanoevents'
 import { Log } from '@logux/core'
 
-import { Client, ClientActionListener, ClientMeta } from '../client'
+import { Client, ClientActionListener, ClientMeta } from '../client/index.js'
 
 /**
  * Low-level browser API for Logux.

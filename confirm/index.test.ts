@@ -1,6 +1,6 @@
 import { TestPair } from '@logux/core'
 
-import { CrossTabClient, confirm } from '..'
+import { CrossTabClient, confirm } from '../index.js'
 
 function setState (client: any, state: string) {
   client.node.setState(state)
