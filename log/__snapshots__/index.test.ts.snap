@@ -31,7 +31,7 @@ exports[`prints log 1`] = `
   Action {\\"type\\":\\"A\\"}
   Meta {\\"sync\\":true,\\"id\\":\\"2 server:uuid 1\\",\\"time\\":2,\\"reasons\\":[\\"syncing\\"],\\"added\\":3}
   From: [1mserver:uuid[22m
-[33m[1mLogux[22m[39m subscribed to [1musers[22m was channel
+[33m[1mLogux[22m[39m subscribed to [1musers[22m channel
   Processed Action {\\"type\\":\\"logux/subscribe\\",\\"channel\\":\\"users\\"}
 [33m[1mLogux[22m[39m state is [1mdisconnected[22m
 [33m[1mLogux[22m[39m state is [1mconnecting[22m

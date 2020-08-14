@@ -103,7 +103,7 @@ function log (client, messages = {}) {
             }
             if (processed.type === 'logux/subscribe') {
               showLog(
-                'subscribed to ' + bold(processed.channel) + ' was channel',
+                'subscribed to ' + bold(processed.channel) + ' channel',
                 details
               )
             } else {
