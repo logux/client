@@ -1,6 +1,10 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.9.2
+* Fix log messages (by Eduard Aksamitov).
+* Replace `chalk` with `colorette`.
+
 ## 0.9.1
 * Improve log messages for subscribing.
 
