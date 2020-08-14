@@ -92,12 +92,7 @@ class IndexedStore {
 
   async byId (id) {
     let store = await this.init()
-    let result = await promisify(
-      store
-        .os('log')
-        .index('id')
-        .get(id)
-    )
+    let result = await promisify(store.os('log').index('id').get(id))
     if (result) {
       return [result.action, result.meta]
     } else {

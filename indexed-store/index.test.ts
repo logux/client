@@ -131,9 +131,7 @@ it('works with broken lastSynced', async () => {
   store = new IndexedStore()
   await privateMethods(store).init()
   await promisify(
-    privateMethods(store)
-      .os('extra', 'write')
-      .delete('lastSynced')
+    privateMethods(store).os('extra', 'write').delete('lastSynced')
   )
   let synced = await store.getLastSynced()
   expect(synced).toEqual({ sent: 0, received: 0 })
