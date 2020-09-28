@@ -60,6 +60,7 @@ afterEach(async () => {
   await store?.clean()
   store = undefined
   global.indexedDB = originIndexedDB
+  // @ts-expect-error
   delete document.reload
 })
 
