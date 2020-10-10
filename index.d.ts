@@ -7,6 +7,7 @@ export {
 } from './badge/index.js'
 export { Client, ClientMeta, ClientOptions } from './client/index.js'
 export { CrossTabClient } from './cross-tab-client/index.js'
+export { encryptActions } from './encryptActions/index.js'
 export { IndexedStore } from './indexed-store/index.js'
 export { attention } from './attention/index.js'
 export { confirm } from './confirm/index.js'
