@@ -1,5 +1,6 @@
 let { badge, badgeRu, badgeEn } = require('./badge')
 let { CrossTabClient } = require('./cross-tab-client')
+let { encryptActions } = require('./encryptActions')
 let { IndexedStore } = require('./indexed-store')
 let { attention } = require('./attention')
 let { confirm } = require('./confirm')
@@ -9,6 +10,7 @@ let { status } = require('./status')
 let { log } = require('./log')
 
 module.exports = {
+  encryptActions,
   CrossTabClient,
   IndexedStore,
   attention,
