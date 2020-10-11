@@ -1,6 +1,6 @@
 let { badge, badgeRu, badgeEn } = require('./badge')
 let { CrossTabClient } = require('./cross-tab-client')
-let { encryptActions } = require('./encryptActions')
+let { encryptActions } = require('./encrypt-actions')
 let { IndexedStore } = require('./indexed-store')
 let { attention } = require('./attention')
 let { confirm } = require('./confirm')
