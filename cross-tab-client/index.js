@@ -50,27 +50,19 @@ function watchForLeader (client) {
   }, client.roleTimeout)
 }
 
-function areWeOutdates (client, meta) {
-  if (!meta.subprotocol) return false
-  if (client.options.subprotocol === meta.subprotocol) return false
-
-  let id = meta.id.split(' ')[1]
-  let prefix = client.clientId + ':'
-  if (id.slice(0, prefix.length) !== prefix) return false
-
-  let ourParts = client.options.subprotocol.split('.')
-  let remoteParts = meta.subprotocol.split('.')
-  // eslint-disable-next-line
-  for (let i = 0; i < ourParts.length; i++) {
-    let ourNumber = parseInt(ourParts[i])
-    let remoteNumber = parseInt(remoteParts[i])
-    if (ourNumber > remoteNumber) {
-      return false
-    } else if (ourNumber < remoteNumber) {
-      return true
+function compareSubprotocols (left, right) {
+  let leftParts = left.split('.')
+  let rightParts = right.split('.')
+  for (let i = 0; i < 3; i++) {
+    let leftNumber = parseInt(leftParts[i] || 0)
+    let rightNumber = parseInt(rightParts[i] || 0)
+    if (leftNumber > rightNumber) {
+      return 1
+    } else if (leftNumber < rightNumber) {
+      return -1
     }
   }
-  return false
+  return 0
 }
 
 function setRole (client, role) {
@@ -170,6 +162,13 @@ class CrossTabClient extends Client {
       window.addEventListener('storage', e => this.onStorage(e))
       window.addEventListener('unload', e => this.onUnload(e))
     }
+
+    if (this.isLocalStorage) {
+      let subprotocolKey = storageKey(this, 'subprotocol')
+      if (localStorage.getItem(subprotocolKey) !== this.options.subprotocol) {
+        sendToTabs(this, 'subprotocol', this.options.subprotocol)
+      }
+    }
   }
 
   start () {
@@ -247,17 +246,6 @@ class CrossTabClient extends Client {
       if (data[0] !== this.tabId) {
         let action = data[1]
         let meta = data[2]
-        if (areWeOutdates(this, meta)) {
-          let err = new LoguxError(
-            'wrong-subprotocol',
-            {
-              supported: meta.subprotocol,
-              used: this.node.options.subprotocol
-            },
-            true
-          )
-          this.node.emitter.emit('error', err)
-        }
         if (!meta.tab || meta.tab === this.tabId) {
           if (isMemory(this.log.store)) {
             this.log.store.add(action, meta)
@@ -286,6 +274,19 @@ class CrossTabClient extends Client {
       data = JSON.parse(e.newValue)
       if (data[0] !== this.tabId) {
         this.emitter.emit('user', data[1])
+      }
+    } else if (e.key === storageKey(this, 'subprotocol')) {
+      let other = JSON.parse(e.newValue)
+      let compare = compareSubprotocols(this.options.subprotocol, other)
+      if (compare === 1) {
+        sendToTabs(this, 'subprotocol', this.options.subprotocol)
+      } else if (compare === -1) {
+        let err = new LoguxError(
+          'wrong-subprotocol',
+          { supported: other, used: this.options.subprotocol },
+          true
+        )
+        this.node.emitter.emit('error', err)
       }
     }
   }
