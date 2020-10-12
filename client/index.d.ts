@@ -16,6 +16,15 @@ export interface ClientActionListener {
   (action: Action, meta: ClientMeta): void
 }
 
+export type LoguxUndoAction = {
+  type: 'logux/undo'
+  id: string
+  action: Action
+  reason?: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any
+}
+
 export type ClientMeta = Meta & {
   /**
    * Action should be visible only for browser tab with the same `client.tabId`.
