@@ -24,6 +24,10 @@ export type LoguxUndoAction = {
   [key: string]: any
 }
 
+export type LoguxUndoError = Error & {
+  action: LoguxUndoAction
+}
+
 export type ClientMeta = Meta & {
   /**
    * Action should be visible only for browser tab with the same `client.tabId`.
