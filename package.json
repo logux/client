@@ -57,7 +57,7 @@
     "eslint-plugin-unicorn": "^22.0.0",
     "fake-indexeddb": "^3.1.2",
     "husky": "^4.3.0",
-    "jest": "^26.5.2",
+    "jest": "^26.5.3",
     "lint-staged": "^10.4.0",
     "nanodelay": "^1.0.3",
     "parcel-bundler": "^1.12.4",
