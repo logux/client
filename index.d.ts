@@ -5,7 +5,13 @@ export {
   BadgeMessages,
   BadgeStyles
 } from './badge/index.js'
-export { Client, ClientMeta, ClientOptions } from './client/index.js'
+export {
+  Client,
+  ClientMeta,
+  ClientOptions,
+  LoguxUndoAction,
+  LoguxUndoError
+} from './client/index.js'
 export { CrossTabClient } from './cross-tab-client/index.js'
 export { IndexedStore } from './indexed-store/index.js'
 export { attention } from './attention/index.js'
