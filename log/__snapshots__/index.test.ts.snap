@@ -22,8 +22,8 @@ exports[`prints log 1`] = `
 [33m[1mLogux[22m[39m cleaned [1mA[22m action
   Action {\\"type\\":\\"A\\"}
   Meta {\\"sync\\":true,\\"id\\":\\"1 10:1:1 0\\",\\"time\\":1,\\"reasons\\":[],\\"subprotocol\\":\\"1.0.0\\",\\"added\\":1}
-[33m[1mLogux[22m[39m action [1m1 10:1:1 0[22m was undid because of [1merror[22m
-  Action {\\"type\\":\\"A\\"}
+[33m[1mLogux[22m[39m action [1mA[22m was undone because of [1merror[22m
+  Undone Action {\\"type\\":\\"A\\"}
 [33m[1mLogux[22m[39m subscribing to [1musers[22m channel
 [33m[1mLogux[22m[39m state is [1msending[22m
 [33m[1mLogux[22m[39m state is [1msynchronized[22m
@@ -45,9 +45,9 @@ exports[`prints log 1`] = `
   Action {\\"type\\":\\"logux/subscribe\\",\\"channel\\":\\"users\\",\\"since\\":1}
 [33m[1mLogux[22m[39m state is [1msending[22m
 [33m[1mLogux[22m[39m state is [1msynchronized[22m
-[33m[1mLogux[22m[39m action [1m3 10:1:1 0[22m was undid because of [1merror[22m
-  Action {\\"type\\":\\"logux/subscribe\\",\\"channel\\":\\"users\\",\\"since\\":{\\"id\\":\\"2 server:uuid 0\\",\\"time\\":2}}
-  Undo {\\"type\\":\\"logux/undo\\",\\"id\\":\\"3 10:1:1 0\\",\\"reason\\":\\"error\\",\\"wrongProp\\":\\"sync\\"}
+[33m[1mLogux[22m[39m subscription to [1musers[22m was undone because of [1merror[22m
+  Undone Action {\\"type\\":\\"logux/subscribe\\",\\"channel\\":\\"users\\",\\"since\\":1}
+  Undo Action {\\"type\\":\\"logux/undo\\",\\"action\\":{\\"type\\":\\"logux/subscribe\\",\\"channel\\":\\"users\\",\\"since\\":1},\\"id\\":\\"3 10:1:1 0\\",\\"reason\\":\\"error\\",\\"wrongProp\\":\\"sync\\"}
 [33m[1mLogux[22m[39m unsubscribed from channel [1musers[22m
 [33m[1mLogux[22m[39m unsubscribed from channel [1musers[22m
   Action {\\"type\\":\\"logux/unsubscribe\\",\\"channel\\":\\"users\\",\\"bad\\":true}
@@ -62,7 +62,8 @@ exports[`prints log 1`] = `
 [33m[1mLogux[22m[39m action [1mB[22m was processed
   Processed Action {\\"type\\":\\"B\\"}
 [33m[1mLogux[22m[39m action [1m200 10:1:1 0[22m was processed
-[33m[1mLogux[22m[39m action [1m201 10:1:1 0[22m was undid because of [1merror[22m
+[33m[1mLogux[22m[39m action [1mB[22m was undone because of [1merror[22m
+  Undone Action {\\"type\\":\\"B\\"}
 [33m[1mLogux[22m[39m user ID was changed to [1m20[22m
   Node ID: [1m20:2:2[22m
 "
