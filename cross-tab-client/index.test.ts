@@ -520,23 +520,30 @@ it('copies actions on memory store', () => {
   expect(client.log.actions()).toEqual([{ type: 'A' }])
 })
 
-it('handles different subprotocols in tabs', () => {
+it('detects higher subprotocol from other tab', () => {
   client = createClient()
+  expect(localStorage.storage['logux:10:subprotocol']).toEqual('"1.0.0"')
+
   let error: Error | undefined
   client.node.on('error', e => {
     error = e
   })
-  emitStorage(
-    'logux:10:add',
-    '["other",{"type":"A"},' +
-      '{"id":"1 ' +
-      client.nodeId +
-      ' 0","reasons":[],"subprotocol":"1.0.1"}]'
-  )
-  if (typeof error === 'undefined') throw new Error('Error was not catched')
-  expect(error.toString()).toContain(
+  emitStorage('logux:10:subprotocol', '"1.0.1"')
+  expect(error?.toString()).toContain(
     'Only 1.0.1 application subprotocols are supported, but you use 1.0.0'
   )
+})
+
+it('detects lower subprotocol from other tab', () => {
+  client = createClient()
+  emitStorage('logux:10:subprotocol', '"0.9.9"')
+  expect(localStorage.storage['logux:10:subprotocol']).toEqual('"1.0.0"')
+})
+
+it('detects the same subprotocol from other tab', () => {
+  client = createClient()
+  emitStorage('logux:10:subprotocol', '"1.0.0"')
+  expect(localStorage.storage['logux:10:subprotocol']).toEqual('"1.0.0"')
 })
 
 it('does not show alert on higher subprotocol', () => {
