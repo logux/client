@@ -23,7 +23,7 @@ exports[`prints log 1`] = `
   Action {\\"type\\":\\"A\\"}
   Meta {\\"sync\\":true,\\"id\\":\\"1 10:1:1 0\\",\\"time\\":1,\\"reasons\\":[],\\"subprotocol\\":\\"1.0.0\\",\\"added\\":1}
 [33m[1mLogux[22m[39m action [1mA[22m was undone because of [1merror[22m
-  Undone Action {\\"type\\":\\"A\\"}
+  Reverted Action {\\"type\\":\\"A\\"}
 [33m[1mLogux[22m[39m subscribing to [1musers[22m channel
 [33m[1mLogux[22m[39m state is [1msending[22m
 [33m[1mLogux[22m[39m state is [1msynchronized[22m
@@ -46,7 +46,7 @@ exports[`prints log 1`] = `
 [33m[1mLogux[22m[39m state is [1msending[22m
 [33m[1mLogux[22m[39m state is [1msynchronized[22m
 [33m[1mLogux[22m[39m subscription to [1musers[22m was undone because of [1merror[22m
-  Undone Action {\\"type\\":\\"logux/subscribe\\",\\"channel\\":\\"users\\",\\"since\\":1}
+  Reverted Action {\\"type\\":\\"logux/subscribe\\",\\"channel\\":\\"users\\",\\"since\\":1}
   Undo Action {\\"type\\":\\"logux/undo\\",\\"action\\":{\\"type\\":\\"logux/subscribe\\",\\"channel\\":\\"users\\",\\"since\\":1},\\"id\\":\\"3 10:1:1 0\\",\\"reason\\":\\"error\\",\\"wrongProp\\":\\"sync\\"}
 [33m[1mLogux[22m[39m unsubscribed from channel [1musers[22m
 [33m[1mLogux[22m[39m unsubscribed from channel [1musers[22m
@@ -63,7 +63,7 @@ exports[`prints log 1`] = `
   Processed Action {\\"type\\":\\"B\\"}
 [33m[1mLogux[22m[39m action [1m200 10:1:1 0[22m was processed
 [33m[1mLogux[22m[39m action [1mB[22m was undone because of [1merror[22m
-  Undone Action {\\"type\\":\\"B\\"}
+  Reverted Action {\\"type\\":\\"B\\"}
 [33m[1mLogux[22m[39m user ID was changed to [1m20[22m
   Node ID: [1m20:2:2[22m
 "
