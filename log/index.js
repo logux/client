@@ -124,7 +124,7 @@ function log (client, messages = {}) {
           }
           message += ' was undone because of ' + bold(action.reason)
           let details = {
-            'Undone Action': action.action
+            'Reverted Action': action.action
           }
           if (Object.keys(action).length > 4) {
             details['Undo Action'] = action
