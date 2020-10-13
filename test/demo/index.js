@@ -29,10 +29,12 @@ serverLog.on('add', (action, meta) => {
 })
 
 let client = new CrossTabClient({
-  subprotocol: '1.0.0',
+  subprotocol: location.hash.slice(1) || '1.0.0',
   userId: '10',
   server: 'wss://example.com/'
 })
+
+console.log(client.options)
 
 let node = new ClientNode(client.node.localNodeId, client.log, pair.left)
 node.connection.url = 'wss://example.com/'
@@ -144,4 +146,12 @@ document.all.subprotocolError.onclick = () => {
     supported: '2.x',
     used: '1.0.0'
   })
+}
+
+if (client.options.subprotocol === '1.0.1') {
+  document.all.subprotocolClient.disabled = true
+} else {
+  document.all.subprotocolClient.onclick = () => {
+    window.open(location.toString() + '#1.0.1', '_blank')
+  }
 }
