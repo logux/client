@@ -117,18 +117,20 @@ function log (client, messages = {}) {
             showLog('action ' + bold(action.id) + ' was processed')
           }
         } else if (action.type === 'logux/undo') {
-          message =
-            'action ' +
-            bold(action.id) +
-            ' was undid because of ' +
-            bold(action.reason)
-          let details = {}
-          if (sent[action.id]) {
-            details.Action = sent[action.id]
-            delete sent[action.id]
+          if (action.action.type === 'logux/subscribe') {
+            message = 'subscription to ' + bold(action.action.channel)
+          } else {
+            message = 'action ' + bold(action.action.type)
           }
-          if (Object.keys(action).length > 3) {
-            details.Undo = action
+          message += ' was undone because of ' + bold(action.reason)
+          let details = {
+            'Reverted Action': action.action
+          }
+          if (Object.keys(action).length > 4) {
+            details['Undo Action'] = action
+          }
+          if (sent[action.id]) {
+            delete sent[action.id]
           }
           showLog(message, details)
         } else {
