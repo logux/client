@@ -95,6 +95,7 @@ it('prints log', async () => {
   await client.node.log.add(
     {
       type: 'logux/undo',
+      action: { type: 'A' },
       id: '1 10:1:1 0',
       reason: 'error'
     },
@@ -135,6 +136,7 @@ it('prints log', async () => {
   await client.node.log.add(
     {
       type: 'logux/undo',
+      action: { type: 'logux/subscribe', channel: 'users', since: 1 },
       id: '3 10:1:1 0',
       reason: 'error',
       wrongProp: 'sync'
@@ -176,6 +178,7 @@ it('prints log', async () => {
   await client.node.log.add(
     {
       type: 'logux/undo',
+      action: { type: 'B' },
       id: '201 10:1:1 0',
       reason: 'error'
     },

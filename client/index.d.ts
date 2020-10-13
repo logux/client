@@ -16,6 +16,18 @@ export interface ClientActionListener {
   (action: Action, meta: ClientMeta): void
 }
 
+export type LoguxUndoAction = {
+  type: 'logux/undo'
+  id: string
+  action: Action
+  reason?: string
+  [key: string]: any
+}
+
+export type LoguxUndoError = Error & {
+  action: LoguxUndoAction
+}
+
 export type ClientMeta = Meta & {
   /**
    * Action should be visible only for browser tab with the same `client.tabId`.
