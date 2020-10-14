@@ -24,12 +24,15 @@
   "engines": {
     "node": ">=10.0.0"
   },
+  "peerDependencies": {
+    "@logux/core": "^0.6.2"
+  },
   "dependencies": {
-    "@logux/core": "^0.6.2",
     "nanoevents": "^5.1.8",
     "nanoid": "^3.1.12"
   },
   "devDependencies": {
+    "@logux/core": "^0.6.2",
     "@logux/eslint-config": "^40.0.5",
     "@logux/sharec-config": "^0.7.4",
     "@peculiar/webcrypto": "^1.1.3",

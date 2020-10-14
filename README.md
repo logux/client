@@ -39,7 +39,7 @@ Check **[demo page]** for widget UI.
 ## Install
 
 ```sh
-npm install @logux/client
+npm install @logux/core @logux/client
 ```
 
 
