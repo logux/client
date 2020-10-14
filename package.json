@@ -11,7 +11,7 @@
   ],
   "scripts": {
     "spell": "yaspeller *.md",
-    "clean": "rimraf api.md coverage/ test/demo/build/ test/demo/.cache",
+    "clean": "rimraf coverage/ test/demo/build/ test/demo/.cache",
     "test": "jest --coverage && eslint . && check-dts && size-limit && yarn spell && yarn build",
     "build": "parcel build --experimental-scope-hoisting -d ./test/demo/build --cache-dir ./test/demo/.cache --public-url ./ ./test/demo/index.html",
     "start": "parcel serve -d ./test/demo/build --cache-dir ./test/demo/.cache ./test/demo/index.html --open"
