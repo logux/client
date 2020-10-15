@@ -13,7 +13,7 @@ export type ZeroActions = {
  *
  * ```js
  * import { encryptActions } from '@logux/client'
- * encryptActions(client,localStorage.getItem('userPassword'), {
+ * encryptActions(client, localStorage.getItem('userPassword'), {
  *   ignore: ['server/public'] // action.type to not be encrypted
  * })
  * ```
