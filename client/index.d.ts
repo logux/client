@@ -143,6 +143,11 @@ export class Client<H extends object = {}, L extends Log = Log<ClientMeta>> {
   constructor (opts: ClientOptions)
 
   /**
+   * Storage for Logux State objects.
+   */
+  objects: Map<string | ((...args: any) => object), object>
+
+  /**
    * Client options.
    *
    * ```js
