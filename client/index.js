@@ -25,6 +25,7 @@ function cleanTabActions (client, id) {
 class Client {
   constructor (opts = {}) {
     this.options = opts
+    this.objects = new Map()
 
     if (process.env.NODE_ENV !== 'production') {
       if (typeof this.options.server === 'undefined') {
