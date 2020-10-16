@@ -425,6 +425,7 @@ it('sends only special actions', async () => {
   ])
   pair.right.send(['synced', 1])
   await client.node.waitFor('synchronized')
+  await delay(10)
   expect(pair.leftSent).toEqual([
     ['sync', 1, { type: 'a' }, { id: [1, '10:client:uuid', 0], time: 1 }]
   ])
@@ -460,6 +461,7 @@ it('filters data before sending', async () => {
   ])
   pair.right.send(['synced', 1])
   await client.node.waitFor('synchronized')
+  await delay(10)
   expect(pair.leftSent).toEqual([
     ['sync', 1, { type: 'a' }, { id: [1, 'a:client:uuid', 0], time: 1 }]
   ])
@@ -492,6 +494,7 @@ it('compresses subprotocol', async () => {
   pair.right.send(['synced', 1])
   pair.right.send(['synced', 2])
   await client.node.waitFor('synchronized')
+  await delay(10)
   expect(pair.leftSent).toEqual([
     ['sync', 1, { type: 'a' }, { id: [1, '10:client:id', 0], time: 1 }],
     [
