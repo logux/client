@@ -12,8 +12,9 @@
   "scripts": {
     "spell": "yaspeller-ci *.md",
     "clean": "rimraf coverage/ test/demo/build/ test/demo/.cache",
-    "test": "jest-ci --coverage && eslint-ci . && check-dts && size-limit && yarn spell && yarn build",
-    "build": "parcel build --dist-dir ./test/demo/build --cache-dir ./test/demo/.cache --public-url ./ ./test/demo/index.html",
+    "test:ci": "jest-ci --coverage && eslint-ci . && check-dts && size-limit && yarn spell",
+    "test": "yarn test:ci && yarn build",
+    "build": "yarn clean && parcel build --dist-dir ./test/demo/build --cache-dir ./test/demo/.cache --public-url ./ ./test/demo/index.html",
     "start": "parcel --dist-dir ./test/demo/build --cache-dir ./test/demo/.cache ./test/demo/index.html --open"
   },
   "author": "Andrey Sitnik <andrey@sitnik.ru>",
@@ -160,6 +161,16 @@
       "roadmap"
     ]
   },
+  "browserslist": [
+    "last 2 versions",
+    "not dead",
+    "not ie 11",
+    "not ie_mob 11",
+    "not op_mini all",
+    "not op_mob > 0",
+    "not and_qq > 0",
+    "not android > 0"
+  ],
   "sharec": {
     "config": "@logux/sharec-config",
     "version": "0.7.6"
