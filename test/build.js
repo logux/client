@@ -5,7 +5,7 @@ let Bundler = require('parcel-bundler')
 let ciJobNumber = require('ci-job-number')
 
 if (ciJobNumber() > 1) {
-  process.stdout.write('Avoid building demo website to keep CI resources')
+  process.stdout.write('Avoid building demo website to keep CI resources\n')
   process.exit(0)
 }
 
