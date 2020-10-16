@@ -12,9 +12,9 @@
   "scripts": {
     "spell": "yaspeller-ci *.md",
     "clean": "rimraf coverage/ test/demo/build/ test/demo/.cache",
-    "test": "jest-ci --coverage && eslint-ci . && check-dts && size-limit && yarn spell",
-    "build": "parcel build --experimental-scope-hoisting -d ./test/demo/build --cache-dir ./test/demo/.cache --public-url ./ ./test/demo/index.html",
-    "start": "parcel serve -d ./test/demo/build --cache-dir ./test/demo/.cache ./test/demo/index.html --open"
+    "test": "jest-ci --coverage && eslint-ci . && check-dts && size-limit && yarn spell && yarn build",
+    "build": "parcel build --dist-dir ./test/demo/build --cache-dir ./test/demo/.cache --public-url ./ ./test/demo/index.html",
+    "start": "parcel --dist-dir ./test/demo/build --cache-dir ./test/demo/.cache ./test/demo/index.html --open"
   },
   "author": "Andrey Sitnik <andrey@sitnik.ru>",
   "license": "MIT",
@@ -65,7 +65,7 @@
     "jest-ci": "^0.1.1",
     "lint-staged": "^10.4.0",
     "nanodelay": "^1.0.3",
-    "parcel-bundler": "^1.12.4",
+    "parcel": "^2.0.0-nightly.420",
     "print-snapshots": "^0.3.2",
     "rimraf": "^3.0.2",
     "size-limit": "^4.6.0",
