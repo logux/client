@@ -13,8 +13,7 @@ async function build () {
   let bundler = new Bundler(join(__dirname, '../test/demo/index.html'), {
     outDir: join(__dirname, '../test/demo/build'),
     cacheDir: join(__dirname, '../test/demo/.cache'),
-    sourceMaps: false,
-    scopeHoist: true
+    sourceMaps: false
   })
   await bundler.bundle()
 }

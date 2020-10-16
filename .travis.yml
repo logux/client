@@ -10,6 +10,6 @@ deploy:
   github-token: $GITHUB_TOKEN
   local-dir: test/demo/build
   "on":
-    branch: master
+    branch: next
 env:
   - FORCE_COLOR=1
