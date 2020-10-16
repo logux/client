@@ -12,7 +12,7 @@
   "scripts": {
     "spell": "yaspeller-ci *.md",
     "clean": "rimraf coverage/ test/demo/build/ test/demo/.cache",
-    "test": "jest-ci --coverage && eslint-ci . && check-dts && size-limit && yarn spell && yarn build",
+    "test": "jest-ci --coverage && eslint-ci . && check-dts && size-limit && yarn spell",
     "build": "NODE_ENV=production ./test/build.js",
     "start": "parcel serve -d ./test/demo/build --cache-dir ./test/demo/.cache ./test/demo/index.html --open"
   },

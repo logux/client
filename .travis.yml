@@ -4,6 +4,7 @@ node_js:
   - node
   - "12"
   - "10"
+before_deploy: yarn build
 deploy:
   provider: pages
   skip-cleanup: true
@@ -11,5 +12,6 @@ deploy:
   local-dir: test/demo/build
   "on":
     branch: next
+    node_js: node
 env:
   - FORCE_COLOR=1
