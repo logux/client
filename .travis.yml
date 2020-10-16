@@ -4,6 +4,7 @@ node_js:
   - node
   - "12"
   - "10"
+script: yarn test:ci
 before_deploy: yarn build
 deploy:
   provider: pages
