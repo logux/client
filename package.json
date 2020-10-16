@@ -26,14 +26,14 @@
     "node": ">=10.0.0"
   },
   "peerDependencies": {
-    "@logux/core": "^0.6.2"
+    "@logux/core": "logux/core#next"
   },
   "dependencies": {
     "nanoevents": "^5.1.8",
     "nanoid": "^3.1.12"
   },
   "devDependencies": {
-    "@logux/core": "^0.6.2",
+    "@logux/core": "logux/core#next",
     "@logux/eslint-config": "^40.0.5",
     "@logux/sharec-config": "^0.7.6",
     "@peculiar/webcrypto": "^1.1.3",
