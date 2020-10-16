@@ -13,7 +13,7 @@
     "spell": "yaspeller-ci *.md",
     "clean": "rimraf coverage/ test/demo/build/ test/demo/.cache",
     "test": "jest-ci --coverage && eslint-ci . && check-dts && size-limit && yarn spell",
-    "build": "NODE_ENV=production ./test/build.js",
+    "build": "parcel build --experimental-scope-hoisting -d ./test/demo/build --cache-dir ./test/demo/.cache --public-url ./ ./test/demo/index.html",
     "start": "parcel serve -d ./test/demo/build --cache-dir ./test/demo/.cache ./test/demo/index.html --open"
   },
   "author": "Andrey Sitnik <andrey@sitnik.ru>",
@@ -44,7 +44,6 @@
     "@typescript-eslint/eslint-plugin": "^4.4.1",
     "@typescript-eslint/parser": "^4.4.1",
     "check-dts": "^0.3.3",
-    "ci-job-number": "^1.2.2",
     "colorette": "^1.2.1",
     "dual-publish": "^0.11.0",
     "eslint": "^7.11.0",
