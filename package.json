@@ -26,7 +26,7 @@
     "node": ">=10.0.0"
   },
   "peerDependencies": {
-    "@logux/core": "logux/core#next"
+    "@logux/core": "^0.6.2"
   },
   "dependencies": {
     "nanoevents": "^5.1.8",
