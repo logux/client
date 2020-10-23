@@ -257,6 +257,10 @@ class Client {
     this.node.connection.connect()
   }
 
+  type (type, listener, event = 'add') {
+    return this.log.type(type, listener, event)
+  }
+
   on (event, listener) {
     if (event === 'user') {
       return this.emitter.on(event, listener)

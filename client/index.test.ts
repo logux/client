@@ -704,3 +704,33 @@ it('checks user ID during changing', async () => {
     client.changeUser('admin:20', 'token')
   }).toThrow(/colon/)
 })
+
+it('has type listeners', async () => {
+  let client = await createDialog()
+  let events: [string, string][] = []
+
+  let unbindAdd = client.type('A', action => {
+    events.push(['add A', action.type])
+  })
+  client.type(
+    'A',
+    action => {
+      events.push(['preadd A', action.type])
+    },
+    'preadd'
+  )
+
+  await client.log.add({ type: 'A' })
+  await client.log.add({ type: 'B' })
+  await client.log.add({ type: 'A' })
+  unbindAdd()
+  await client.log.add({ type: 'A' })
+
+  expect(events).toEqual([
+    ['preadd A', 'A'],
+    ['add A', 'A'],
+    ['preadd A', 'A'],
+    ['add A', 'A'],
+    ['preadd A', 'A']
+  ])
+})

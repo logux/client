@@ -102,20 +102,37 @@ it('supports nanoevents API', async () => {
   client = createClient()
 
   let twice: string[] = []
+  let c: string[] = []
   let preadd: string[] = []
+  let preaddC: string[] = []
   client.on('preadd', action => {
     preadd.push(action.type)
   })
-  let unbind = client.on('add', action => {
+  client.type(
+    'C',
+    action => {
+      preaddC.push(action.type)
+    },
+    'preadd'
+  )
+  let unbindType = client.type('C', action => {
+    c.push(action.type)
+  })
+  let unbindAdd = client.on('add', action => {
     twice.push(action.type)
-    if (action.type === 'B') unbind()
+    if (action.type === 'B') unbindAdd()
   })
 
   await client.log.add({ type: 'A' })
   await client.log.add({ type: 'B' })
   await client.log.add({ type: 'C' })
-  expect(preadd).toEqual(['A', 'B', 'C'])
+  await client.log.add({ type: 'C' })
+  unbindType()
+  await client.log.add({ type: 'C' })
+  expect(preadd).toEqual(['A', 'B', 'C', 'C', 'C'])
   expect(twice).toEqual(['A', 'B'])
+  expect(c).toEqual(['C', 'C'])
+  expect(preaddC).toEqual(['C', 'C', 'C'])
 })
 
 it('cleans everything', async () => {
@@ -171,7 +188,10 @@ it('synchronizes actions between tabs', async () => {
     userId: '20'
   })
 
-  let events: ['add' | 'clean', Action, string[]][] = []
+  let events: [string, Action, string[]][] = []
+  client1.type('A', (action, meta) => {
+    events.push(['A', action, meta.reasons])
+  })
   client1.on('add', (action, meta) => {
     events.push(['add', action, meta.reasons])
   })
@@ -185,6 +205,7 @@ it('synchronizes actions between tabs', async () => {
   await client2.log.add({ type: 'D' }, { tab: client2.tabId })
   await client4.log.add({ type: 'E' })
   expect(events).toEqual([
+    ['A', { type: 'A' }, []],
     ['add', { type: 'A' }, []],
     ['add', { type: 'C' }, []]
   ])
