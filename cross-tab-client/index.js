@@ -149,12 +149,14 @@ class CrossTabClient extends Client {
     })
 
     this.log.on('add', (action, meta) => {
+      this.emitter.emit(`add-${action.type}`, action, meta)
       this.emitter.emit('add', action, meta)
       if (meta.tab !== this.tabId) {
         sendToTabs(this, 'add', [this.tabId, action, meta])
       }
     })
     this.log.on('clean', (action, meta) => {
+      this.emitter.emit(`clean-${action.type}`, action, meta)
       this.emitter.emit('clean', action, meta)
     })
 
@@ -215,6 +217,14 @@ class CrossTabClient extends Client {
     super.changeUser(userId, token)
   }
 
+  type (type, listener, event = 'add') {
+    if (event === 'preadd') {
+      return this.log.type(type, listener, event)
+    } else {
+      return this.emitter.on(`${event}-${type}`, listener)
+    }
+  }
+
   on (event, listener) {
     if (event === 'preadd') {
       return this.log.emitter.on(event, listener)
@@ -250,6 +260,7 @@ class CrossTabClient extends Client {
           if (isMemory(this.log.store)) {
             this.log.store.add(action, meta)
           }
+          this.emitter.emit(`add-${action.type}`, action, meta)
           this.emitter.emit('add', action, meta)
           if (this.role === 'leader') {
             this.node.onAdd(action, meta)

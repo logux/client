@@ -12,8 +12,8 @@ import {
 
 type TabID = string
 
-export interface ClientActionListener {
-  (action: Action, meta: ClientMeta): void
+export interface ClientActionListener<A extends Action> {
+  (action: A, meta: ClientMeta): void
 }
 
 export type LoguxUndoAction = {
@@ -207,6 +207,27 @@ export class Client<H extends object = {}, L extends Log = Log<ClientMeta>> {
   start (): void
 
   /**
+   * Add listener for adding action with specific type.
+   * Works faster than `on('add', cb)` with `if`.
+   *
+   * ```js
+   * client.type('rename', (action, meta) => {
+   *   name = action.name
+   * })
+   * ```
+   *
+   * @param type Action’s type.
+   * @param ActionListener The listener function.
+   * @param event
+   * @returns Unbind listener from event.
+   */
+  type<A extends Action = Action, T extends string = A['type']> (
+    type: T,
+    listener: ClientActionListener<A>,
+    event?: 'preadd' | 'add' | 'clean'
+  ): Unsubscribe
+
+  /**
    * Subscribe for synchronization events. It implements Nano Events API.
    * Supported events:
    *
@@ -214,6 +235,8 @@ export class Client<H extends object = {}, L extends Log = Log<ClientMeta>> {
    * * `add`: action has been added to log (by any tab).
    * * `clean`: action has been removed from log (by any tab).
    * * `user`: user ID was changed.
+   *
+   * Note, that `Log#type()` will work faster than `on` event with `if`.
    *
    * ```js
    * client.on('add', (action, meta) => {
@@ -227,7 +250,7 @@ export class Client<H extends object = {}, L extends Log = Log<ClientMeta>> {
    */
   on (
     event: 'preadd' | 'add' | 'clean',
-    listener: ClientActionListener
+    listener: ClientActionListener<Action>
   ): Unsubscribe
   on (event: 'user', listener: (userId: string) => void): Unsubscribe
 
