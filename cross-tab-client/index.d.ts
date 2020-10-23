@@ -1,5 +1,5 @@
+import { Action, Log } from '@logux/core'
 import { Unsubscribe } from 'nanoevents'
-import { Log } from '@logux/core'
 
 import { Client, ClientActionListener, ClientMeta } from '../client/index.js'
 
@@ -84,7 +84,7 @@ export class CrossTabClient<
   on (event: 'user', listener: (userId: string) => void): Unsubscribe
   on (
     event: 'preadd' | 'add' | 'clean',
-    listener: ClientActionListener
+    listener: ClientActionListener<Action>
   ): Unsubscribe
 
   /**

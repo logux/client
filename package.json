@@ -128,7 +128,7 @@
       "name": "CrossTabClient",
       "path": "./cross-tab-client/index.js",
       "import": "{ CrossTabClient }",
-      "limit": "3 KB"
+      "limit": "4 KB"
     },
     {
       "name": "Helpers",
