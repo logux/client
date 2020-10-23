@@ -2,6 +2,7 @@ language: node_js
 cache: yarn
 node_js:
   - node
+  - "14"
   - "12"
 script: yarn test:ci
 before_deploy: yarn build
