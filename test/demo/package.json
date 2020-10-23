@@ -1,4 +1,5 @@
 {
+  "private": "true",
   "scripts": {
     "build": "../../node_modules/.bin/parcel build --cache-dir ./.parcel-cache --dist-dir ./build --public-url ./ ./index.html",
     "start": "../../node_modules/.bin/parcel --cache-dir ./.parcel-cache --dist-dir ./build ./index.html --open"
