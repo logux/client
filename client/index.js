@@ -107,33 +107,37 @@ class Client {
         subscribing[meta.id] = action
       } else if (type === 'logux/unsubscribe') {
         unsubscribing[meta.id] = action
-      } else if (type === 'logux/processed' && unsubscribing[action.id]) {
-        let unsubscription = unsubscribing[action.id]
-        json = JSON.stringify({ ...unsubscription, type: 'logux/subscribe' })
-        let subscribers = this.subscriptions[json]
-        if (subscribers) {
-          if (subscribers === 1) {
-            delete this.subscriptions[json]
-          } else {
-            this.subscriptions[json] = subscribers - 1
+      } else if (type === 'logux/processed') {
+        if (unsubscribing[action.id]) {
+          let unsubscription = unsubscribing[action.id]
+          json = JSON.stringify({ ...unsubscription, type: 'logux/subscribe' })
+          let subscribers = this.subscriptions[json]
+          if (subscribers) {
+            if (subscribers === 1) {
+              delete this.subscriptions[json]
+            } else {
+              this.subscriptions[json] = subscribers - 1
+            }
           }
         }
-      } else if (type === 'logux/processed' && subscribing[action.id]) {
-        let subscription = subscribing[action.id]
-        delete subscribing[action.id]
-        json = JSON.stringify(subscription)
-        if (this.subscriptions[json]) {
-          this.subscriptions[json] += 1
-        } else {
-          this.subscriptions[json] = 1
+        if (subscribing[action.id]) {
+          let subscription = subscribing[action.id]
+          delete subscribing[action.id]
+          json = JSON.stringify(subscription)
+          if (this.subscriptions[json]) {
+            this.subscriptions[json] += 1
+          } else {
+            this.subscriptions[json] = 1
+          }
+          last = this.last[subscription.channel]
+          if (!last || isFirstOlder(last, meta)) {
+            this.last[subscription.channel] = { id: meta.id, time: meta.time }
+          }
         }
-        last = this.last[subscription.channel]
-        if (!last || isFirstOlder(last, meta)) {
-          this.last[subscription.channel] = { id: meta.id, time: meta.time }
+        if (type === 'logux/processed' && this.processing[action.id]) {
+          this.processing[action.id][0](meta)
+          delete this.processing[action.id]
         }
-      } else if (type === 'logux/processed' && this.processing[action.id]) {
-        this.processing[action.id][0](meta)
-        delete this.processing[action.id]
       } else if (type === 'logux/undo') {
         if (this.processing[action.id]) {
           let error = new Error(
