@@ -63,7 +63,7 @@ function encryptActions (client, secret, opts = {}) {
 
   let ignore = new Set(opts.ignore || [])
   async function outMap (action, meta) {
-    if (ignore.has(action.type)) {
+    if (action.type === '0/clean' || ignore.has(action.type)) {
       return [action, meta]
     } else {
       if (!key) key = await getKey()
@@ -89,6 +89,12 @@ function encryptActions (client, secret, opts = {}) {
   }
 
   client.node.options.inMap = inMap
+
+  client.log.on('clean', (action, meta) => {
+    if (meta.sync) {
+      client.log.add({ type: '0/clean', id: meta.id }, { sync: true })
+    }
+  })
 }
 
 module.exports = { encryptActions }
