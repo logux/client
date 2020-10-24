@@ -48,7 +48,7 @@
     "check-dts": "^0.3.3",
     "colorette": "^1.2.1",
     "dual-publish": "^0.11.0",
-    "eslint": "^7.11.0",
+    "eslint": "^7.12.0",
     "eslint-ci": "^1.0.0",
     "eslint-config-standard": "^15.0.0",
     "eslint-plugin-es5": "^1.5.0",
