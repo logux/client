@@ -131,7 +131,18 @@ class Client {
         if (!last || isFirstOlder(last, meta)) {
           this.last[subscription.channel] = { id: meta.id, time: meta.time }
         }
+      } else if (type === 'logux/processed' && this.processing[action.id]) {
+        this.processing[action.id][0](meta)
+        delete this.processing[action.id]
       } else if (type === 'logux/undo') {
+        if (this.processing[action.id]) {
+          let error = new Error(
+            'Server undid Logux action because of ' + action.reason
+          )
+          error.action = action
+          this.processing[action.id][1](error)
+          delete this.processing[action.id]
+        }
         delete subscribing[action.id]
         delete unsubscribing[action.id]
       } else if (meta.channels) {
@@ -250,11 +261,25 @@ class Client {
     if (typeof window !== 'undefined' && window.addEventListener) {
       window.addEventListener('unload', this.onUnload)
     }
+
+    this.processing = {}
   }
 
   start () {
     this.cleanPrevActions()
     this.node.connection.connect()
+  }
+
+  sync (action, meta = {}) {
+    meta.sync = true
+    if (typeof meta.id === 'undefined') {
+      meta.id = this.log.generateId()
+    }
+
+    return new Promise((resolve, reject) => {
+      this.processing[meta.id] = [resolve, reject]
+      this.log.add(action, meta)
+    })
   }
 
   type (type, listener, event = 'add') {
