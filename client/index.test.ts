@@ -1,7 +1,14 @@
-import { MemoryStore, TestPair, TestTime, TestLog, Action } from '@logux/core'
+import {
+  MemoryStore,
+  TestPair,
+  TestTime,
+  TestLog,
+  Action,
+  Log
+} from '@logux/core'
 import { delay } from 'nanodelay'
 
-import { Client, ClientOptions } from '../index.js'
+import { Client, ClientOptions, ClientMeta } from '../index.js'
 
 type Events = {
   [key: string]: (() => void)[]
@@ -66,7 +73,7 @@ async function createDialog (
 ) {
   let pair = new TestPair()
 
-  let client = new Client({
+  let client = new Client<{}, Log<ClientMeta, MemoryStore>>({
     subprotocol: '1.0.0',
     userId: '10',
     server: pair.left,
@@ -733,4 +740,49 @@ it('has type listeners', async () => {
     ['add A', 'A'],
     ['preadd A', 'A']
   ])
+})
+
+it('tracks server processing of action', async () => {
+  let client = await createDialog()
+
+  let result = 'none'
+  client
+    .sync({ type: 'A' })
+    .then(meta => {
+      expect(typeof meta.id).toEqual('string')
+      result = 'processed'
+    })
+    .catch(() => {
+      result = 'error'
+    })
+
+  expect(result).toEqual('none')
+  expect(client.log.store.entries[0][1].sync).toBe(true)
+  let id = client.log.store.entries[0][1].id
+  client.log.add({ type: 'logux/processed', id })
+  await delay(10)
+
+  expect(result).toEqual('processed')
+})
+
+it('tracks server error of action', async () => {
+  let client = await createDialog()
+
+  let result = 'none'
+  client
+    .sync({ type: 'A' }, { id: '2 10:1:1 0', reasons: ['test'] })
+    .then(() => {
+      result = 'processed'
+    })
+    .catch(e => {
+      expect(e.message).toEqual('Server undid Logux action because of test')
+      expect(e.action.type).toEqual('logux/undo')
+      result = 'error'
+    })
+
+  expect(result).toEqual('none')
+  client.log.add({ type: 'logux/undo', id: '2 10:1:1 0', reason: 'test' })
+  await delay(10)
+
+  expect(result).toEqual('error')
 })
