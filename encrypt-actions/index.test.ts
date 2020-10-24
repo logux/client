@@ -1,5 +1,5 @@
-import { TestTime, TestPair } from '@logux/core'
 import { TextEncoder, TextDecoder } from 'util'
+import { TestTime, TestPair } from '@logux/core'
 import { Crypto } from '@peculiar/webcrypto'
 import { delay } from 'nanodelay'
 
@@ -107,5 +107,28 @@ it('ignores specific actions', async () => {
   expect(privateMethods(client2.log).actions()).toEqual([
     { type: 'sync' },
     { type: 'server' }
+  ])
+})
+
+it('cleans actions on server', async () => {
+  let client = createClient()
+  encryptActions(client, 'password')
+  await connect(client)
+
+  let meta = await client.log.add({ type: 'sync' }, { sync: true })
+  if (meta === false) throw new Error('Action was no inserted')
+  await delay(10)
+  getPair(client).clear()
+
+  await client.log.removeReason('test')
+  await client.log.removeReason('syncing')
+  await delay(10)
+  expect(getPair(client).leftSent).toMatchObject([
+    [
+      'sync',
+      2,
+      { type: '0/clean', id: meta.id },
+      { id: 2, time: expect.any(Number) }
+    ]
   ])
 })
