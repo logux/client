@@ -7,7 +7,8 @@ import {
   ClientNode,
   Action,
   Meta,
-  TokenGenerator
+  TokenGenerator,
+  AnyAction
 } from '@logux/core'
 
 type TabID = string
@@ -205,6 +206,28 @@ export class Client<H extends object = {}, L extends Log = Log<ClientMeta>> {
    * ```
    */
   start (): void
+
+  /**
+   * Send action to the server (by setting `meta.sync` and adding to the log)
+   * and track server processing.
+   *
+   * ```js
+   * showLoader()
+   * client.sync(
+   *   { type: 'CHANGE_NAME', name }
+   * ).then(() => {
+   *   hideLoader()
+   * }).catch(error => {
+   *   hideLoader()
+   *   showError(error.action.reason)
+   * })
+   * ```
+   *
+   * @param action The action
+   * @param meta Optional meta.
+   * @returns Promise for server processing.
+   */
+  sync (action: AnyAction, meta?: Partial<ClientMeta>): Promise<ClientMeta>
 
   /**
    * Add listener for adding action with specific type.
