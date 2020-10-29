@@ -1,14 +1,7 @@
-import {
-  MemoryStore,
-  TestPair,
-  TestTime,
-  TestLog,
-  Action,
-  Log
-} from '@logux/core'
+import { MemoryStore, TestPair, TestTime, TestLog, Action } from '@logux/core'
 import { delay } from 'nanodelay'
 
-import { Client, ClientOptions, ClientMeta } from '../index.js'
+import { Client, ClientOptions } from '../index.js'
 
 type Events = {
   [key: string]: (() => void)[]
@@ -69,7 +62,7 @@ function getPair (client: Client): TestPair {
 
 async function createDialog (
   opts: Partial<ClientOptions> = {},
-  token?: string
+  token: string | undefined = undefined
 ) {
   let pair = new TestPair()
 
