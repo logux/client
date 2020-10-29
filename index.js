@@ -7,6 +7,7 @@ let { confirm } = require('./confirm')
 let { favicon } = require('./favicon')
 let { Client } = require('./client')
 let { status } = require('./status')
+let { track } = require('./track')
 let { log } = require('./log')
 
 module.exports = {
@@ -21,5 +22,6 @@ module.exports = {
   Client,
   status,
   badge,
+  track,
   log
 }

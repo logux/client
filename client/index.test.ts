@@ -73,7 +73,7 @@ async function createDialog (
 ) {
   let pair = new TestPair()
 
-  let client = new Client<{}, Log<ClientMeta, MemoryStore>>({
+  let client = new Client<{}, TestLog>({
     subprotocol: '1.0.0',
     userId: '10',
     server: pair.left,
@@ -758,8 +758,8 @@ it('tracks server processing of action', async () => {
     })
 
   expect(result).toEqual('none')
-  expect(client.log.store.entries[0][1].sync).toBe(true)
-  let id = client.log.store.entries[0][1].id
+  expect(client.log.entries()[0][1].sync).toBe(true)
+  let id = client.log.entries()[0][1].id
   client.log.add({ type: 'logux/processed', id })
   await delay(10)
 
