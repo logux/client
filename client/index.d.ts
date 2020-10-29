@@ -44,6 +44,11 @@ export type ClientMeta = Meta & {
    * Disable setting `timeTravel` reason.
    */
   noAutoReason?: boolean
+
+  /**
+   * ID of the action for which this action is the answer received from the server.
+   */
+  answer?: string
 }
 
 export type ClientOptions = {
@@ -227,7 +232,13 @@ export class Client<H extends object = {}, L extends Log = Log<ClientMeta>> {
    * @param meta Optional meta.
    * @returns Promise for server processing.
    */
-  sync (action: AnyAction, meta?: Partial<ClientMeta>): Promise<ClientMeta>
+  sync (
+    action: AnyAction,
+    meta?: Partial<ClientMeta>
+  ): Promise<{
+    answer?: AnyAction[]
+    meta: ClientMeta
+  }>
 
   /**
    * Add listener for adding action with specific type.

@@ -93,6 +93,7 @@ class Client {
 
     this.last = {}
     this.subscriptions = {}
+    let answering = {}
     let subscribing = {}
     let unsubscribing = {}
 
@@ -134,8 +135,13 @@ class Client {
             this.last[subscription.channel] = { id: meta.id, time: meta.time }
           }
         }
-        if (type === 'logux/processed' && this.processing[action.id]) {
-          this.processing[action.id][0](meta)
+        if (this.processing[action.id]) {
+          let res = { meta }
+          if (answering[action.id]) {
+            res.answer = answering[action.id]
+            delete answering[action.id]
+          }
+          this.processing[action.id][0](res)
           delete this.processing[action.id]
         }
       } else if (type === 'logux/undo') {
@@ -158,6 +164,10 @@ class Client {
             }
           })
         }
+      } else if (meta.answer) {
+        let to = meta.answer
+        if (!answering[to]) answering[to] = []
+        answering[to].push(action)
       }
       if (process.env.NODE_ENV !== 'production') {
         if (type === 'logux/subscribe' || type === 'logux/unsubscribe') {
