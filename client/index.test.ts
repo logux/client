@@ -748,7 +748,7 @@ it('tracks server processing of action', async () => {
   let result = 'none'
   client
     .sync({ type: 'logux/subscribe' })
-    .then(meta => {
+    .then(({ meta }) => {
       expect(typeof meta.id).toEqual('string')
       result = 'processed'
     })
