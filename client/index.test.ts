@@ -786,3 +786,22 @@ it('tracks server error of action', async () => {
 
   expect(result).toEqual('error')
 })
+
+it('tracks server answers on action by another actions', async () => {
+  let client = await createDialog()
+
+  let answered
+  client.sync({ type: 'A' }).then(({ answer }) => {
+    answered = answer
+  })
+
+  let id = client.log.store.entries[0][1].id
+  client.log.add({ type: 'B' }, { answer: id })
+  client.log.add({ type: 'C' }, { answer: id })
+  expect(answered).toBeUndefined()
+
+  client.log.add({ type: 'logux/processed', id })
+  await delay(10)
+
+  expect(answered).toEqual([{ type: 'B' }, { type: 'C' }])
+})
