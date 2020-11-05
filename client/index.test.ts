@@ -790,11 +790,17 @@ it('copies state from node', async () => {
   })
 
   expect(client.state).toEqual('connecting')
-  await client.waitFor('connecting')
+  expect(client.connected).toBe(false)
+
+  await delay(10)
+  expect(client.state).toEqual('synchronized')
+  expect(client.connected).toBe(true)
+  await client.waitFor('synchronized')
 
   delay(100).then(() => {
     client.node.connection.disconnect()
   })
   await client.waitFor('disconnected')
+  expect(client.connected).toBe(false)
   expect(events).toEqual(['synchronized', 'disconnected'])
 })

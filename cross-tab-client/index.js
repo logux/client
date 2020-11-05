@@ -316,12 +316,6 @@ class CrossTabClient extends Client {
       return clientId
     }
   }
-
-  get connected () {
-    return (
-      this.leaderState !== 'disconnected' && this.leaderState !== 'connecting'
-    )
-  }
 }
 
 module.exports = { CrossTabClient }

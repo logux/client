@@ -41,11 +41,6 @@ export class CrossTabClient<
   role: 'leader' | 'candidate' | 'follower'
 
   /**
-   * Is leader tab connected to server.
-   */
-  connected: boolean
-
-  /**
    * Subscribe for synchronization events. It implements nanoevents API.
    * Supported events:
    *
