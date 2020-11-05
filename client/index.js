@@ -273,6 +273,10 @@ class Client {
     return this.node.state
   }
 
+  get connected () {
+    return this.state !== 'disconnected' && this.state !== 'connecting'
+  }
+
   start () {
     this.cleanPrevActions()
     this.node.connection.connect()

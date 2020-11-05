@@ -213,6 +213,11 @@ export class Client<H extends object = {}, L extends Log = Log<ClientMeta>> {
   state: ClientNode['state']
 
   /**
+   * Is leader tab connected to server.
+   */
+  connected: boolean
+
+  /**
    * Connect to server and reconnect on any connection problem.
    *
    * ```js
