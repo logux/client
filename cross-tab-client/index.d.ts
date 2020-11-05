@@ -41,20 +41,6 @@ export class CrossTabClient<
   role: 'leader' | 'candidate' | 'follower'
 
   /**
-   * Leader tab synchronization state. It can differs
-   * from `client.node.state` (because only the leader tab keeps connection).
-   *
-   * ```js
-   * client.on('state', () => {
-   *   if (client.state === 'disconnected' && client.state === 'sending') {
-   *     showCloseWarning()
-   *   }
-   * })
-   * ```
-   */
-  state: 'disconnected' | 'connecting' | 'sending' | 'synchronized'
-
-  /**
    * Is leader tab connected to server.
    */
   connected: boolean
@@ -86,18 +72,4 @@ export class CrossTabClient<
     event: 'preadd' | 'add' | 'clean',
     listener: ClientActionListener<Action>
   ): Unsubscribe
-
-  /**
-   * Wait for specific state of the leader tab.
-   *
-   * ```js
-   * await client.waitFor('synchronized')
-   * hideLoader()
-   * ```
-   *
-   * @param state State name
-   */
-  waitFor (
-    state: 'disconnected' | 'connecting' | 'sending' | 'synchronized'
-  ): Promise<void>
 }

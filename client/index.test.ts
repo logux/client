@@ -780,3 +780,21 @@ it('tracks server error of action', async () => {
 
   expect(result).toEqual('error')
 })
+
+it('copies state from node', async () => {
+  let client = await createDialog()
+
+  let events: string[] = []
+  client.on('state', () => {
+    events.push(client.state)
+  })
+
+  expect(client.state).toEqual('connecting')
+  await client.waitFor('connecting')
+
+  delay(100).then(() => {
+    client.node.connection.disconnect()
+  })
+  await client.waitFor('disconnected')
+  expect(events).toEqual(['synchronized', 'disconnected'])
+})
