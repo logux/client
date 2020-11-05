@@ -140,7 +140,7 @@ class CrossTabClient extends Client {
     this.leaderPing = 2000
     this.electionDelay = 1000
 
-    this.state = this.node.state
+    this.leaderState = this.node.state
 
     this.node.on('state', () => {
       if (this.role === 'leader') {
@@ -171,6 +171,14 @@ class CrossTabClient extends Client {
         sendToTabs(this, 'subprotocol', this.options.subprotocol)
       }
     }
+  }
+
+  get state () {
+    return this.leaderState
+  }
+
+  set state (value) {
+    this.leaderState = value
   }
 
   start () {
@@ -233,20 +241,6 @@ class CrossTabClient extends Client {
     }
   }
 
-  waitFor (state) {
-    if (this.state === state) {
-      return Promise.resolve()
-    }
-    return new Promise(resolve => {
-      let unbind = this.on('state', () => {
-        if (this.state === state) {
-          unbind()
-          resolve()
-        }
-      })
-    })
-  }
-
   onStorage (e) {
     if (e.newValue === null) return
 
@@ -277,8 +271,8 @@ class CrossTabClient extends Client {
       }
     } else if (e.key === storageKey(this, 'state')) {
       let state = JSON.parse(localStorage.getItem(e.key))
-      if (this.state !== state) {
-        this.state = state
+      if (this.leaderState !== state) {
+        this.leaderState = state
         this.emitter.emit('state')
       }
     } else if (e.key === storageKey(this, 'user')) {
@@ -324,7 +318,9 @@ class CrossTabClient extends Client {
   }
 
   get connected () {
-    return this.state !== 'disconnected' && this.state !== 'connecting'
+    return (
+      this.leaderState !== 'disconnected' && this.leaderState !== 'connecting'
+    )
   }
 }
 

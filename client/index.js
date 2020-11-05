@@ -269,6 +269,10 @@ class Client {
     this.processing = {}
   }
 
+  get state () {
+    return this.node.state
+  }
+
   start () {
     this.cleanPrevActions()
     this.node.connection.connect()
@@ -291,7 +295,9 @@ class Client {
   }
 
   on (event, listener) {
-    if (event === 'user') {
+    if (event === 'state') {
+      return this.node.emitter.on(event, listener)
+    } else if (event === 'user') {
       return this.emitter.on(event, listener)
     } else {
       return this.log.emitter.on(event, listener)
@@ -322,6 +328,20 @@ class Client {
 
     this.emitter.emit('user', userId)
     if (wasConnected) this.node.connection.connect()
+  }
+
+  waitFor (state) {
+    if (this.state === state) {
+      return Promise.resolve()
+    }
+    return new Promise(resolve => {
+      let unbind = this.on('state', () => {
+        if (this.state === state) {
+          unbind()
+          resolve()
+        }
+      })
+    })
   }
 
   destroy () {

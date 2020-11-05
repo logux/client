@@ -199,6 +199,20 @@ export class Client<H extends object = {}, L extends Log = Log<ClientMeta>> {
   node: ClientNode<H, L>
 
   /**
+   * Leader tab synchronization state. It can differs
+   * from `client.node.state` (because only the leader tab keeps connection).
+   *
+   * ```js
+   * client.on('state', () => {
+   *   if (client.state === 'disconnected' && client.state === 'sending') {
+   *     showCloseWarning()
+   *   }
+   * })
+   * ```
+   */
+  state: ClientNode['state']
+
+  /**
    * Connect to server and reconnect on any connection problem.
    *
    * ```js
@@ -271,6 +285,7 @@ export class Client<H extends object = {}, L extends Log = Log<ClientMeta>> {
    * @param listener The listener function.
    * @returns Unbind listener from event.
    */
+  on (event: 'state', listener: () => void): Unsubscribe
   on (
     event: 'preadd' | 'add' | 'clean',
     listener: ClientActionListener<Action>
@@ -296,6 +311,18 @@ export class Client<H extends object = {}, L extends Log = Log<ClientMeta>> {
    * @param token Credentials for new user.
    */
   changeUser (userId: string, token?: string): void
+
+  /**
+   * Wait for specific state of the leader tab.
+   *
+   * ```js
+   * await client.waitFor('synchronized')
+   * hideLoader()
+   * ```
+   *
+   * @param state State name
+   */
+  waitFor (state: ClientNode['state']): Promise<void>
 
   /**
    * Disconnect and stop synchronization.
