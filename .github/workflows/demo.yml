@@ -1,0 +1,31 @@
+name: Deploy Demo
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  env:
+    FORCE_COLOR: 2
+  jobs:
+    full:
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout the repository
+          uses: actions/checkout@v2
+          with:
+            persist-credentials: false
+        - name: Install Node.js
+          uses: actions/setup-node@v1
+          with:
+            node-version: 15
+        - name: Install dependencies
+          run: yarn install --frozen-lockfile
+        - name: Build
+          run: yarn build
+        - name: Deploy 🚀
+          uses: JamesIves/github-pages-deploy-action@3.7.1
+          with:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            FOLDER: test/demo/build
