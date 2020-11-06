@@ -92,8 +92,7 @@
     },
     "moduleNameMapper": {
       ".*\\.svg$": "<rootDir>/test/image.js"
-    },
-    "testEnvironment": "node"
+    }
   },
   "eslintConfig": {
     "extends": "@logux/eslint-config/ts",
