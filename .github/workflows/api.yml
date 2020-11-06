@@ -1,10 +1,8 @@
 name: Update API
-
 on:
   create:
     tags:
       - "*.*.*"
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
