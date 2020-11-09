@@ -2,6 +2,8 @@ let { badge, badgeRu, badgeEn } = require('./badge')
 let { CrossTabClient } = require('./cross-tab-client')
 let { encryptActions } = require('./encrypt-actions')
 let { IndexedStore } = require('./indexed-store')
+let { TestServer } = require('./test-server')
+let { TestClient } = require('./test-client')
 let { attention } = require('./attention')
 let { confirm } = require('./confirm')
 let { favicon } = require('./favicon')
@@ -14,6 +16,8 @@ module.exports = {
   encryptActions,
   CrossTabClient,
   IndexedStore,
+  TestServer,
+  TestClient,
   attention,
   confirm,
   badgeRu,
