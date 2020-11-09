@@ -217,6 +217,7 @@ class Client {
       subprotocol: this.options.subprotocol,
       outFilter,
       timeout: this.options.timeout,
+      fixTime: !this.options.time,
       outMap,
       token: this.options.token,
       ping: this.options.ping
