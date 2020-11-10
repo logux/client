@@ -11,7 +11,6 @@ class TestServer {
     this.channels = {}
     this.resenders = {}
     this.log.on('preadd', (action, meta) => {
-      meta.reasons.push('test')
       if (this.resenders[action.type]) {
         let channels = this.resenders[action.type](action, meta)
         if (typeof channels === 'string') channels = [channels]
@@ -120,6 +119,12 @@ class TestServer {
       delete this.subscriptions[action.channel][nodeId]
     }
     this.log.add({ type: 'logux/processed', id }, { nodes })
+  }
+
+  keepActions () {
+    this.log.on('preadd', (action, meta) => {
+      meta.reasons.push('test')
+    })
   }
 }
 

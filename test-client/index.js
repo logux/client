@@ -14,9 +14,6 @@ class TestClient extends Client {
       userId,
       time: server.time
     })
-    this.log.on('preadd', (action, meta) => {
-      meta.reasons.push('test')
-    })
     this.pair = pair
     this.server = server
   }
@@ -46,6 +43,12 @@ class TestClient extends Client {
   subscribed (channel) {
     let nodes = this.server.subscriptions[channel] || {}
     return !!nodes[this.nodeId]
+  }
+
+  keepActions () {
+    this.log.on('preadd', (action, meta) => {
+      meta.reasons.push('test')
+    })
   }
 }
 
