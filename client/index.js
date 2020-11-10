@@ -8,6 +8,8 @@ let { parseId } = require('@logux/core/parse-id')
 let { nanoid } = require('nanoid')
 let { Log } = require('@logux/core/log')
 
+const { track } = require('../track')
+
 let ALLOWED_META = ['id', 'time', 'subprotocol']
 
 function tabPing (c) {
@@ -135,7 +137,7 @@ class Client {
           }
         }
         if (type === 'logux/processed' && this.processing[action.id]) {
-          this.processing[action.id][0](meta)
+          this.processing[action.id][1](meta)
           delete this.processing[action.id]
         }
       } else if (type === 'logux/undo') {
@@ -144,7 +146,7 @@ class Client {
             'Server undid Logux action because of ' + action.reason
           )
           error.action = action
-          this.processing[action.id][1](error)
+          this.processing[action.id][2](error)
           delete this.processing[action.id]
         }
         delete subscribing[action.id]
@@ -289,10 +291,8 @@ class Client {
       meta.id = this.log.generateId()
     }
 
-    return new Promise((resolve, reject) => {
-      this.processing[meta.id] = [resolve, reject]
-      this.log.add(action, meta)
-    })
+    this.log.add(action, meta)
+    return track(this, meta.id)
   }
 
   type (type, listener, event = 'add') {

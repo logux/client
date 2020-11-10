@@ -1,7 +1,14 @@
 function track (client, id) {
-  return new Promise((resolve, reject) => {
-    client.processing[id] = [resolve, reject]
+  if (client.processing[id]) return client.processing[id][0]
+
+  let resolveCallback, rejectCallback
+  let promise = new Promise((resolve, reject) => {
+    resolveCallback = resolve
+    rejectCallback = reject
   })
+  client.processing[id] = [promise, resolveCallback, rejectCallback]
+
+  return promise
 }
 
 module.exports = { track }
