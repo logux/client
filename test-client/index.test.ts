@@ -309,7 +309,6 @@ it('freezes processing', async () => {
     await delay(10)
     expect(client.log.actions()).toEqual([{ type: 'test' }])
   })
-  await delay(10)
   expect(client.log.actions()).toEqual([
     { type: 'test' },
     { type: 'logux/processed', id: '1 10:2:2 0' }
