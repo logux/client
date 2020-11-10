@@ -23,8 +23,54 @@ it('sets node ID', () => {
   expect(client.nodeId).toEqual('10:2:2')
 })
 
+it('collects actions', async () => {
+  let client1 = new TestClient('10')
+  let client2 = new TestClient('20', { server: client1.server })
+  await Promise.all([client1.connect(), client2.connect()])
+
+  await client1.sync({ type: 'A' })
+  let action1 = await client1.sent(async () => {
+    await client1.log.add({ type: 'local' })
+    await client1.sync({ type: 'B' })
+    await client2.sync({ type: 'C' })
+  })
+  expect(action1).toEqual([{ type: 'B' }])
+})
+
+it('keeps actions by request', async () => {
+  let client = new TestClient('10')
+  await client.connect()
+
+  await client.sync({ type: 'A' })
+  expect(client.log.actions()).toEqual([])
+  expect(client.server.log.actions()).toEqual([])
+
+  client.keepActions()
+  await client.sync({ type: 'B' })
+  expect(client.log.actions()).toEqual([
+    { type: 'B' },
+    { type: 'logux/processed', id: '3 10:2:2 0' }
+  ])
+  expect(client.server.log.actions()).toEqual([])
+
+  client.server.keepActions()
+  await client.sync({ type: 'C' })
+  expect(client.log.actions()).toEqual([
+    { type: 'B' },
+    { type: 'logux/processed', id: '3 10:2:2 0' },
+    { type: 'C' },
+    { type: 'logux/processed', id: '5 10:2:2 0' }
+  ])
+  expect(client.server.log.actions()).toEqual([
+    { type: 'C' },
+    { type: 'logux/processed', id: '5 10:2:2 0' }
+  ])
+})
+
 it('connects, sends, and processes actions', async () => {
   let client = new TestClient('10')
+  client.keepActions()
+  client.server.keepActions()
 
   await client.log.add({ type: 'local' })
   await client.log.add({ type: 'offline1' }, { sync: true })
@@ -72,6 +118,7 @@ it('connects, sends, and processes actions', async () => {
 
 it('supports channels', async () => {
   let client = new TestClient('10')
+  client.keepActions()
 
   client.server.onChannel('users/1', { type: 'name', userId: '1' })
   client.server.onChannel('users/1', { type: 'name', userId: '1', name: 'A' })
@@ -149,6 +196,8 @@ it('supports undo', async () => {
 it('supports multiple clients with same server', async () => {
   let client1 = new TestClient('10')
   let client2 = new TestClient('20', { server: client1.server })
+  client1.keepActions()
+  client2.keepActions()
 
   await Promise.all([client1.connect(), client2.connect()])
 
@@ -156,6 +205,7 @@ it('supports multiple clients with same server', async () => {
   client1.server.resend<NameAction>('name', action => `users/${action.userId}`)
 
   await client1.sync({ type: 'default' })
+  await delay(1)
   expect(client2.log.actions()).toEqual([{ type: 'default' }])
 
   await client2.sync({ type: 'logux/subscribe', channel: 'users/1' })
@@ -227,10 +277,13 @@ it('supports subprotocols', async () => {
     server: client1.server,
     subprotocol: '1.0.1'
   })
+  client1.keepActions()
+  client2.keepActions()
   await Promise.all([client1.connect(), client2.connect()])
 
   await client1.sync({ type: 'client1' })
   await client2.sync({ type: 'client2' })
+  await delay(1)
 
   expect(client1.log.actions()).toEqual([
     { type: 'client1' },
@@ -249,6 +302,7 @@ it('supports subprotocols', async () => {
 
 it('freezes processing', async () => {
   let client = new TestClient('10')
+  client.keepActions()
   await client.connect()
   await client.server.freezeProcessing(async () => {
     await client.log.add({ type: 'test' }, { sync: true })
@@ -260,18 +314,4 @@ it('freezes processing', async () => {
     { type: 'test' },
     { type: 'logux/processed', id: '1 10:2:2 0' }
   ])
-})
-
-it('collects actions', async () => {
-  let client1 = new TestClient('10')
-  let client2 = new TestClient('20', { server: client1.server })
-  await Promise.all([client1.connect(), client2.connect()])
-
-  await client1.sync({ type: 'A' })
-  let action1 = await client1.sent(async () => {
-    await client1.log.add({ type: 'local' })
-    await client1.sync({ type: 'B' })
-    await client2.sync({ type: 'C' })
-  })
-  expect(action1).toEqual([{ type: 'B' }])
 })
