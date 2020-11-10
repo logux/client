@@ -34,8 +34,8 @@
   },
   "devDependencies": {
     "@logux/core": "logux/core#next",
-    "@logux/eslint-config": "^42.2.0",
-    "@logux/sharec-config": "^0.8.3",
+    "@logux/eslint-config": "^42.2.1",
+    "@logux/sharec-config": "^0.8.4",
     "@peculiar/webcrypto": "^1.1.3",
     "@size-limit/dual-publish": "^4.7.0",
     "@size-limit/preset-small-lib": "^4.7.0",
@@ -44,7 +44,7 @@
     "@types/ws": "^7.4.0",
     "@typescript-eslint/eslint-plugin": "^4.7.0",
     "@typescript-eslint/parser": "^4.7.0",
-    "check-dts": "^0.3.3",
+    "check-dts": "^0.4.0",
     "colorette": "^1.2.1",
     "dual-publish": "^0.11.0",
     "eslint": "^7.13.0",
@@ -57,7 +57,6 @@
     "eslint-plugin-prettierx": "^0.14.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-security": "^1.4.0",
-    "eslint-plugin-standard": "^4.1.0",
     "eslint-plugin-unicorn": "^23.0.0",
     "fake-indexeddb": "^3.1.2",
     "husky": "^4.3.0",
@@ -159,6 +158,6 @@
   },
   "sharec": {
     "config": "@logux/sharec-config",
-    "version": "0.8.3"
+    "version": "0.8.4"
   }
 }
