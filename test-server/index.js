@@ -1,4 +1,5 @@
 let { TestTime, ServerNode, parseId } = require('@logux/core')
+let { delay } = require('nanodelay')
 
 class TestServer {
   constructor () {
@@ -79,6 +80,7 @@ class TestServer {
       this.process(action, meta)
     }
     this.deferred = []
+    await delay(10)
   }
 
   resend (type, resend) {
