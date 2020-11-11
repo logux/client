@@ -804,3 +804,27 @@ it('copies state from node', async () => {
   expect(client.connected).toBe(false)
   expect(events).toEqual(['synchronized', 'disconnected'])
 })
+
+it('destroys objects on client destroy', () => {
+  let client = new Client({
+    subprotocol: '1.0.0',
+    server: 'wss://localhost:1337',
+    userId: '10'
+  })
+
+  let destroys: string[] = []
+  class B {
+    destroy () {
+      destroys.push('B')
+    }
+  }
+  client.objects.set('A', {
+    destroy () {
+      destroys.push('A')
+    }
+  })
+  client.objects.set(B, new B())
+
+  client.destroy()
+  expect(destroys).toEqual(['A', 'B'])
+})

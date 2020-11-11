@@ -356,6 +356,9 @@ class Client {
     if (typeof window !== 'undefined' && window.removeEventListener) {
       window.removeEventListener('unload', this.onUnload)
     }
+    for (let obj of this.objects.values()) {
+      if (obj.destroy) obj.destroy()
+    }
   }
 
   clean () {
