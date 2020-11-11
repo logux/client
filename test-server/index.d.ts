@@ -54,7 +54,7 @@ export class TestServer {
    * @param reason Optional code for reason. Default is `'error'`.
    * @param extra Extra fields to `logux/undo` action.
    */
-  undoAction (action: Action, reason?: string, extra?: object): void
+  undoAction (action: AnyAction, reason?: string, extra?: object): void
 
   /**
    * Define server’s responses for specific channel.
