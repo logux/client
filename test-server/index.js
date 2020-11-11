@@ -1,4 +1,5 @@
 let { TestTime, ServerNode, parseId } = require('@logux/core')
+let stringify = require('fast-json-stable-stringify')
 let { delay } = require('nanodelay')
 
 class TestServer {
@@ -70,7 +71,7 @@ class TestServer {
   }
 
   undoAction (action, reason, extra) {
-    this.bad[JSON.stringify(action)] = [reason || 'error', extra || {}]
+    this.bad[stringify(action)] = [reason || 'error', extra || {}]
   }
 
   onChannel (channel, response) {
@@ -108,7 +109,7 @@ class TestServer {
     let nodes = [nodeId]
 
     if (this.sendUndo(action, meta, this.undo.shift())) return
-    if (this.sendUndo(action, meta, this.bad[JSON.stringify(action)])) return
+    if (this.sendUndo(action, meta, this.bad[stringify(action)])) return
 
     if (action.type === 'logux/subscribe') {
       if (!this.subscriptions[action.channel]) {

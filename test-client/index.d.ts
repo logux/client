@@ -1,4 +1,4 @@
-import { TestLog, Action, TestPair, ServerNode } from '@logux/core'
+import { TestLog, TestPair, Action } from '@logux/core'
 
 import { Client, ClientMeta } from '../client/index.js'
 import { TestServer } from '../test-server/index.js'
