@@ -6,6 +6,7 @@ class TestServer {
     this.time = new TestTime()
     this.log = this.time.nextLog({ nodeId: 'server:id' })
     this.undo = []
+    this.bad = {}
     this.subscriptions = {}
     this.frozen = false
     this.deferred = []
@@ -68,6 +69,10 @@ class TestServer {
     this.undo.push([reason || 'error', extra || {}])
   }
 
+  undoAction (action, reason, extra) {
+    this.bad[JSON.stringify(action)] = [reason || 'error', extra || {}]
+  }
+
   onChannel (channel, response) {
     this.channels[channel] = response
   }
@@ -87,18 +92,23 @@ class TestServer {
     this.resenders[type] = resend
   }
 
+  sendUndo (action, meta, record) {
+    if (!record) return false
+    let [reason, extra] = record
+    this.log.add(
+      { type: 'logux/undo', id: meta.id, reason, action, ...extra },
+      { nodes: [parseId(meta.id).nodeId] }
+    )
+    return true
+  }
+
   process (action, meta) {
     let id = meta.id
     let nodeId = parseId(id).nodeId
     let nodes = [nodeId]
-    if (this.undo.length > 0) {
-      let [reason, extra] = this.undo.shift()
-      this.log.add(
-        { type: 'logux/undo', id, reason, action, ...extra },
-        { nodes }
-      )
-      return
-    }
+
+    if (this.sendUndo(action, meta, this.undo.shift())) return
+    if (this.sendUndo(action, meta, this.bad[JSON.stringify(action)])) return
 
     if (action.type === 'logux/subscribe') {
       if (!this.subscriptions[action.channel]) {

@@ -193,6 +193,16 @@ it('supports undo', async () => {
   expect(error3.action.key).toEqual(1)
 })
 
+it('supports undo for specific action', async () => {
+  let client = new TestClient('10')
+  await client.connect()
+
+  client.server.undoAction({ type: 'B' })
+  await client.sync({ type: 'A' })
+  let error = await catchError(() => client.sync({ type: 'B' }))
+  expect(error.message).toEqual('Server undid Logux action because of error')
+})
+
 it('supports multiple clients with same server', async () => {
   let client1 = new TestClient('10')
   let client2 = new TestClient('20', { server: client1.server })

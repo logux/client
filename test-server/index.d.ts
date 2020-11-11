@@ -37,6 +37,26 @@ export class TestServer {
   undoNext (reason?: string, extra?: object): void
 
   /**
+   * Response with `logux/undo` instead of `logux/process` on receiving
+   * specific action.
+   *
+   * ```js
+   * client.server.undoAction(
+   *   { type: 'rename', userId: '10', value: 'Bad name' }
+   * )
+   * user.rename('Good name')
+   * user.rename('Bad name')
+   * await delay(10)
+   * expect(user.name).toEqual('Good name')
+   * ```
+   *
+   * @param action Action to be undone on receiving
+   * @param reason Optional code for reason. Default is `'error'`.
+   * @param extra Extra fields to `logux/undo` action.
+   */
+  undoAction (action: Action, reason?: string, extra?: object): void
+
+  /**
    * Define server’s responses for specific channel.
    *
    * Second call with the same channel name will override previous data.
