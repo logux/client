@@ -769,7 +769,8 @@ it('tracks server error of action', async () => {
       result = 'processed'
     })
     .catch(e => {
-      expect(e.message).toEqual('Server undid Logux action because of test')
+      expect(e.name).toEqual('LoguxUndoError')
+      expect(e.message).toEqual('Server undid action because of test')
       expect(e.action.type).toEqual('logux/undo')
       result = 'error'
     })

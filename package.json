@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "@logux/core": "logux/core#next",
-    "@logux/eslint-config": "^42.2.1",
+    "@logux/eslint-config": "^42.2.2",
     "@logux/sharec-config": "^0.8.4",
     "@peculiar/webcrypto": "^1.1.3",
     "@size-limit/dual-publish": "^4.7.0",

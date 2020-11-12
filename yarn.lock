@@ -1222,10 +1222,10 @@
   dependencies:
     nanoevents "^5.1.10"
 
-"@logux/eslint-config@^42.2.1":
-  version "42.2.1"
-  resolved "https://registry.yarnpkg.com/@logux/eslint-config/-/eslint-config-42.2.1.tgz#83bd48297c84d58186844db81b703e168c3c1889"
-  integrity sha512-swwEeZZzdwE7fiIkZFVKrxcxztQ+W2DpQlY+JhHcoQQnM26ePh+EKRVkfJQqlQJvFF141rVSnb4fsaBR3w8yNA==
+"@logux/eslint-config@^42.2.2":
+  version "42.2.2"
+  resolved "https://registry.yarnpkg.com/@logux/eslint-config/-/eslint-config-42.2.2.tgz#3bc238554dabaeb70e633fd3eb3983903da0c517"
+  integrity sha512-C68dVNmKiqvryoVM4es3tHSjabXwASGAgzwqJRBuguf9/JDQPmwLQJTl2F+GWiOCA7IZ3GPdhwZAclfrUqZMGQ==
   dependencies:
     globals "^13.3.0"
 
