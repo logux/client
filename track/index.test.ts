@@ -37,7 +37,7 @@ it('tracks action processing', async () => {
     await client.log.add({ type: 'logux/undo', id: meta2.id, reason: 'test' })
   }
   await delay(10)
-  expect(results).toEqual(['Server undid Logux action because of test'])
+  expect(results).toEqual(['Server undid action because of test'])
 })
 
 it('works on multiple calls', async () => {

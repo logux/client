@@ -8,7 +8,8 @@ let { parseId } = require('@logux/core/parse-id')
 let { nanoid } = require('nanoid')
 let { Log } = require('@logux/core/log')
 
-const { track } = require('../track')
+let { LoguxUndoError } = require('../logux-undo-error')
+let { track } = require('../track')
 
 let ALLOWED_META = ['id', 'time', 'subprotocol']
 
@@ -142,11 +143,7 @@ class Client {
         }
       } else if (type === 'logux/undo') {
         if (this.processing[action.id]) {
-          let error = new Error(
-            'Server undid Logux action because of ' + action.reason
-          )
-          error.action = action
-          this.processing[action.id][2](error)
+          this.processing[action.id][2](new LoguxUndoError(action))
           delete this.processing[action.id]
         }
         delete subscribing[action.id]
