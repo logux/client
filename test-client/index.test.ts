@@ -1,15 +1,17 @@
 import { AnyAction } from '@logux/core'
 import { delay } from 'nanodelay'
 
-import { TestClient, LoguxUndoError } from '../index.js'
+import { TestClient, LoguxUndoError, LoguxUndoAction } from '../index.js'
 
 interface NameAction {
   type: 'name'
   userId: string
 }
 
+type LoguxUndoWithKeyAction = LoguxUndoAction & { key?: number }
+
 async function catchError (cb: () => Promise<any>) {
-  let error: LoguxUndoError<AnyAction> | undefined
+  let error: LoguxUndoError<LoguxUndoWithKeyAction> | undefined
   try {
     await cb()
   } catch (e) {
@@ -179,7 +181,7 @@ it('supports undo', async () => {
 
   client.server.undoNext()
   let error1 = await catchError(() => client.sync({ type: 'test' }))
-  expect(error1.message).toEqual('Server undid action because of error')
+  expect(error1.message).toEqual('Server undid test because of error')
 
   await client.sync({ type: 'test' })
 
@@ -187,10 +189,10 @@ it('supports undo', async () => {
   client.server.undoNext('test', { key: 1 })
 
   let error2 = await catchError(() => client.sync({ type: 'test' }))
-  expect(error2.message).toEqual('Server undid action because of test')
+  expect(error2.message).toEqual('Server undid test because of test')
 
   let error3 = await catchError(() => client.sync({ type: 'test' }))
-  expect(error3.message).toEqual('Server undid action because of test')
+  expect(error3.message).toEqual('Server undid test because of test')
   expect(error3.action.key).toEqual(1)
 })
 
