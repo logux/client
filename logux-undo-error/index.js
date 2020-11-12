@@ -1,6 +1,7 @@
 class LoguxUndoError extends Error {
   constructor (action) {
-    super('Server undid action because of ' + action.reason)
+    let type = action.action ? action.action.type : 'action'
+    super(`Server undid ${type} because of ${action.reason}`)
     this.name = 'LoguxUndoError'
     this.action = action
   }
