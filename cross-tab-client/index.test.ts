@@ -497,7 +497,7 @@ it('changes state on leader death', async () => {
   localStorage.setItem('logux:10:state', '"sending"')
 
   client.start()
-  await delay(40)
+  await delay(30)
   expect(client.state).toEqual('disconnected')
   expect(localStorage.getItem('logux:10:state')).toEqual('"disconnected"')
 })
