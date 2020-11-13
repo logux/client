@@ -10,7 +10,12 @@ export {
   ZeroAction,
   ZeroCleanAction
 } from './encrypt-actions/index.js'
-export { Client, ClientMeta, ClientOptions } from './client/index.js'
+export {
+  Client,
+  ClientMeta,
+  ClientOptions,
+  LoguxSubscribeAction
+} from './client/index.js'
 export { LoguxUndoError, LoguxUndoAction } from './logux-undo-error/index.js'
 export { CrossTabClient } from './cross-tab-client/index.js'
 export { IndexedStore } from './indexed-store/index.js'
