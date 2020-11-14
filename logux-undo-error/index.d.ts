@@ -10,6 +10,15 @@ export type LoguxUndoAction<
   action: A
 }
 
+export type LoguxSubscribeAction = {
+  type: 'logux/subscribe'
+  channel: string
+  since?: {
+    id: string
+    time: number
+  }
+}
+
 /**
  * Error on `logux/undo` action from the server.
  *
@@ -47,3 +56,15 @@ export class LoguxUndoError<
 
   constructor (action: A)
 }
+
+export type ChannelNotFoundError = LoguxUndoError<
+  LoguxUndoAction<LoguxSubscribeAction, 'notFound'>
+>
+
+export type ChannelDeniedError = LoguxUndoError<
+  LoguxUndoAction<LoguxSubscribeAction, 'denied'>
+>
+
+export type ChannelServerError = LoguxUndoError<
+  LoguxUndoAction<LoguxSubscribeAction, 'error'>
+>
