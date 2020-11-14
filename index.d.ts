@@ -17,7 +17,8 @@ export {
   LoguxSubscribeAction,
   ChannelNotFoundError,
   ChannelDeniedError,
-  ChannelServerError
+  ChannelServerError,
+  ChannelError
 } from './logux-undo-error/index.js'
 export { CrossTabClient } from './cross-tab-client/index.js'
 export { IndexedStore } from './indexed-store/index.js'

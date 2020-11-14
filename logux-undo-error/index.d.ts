@@ -68,3 +68,8 @@ export type ChannelDeniedError = LoguxUndoError<
 export type ChannelServerError = LoguxUndoError<
   LoguxUndoAction<LoguxSubscribeAction, 'error'>
 >
+
+export type ChannelError =
+  | ChannelNotFoundError
+  | ChannelDeniedError
+  | ChannelServerError
