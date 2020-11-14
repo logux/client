@@ -44,4 +44,6 @@ export class LoguxUndoError<
    * ```
    */
   action: A
+
+  constructor (action: A)
 }
