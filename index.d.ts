@@ -10,13 +10,15 @@ export {
   ZeroAction,
   ZeroCleanAction
 } from './encrypt-actions/index.js'
+export { Client, ClientMeta, ClientOptions } from './client/index.js'
 export {
-  Client,
-  ClientMeta,
-  ClientOptions,
-  LoguxSubscribeAction
-} from './client/index.js'
-export { LoguxUndoError, LoguxUndoAction } from './logux-undo-error/index.js'
+  LoguxUndoError,
+  LoguxUndoAction,
+  LoguxSubscribeAction,
+  ChannelNotFoundError,
+  ChannelDeniedError,
+  ChannelServerError
+} from './logux-undo-error/index.js'
 export { CrossTabClient } from './cross-tab-client/index.js'
 export { IndexedStore } from './indexed-store/index.js'
 export { TestServer } from './test-server/index.js'

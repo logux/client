@@ -13,15 +13,6 @@ import {
 
 type TabID = string
 
-export type LoguxSubscribeAction = {
-  type: 'logux/subscribe'
-  channel: string
-  since?: {
-    id: string
-    time: number
-  }
-}
-
 export interface ClientActionListener<A extends Action> {
   (action: A, meta: ClientMeta): void
 }
