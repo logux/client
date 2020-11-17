@@ -625,6 +625,9 @@ it('notifies other tabs on user change', () => {
   expect(localStorage.getItem('logux:10:user')).toEqual(
     `["${client.tabId}","20"]`
   )
+  expect(localStorage.getItem('logux:20:client')).toEqual(
+    client.clientId.split(':')[1]
+  )
   expect(users).toEqual(['20'])
 })
 
