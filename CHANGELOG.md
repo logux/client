@@ -1,6 +1,9 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.9.3
+* Fix `changeUser()` for cross-tab client case (by Sergey Korolev).
+
 ## 0.9.2
 * Fix log messages (by Eduard Aksamitov).
 * Replace `chalk` with `colorette`.
