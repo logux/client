@@ -279,7 +279,7 @@ class Client {
 
     this.options.userId = userId
     this.options.token = token
-    this.clientId = userId + ':' + this.clientId.split(':')[1]
+    this.clientId = userId + ':' + this.getClientId()
     this.nodeId = this.clientId + ':' + this.tabId
 
     this.log.nodeId = this.nodeId

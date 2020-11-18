@@ -684,11 +684,12 @@ it('changes user ID of disconnected node', async () => {
   let client = await createDialog()
   client.node.connection.disconnect()
   client.changeUser('20', 'token')
-  expect(client.node.localNodeId).toEqual('20:1:1')
+  let clientID = client.clientId.split(':')[1]
+  expect(client.node.localNodeId).toEqual(`20:${clientID}:1`)
   expect(client.node.state).toEqual('disconnected')
   let meta = await client.log.add({ type: 'test' })
   if (meta === false) throw new Error('Action was not found')
-  expect(meta.id).toContain(' 20:1:1 ')
+  expect(meta.id).toContain(` 20:${clientID}:1 `)
 })
 
 it('checks user ID during changing', async () => {
