@@ -1,4 +1,4 @@
-let { LoguxError } = require('@logux/core/logux-error')
+let { LoguxError, actionEvents } = require('@logux/core')
 
 let { Client } = require('../client')
 
@@ -149,15 +149,13 @@ class CrossTabClient extends Client {
     })
 
     this.log.on('add', (action, meta) => {
-      this.emitter.emit(`add-${action.type}`, action, meta)
-      this.emitter.emit('add', action, meta)
+      actionEvents(this.emitter, 'add', action, meta)
       if (meta.tab !== this.tabId) {
         sendToTabs(this, 'add', [this.tabId, action, meta])
       }
     })
     this.log.on('clean', (action, meta) => {
-      this.emitter.emit(`clean-${action.type}`, action, meta)
-      this.emitter.emit('clean', action, meta)
+      actionEvents(this.emitter, 'clean', action, meta)
     })
 
     if (typeof window !== 'undefined' && window.addEventListener) {
@@ -225,11 +223,13 @@ class CrossTabClient extends Client {
     super.changeUser(userId, token)
   }
 
-  type (type, listener, event = 'add') {
-    if (event === 'preadd') {
-      return this.log.type(type, listener, event)
+  type (type, listener, opts = {}) {
+    if (opts.event === 'preadd') {
+      return this.log.type(type, listener, opts)
     } else {
-      return this.emitter.on(`${event}-${type}`, listener)
+      let event = opts.event || 'add'
+      let id = opts.id || ''
+      return this.emitter.on(`${event}-${type}-${id}`, listener)
     }
   }
 
@@ -254,8 +254,7 @@ class CrossTabClient extends Client {
           if (isMemory(this.log.store)) {
             this.log.store.add(action, meta)
           }
-          this.emitter.emit(`add-${action.type}`, action, meta)
-          this.emitter.emit('add', action, meta)
+          actionEvents(this.emitter, 'add', action, meta)
           if (this.role === 'leader') {
             this.node.onAdd(action, meta)
           }

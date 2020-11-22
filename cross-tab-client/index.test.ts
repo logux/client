@@ -105,6 +105,7 @@ it('supports nanoevents API', async () => {
   let c: string[] = []
   let preadd: string[] = []
   let preaddC: string[] = []
+  let id: string[] = []
   client.on('preadd', action => {
     preadd.push(action.type)
   })
@@ -113,11 +114,18 @@ it('supports nanoevents API', async () => {
     action => {
       preaddC.push(action.type)
     },
-    'preadd'
+    { event: 'preadd' }
   )
   let unbindType = client.type('C', action => {
     c.push(action.type)
   })
+  client.type(
+    'D',
+    action => {
+      id.push(action.type)
+    },
+    { id: 'ID' }
+  )
   let unbindAdd = client.on('add', action => {
     twice.push(action.type)
     if (action.type === 'B') unbindAdd()
@@ -129,10 +137,13 @@ it('supports nanoevents API', async () => {
   await client.log.add({ type: 'C' })
   unbindType()
   await client.log.add({ type: 'C' })
-  expect(preadd).toEqual(['A', 'B', 'C', 'C', 'C'])
+  await client.log.add({ type: 'D', id: 'ID' })
+  await client.log.add({ type: 'D', id: 'Other' })
+  expect(preadd).toEqual(['A', 'B', 'C', 'C', 'C', 'D', 'D'])
   expect(twice).toEqual(['A', 'B'])
   expect(c).toEqual(['C', 'C'])
   expect(preaddC).toEqual(['C', 'C', 'C'])
+  expect(id).toEqual(['D'])
 })
 
 it('cleans everything', async () => {

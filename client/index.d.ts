@@ -254,7 +254,7 @@ export class Client<H extends object = {}, L extends Log = Log<ClientMeta>> {
   type<A extends Action = Action, T extends string = A['type']> (
     type: T,
     listener: ClientActionListener<A>,
-    event?: 'preadd' | 'add' | 'clean'
+    opts?: { id?: string; event?: 'preadd' | 'add' | 'clean' }
   ): Unsubscribe
 
   /**

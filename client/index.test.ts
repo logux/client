@@ -718,7 +718,7 @@ it('has type listeners', async () => {
     action => {
       events.push(['preadd A', action.type])
     },
-    'preadd'
+    { event: 'preadd' }
   )
 
   await client.log.add({ type: 'A' })
