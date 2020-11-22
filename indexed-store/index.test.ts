@@ -94,7 +94,7 @@ it('reloads page on database update', async () => {
   store = new IndexedStore()
   await privateMethods(store).init()
   let opening = indexedDB.open(store.name, 1000)
-  await new Promise((resolve, reject) => {
+  await new Promise<void>((resolve, reject) => {
     opening.onsuccess = (e: any) => {
       e.target.result.close()
       resolve()
