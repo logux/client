@@ -292,8 +292,8 @@ class Client {
     return track(this, meta.id)
   }
 
-  type (type, listener, event = 'add') {
-    return this.log.type(type, listener, event)
+  type (type, listener, opts) {
+    return this.log.type(type, listener, opts)
   }
 
   on (event, listener) {
