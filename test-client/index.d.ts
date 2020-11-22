@@ -103,7 +103,7 @@ export class TestClient<H extends object = {}> extends Client<
    * @param test Function, where do you expect action will be received
    * @returns Promise with all received actions
    */
-  sent (test: () => Promise<void>): Promise<Action[]>
+  sent (test: () => Promise<void> | void): Promise<Action[]>
 
   /**
    * Keep actions without `meta.reasons` in the log by setting `test` reason
