@@ -26,3 +26,4 @@ jobs:
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           FOLDER: test/demo/build
+          BRANCH: gh-pages
