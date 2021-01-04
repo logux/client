@@ -28,7 +28,6 @@ function cleanTabActions (client, id) {
 class Client {
   constructor (opts = {}) {
     this.options = opts
-    this.objects = new Map()
 
     if (process.env.NODE_ENV !== 'production') {
       if (typeof this.options.server === 'undefined') {
@@ -352,9 +351,6 @@ class Client {
     clearInterval(this.pinging)
     if (typeof window !== 'undefined' && window.removeEventListener) {
       window.removeEventListener('unload', this.onUnload)
-    }
-    for (let obj of this.objects.values()) {
-      if (obj.destroy) obj.destroy()
     }
   }
 
