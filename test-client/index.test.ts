@@ -1,4 +1,3 @@
-import { AnyAction } from '@logux/core'
 import { delay } from 'nanodelay'
 
 import { TestClient, LoguxUndoError, LoguxUndoAction } from '../index.js'
