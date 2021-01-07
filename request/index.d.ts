@@ -1,4 +1,4 @@
-import { Action } from '@logux/core'
+import { Action, AnyAction } from '@logux/core'
 
 import { ClientOptions } from '../client/index.js'
 
@@ -31,6 +31,6 @@ export type RequestOptions = Omit<ClientOptions, 'userId'> & {
  * @return Action of server response.
  */
 export function request<A extends Action = Action> (
-  action: Action,
+  action: AnyAction,
   opts: RequestOptions
 ): Promise<A>
