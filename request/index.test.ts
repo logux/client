@@ -37,14 +37,23 @@ async function createTest (
       test.answer = e
     })
   await test.pair.wait()
-  test.pair.right.send(['connected', 4, 'server:uuid', [0, 0]])
-  await delay(15)
 
   return test
 }
 
+async function connectTest (
+  action: AnyAction,
+  opts: Partial<RequestOptions> = {}
+) {
+  let test = await createTest(action, opts)
+  await test.pair.wait()
+  test.pair.right.send(['connected', 4, 'server:uuid', [0, 0]])
+  await delay(15)
+  return test
+}
+
 it('sends action to the server and wait for response', async () => {
-  let test = await createTest({ type: 'test' })
+  let test = await connectTest({ type: 'test' })
   expect(test.answer).toBeUndefined()
   expect(test.pair.leftSent).toEqual([
     ['connect', 4, 'anonymous:1:1', 0, { subprotocol: '1.0.0' }],
@@ -56,7 +65,7 @@ it('sends action to the server and wait for response', async () => {
 })
 
 it('waits for logux/undo', async () => {
-  let test = await createTest({ type: 'test' }, { userId: '10' })
+  let test = await connectTest({ type: 'test' }, { userId: '10' })
 
   expect(test.answer).toBeUndefined()
   expect(test.pair.leftSent).toEqual([
@@ -66,4 +75,14 @@ it('waits for logux/undo', async () => {
 
   await test.response({ type: 'logux/undo', id: '1 10:1:1 0', reason: 'test' })
   expect(test.answer?.message).toEqual('Server undid action because of test')
+})
+
+it('throws Logux errors', async () => {
+  let test = await createTest({ type: 'test ' })
+
+  test.pair.right.send(['error', 'wrong-subprotocol', { supported: '2.0.0' }])
+  await delay(15)
+
+  expect(test.answer?.name).toEqual('LoguxError')
+  expect(test.answer?.message).toContain('Logux received wrong-subprotocol')
 })
