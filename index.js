@@ -8,6 +8,7 @@ let { TestClient } = require('./test-client')
 let { attention } = require('./attention')
 let { confirm } = require('./confirm')
 let { favicon } = require('./favicon')
+let { request } = require('./request')
 let { Client } = require('./client')
 let { status } = require('./status')
 let { track } = require('./track')
@@ -25,6 +26,7 @@ module.exports = {
   badgeRu,
   badgeEn,
   favicon,
+  request,
   Client,
   status,
   badge,
