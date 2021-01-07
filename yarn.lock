@@ -1174,7 +1174,7 @@
 
 "@logux/core@logux/core#next":
   version "0.6.2"
-  resolved "https://codeload.github.com/logux/core/tar.gz/2e619b0426ade8d8a2efd690c2c7c03f944cb89a"
+  resolved "https://codeload.github.com/logux/core/tar.gz/34f58cae95941089d86182ec323fee375df11572"
   dependencies:
     nanoevents "^6.0.0"
 
