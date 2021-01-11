@@ -60,6 +60,8 @@ class IndexedStore {
       log.createIndex('id', 'id', { unique: true })
       log.createIndex('created', 'created', { unique: true })
       log.createIndex('reasons', 'reasons', { multiEntry: true })
+      log.createIndex('indexes', 'indexes', { multiEntry: true })
+      log.createIndex('indexes, time', ['indexes', 'time'])
 
       db.createObjectStore('extra', { keyPath: 'key' })
     }
@@ -79,10 +81,22 @@ class IndexedStore {
   }
 
   async get (opts) {
-    let request
+    let { index, order } = opts
     let store = await this.init()
     let log = store.os('log')
-    if (opts.order === 'created') {
+    let request
+    if (index) {
+      if (order === 'created') {
+        let keyRange = IDBKeyRange.bound(
+          [[index], 0],
+          [[index], Number.MAX_SAFE_INTEGER]
+        )
+        request = log.index('indexes, time').openCursor(keyRange, 'prev')
+      } else {
+        let keyRange = IDBKeyRange.only(index)
+        request = log.index('indexes').openCursor(keyRange, 'prev')
+      }
+    } else if (order === 'created') {
       request = log.index('created').openCursor(null, 'prev')
     } else {
       request = log.openCursor(null, 'prev')
@@ -121,6 +135,7 @@ class IndexedStore {
       time: meta.time,
       action,
       reasons: meta.reasons,
+      indexes: meta.indexes || [],
       created: [meta.time, id[1], id[2], id[0]].join(' ')
     }
 
