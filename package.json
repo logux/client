@@ -34,7 +34,7 @@
     "nanoid": "^3.1.19"
   },
   "devDependencies": {
-    "@logux/core": "logux/core#next",
+    "@logux/core": "euaaaio/core#feat/custom-index",
     "@logux/eslint-config": "^42.2.3",
     "@logux/sharec-config": "^0.8.5",
     "@peculiar/webcrypto": "^1.1.4",

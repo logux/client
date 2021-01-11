@@ -1207,9 +1207,9 @@
     "@types/yargs" "^15.0.0"
     chalk "^4.0.0"
 
-"@logux/core@logux/core#next":
+"@logux/core@euaaaio/core#feat/custom-index":
   version "0.6.2"
-  resolved "https://codeload.github.com/logux/core/tar.gz/2e619b0426ade8d8a2efd690c2c7c03f944cb89a"
+  resolved "https://codeload.github.com/euaaaio/core/tar.gz/d43a71c39b743dc5684d96821d337e7409a95c39"
   dependencies:
     nanoevents "^5.1.10"
 
