@@ -129,7 +129,18 @@ class TestServer {
         this.log.add(responses, { nodes })
       }
     } else if (action.type === 'logux/unsubscribe') {
-      delete this.subscriptions[action.channel][nodeId]
+      if (
+        this.subscriptions[action.channel] &&
+        this.subscriptions[action.channel][nodeId]
+      ) {
+        delete this.subscriptions[action.channel][nodeId]
+      } else {
+        // istanbul ignore next
+        throw new Error(
+          `Client was not subscribed to ${action.channel} ` +
+            'but it try to unsubscribe from it'
+        )
+      }
     }
     this.log.add({ type: 'logux/processed', id }, { nodes })
   }
