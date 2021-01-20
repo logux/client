@@ -1,4 +1,5 @@
 const { TestPair } = require('@logux/core')
+let { delay } = require('nanodelay')
 
 let { TestServer } = require('../test-server')
 let { Client } = require('../client')
@@ -36,6 +37,7 @@ class TestClient extends Client {
       }
     })
     await test()
+    await delay(1)
     unbind()
     return actions
   }
