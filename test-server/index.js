@@ -86,7 +86,7 @@ class TestServer {
       this.process(action, meta)
     }
     this.deferred = []
-    await delay(10)
+    await delay(20)
   }
 
   resend (type, resend) {
