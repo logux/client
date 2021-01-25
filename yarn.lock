@@ -1209,7 +1209,7 @@
 
 "@logux/core@euaaaio/core#feat/custom-index":
   version "0.6.2"
-  resolved "https://codeload.github.com/euaaaio/core/tar.gz/d43a71c39b743dc5684d96821d337e7409a95c39"
+  resolved "https://codeload.github.com/euaaaio/core/tar.gz/71c223c45d24d0dbcf539b18f805afc7de19f09b"
   dependencies:
     nanoevents "^5.1.10"
 
