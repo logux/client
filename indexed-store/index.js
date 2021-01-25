@@ -17,15 +17,19 @@ function promisify (request) {
   })
 }
 
-function nextEntry (request) {
+function nextEntry (request, filter = {}) {
   return cursor => {
     if (cursor) {
+      if (filter.index && !cursor.value.indexes.includes(filter.index)) {
+        cursor.continue()
+        return promisify(request).then(nextEntry(request, filter))
+      }
       cursor.value.meta.added = cursor.value.added
       return {
         entries: [[cursor.value.action, cursor.value.meta]],
         next () {
           cursor.continue()
-          return promisify(request).then(nextEntry(request))
+          return promisify(request).then(nextEntry(request, filter))
         }
       }
     } else {
@@ -61,7 +65,6 @@ class IndexedStore {
       log.createIndex('created', 'created', { unique: true })
       log.createIndex('reasons', 'reasons', { multiEntry: true })
       log.createIndex('indexes', 'indexes', { multiEntry: true })
-      log.createIndex('indexes, time', ['indexes', 'time'])
 
       db.createObjectStore('extra', { keyPath: 'key' })
     }
@@ -85,13 +88,11 @@ class IndexedStore {
     let store = await this.init()
     let log = store.os('log')
     let request
+    let filter
     if (index) {
       if (order === 'created') {
-        let keyRange = IDBKeyRange.bound(
-          [[index], 0],
-          [[index], Number.MAX_SAFE_INTEGER]
-        )
-        request = log.index('indexes, time').openCursor(keyRange, 'prev')
+        filter = { index }
+        request = log.index('created').openCursor(null, 'prev')
       } else {
         let keyRange = IDBKeyRange.only(index)
         request = log.index('indexes').openCursor(keyRange, 'prev')
@@ -101,7 +102,7 @@ class IndexedStore {
     } else {
       request = log.openCursor(null, 'prev')
     }
-    return promisify(request).then(nextEntry(request))
+    return promisify(request).then(nextEntry(request, filter))
   }
 
   async byId (id) {
