@@ -1,35 +1,15 @@
-let { badge, badgeRu, badgeEn } = require('./badge')
-let { LoguxUndoError } = require('./logux-undo-error')
-let { CrossTabClient } = require('./cross-tab-client')
-let { encryptActions } = require('./encrypt-actions')
-let { IndexedStore } = require('./indexed-store')
-let { TestServer } = require('./test-server')
-let { TestClient } = require('./test-client')
-let { attention } = require('./attention')
-let { confirm } = require('./confirm')
-let { favicon } = require('./favicon')
-let { request } = require('./request')
-let { Client } = require('./client')
-let { status } = require('./status')
-let { track } = require('./track')
-let { log } = require('./log')
-
-module.exports = {
-  LoguxUndoError,
-  encryptActions,
-  CrossTabClient,
-  IndexedStore,
-  TestServer,
-  TestClient,
-  attention,
-  confirm,
-  badgeRu,
-  badgeEn,
-  favicon,
-  request,
-  Client,
-  status,
-  badge,
-  track,
-  log
-}
+export { badge, badgeRu, badgeEn } from './badge/index.js'
+export { LoguxUndoError } from './logux-undo-error/index.js'
+export { CrossTabClient } from './cross-tab-client/index.js'
+export { encryptActions } from './encrypt-actions/index.js'
+export { IndexedStore } from './indexed-store/index.js'
+export { TestServer } from './test-server/index.js'
+export { TestClient } from './test-client/index.js'
+export { attention } from './attention/index.js'
+export { confirm } from './confirm/index.js'
+export { favicon } from './favicon/index.js'
+export { request } from './request/index.js'
+export { Client } from './client/index.js'
+export { status } from './status/index.js'
+export { track } from './track/index.js'
+export { log } from './log/index.js'

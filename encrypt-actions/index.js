@@ -48,7 +48,7 @@ async function decrypt (action, key) {
   return bytesToObj(bytes)
 }
 
-function encryptActions (client, secret, opts = {}) {
+export function encryptActions (client, secret, opts = {}) {
   let key
   async function getKey () {
     key = await crypto.subtle.importKey(
@@ -96,5 +96,3 @@ function encryptActions (client, secret, opts = {}) {
     }
   })
 }
-
-module.exports = { encryptActions }

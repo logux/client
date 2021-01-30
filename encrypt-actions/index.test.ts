@@ -60,7 +60,7 @@ it('encrypts and decrypts actions', async () => {
   getPair(client1).clear()
 
   client1.log.add({ type: 'sync', value: 'secret' }, { sync: true })
-  await delay(20)
+  await delay(50)
   expect(getPair(client1).leftSent).toMatchObject([
     [
       'sync',

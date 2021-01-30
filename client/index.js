@@ -1,15 +1,17 @@
-let { createNanoEvents } = require('nanoevents')
-let { isFirstOlder } = require('@logux/core/is-first-older')
-let { WsConnection } = require('@logux/core/ws-connection')
-let { MemoryStore } = require('@logux/core/memory-store')
-let { ClientNode } = require('@logux/core/client-node')
-let { Reconnect } = require('@logux/core/reconnect')
-let { parseId } = require('@logux/core/parse-id')
-let { nanoid } = require('nanoid')
-let { Log } = require('@logux/core/log')
+import { createNanoEvents } from 'nanoevents'
+import {
+  isFirstOlder,
+  WsConnection,
+  MemoryStore,
+  ClientNode,
+  Reconnect,
+  parseId,
+  Log
+} from '@logux/core'
+import { nanoid } from 'nanoid'
 
-let { LoguxUndoError } = require('../logux-undo-error')
-let { track } = require('../track')
+import { LoguxUndoError } from '../logux-undo-error/index.js'
+import { track } from '../track/index.js'
 
 let ALLOWED_META = ['id', 'time', 'subprotocol']
 
@@ -25,7 +27,7 @@ function cleanTabActions (client, id) {
   })
 }
 
-class Client {
+export class Client {
   constructor (opts = {}) {
     this.options = opts
 
@@ -381,5 +383,3 @@ class Client {
     return nanoid(8)
   }
 }
-
-module.exports = { Client }

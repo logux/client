@@ -1,6 +1,6 @@
-let { LoguxError, actionEvents } = require('@logux/core')
+import { LoguxError, actionEvents } from '@logux/core'
 
-let { Client } = require('../client')
+import { Client } from '../client/index'
 
 function storageKey (client, name) {
   return client.options.prefix + ':' + client.options.userId + ':' + name
@@ -129,7 +129,7 @@ function isMemory (store) {
   return Array.isArray(store.entries) && Array.isArray(store.added)
 }
 
-class CrossTabClient extends Client {
+export class CrossTabClient extends Client {
   constructor (opts = {}) {
     super(opts)
 
@@ -316,5 +316,3 @@ class CrossTabClient extends Client {
     }
   }
 }
-
-module.exports = { CrossTabClient }

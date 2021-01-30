@@ -1,4 +1,4 @@
-class LoguxUndoError extends Error {
+export class LoguxUndoError extends Error {
   constructor (action) {
     let type = action.action ? action.action.type : 'action'
     super(`Server undid ${type} because of ${action.reason}`)
@@ -6,5 +6,3 @@ class LoguxUndoError extends Error {
     this.action = action
   }
 }
-
-module.exports = { LoguxUndoError }

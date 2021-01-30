@@ -1,8 +1,8 @@
-let { TestTime, ServerNode, parseId } = require('@logux/core')
-let stringify = require('fast-json-stable-stringify')
-let { delay } = require('nanodelay')
+import { TestTime, ServerNode, parseId } from '@logux/core'
+import stringify from 'fast-json-stable-stringify'
+import { delay } from 'nanodelay'
 
-class TestServer {
+export class TestServer {
   constructor () {
     this.time = new TestTime()
     this.log = this.time.nextLog({ nodeId: 'server:id' })
@@ -151,5 +151,3 @@ class TestServer {
     })
   }
 }
-
-module.exports = { TestServer }

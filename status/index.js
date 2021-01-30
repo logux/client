@@ -1,4 +1,4 @@
-function status (client, callback, options = {}) {
+export function status (client, callback, options = {}) {
   let observable = client.on ? client : client.node
   let disconnected = observable.state === 'disconnected'
   let wait = false
@@ -102,5 +102,3 @@ function status (client, callback, options = {}) {
     for (let i of unbind) i()
   }
 }
-
-module.exports = { status }
