@@ -1,7 +1,7 @@
-let { LoguxUndoError } = require('../logux-undo-error')
-let { Client } = require('../client')
+import { LoguxUndoError } from '../logux-undo-error/index.js'
+import { Client } from '../client/index.js'
 
-function request (action, opts) {
+export function request (action, opts) {
   if (!opts.userId) opts.userId = 'anonymous'
   let client = new Client(opts)
   return new Promise((resolve, reject) => {
@@ -22,5 +22,3 @@ function request (action, opts) {
     client.start()
   })
 }
-
-module.exports = { request }

@@ -1,4 +1,4 @@
-let { parseId } = require('@logux/core/parse-id')
+import { parseId } from '@logux/core'
 
 function bold (string) {
   return '%c' + string + '%c'
@@ -31,7 +31,7 @@ function showLog (text, details) {
   }
 }
 
-function log (client, messages = {}) {
+export function log (client, messages = {}) {
   let node = client.node
 
   let sent = {}
@@ -180,5 +180,3 @@ function log (client, messages = {}) {
     for (let i of unbind) i()
   }
 }
-
-module.exports = { log }

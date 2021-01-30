@@ -1,4 +1,4 @@
-let { isFirstOlder } = require('@logux/core')
+import { isFirstOlder } from '@logux/core'
 
 const VERSION = 1
 
@@ -38,7 +38,7 @@ function isDefined (value) {
   return typeof value !== 'undefined'
 }
 
-class IndexedStore {
+export class IndexedStore {
   constructor (name = 'logux') {
     this.name = name
     this.adding = {}
@@ -267,5 +267,3 @@ class IndexedStore {
     await promisify(indexedDB.deleteDatabase(store.name))
   }
 }
-
-module.exports = { IndexedStore }

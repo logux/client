@@ -81,7 +81,7 @@ it('throws Logux errors', async () => {
   let test = await createTest({ type: 'test ' })
 
   test.pair.right.send(['error', 'wrong-subprotocol', { supported: '2.0.0' }])
-  await delay(15)
+  await delay(20)
 
   expect(test.answer?.name).toEqual('LoguxError')
   expect(test.answer?.message).toContain('Logux received wrong-subprotocol')
