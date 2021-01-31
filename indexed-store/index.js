@@ -17,15 +17,19 @@ function promisify (request) {
   })
 }
 
-function nextEntry (request) {
+function nextEntry (request, filter = {}) {
   return cursor => {
     if (cursor) {
+      if (filter.index && !cursor.value.indexes.includes(filter.index)) {
+        cursor.continue()
+        return promisify(request).then(nextEntry(request, filter))
+      }
       cursor.value.meta.added = cursor.value.added
       return {
         entries: [[cursor.value.action, cursor.value.meta]],
         next () {
           cursor.continue()
-          return promisify(request).then(nextEntry(request))
+          return promisify(request).then(nextEntry(request, filter))
         }
       }
     } else {
@@ -60,6 +64,7 @@ export class IndexedStore {
       log.createIndex('id', 'id', { unique: true })
       log.createIndex('created', 'created', { unique: true })
       log.createIndex('reasons', 'reasons', { multiEntry: true })
+      log.createIndex('indexes', 'indexes', { multiEntry: true })
 
       db.createObjectStore('extra', { keyPath: 'key' })
     }
@@ -79,15 +84,25 @@ export class IndexedStore {
   }
 
   async get (opts) {
-    let request
+    let { index, order } = opts
     let store = await this.init()
     let log = store.os('log')
-    if (opts.order === 'created') {
+    let request
+    let filter
+    if (index) {
+      if (order === 'created') {
+        filter = { index }
+        request = log.index('created').openCursor(null, 'prev')
+      } else {
+        let keyRange = IDBKeyRange.only(index)
+        request = log.index('indexes').openCursor(keyRange, 'prev')
+      }
+    } else if (order === 'created') {
       request = log.index('created').openCursor(null, 'prev')
     } else {
       request = log.openCursor(null, 'prev')
     }
-    return promisify(request).then(nextEntry(request))
+    return promisify(request).then(nextEntry(request, filter))
   }
 
   async byId (id) {
@@ -121,6 +136,7 @@ export class IndexedStore {
       time: meta.time,
       action,
       reasons: meta.reasons,
+      indexes: meta.indexes || [],
       created: [meta.time, id[1], id[2], id[0]].join(' ')
     }
 

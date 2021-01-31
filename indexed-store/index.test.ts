@@ -2,6 +2,7 @@ import { eachStoreCheck, Action, Meta, Page } from '@logux/core'
 
 import { IndexedStore } from '../index.js'
 import fakeIndexedDB = require('fake-indexeddb')
+import IDBKeyRange = require('fake-indexeddb/lib/FDBKeyRange')
 
 type Entry = [Action, Meta]
 
@@ -19,6 +20,7 @@ declare global {
 let originIndexedDB = global.indexedDB
 beforeEach(() => {
   global.indexedDB = fakeIndexedDB
+  global.IDBKeyRange = IDBKeyRange
 })
 
 function privateMethods (obj: object): any {

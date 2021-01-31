@@ -1167,7 +1167,7 @@
     "@types/yargs" "^15.0.0"
     chalk "^4.0.0"
 
-"@logux/core@logux/core#next":
+"@logux/core@euaaaio/core#feat/custom-index":
   version "0.6.2"
   resolved "https://codeload.github.com/logux/core/tar.gz/93859e8081ca871a025aa44fc5b301a0fb3732b1"
   dependencies:
