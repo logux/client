@@ -1,6 +1,6 @@
 import { isFirstOlder } from '@logux/core'
 
-const VERSION = 1
+const VERSION = 2
 
 function rejectify (request, reject) {
   request.onerror = e => {
@@ -57,16 +57,21 @@ export class IndexedStore {
     opening.onupgradeneeded = function (e) {
       let db = e.target.result
 
-      let log = db.createObjectStore('log', {
-        keyPath: 'added',
-        autoIncrement: true
-      })
-      log.createIndex('id', 'id', { unique: true })
-      log.createIndex('created', 'created', { unique: true })
-      log.createIndex('reasons', 'reasons', { multiEntry: true })
-      log.createIndex('indexes', 'indexes', { multiEntry: true })
-
-      db.createObjectStore('extra', { keyPath: 'key' })
+      let log
+      if (e.oldVersion < 1) {
+        log = db.createObjectStore('log', {
+          keyPath: 'added',
+          autoIncrement: true
+        })
+        log.createIndex('id', 'id', { unique: true })
+        log.createIndex('created', 'created', { unique: true })
+        log.createIndex('reasons', 'reasons', { multiEntry: true })
+        db.createObjectStore('extra', { keyPath: 'key' })
+      }
+      if (e.oldVersion < 2) {
+        if (!log) log = opening.transaction.objectStore('log')
+        log.createIndex('indexes', 'indexes', { multiEntry: true })
+      }
     }
 
     this.initing = promisify(opening).then(db => {
