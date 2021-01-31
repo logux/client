@@ -92,6 +92,7 @@
       "node_modules/(?!@logux)"
     ],
     "coveragePathIgnorePatterns": [
+      "<rootDir>/indexed-store/index.js",
       "<rootDir>/index.js"
     ],
     "coverageThreshold": {
