@@ -89,6 +89,9 @@
     "transform": {
       ".js": "jest-esm-transformer"
     },
+    "transformIgnorePatterns": [
+      "node_modules/(?!@logux)"
+    ],
     "coveragePathIgnorePatterns": [
       "<rootDir>/index.js"
     ],
