@@ -3,7 +3,7 @@ function block (e) {
   return 'unsynced'
 }
 
-function confirm (client) {
+export function confirm (client) {
   let disconnected = client.state === 'disconnected'
   let wait = false
 
@@ -47,5 +47,3 @@ function confirm (client) {
     for (let i of unbind) i()
   }
 }
-
-module.exports = { confirm }

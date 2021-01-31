@@ -1,8 +1,8 @@
-let { TestTime, ServerNode, parseId } = require('@logux/core')
-let stringify = require('fast-json-stable-stringify')
-let { delay } = require('nanodelay')
+import { TestTime, ServerNode, parseId } from '@logux/core'
+import stringify from 'fast-json-stable-stringify'
+import { delay } from 'nanodelay'
 
-class TestServer {
+export class TestServer {
   constructor () {
     this.time = new TestTime()
     this.log = this.time.nextLog({ nodeId: 'server:id' })
@@ -86,7 +86,7 @@ class TestServer {
       this.process(action, meta)
     }
     this.deferred = []
-    await delay(10)
+    await delay(20)
   }
 
   resend (type, resend) {
@@ -129,7 +129,18 @@ class TestServer {
         this.log.add(responses, { nodes })
       }
     } else if (action.type === 'logux/unsubscribe') {
-      delete this.subscriptions[action.channel][nodeId]
+      if (
+        this.subscriptions[action.channel] &&
+        this.subscriptions[action.channel][nodeId]
+      ) {
+        delete this.subscriptions[action.channel][nodeId]
+      } else {
+        // istanbul ignore next
+        throw new Error(
+          `Client was not subscribed to ${action.channel} ` +
+            'but it try to unsubscribe from it'
+        )
+      }
     }
     this.log.add({ type: 'logux/processed', id }, { nodes })
   }
@@ -140,5 +151,3 @@ class TestServer {
     })
   }
 }
-
-module.exports = { TestServer }

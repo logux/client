@@ -1,9 +1,10 @@
-const { TestPair } = require('@logux/core')
+import { TestPair } from '@logux/core'
+import { delay } from 'nanodelay'
 
-let { TestServer } = require('../test-server')
-let { Client } = require('../client')
+import { TestServer } from '../test-server/index.js'
+import { Client } from '../client/index.js'
 
-class TestClient extends Client {
+export class TestClient extends Client {
   constructor (userId, opts = {}) {
     let server = opts.server || new TestServer()
     let pair = new TestPair()
@@ -36,6 +37,7 @@ class TestClient extends Client {
       }
     })
     await test()
+    await delay(1)
     unbind()
     return actions
   }
@@ -51,5 +53,3 @@ class TestClient extends Client {
     })
   }
 }
-
-module.exports = { TestClient }

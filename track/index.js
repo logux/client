@@ -1,4 +1,4 @@
-function track (client, id) {
+export function track (client, id) {
   if (client.processing[id]) return client.processing[id][0]
 
   let resolveCallback, rejectCallback
@@ -10,5 +10,3 @@ function track (client, id) {
 
   return promise
 }
-
-module.exports = { track }

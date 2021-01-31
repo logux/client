@@ -20,6 +20,7 @@ export {
   ChannelServerError,
   ChannelError
 } from './logux-undo-error/index.js'
+export { request, RequestOptions } from './request/index.js'
 export { CrossTabClient } from './cross-tab-client/index.js'
 export { IndexedStore } from './indexed-store/index.js'
 export { TestServer } from './test-server/index.js'

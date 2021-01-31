@@ -1,4 +1,4 @@
-let { status } = require('../status')
+import { status } from '../status/index.js'
 
 function injectStyles (element, styles) {
   for (let i in styles) {
@@ -40,7 +40,7 @@ const RESET = {
   lineHeight: 'auto'
 }
 
-function badge (client, opts) {
+export function badge (client, opts) {
   let messages = opts.messages
   let position = opts.position || 'bottom-right'
   let styles = opts.styles
@@ -100,7 +100,7 @@ function badge (client, opts) {
   }
 }
 
-let badgeRu = {
+export let badgeRu = {
   synchronized: 'Ваши данные сохранены',
   disconnected: 'Нет интернета',
   wait: 'Нет интернета<br>Ваши данные не сохранены',
@@ -111,7 +111,7 @@ let badgeRu = {
   protocolError: 'Сохранение не работает<br>Обновите страницу'
 }
 
-let badgeEn = {
+export let badgeEn = {
   synchronized: 'Your data has been saved',
   disconnected: 'No Internet connection',
   wait: 'No Internet connection<br>Your data has not been saved',
@@ -121,5 +121,3 @@ let badgeEn = {
   denied: 'You have no access<br>You changes was reverted',
   protocolError: 'Saving is not working<br>Refresh the page'
 }
-
-module.exports = { badge, badgeEn, badgeRu }

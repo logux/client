@@ -1,4 +1,4 @@
-function attention (client) {
+export function attention (client) {
   let doc = document
   let originTitle = false
   let unbind = []
@@ -56,5 +56,3 @@ function attention (client) {
     for (let i of unbind) i()
   }
 }
-
-module.exports = { attention }

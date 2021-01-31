@@ -1,4 +1,4 @@
-function favicon (client, links) {
+export function favicon (client, links) {
   let normal = links.normal
   let offline = links.offline
   let error = links.error
@@ -61,5 +61,3 @@ function favicon (client, links) {
     for (let i of unbind) i()
   }
 }
-
-module.exports = { favicon }
