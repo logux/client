@@ -1,4 +1,5 @@
 import { LoguxError, TestPair } from '@logux/core'
+import { jest } from '@jest/globals'
 
 import { CrossTabClient, attention } from '../index.js'
 

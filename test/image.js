@@ -1,1 +1,1 @@
-module.exports = 'IMAGE_MOCK'
+export default 'IMAGE_MOCK'

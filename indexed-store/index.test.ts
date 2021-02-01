@@ -1,8 +1,9 @@
 import { eachStoreCheck, Action, Meta, Page } from '@logux/core'
+import { jest } from '@jest/globals'
 
 import { IndexedStore } from '../index.js'
-import fakeIndexedDB = require('fake-indexeddb')
-import IDBKeyRange = require('fake-indexeddb/lib/FDBKeyRange')
+import fakeIndexedDB from 'fake-indexeddb'
+import IDBKeyRange from 'fake-indexeddb/lib/FDBKeyRange'
 
 type Entry = [Action, Meta]
 

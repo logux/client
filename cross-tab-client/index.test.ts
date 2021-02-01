@@ -1,13 +1,18 @@
 import { TestLog, TestPair, TestTime, Action } from '@logux/core'
 import { delay } from 'nanodelay'
+import { jest } from '@jest/globals'
 
+import {
+  breakLocalStorage,
+  setLocalStorage,
+  emitStorage
+} from '../test/local-storage.js'
 import { CrossTabClient, ClientOptions } from '../index.js'
 
 declare global {
   namespace NodeJS {
     interface Global {
       WebSocket: any
-      _localStorage: any
     }
   }
 }
@@ -17,22 +22,7 @@ beforeEach(() => {
     close () {}
   }
   global.WebSocket = WebSocket
-  Object.defineProperty(global, '_localStorage', {
-    value: {
-      storage: {},
-      setItem (key: string, value: string) {
-        this[key] = value
-        this.storage[key] = value
-      },
-      getItem (key: string) {
-        return this.storage[key]
-      },
-      removeItem (key: string) {
-        delete this[key]
-        delete this.storage[key]
-      }
-    }
-  })
+  setLocalStorage()
 })
 
 const ELECTION_DELAY = 1000 / 20
@@ -66,13 +56,6 @@ function createClient (overrides: Partial<ClientOptions> = {}) {
   privateMethods(result).leaderTimeout = LEADER_TIMEOUT
   privateMethods(result).leaderPing = LEADER_PING
   return result
-}
-
-function emitStorage (name: string, value: string | null) {
-  let event: any = new CustomEvent('storage')
-  event.key = name
-  event.newValue = value
-  window.dispatchEvent(event)
 }
 
 it('saves options', () => {
@@ -162,9 +145,7 @@ it('cleans everything', async () => {
 })
 
 it('does not use broken localStorage', async () => {
-  localStorage.setItem = () => {
-    throw new Error('The quota has been exceeded')
-  }
+  breakLocalStorage(new Error('The quota has been exceeded'))
   client = new CrossTabClient({
     subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
@@ -177,7 +158,7 @@ it('synchronizes actions between tabs', async () => {
   localStorage.setItem = (name, value) => {
     emitStorage(name, value)
   }
-  let client1 = new CrossTabClient({
+  client = new CrossTabClient({
     subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
     userId: '10'
@@ -200,19 +181,19 @@ it('synchronizes actions between tabs', async () => {
   })
 
   let events: [string, Action, string[]][] = []
-  client1.type('A', (action, meta) => {
+  client.type('A', (action, meta) => {
     events.push(['A', action, meta.reasons])
   })
-  client1.on('add', (action, meta) => {
+  client.on('add', (action, meta) => {
     events.push(['add', action, meta.reasons])
   })
-  client1.on('clean', (action, meta) => {
+  client.on('clean', (action, meta) => {
     events.push(['clean', action, meta.reasons])
   })
 
   await client2.log.add({ type: 'A' })
   await client3.log.add({ type: 'B' })
-  await client2.log.add({ type: 'C' }, { tab: client1.tabId })
+  await client2.log.add({ type: 'C' }, { tab: client.tabId })
   await client2.log.add({ type: 'D' }, { tab: client2.tabId })
   await client4.log.add({ type: 'E' })
   expect(events).toEqual([
@@ -641,9 +622,7 @@ it('disables cross-tab communication on localStorage error', async () => {
   let error = new Error('test')
   jest.spyOn(console, 'error').mockImplementation(() => true)
   jest.spyOn(client.node.connection, 'connect')
-  global._localStorage.setItem = () => {
-    throw error
-  }
+  breakLocalStorage(error)
   client.log.add({ type: 'A' })
 
   expect(client.role).toEqual('leader')

@@ -1,9 +1,9 @@
-let refresh = require('./refresh.svg')
-let success = require('./success.svg')
-let offline = require('./offline.svg')
-let error = require('./error.svg')
+import refresh from './refresh.svg'
+import success from './success.svg'
+import offline from './offline.svg'
+import error from './error.svg'
 
-let badgeStyles = {
+export let badgeStyles = {
   base: {
     position: 'fixed',
     width: '15.4em',
@@ -50,5 +50,3 @@ let badgeStyles = {
     backgroundImage: 'url(' + refresh + ')'
   }
 }
-
-module.exports = { badgeStyles }

@@ -1,6 +1,8 @@
 import { MemoryStore, TestPair, TestTime, TestLog, Action } from '@logux/core'
 import { delay } from 'nanodelay'
+import { jest } from '@jest/globals'
 
+import { setLocalStorage } from '../test/local-storage.js'
 import { Client, ClientOptions } from '../index.js'
 
 type Events = {
@@ -8,22 +10,7 @@ type Events = {
 }
 
 beforeEach(() => {
-  Object.defineProperty(global, '_localStorage', {
-    value: {
-      storage: {},
-      setItem (key: string, value: string) {
-        this[key] = value
-        this.storage[key] = value
-      },
-      getItem (key: string) {
-        return this.storage[key]
-      },
-      removeItem (key: string) {
-        delete this[key]
-        delete this.storage[key]
-      }
-    }
-  })
+  setLocalStorage()
 })
 
 let originIndexedDB = global.indexedDB
@@ -340,14 +327,15 @@ it('pings after tab-specific action', async () => {
   client.node.connection.connect = () => Promise.resolve()
 
   client.start()
-  expect(localStorage.getItem('test:tab:' + id)).toBeUndefined()
+  let key = 'test:tab:' + id
+  expect(localStorage.getItem(key)).toBeNull()
 
   let prev
   await client.log.add({ type: 'A' }, { reasons: ['tab' + id] })
-  expect(localStorage.getItem('test:tab:' + id)).toBeDefined()
-  prev = localStorage.getItem('test:tab:' + id)
+  expect(localStorage.getItem(key)).toBeDefined()
+  prev = localStorage.getItem(key)
   await delay(privateMethods(client).tabPing)
-  expect(localStorage.getItem('test:tab:' + id)).toBeGreaterThan(toNumber(prev))
+  expect(toNumber(localStorage.getItem(key))).toBeGreaterThan(toNumber(prev))
 })
 
 it('cleans own actions on destroy', async () => {
@@ -360,7 +348,7 @@ it('cleans own actions on destroy', async () => {
   client.destroy()
   await delay(1)
   expect(client.log.actions()).toHaveLength(0)
-  expect(localStorage.getItem('test:tab:' + client.tabId)).toBeUndefined()
+  expect(localStorage.getItem('test:tab:' + client.tabId)).toBeNull()
 })
 
 it('cleans own actions on unload', async () => {
@@ -373,7 +361,7 @@ it('cleans own actions on unload', async () => {
   window.dispatchEvent(new Event('unload'))
   await delay(1)
   expect(client.log.actions()).toHaveLength(0)
-  expect(localStorage.getItem('test:tab:' + client.tabId)).toBeUndefined()
+  expect(localStorage.getItem('test:tab:' + client.tabId)).toBeNull()
 })
 
 it('cleans other tab action after timeout', async () => {
@@ -388,7 +376,7 @@ it('cleans other tab action after timeout', async () => {
   client.start()
   await delay(1)
   expect(client.log.actions()).toEqual([{ type: 'B' }])
-  expect(localStorage.getItem('test:tab:2')).toBeUndefined()
+  expect(localStorage.getItem('test:tab:2')).toBeNull()
 })
 
 it('adds current subprotocol to meta', async () => {
