@@ -69,7 +69,10 @@ export class IndexedStore {
         db.createObjectStore('extra', { keyPath: 'key' })
       }
       if (e.oldVersion < 2) {
-        if (!log) log = opening.transaction.objectStore('log')
+        if (!log) {
+          /* istanbul ignore next */
+          log = opening.transaction.objectStore('log')
+        }
         log.createIndex('indexes', 'indexes', { multiEntry: true })
       }
     }
