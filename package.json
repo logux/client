@@ -46,7 +46,7 @@
     "@types/ws": "^7.4.0",
     "@typescript-eslint/eslint-plugin": "^4.14.1",
     "@typescript-eslint/parser": "^4.14.1",
-    "check-dts": "^0.4.2",
+    "check-dts": "^0.4.4",
     "colorette": "^1.2.1",
     "eslint": "^7.19.0",
     "eslint-config-standard": "^16.0.2",
