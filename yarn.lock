@@ -2017,7 +2017,7 @@
     chrome-trace-event "^1.0.2"
     nullthrows "^1.1.1"
 
-"@peculiar/asn1-schema@^2.0.12", "@peculiar/asn1-schema@^2.0.26":
+"@peculiar/asn1-schema@^2.0.27":
   version "2.0.27"
   resolved "https://registry.yarnpkg.com/@peculiar/asn1-schema/-/asn1-schema-2.0.27.tgz#1ee3b2b869ff3200bcc8ec60e6c87bd5a6f03fe0"
   integrity sha512-1tIx7iL3Ma3HtnNS93nB7nhyI0soUJypElj9owd4tpMrRDmeJ8eZubsdq1sb0KSaCs5RqZNoABCP6m5WtnlVhQ==
@@ -2034,16 +2034,16 @@
   dependencies:
     tslib "^2.0.0"
 
-"@peculiar/webcrypto@^1.1.4":
-  version "1.1.4"
-  resolved "https://registry.yarnpkg.com/@peculiar/webcrypto/-/webcrypto-1.1.4.tgz#cbbe2195e5e6f879780bdac9a66bcbaca75c483c"
-  integrity sha512-gEVxfbseFDV0Za3AmjTrRB+wigEMOejHDzoo571e8/YWD33Ejmk0XPF3+G+VaN8+5C5IWZx4CPvxQZ7mF2dvNA==
+"@peculiar/webcrypto@^1.1.5":
+  version "1.1.5"
+  resolved "https://registry.yarnpkg.com/@peculiar/webcrypto/-/webcrypto-1.1.5.tgz#d1ef11bccaae2a5c7ab170a7082b65702c2d2283"
+  integrity sha512-0cAJiTZTR+ARx/zP/+dJ+SpcWEbUMjp2ZpS2V7iv4dNmSiaQjBn8EHGXIsUkcP1Nl45WOw1nY/1as+nscJDc4w==
   dependencies:
-    "@peculiar/asn1-schema" "^2.0.26"
+    "@peculiar/asn1-schema" "^2.0.27"
     "@peculiar/json-schema" "^1.1.12"
     pvtsutils "^1.1.1"
-    tslib "^2.0.3"
-    webcrypto-core "^1.1.8"
+    tslib "^2.1.0"
+    webcrypto-core "^1.1.10"
 
 "@polka/url@^1.0.0-next.9":
   version "1.0.0-next.11"
@@ -7706,9 +7706,9 @@ onetime@^5.1.0, onetime@^5.1.2:
     mimic-fn "^2.1.0"
 
 open@^7.0.3:
-  version "7.3.1"
-  resolved "https://registry.yarnpkg.com/open/-/open-7.3.1.tgz#111119cb919ca1acd988f49685c4fdd0f4755356"
-  integrity sha512-f2wt9DCBKKjlFbjzGb8MOAW8LH8F0mrs1zc7KTjAJ9PZNQbfenzWbNP1VZJvw6ICMG9r14Ah6yfwPn7T7i646A==
+  version "7.4.0"
+  resolved "https://registry.yarnpkg.com/open/-/open-7.4.0.tgz#ad95b98f871d9acb0ec8fecc557082cc9986626b"
+  integrity sha512-PGoBCX/lclIWlpS/R2PQuIR4NJoXh6X5AwVzE7WXnWRGvHg7+4TBCgsujUgiPpm0K1y4qvQeWnCWVTpTKZBtvA==
   dependencies:
     is-docker "^2.0.0"
     is-wsl "^2.1.1"
@@ -8823,12 +8823,12 @@ purgecss@^2.3.0:
     postcss "7.0.32"
     postcss-selector-parser "^6.0.2"
 
-pvtsutils@^1.0.11, pvtsutils@^1.1.1:
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/pvtsutils/-/pvtsutils-1.1.1.tgz#22c2d7689139d2c36d7ef3ac3d5e29bcd818d38a"
-  integrity sha512-Evbhe6L4Sxwu4SPLQ4LQZhgfWDQO3qa1lju9jM5cxsQp8vE10VipcSmo7hiJW48TmiHgVLgDtC2TL6/+ND+IVg==
+pvtsutils@^1.1.1, pvtsutils@^1.1.2:
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/pvtsutils/-/pvtsutils-1.1.2.tgz#483d72f4baa5e354466e68ff783ce8a9e2810030"
+  integrity sha512-Yfm9Dsk1zfEpOWCaJaHfqtNXAFWNNHMFSCLN6jTnhuCCBCC2nqge4sAgo7UrkRBoAAYIL8TN/6LlLoNfZD/b5A==
   dependencies:
-    tslib "^2.0.3"
+    tslib "^2.1.0"
 
 pvutils@latest:
   version "1.0.17"
@@ -10202,7 +10202,7 @@ tslib@1.14.1, tslib@^1.10.0, tslib@^1.8.1, tslib@^1.9.0, tslib@^1.9.3:
   resolved "https://registry.yarnpkg.com/tslib/-/tslib-1.14.1.tgz#cf2d38bdc34a134bcaf1091c41f6619e2f672d00"
   integrity sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==
 
-tslib@^2.0.0, tslib@^2.0.1, tslib@^2.0.3:
+tslib@^2.0.0, tslib@^2.0.3, tslib@^2.1.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/tslib/-/tslib-2.1.0.tgz#da60860f1c2ecaa5703ab7d39bc05b6bf988b97a"
   integrity sha512-hcVC3wYEziELGGmEEXue7D75zbwIIVUMWAVbHItGPx0ziyXxrOMQx4rQEVEV45Ut/1IotuEvwqPopzIOkDMf0A==
@@ -10697,16 +10697,16 @@ wcwidth@^1.0.1:
   dependencies:
     defaults "^1.0.3"
 
-webcrypto-core@^1.1.8:
-  version "1.1.9"
-  resolved "https://registry.yarnpkg.com/webcrypto-core/-/webcrypto-core-1.1.9.tgz#3ee11dbbdfb9615c95c66d3f83b4110d7b77c5c5"
-  integrity sha512-Ac7yZQpz9+oDpKgltmHUb7Czlw6fahe9AhbBOkXkaU3y7vmvrRASNmU1T0VdH4iJsNEFgYh7R49qJjru4huzmw==
+webcrypto-core@^1.1.10:
+  version "1.1.10"
+  resolved "https://registry.yarnpkg.com/webcrypto-core/-/webcrypto-core-1.1.10.tgz#8dc35a536d12859ca20bbc6c19b9d6a758467e6f"
+  integrity sha512-9q47cYIi1NFGBg0C4FTJGy9zWwFvrowJ28V3Faxs9Hu7TAEFbrfxOIy7fsniSLsfjZqK/VMeiVUHoWWuxtiA8A==
   dependencies:
-    "@peculiar/asn1-schema" "^2.0.12"
+    "@peculiar/asn1-schema" "^2.0.27"
     "@peculiar/json-schema" "^1.1.12"
     asn1js "^2.0.26"
-    pvtsutils "^1.0.11"
-    tslib "^2.0.1"
+    pvtsutils "^1.1.2"
+    tslib "^2.1.0"
 
 webidl-conversions@^4.0.2:
   version "4.0.2"

@@ -2,38 +2,8 @@ import { TextEncoder, TextDecoder } from 'util'
 import { TestTime, TestPair } from '@logux/core'
 import { Crypto } from '@peculiar/webcrypto'
 import { delay } from 'nanodelay'
-import { BufferSourceConverter } from 'pvtsutils'
 
 import { Client, encryptActions } from '../index.js'
-
-// Until https://github.com/PeculiarVentures/webcrypto/issues/24
-function isArrayBuffer (data: any) {
-  return Object.prototype.toString.call(data) === '[object ArrayBuffer]'
-}
-BufferSourceConverter.toUint8Array = function (data: BufferSource) {
-  if (typeof Buffer !== 'undefined' && Buffer.isBuffer(data)) {
-    return new Uint8Array(data)
-  }
-  if (ArrayBuffer.isView(data)) {
-    return new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
-  }
-  if (isArrayBuffer(data)) {
-    return new Uint8Array(data)
-  }
-  throw new TypeError(
-    "The provided value is not of type '(ArrayBuffer or ArrayBufferView)'"
-  )
-}
-BufferSourceConverter.isBufferSource = function (
-  data: any
-): data is BufferSource {
-  return this.isArrayBufferView(data) || isArrayBuffer(data)
-}
-BufferSourceConverter.isArrayBufferView = function (
-  data: any
-): data is ArrayBufferView {
-  return ArrayBuffer.isView(data) || (data && isArrayBuffer(data.buffer))
-}
 
 global.crypto = new Crypto()
 global.TextEncoder = TextEncoder

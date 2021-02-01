@@ -39,7 +39,7 @@
     "@logux/core": "logux/core#next",
     "@logux/eslint-config": "^44.1.0",
     "@logux/sharec-config": "^0.8.5",
-    "@peculiar/webcrypto": "^1.1.4",
+    "@peculiar/webcrypto": "^1.1.5",
     "@size-limit/preset-small-lib": "^4.9.2",
     "@types/jest": "^26.0.20",
     "@types/node": "^14.14.22",
