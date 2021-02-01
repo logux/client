@@ -1,13 +1,16 @@
 import { MemoryStore, ClientNode, LocalPair, BaseNode, Log } from '@logux/core'
 
-import { CrossTabClient } from '../../cross-tab-client'
-import { badge, badgeEn } from '../../badge'
+import {
+  CrossTabClient,
+  attention,
+  badgeEn,
+  confirm,
+  favicon,
+  status,
+  badge,
+  log
+} from '../../index.js'
 import { badgeStyles } from '../../badge/styles'
-import { attention } from '../../attention'
-import { confirm } from '../../confirm'
-import { favicon } from '../../favicon'
-import { status } from '../../status'
-import { log } from '../../log'
 import faviconOffline from './offline.png'
 import faviconNormal from './normal.png'
 import faviconError from './error.png'
