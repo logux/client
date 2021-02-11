@@ -1,6 +1,6 @@
 import { LoguxError, actionEvents } from '@logux/core'
 
-import { Client } from '../client/index'
+import { Client } from '../client/index.js'
 
 function storageKey (client, name) {
   return client.options.prefix + ':' + client.options.userId + ':' + name

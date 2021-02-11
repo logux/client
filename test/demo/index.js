@@ -10,7 +10,7 @@ import {
   badge,
   log
 } from '../../index.js'
-import { badgeStyles } from '../../badge/styles'
+import { badgeStyles } from '../../badge/styles.js'
 import faviconOffline from './offline.png'
 import faviconNormal from './normal.png'
 import faviconError from './error.png'
