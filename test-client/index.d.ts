@@ -112,7 +112,7 @@ export class TestClient<H extends object = {}> extends Client<
    * ```js
    * client.keepActions()
    * client.log.add({ type: 'test' })
-   * client.log.actions() //=> { type: 'test' }
+   * client.log.actions() //=> [{ type: 'test' }]
    * ```
    */
   keepActions (): void
