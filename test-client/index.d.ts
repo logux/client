@@ -95,7 +95,6 @@ export class TestClient<H extends object = {}> extends Client<
    * ```js
    * let answers = await client.sent(async () => {
    *   client.log.add({ type: 'local' })
-   *   await delay(10)
    * })
    * expect(actions).toEqual([{ type: 'local' }])
    * ```
