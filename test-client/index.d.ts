@@ -104,16 +104,4 @@ export class TestClient<H extends object = {}> extends Client<
    * @returns Promise with all received actions
    */
   sent (test: () => Promise<void> | void): Promise<Action[]>
-
-  /**
-   * Keep actions without `meta.reasons` in the log by setting `test` reason
-   * during adding to the log.
-   *
-   * ```js
-   * client.keepActions()
-   * client.log.add({ type: 'test' })
-   * client.log.actions() //=> [{ type: 'test' }]
-   * ```
-   */
-  keepActions (): void
 }

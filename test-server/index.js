@@ -144,10 +144,4 @@ export class TestServer {
     }
     this.log.add({ type: 'logux/processed', id }, { nodes })
   }
-
-  keepActions () {
-    this.log.on('preadd', (action, meta) => {
-      meta.reasons.push('test')
-    })
-  }
 }

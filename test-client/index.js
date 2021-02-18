@@ -46,10 +46,4 @@ export class TestClient extends Client {
     let nodes = this.server.subscriptions[channel] || {}
     return !!nodes[this.nodeId]
   }
-
-  keepActions () {
-    this.log.on('preadd', (action, meta) => {
-      meta.reasons.push('test')
-    })
-  }
 }

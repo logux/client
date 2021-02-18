@@ -106,16 +106,4 @@ export class TestServer {
    * @returns Promise until `test` will be finished.
    */
   freezeProcessing (test: () => Promise<void>): Promise<void>
-
-  /**
-   * Keep actions without `meta.reasons` in the log by setting `test` reason
-   * during adding to the log.
-   *
-   * ```js
-   * client.keepActions()
-   * client.log.add({ type: 'test' })
-   * client.log.actions() //=> { type: 'test' }
-   * ```
-   */
-  keepActions (): void
 }
