@@ -6,21 +6,15 @@ export {
   BadgeStyles
 } from './badge/index.js'
 export {
-  encryptActions,
-  ZeroAction,
-  ZeroCleanAction
-} from './encrypt-actions/index.js'
-export { Client, ClientMeta, ClientOptions } from './client/index.js'
-export {
   LoguxUndoError,
-  LoguxUndoAction,
-  LoguxSubscribeAction,
   ChannelNotFoundError,
   ChannelDeniedError,
   ChannelServerError,
   ChannelError
 } from './logux-undo-error/index.js'
+export { Client, ClientMeta, ClientOptions } from './client/index.js'
 export { request, RequestOptions } from './request/index.js'
+export { encryptActions } from './encrypt-actions/index.js'
 export { CrossTabClient } from './cross-tab-client/index.js'
 export { IndexedStore } from './indexed-store/index.js'
 export { TestServer } from './test-server/index.js'

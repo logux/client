@@ -1182,6 +1182,10 @@
     "@types/yargs" "^15.0.0"
     chalk "^4.0.0"
 
+"@logux/actions@logux/actions":
+  version "0.0.0"
+  resolved "https://codeload.github.com/logux/actions/tar.gz/2b724032d407cfd108027c093d471013cd4f167b"
+
 "@logux/core@logux/core#next":
   version "0.6.2"
   resolved "https://codeload.github.com/logux/core/tar.gz/379547e75181641aeaf6957956a0b1e6e6859e9b"

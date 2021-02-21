@@ -1,6 +1,7 @@
+import { LoguxUndoAction } from '@logux/actions'
 import { delay } from 'nanodelay'
 
-import { TestClient, LoguxUndoError, LoguxUndoAction } from '../index.js'
+import { TestClient, LoguxUndoError } from '../index.js'
 
 interface NameAction {
   type: 'name'

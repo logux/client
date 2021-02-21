@@ -29,6 +29,7 @@
     "@logux/core": "^0.6.2"
   },
   "dependencies": {
+    "@logux/actions": "logux/actions",
     "fast-json-stable-stringify": "^2.1.0",
     "nanodelay": "^1.0.6",
     "nanoevents": "^5.1.11",

@@ -1,17 +1,4 @@
-import { Action, Meta } from '@logux/core'
-
 import { Client } from '../client/index.js'
-
-export type ZeroAction = Action & {
-  type: '0'
-  d: string
-  iv: string
-}
-
-export type ZeroCleanAction = Action & {
-  type: '0/clean'
-  id: Meta['id']
-}
 
 /**
  * Encrypt actions before sending them to server.

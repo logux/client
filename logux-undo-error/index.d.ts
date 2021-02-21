@@ -1,23 +1,4 @@
-import { Action, AnyAction } from '@logux/core'
-
-export type LoguxUndoAction<
-  A extends Action = AnyAction,
-  R extends string = string
-> = {
-  type: 'logux/undo'
-  id: string
-  reason: R
-  action: A
-}
-
-export type LoguxSubscribeAction = {
-  type: 'logux/subscribe'
-  channel: string
-  since?: {
-    id: string
-    time: number
-  }
-}
+import { LoguxSubscribeAction, LoguxUndoAction } from '@logux/actions'
 
 /**
  * Error on `logux/undo` action from the server.
