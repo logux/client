@@ -41,6 +41,12 @@ export class CrossTabClient<
   role: 'leader' | 'candidate' | 'follower'
 
   /**
+   * Cache for localStorage detection. Can be overriden to disable leader tab
+   * election in tests.
+   */
+  isLocalStorage: boolean
+
+  /**
    * Subscribe for synchronization events. It implements nanoevents API.
    * Supported events:
    *
