@@ -4,11 +4,11 @@ import { jest } from '@jest/globals'
 
 import { CrossTabClient, ClientMeta, log } from '../index.js'
 
-function setState (client: any, state: string) {
+function setState (client: any, state: string): void {
   client.node.setState(state)
 }
 
-function emit (obj: any, event: string, ...args: any[]) {
+function emit (obj: any, event: string, ...args: any[]): void {
   obj.emitter.emit(event, ...args)
 }
 
@@ -16,7 +16,9 @@ function privateMethods (obj: object): any {
   return obj
 }
 
-async function createClient () {
+async function createClient (): Promise<
+  CrossTabClient<{}, TestLog<ClientMeta>>
+> {
   let pair = new TestPair()
   privateMethods(pair.left).url = 'ws://example.com'
   let client = new CrossTabClient<{}, TestLog<ClientMeta>>({

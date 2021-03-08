@@ -19,7 +19,7 @@ afterEach(() => {
   jest.clearAllMocks()
 })
 
-function emit (obj: any, event: string, ...args: any[]) {
+function emit (obj: any, event: string, ...args: any[]): void {
   obj.emitter.emit(event, ...args)
 }
 
@@ -27,7 +27,7 @@ function getEvents (obj: any): Events {
   return obj.emitter.events
 }
 
-function setState (client: any, state: string) {
+function setState (client: any, state: string): void {
   client.node.setState(state)
 }
 
@@ -50,7 +50,7 @@ function getPair (client: Client): TestPair {
 async function createDialog (
   opts: Partial<ClientOptions> = {},
   token: string | undefined = undefined
-) {
+): Promise<Client<{}, TestLog>> {
   let pair = new TestPair()
 
   let client = new Client<{}, TestLog>({
@@ -94,7 +94,7 @@ async function createDialog (
   return client
 }
 
-function createClient () {
+function createClient (): Client<{}, TestLog> {
   let client = new Client<{}, TestLog>({
     subprotocol: '1.0.0',
     server: 'wss://localhost:1337',

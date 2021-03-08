@@ -37,8 +37,6 @@ let client = new CrossTabClient({
   server: 'wss://example.com/'
 })
 
-console.log(client.options)
-
 let node = new ClientNode(client.node.localNodeId, client.log, pair.left)
 node.connection.url = 'wss://example.com/'
 node.emitter = client.node.emitter

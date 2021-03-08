@@ -29,15 +29,17 @@ function getBadgeMessage (): string {
   return badgeNode()?.children[0].innerHTML ?? 'NO BADGE'
 }
 
-function setState (node: any, state: string) {
+function setState (node: any, state: string): void {
   node.setState(state)
 }
 
-function emit (obj: any, event: string, ...args: any[]) {
+function emit (obj: any, event: string, ...args: any[]): void {
   obj.emitter.emit(event, ...args)
 }
 
-async function createTest (override?: Partial<BadgeOptions>) {
+async function createTest (
+  override?: Partial<BadgeOptions>
+): Promise<TestPair> {
   let pair = new TestPair()
   let client = new CrossTabClient<{}, TestLog<ClientMeta>>({
     subprotocol: '1.0.0',

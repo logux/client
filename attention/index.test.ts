@@ -16,11 +16,11 @@ Object.defineProperty(document, 'hidden', {
   }
 })
 
-function emit (obj: any, event: string, ...args: any[]) {
+function emit (obj: any, event: string, ...args: any[]): void {
   obj.emitter.emit(event, ...args)
 }
 
-async function createClient () {
+async function createClient (): Promise<CrossTabClient> {
   document.title = 'title'
 
   let pair = new TestPair()

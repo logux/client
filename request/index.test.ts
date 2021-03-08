@@ -12,7 +12,7 @@ type Test = {
 async function createTest (
   action: AnyAction,
   opts: Partial<RequestOptions> = {}
-) {
+): Promise<Test> {
   let test: Test = {
     pair: new TestPair(),
     answer: undefined,
@@ -44,7 +44,7 @@ async function createTest (
 async function connectTest (
   action: AnyAction,
   opts: Partial<RequestOptions> = {}
-) {
+): Promise<Test> {
   let test = await createTest(action, opts)
   await test.pair.wait()
   test.pair.right.send(['connected', 4, 'server:uuid', [0, 0]])

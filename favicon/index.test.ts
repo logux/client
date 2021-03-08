@@ -15,19 +15,19 @@ function getFavHref (): string {
   return getFavNode().href.replace('http://localhost', '')
 }
 
-function setFavHref (href: string) {
+function setFavHref (href: string): void {
   getFavNode().href = href
 }
 
-function setState (node: any, state: string) {
+function setState (node: any, state: string): void {
   node.setState(state)
 }
 
-function emit (obj: any, event: string, ...args: any[]) {
+function emit (obj: any, event: string, ...args: any[]): void {
   obj.emitter.emit(event, ...args)
 }
 
-async function createClient () {
+async function createClient (): Promise<CrossTabClient> {
   let pair = new TestPair()
   let client = new CrossTabClient({
     subprotocol: '1.0.0',

@@ -28,7 +28,7 @@ function privateMethods (obj: object): any {
   return obj
 }
 
-function promisify (request: IDBRequest) {
+function promisify (request: IDBRequest): Promise<any> {
   return new Promise((resolve, reject) => {
     request.onerror = (e: any) => {
       reject(e.target.error)
@@ -50,7 +50,11 @@ async function all (
   }
 }
 
-async function check (db: IndexedStore, created: Entry[], added = created) {
+async function check (
+  db: IndexedStore,
+  created: Entry[],
+  added = created
+): Promise<void> {
   let entriesCreated = await all(db.get({ order: 'created' }))
   expect(entriesCreated).toEqual(created)
   let entriesAdded = await all(db.get({ order: 'added' }))

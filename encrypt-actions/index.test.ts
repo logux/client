@@ -20,7 +20,7 @@ function getPair (client: Client): TestPair {
 
 const BASE64 = expect.stringMatching(/^[\w+/]+=?=?$/)
 
-function createClient () {
+function createClient (): Client {
   let pair = new TestPair()
   let client = new Client({
     subprotocol: '1.0.0',
@@ -34,7 +34,7 @@ function createClient () {
   return client
 }
 
-async function connect (client: Client) {
+async function connect (client: Client): Promise<void> {
   await client.node.connection.connect()
   let pair = getPair(client)
   await pair.wait('right')

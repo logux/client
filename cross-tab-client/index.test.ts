@@ -19,7 +19,7 @@ declare global {
 
 beforeEach(() => {
   class WebSocket {
-    close () {}
+    close (): void {}
   }
   global.WebSocket = WebSocket
   setLocalStorage()
@@ -40,11 +40,13 @@ function privateMethods (obj: object): any {
   return obj
 }
 
-function emit (obj: any, event: string, ...args: any[]) {
+function emit (obj: any, event: string, ...args: any[]): void {
   obj.emitter.emit(event, ...args)
 }
 
-function createClient (overrides: Partial<ClientOptions> = {}) {
+function createClient (
+  overrides: Partial<ClientOptions> = {}
+): CrossTabClient<{}, TestLog> {
   let result = new CrossTabClient<{}, TestLog>({
     subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
