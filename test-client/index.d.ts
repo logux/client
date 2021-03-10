@@ -84,8 +84,8 @@ export class TestClient<H extends object = {}> extends Client<
    * expect(client.subscribed('users/10')).toBe(true)
    * ```
    *
-   * @param channel
-   * @returns
+   * @param channel Channel name.
+   * @returns Does client has an active subscription.
    */
   subscribed (channel: string): boolean
 
