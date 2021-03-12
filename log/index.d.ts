@@ -49,4 +49,4 @@ type LogMessages = {
  * @param messages Disable specific message types.
  * @returns Unbind listener.
  */
-export function log (client: Client, messages?: LogMessages): () => void
+export function log(client: Client, messages?: LogMessages): () => void

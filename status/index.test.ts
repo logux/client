@@ -3,15 +3,15 @@ import { delay } from 'nanodelay'
 
 import { CrossTabClient, status } from '../index.js'
 
-function setState (node: any, state: string): void {
+function setState(node: any, state: string): void {
   node.setState(state)
 }
 
-function emit (obj: any, event: string, ...args: any[]): void {
+function emit(obj: any, event: string, ...args: any[]): void {
   obj.emitter.emit(event, ...args)
 }
 
-async function createTest (options?: {
+async function createTest(options?: {
   duration?: number
 }): Promise<{
   client: CrossTabClient<{}, TestLog>

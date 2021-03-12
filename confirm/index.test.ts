@@ -3,15 +3,15 @@ import { jest } from '@jest/globals'
 
 import { CrossTabClient, confirm } from '../index.js'
 
-function setState (client: any, state: string): void {
+function setState(client: any, state: string): void {
   client.node.setState(state)
 }
 
-function emit (obj: any, event: string, ...args: any[]): void {
+function emit(obj: any, event: string, ...args: any[]): void {
   obj.emitter.emit(event, ...args)
 }
 
-async function createClient (): Promise<CrossTabClient> {
+async function createClient(): Promise<CrossTabClient> {
   let pair = new TestPair()
 
   let client = new CrossTabClient({
@@ -28,7 +28,7 @@ async function createClient (): Promise<CrossTabClient> {
 }
 
 let beforeunloader: false | ((event?: any) => string)
-function callBeforeloader (event?: any): string {
+function callBeforeloader(event?: any): string {
   if (beforeunloader === false) {
     throw new Error('beforeunloader was not set')
   } else {

@@ -35,7 +35,7 @@ export class LoguxUndoError<
    */
   action: A
 
-  constructor (action: A)
+  constructor(action: A)
 }
 
 export type ChannelNotFoundError = LoguxUndoError<

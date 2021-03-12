@@ -33,4 +33,4 @@ type FaviconLinks = {
  * @param links Favicon links.
  * @returns Unbind listener.
  */
-export function favicon (client: Client, links: FaviconLinks): () => void
+export function favicon(client: Client, links: FaviconLinks): () => void

@@ -59,7 +59,7 @@ status(client, s => {
 })
 
 let count = 0
-function emoji (state) {
+function emoji(state) {
   if (state === 'disconnected') {
     return '😴'
   } else if (state === 'connecting') {
@@ -68,10 +68,10 @@ function emoji (state) {
     return '😊'
   }
 }
-function role (value) {
+function role(value) {
   return value.slice(0, 1).toUpperCase()
 }
-function updateTitle () {
+function updateTitle() {
   document.title = emoji(client.state) + ' ' + role(client.role) + ' ' + count
 }
 

@@ -19,23 +19,23 @@ afterEach(() => {
   jest.clearAllMocks()
 })
 
-function emit (obj: any, event: string, ...args: any[]): void {
+function emit(obj: any, event: string, ...args: any[]): void {
   obj.emitter.emit(event, ...args)
 }
 
-function getEvents (obj: any): Events {
+function getEvents(obj: any): Events {
   return obj.emitter.events
 }
 
-function setState (client: any, state: string): void {
+function setState(client: any, state: string): void {
   client.node.setState(state)
 }
 
-function privateMethods (obj: object): any {
+function privateMethods(obj: object): any {
   return obj
 }
 
-function toNumber (str: string | null): number {
+function toNumber(str: string | null): number {
   if (str === null) {
     throw new Error('Key value is null')
   } else {
@@ -43,11 +43,11 @@ function toNumber (str: string | null): number {
   }
 }
 
-function getPair (client: Client): TestPair {
+function getPair(client: Client): TestPair {
   return privateMethods(client.node.connection).pair
 }
 
-async function createDialog (
+async function createDialog(
   opts: Partial<ClientOptions> = {},
   token: string | undefined = undefined
 ): Promise<Client<{}, TestLog>> {
@@ -94,7 +94,7 @@ async function createDialog (
   return client
 }
 
-function createClient (): Client<{}, TestLog> {
+function createClient(): Client<{}, TestLog> {
   let client = new Client<{}, TestLog>({
     subprotocol: '1.0.0',
     server: 'wss://localhost:1337',

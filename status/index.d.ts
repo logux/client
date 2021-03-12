@@ -47,7 +47,7 @@ type StatusOptions = {
  * @param messages Disable specific message types.
  * @returns Unbind listener.
  */
-export function status (
+export function status(
   client: Client,
   callback: StatusListener,
   options?: StatusOptions

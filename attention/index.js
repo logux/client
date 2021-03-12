@@ -1,4 +1,4 @@
-export function attention (client) {
+export function attention(client) {
   let doc = document
   let originTitle = false
   let unbind = []

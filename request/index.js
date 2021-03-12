@@ -1,7 +1,7 @@
 import { LoguxUndoError } from '../logux-undo-error/index.js'
 import { Client } from '../client/index.js'
 
-export function request (action, opts) {
+export function request(action, opts) {
   if (!opts.userId) opts.userId = 'anonymous'
   let client = new Client(opts)
   return new Promise((resolve, reject) => {

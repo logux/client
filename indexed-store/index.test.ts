@@ -24,11 +24,11 @@ beforeEach(() => {
   global.IDBKeyRange = IDBKeyRange
 })
 
-function privateMethods (obj: object): any {
+function privateMethods(obj: object): any {
   return obj
 }
 
-function promisify (request: IDBRequest): Promise<any> {
+function promisify(request: IDBRequest): Promise<any> {
   return new Promise((resolve, reject) => {
     request.onerror = (e: any) => {
       reject(e.target.error)
@@ -37,7 +37,7 @@ function promisify (request: IDBRequest): Promise<any> {
   })
 }
 
-async function all (
+async function all(
   request: Promise<Page>,
   list: Entry[] = []
 ): Promise<Entry[]> {
@@ -50,7 +50,7 @@ async function all (
   }
 }
 
-async function check (
+async function check(
   db: IndexedStore,
   created: Entry[],
   added = created

@@ -1,4 +1,4 @@
-export function favicon (client, links) {
+export function favicon(client, links) {
   let normal = links.normal
   let offline = links.offline
   let error = links.error
@@ -8,7 +8,7 @@ export function favicon (client, links) {
   let fav = false
   let prevFav = false
 
-  function update () {
+  function update() {
     if (client.connected && prevFav !== normal) {
       fav.href = prevFav = normal
     } else if (
@@ -21,7 +21,7 @@ export function favicon (client, links) {
     }
   }
 
-  function setError () {
+  function setError() {
     if (error && prevFav !== error) {
       fav.href = prevFav = error
     }

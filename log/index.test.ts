@@ -4,19 +4,19 @@ import { jest } from '@jest/globals'
 
 import { CrossTabClient, ClientMeta, log } from '../index.js'
 
-function setState (client: any, state: string): void {
+function setState(client: any, state: string): void {
   client.node.setState(state)
 }
 
-function emit (obj: any, event: string, ...args: any[]): void {
+function emit(obj: any, event: string, ...args: any[]): void {
   obj.emitter.emit(event, ...args)
 }
 
-function privateMethods (obj: object): any {
+function privateMethods(obj: object): any {
   return obj
 }
 
-async function createClient (): Promise<
+async function createClient(): Promise<
   CrossTabClient<{}, TestLog<ClientMeta>>
 > {
   let pair = new TestPair()
@@ -38,7 +38,7 @@ async function createClient (): Promise<
 let group = false
 let out = ''
 
-function format (...args: (string | object)[]): string {
+function format(...args: (string | object)[]): string {
   return (
     (group ? '  ' : '') +
     args

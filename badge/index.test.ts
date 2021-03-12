@@ -5,11 +5,11 @@ import { CrossTabClient, badge, badgeEn, ClientMeta } from '../index.js'
 import { BadgeOptions } from './index.js'
 import { badgeStyles } from './styles/index.js'
 
-function badgeNode (): HTMLElement | null {
+function badgeNode(): HTMLElement | null {
   return document.querySelector('div')!
 }
 
-function badgeChildStyle (): any {
+function badgeChildStyle(): any {
   let node = badgeNode()
   if (node !== null) {
     let child = node.children[0]
@@ -20,26 +20,24 @@ function badgeChildStyle (): any {
   return {}
 }
 
-function badgeStyle (): any {
+function badgeStyle(): any {
   let node = badgeNode()
   return node !== null ? node.style : {}
 }
 
-function getBadgeMessage (): string {
+function getBadgeMessage(): string {
   return badgeNode()?.children[0].innerHTML ?? 'NO BADGE'
 }
 
-function setState (node: any, state: string): void {
+function setState(node: any, state: string): void {
   node.setState(state)
 }
 
-function emit (obj: any, event: string, ...args: any[]): void {
+function emit(obj: any, event: string, ...args: any[]): void {
   obj.emitter.emit(event, ...args)
 }
 
-async function createTest (
-  override?: Partial<BadgeOptions>
-): Promise<TestPair> {
+async function createTest(override?: Partial<BadgeOptions>): Promise<TestPair> {
   let pair = new TestPair()
   let client = new CrossTabClient<{}, TestLog<ClientMeta>>({
     subprotocol: '1.0.0',

@@ -17,7 +17,7 @@ import { Client } from '../client/index.js'
  * @param opts Encryption options.
  * @returns Unbind listener.
  */
-export function encryptActions (
+export function encryptActions(
   client: Client,
   secret: string,
   opts?: {

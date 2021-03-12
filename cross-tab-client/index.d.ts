@@ -67,9 +67,9 @@ export class CrossTabClient<
    * @param listener The listener function.
    * @returns Unbind listener from event.
    */
-  on (event: 'role' | 'state', listener: () => void): Unsubscribe
-  on (event: 'user', listener: (userId: string) => void): Unsubscribe
-  on (
+  on(event: 'role' | 'state', listener: () => void): Unsubscribe
+  on(event: 'user', listener: (userId: string) => void): Unsubscribe
+  on(
     event: 'preadd' | 'add' | 'clean',
     listener: ClientActionListener<Action>
   ): Unsubscribe

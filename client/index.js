@@ -15,11 +15,11 @@ import { track } from '../track/index.js'
 
 let ALLOWED_META = ['id', 'time', 'subprotocol']
 
-function tabPing (c) {
+function tabPing(c) {
   localStorage.setItem(c.options.prefix + ':tab:' + c.tabId, Date.now())
 }
 
-function cleanTabActions (client, id) {
+function cleanTabActions(client, id) {
   client.log.removeReason('tab' + id).then(() => {
     if (client.isLocalStorage) {
       localStorage.removeItem(client.options.prefix + ':tab:' + id)
@@ -28,7 +28,7 @@ function cleanTabActions (client, id) {
 }
 
 export class Client {
-  constructor (opts = {}) {
+  constructor(opts = {}) {
     this.options = opts
 
     if (process.env.NODE_ENV !== 'production') {
@@ -270,20 +270,20 @@ export class Client {
     this.processing = {}
   }
 
-  get state () {
+  get state() {
     return this.node.state
   }
 
-  get connected () {
+  get connected() {
     return this.state !== 'disconnected' && this.state !== 'connecting'
   }
 
-  start () {
+  start() {
     this.cleanPrevActions()
     this.node.connection.connect()
   }
 
-  sync (action, meta = {}) {
+  sync(action, meta = {}) {
     meta.sync = true
     if (typeof meta.id === 'undefined') {
       meta.id = this.log.generateId()
@@ -293,11 +293,11 @@ export class Client {
     return track(this, meta.id)
   }
 
-  type (type, listener, opts) {
+  type(type, listener, opts) {
     return this.log.type(type, listener, opts)
   }
 
-  on (event, listener) {
+  on(event, listener) {
     if (event === 'state') {
       return this.node.emitter.on(event, listener)
     } else if (event === 'user') {
@@ -307,7 +307,7 @@ export class Client {
     }
   }
 
-  changeUser (userId, token) {
+  changeUser(userId, token) {
     if (process.env.NODE_ENV !== 'production') {
       if (typeof userId !== 'string') {
         throw new Error('userId must be a string')
@@ -333,7 +333,7 @@ export class Client {
     if (wasConnected) this.node.connection.connect()
   }
 
-  waitFor (state) {
+  waitFor(state) {
     if (this.state === state) {
       return Promise.resolve()
     }
@@ -347,7 +347,7 @@ export class Client {
     })
   }
 
-  destroy () {
+  destroy() {
     this.onUnload()
     this.node.destroy()
     clearInterval(this.pinging)
@@ -356,12 +356,12 @@ export class Client {
     }
   }
 
-  clean () {
+  clean() {
     this.destroy()
     return this.log.store.clean ? this.log.store.clean() : Promise.resolve()
   }
 
-  cleanPrevActions () {
+  cleanPrevActions() {
     if (!this.isLocalStorage) return
 
     for (let i in localStorage) {
@@ -375,11 +375,11 @@ export class Client {
     }
   }
 
-  onUnload () {
+  onUnload() {
     if (this.pinging) cleanTabActions(this, this.tabId)
   }
 
-  getClientId () {
+  getClientId() {
     return nanoid(8)
   }
 }

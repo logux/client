@@ -11,4 +11,4 @@ import { Client } from '../client/index.js'
  * @param client Observed Client instance.
  * @returns Unbind listener.
  */
-export function confirm (client: Client): () => void
+export function confirm(client: Client): () => void

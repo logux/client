@@ -1,10 +1,10 @@
 import { parseId } from '@logux/core'
 
-function bold (string) {
+function bold(string) {
   return '%c' + string + '%c'
 }
 
-function showLog (text, details) {
+function showLog(text, details) {
   text = '%cLogux%c ' + text
   let args = Array.from(text.match(/%c/g)).map((_, i) => {
     if (i === 0) {
@@ -31,7 +31,7 @@ function showLog (text, details) {
   }
 }
 
-export function log (client, messages = {}) {
+export function log(client, messages = {}) {
   let node = client.node
 
   let sent = {}

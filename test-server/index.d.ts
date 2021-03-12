@@ -34,7 +34,7 @@ export class TestServer {
    * @param reason Optional code for reason. Default is `'error'`.
    * @param extra Extra fields to `logux/undo` action.
    */
-  undoNext (reason?: string, extra?: object): void
+  undoNext(reason?: string, extra?: object): void
 
   /**
    * Response with `logux/undo` instead of `logux/process` on receiving
@@ -54,7 +54,7 @@ export class TestServer {
    * @param reason Optional code for reason. Default is `'error'`.
    * @param extra Extra fields to `logux/undo` action.
    */
-  undoAction (action: AnyAction, reason?: string, extra?: object): void
+  undoAction(action: AnyAction, reason?: string, extra?: object): void
 
   /**
    * Define server’s responses for specific channel.
@@ -73,7 +73,7 @@ export class TestServer {
    * @param channel The channel name.
    * @param response Actions to send back on subscription.
    */
-  onChannel (
+  onChannel(
     channel: string,
     response: AnyAction | AnyAction[] | [AnyAction, Partial<Meta>][]
   ): void
@@ -83,7 +83,7 @@ export class TestServer {
    * @param type Action type.
    * @param resend Callback returns channel name.
    */
-  resend<A extends Action = AnyAction> (
+  resend<A extends Action = AnyAction>(
     type: A['type'],
     resend: (action: A, meta: Meta) => string | string[]
   ): void
@@ -105,5 +105,5 @@ export class TestServer {
    * @param test Function, where server will not send `logux/processed`.
    * @returns Promise until `test` will be finished.
    */
-  freezeProcessing (test: () => Promise<void>): Promise<void>
+  freezeProcessing(test: () => Promise<void>): Promise<void>
 }

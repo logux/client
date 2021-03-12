@@ -31,15 +31,15 @@
   "dependencies": {
     "@logux/actions": "logux/actions",
     "fast-json-stable-stringify": "^2.1.0",
-    "nanodelay": "^1.0.6",
+    "nanodelay": "^1.0.7",
     "nanoevents": "^5.1.12",
-    "nanoid": "^3.1.20"
+    "nanoid": "^3.1.21"
   },
   "devDependencies": {
-    "@babel/core": "^7.13.8",
+    "@babel/core": "^7.13.10",
     "@logux/core": "logux/core#next",
-    "@logux/eslint-config": "^45.1.0",
-    "@logux/sharec-config": "^0.8.5",
+    "@logux/eslint-config": "^45.2.0",
+    "@logux/sharec-config": "^0.9.0",
     "@parcel/optimizer-cssnano": "^2.0.0-nightly.600",
     "@parcel/optimizer-htmlnano": "^2.0.0-nightly.600",
     "@parcel/packager-css": "^2.0.0-nightly.600",
@@ -51,17 +51,17 @@
     "@peculiar/webcrypto": "^1.1.6",
     "@size-limit/preset-small-lib": "^4.10.1",
     "@types/jest": "^26.0.20",
-    "@types/node": "^14.14.32",
+    "@types/node": "^14.14.33",
     "@types/ws": "^7.4.0",
-    "@typescript-eslint/eslint-plugin": "^4.16.1",
-    "@typescript-eslint/parser": "^4.16.1",
+    "@typescript-eslint/eslint-plugin": "^4.17.0",
+    "@typescript-eslint/parser": "^4.17.0",
     "check-dts": "^0.4.4",
     "colorette": "^1.2.2",
     "eslint": "^7.21.0",
     "eslint-config-standard": "^16.0.2",
     "eslint-plugin-es5": "^1.5.0",
     "eslint-plugin-import": "^2.22.1",
-    "eslint-plugin-jest": "^24.1.9",
+    "eslint-plugin-jest": "^24.2.1",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-prefer-let": "^1.1.0",
     "eslint-plugin-prettierx": "^0.17.1",
@@ -69,29 +69,42 @@
     "eslint-plugin-security": "^1.4.0",
     "eslint-plugin-unicorn": "^28.0.2",
     "fake-indexeddb": "^3.1.2",
-    "husky": "^4.3.8",
     "jest": "^27.0.0-next.2",
     "lint-staged": "^10.5.4",
     "parcel": "^2.0.0-nightly.463",
-    "postcss": "^8.2.7",
+    "postcss": "^8.2.8",
+    "prettier": "^2.2.1",
     "print-snapshots": "^0.3.2",
     "rimraf": "^3.0.2",
+    "simple-git-hooks": "^2.0.2",
     "size-limit": "^4.10.1",
-    "svgo": "^2.2.1",
+    "svgo": "^2.2.2",
     "ts-jest": "^27.0.0-next.4",
     "typescript": "^4.2.3",
     "yaspeller": "^7.0.0"
   },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
+  "simple-git-hooks": {
+    "pre-commit": "npx lint-staged"
+  },
+  "prettier": {
+    "arrowParens": "avoid",
+    "jsxSingleQuote": false,
+    "quoteProps": "consistent",
+    "semi": false,
+    "singleQuote": true,
+    "trailingComma": "none"
   },
   "lint-staged": {
     "*.svg": "svgo",
     "*.md": "yaspeller",
-    "*.js": "eslint --fix",
-    "*.ts": "eslint --fix"
+    "*.js": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.ts": [
+      "prettier --write",
+      "eslint --fix"
+    ]
   },
   "jest": {
     "preset": "ts-jest/presets/default-esm",
@@ -183,6 +196,6 @@
   },
   "sharec": {
     "config": "@logux/sharec-config",
-    "version": "0.8.5"
+    "version": "0.9.0"
   }
 }

@@ -83,7 +83,7 @@ type BadgeOptions = {
  * @param opts Widget settings.
  * @returns Unbind badge listener and remove widget from DOM.
  */
-export function badge (client: Client, opts: BadgeOptions): () => void
+export function badge(client: Client, opts: BadgeOptions): () => void
 
 /**
  * Russian translation for widget.

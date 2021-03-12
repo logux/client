@@ -5,7 +5,7 @@ import { CrossTabClient, attention } from '../index.js'
 
 let nextHidden: boolean | undefined
 Object.defineProperty(document, 'hidden', {
-  get () {
+  get() {
     if (typeof nextHidden !== 'undefined') {
       let value = nextHidden
       nextHidden = undefined
@@ -16,11 +16,11 @@ Object.defineProperty(document, 'hidden', {
   }
 })
 
-function emit (obj: any, event: string, ...args: any[]): void {
+function emit(obj: any, event: string, ...args: any[]): void {
   obj.emitter.emit(event, ...args)
 }
 
-async function createClient (): Promise<CrossTabClient> {
+async function createClient(): Promise<CrossTabClient> {
   document.title = 'title'
 
   let pair = new TestPair()

@@ -53,7 +53,7 @@ export class TestClient<H extends object = {}> extends Client<
    * @param userId User ID.
    * @param opts Other options.
    */
-  constructor (userId: string, opts?: TestClientOptions<H>)
+  constructor(userId: string, opts?: TestClientOptions<H>)
 
   /**
    * Connect to virtual server.
@@ -64,7 +64,7 @@ export class TestClient<H extends object = {}> extends Client<
    *
    * @returns Promise until connection will be established.
    */
-  connect (): Promise<void>
+  connect(): Promise<void>
 
   /**
    * Disconnect from virtual server.
@@ -73,7 +73,7 @@ export class TestClient<H extends object = {}> extends Client<
    * client.disconnect()
    * ```
    */
-  disconnect (): void
+  disconnect(): void
 
   /**
    * Does client subscribed to specific channel.
@@ -87,7 +87,7 @@ export class TestClient<H extends object = {}> extends Client<
    * @param channel Channel name.
    * @returns Does client has an active subscription.
    */
-  subscribed (channel: string): boolean
+  subscribed(channel: string): boolean
 
   /**
    * Collect actions sent by client during the `test` call.
@@ -102,5 +102,5 @@ export class TestClient<H extends object = {}> extends Client<
    * @param test Function, where do you expect action will be received
    * @returns Promise with all received actions
    */
-  sent (test: () => Promise<void> | void): Promise<Action[]>
+  sent(test: () => Promise<void> | void): Promise<Action[]>
 }

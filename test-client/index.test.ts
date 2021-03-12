@@ -10,7 +10,7 @@ interface NameAction {
 
 type LoguxUndoWithKeyAction = LoguxUndoAction & { key?: number }
 
-async function catchError (cb: () => Promise<any>): Promise<any> {
+async function catchError(cb: () => Promise<any>): Promise<any> {
   let error: LoguxUndoError<LoguxUndoWithKeyAction> | undefined
   try {
     await cb()

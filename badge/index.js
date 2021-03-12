@@ -1,12 +1,12 @@
 import { status } from '../status/index.js'
 
-function injectStyles (element, styles) {
+function injectStyles(element, styles) {
   for (let i in styles) {
     element.style[i] = styles[i]
   }
 }
 
-function setPosition (element, position) {
+function setPosition(element, position) {
   let style = element.style
   if (position === 'middle-center' || position === 'center-middle') {
     style.top = '50%'
@@ -40,7 +40,7 @@ const RESET = {
   lineHeight: 'auto'
 }
 
-export function badge (client, opts) {
+export function badge(client, opts) {
   let messages = opts.messages
   let position = opts.position || 'bottom-right'
   let styles = opts.styles

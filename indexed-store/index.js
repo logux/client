@@ -2,13 +2,13 @@ import { isFirstOlder } from '@logux/core'
 
 const VERSION = 2
 
-function rejectify (request, reject) {
+function rejectify(request, reject) {
   request.onerror = e => {
     reject(e.target.error)
   }
 }
 
-function promisify (request) {
+function promisify(request) {
   return new Promise((resolve, reject) => {
     rejectify(request, reject)
     request.onsuccess = e => {
@@ -17,7 +17,7 @@ function promisify (request) {
   })
 }
 
-function nextEntry (request, filter = {}) {
+function nextEntry(request, filter = {}) {
   return cursor => {
     if (cursor) {
       if (filter.index && !cursor.value.indexes.includes(filter.index)) {
@@ -27,7 +27,7 @@ function nextEntry (request, filter = {}) {
       cursor.value.meta.added = cursor.value.added
       return {
         entries: [[cursor.value.action, cursor.value.meta]],
-        next () {
+        next() {
           cursor.continue()
           return promisify(request).then(nextEntry(request, filter))
         }
@@ -38,17 +38,17 @@ function nextEntry (request, filter = {}) {
   }
 }
 
-function isDefined (value) {
+function isDefined(value) {
   return typeof value !== 'undefined'
 }
 
 export class IndexedStore {
-  constructor (name = 'logux') {
+  constructor(name = 'logux') {
     this.name = name
     this.adding = {}
   }
 
-  init () {
+  init() {
     if (this.initing) return this.initing
 
     let store = this
@@ -91,7 +91,7 @@ export class IndexedStore {
     return this.initing
   }
 
-  async get (opts) {
+  async get(opts) {
     let { index, order } = opts
     let store = await this.init()
     let log = store.os('log')
@@ -113,7 +113,7 @@ export class IndexedStore {
     return promisify(request).then(nextEntry(request, filter))
   }
 
-  async byId (id) {
+  async byId(id) {
     let store = await this.init()
     let result = await promisify(store.os('log').index('id').get(id))
     if (result) {
@@ -123,7 +123,7 @@ export class IndexedStore {
     }
   }
 
-  async remove (id) {
+  async remove(id) {
     let store = await this.init()
     let log = store.os('log', 'write')
     let entry = await promisify(log.index('id').get(id))
@@ -136,7 +136,7 @@ export class IndexedStore {
     }
   }
 
-  async add (action, meta) {
+  async add(action, meta) {
     let id = meta.id.split(' ')
     let entry = {
       id: meta.id,
@@ -166,7 +166,7 @@ export class IndexedStore {
     }
   }
 
-  async changeMeta (id, diff) {
+  async changeMeta(id, diff) {
     let store = await this.init()
     let log = store.os('log', 'write')
     let entry = await promisify(log.index('id').get(id))
@@ -180,7 +180,7 @@ export class IndexedStore {
     }
   }
 
-  async removeReason (reason, criteria, callback) {
+  async removeReason(reason, criteria, callback) {
     let store = await this.init()
     let log = store.os('log', 'write')
     if (criteria.id) {
@@ -250,13 +250,13 @@ export class IndexedStore {
     }
   }
 
-  async getLastAdded () {
+  async getLastAdded() {
     let store = await this.init()
     let cursor = await promisify(store.os('log').openCursor(null, 'prev'))
     return cursor ? cursor.value.added : 0
   }
 
-  async getLastSynced () {
+  async getLastSynced() {
     let store = await this.init()
     let data = await promisify(store.os('extra').get('lastSynced'))
     if (data) {
@@ -266,7 +266,7 @@ export class IndexedStore {
     }
   }
 
-  async setLastSynced (values) {
+  async setLastSynced(values) {
     let store = await this.init()
     let extra = store.os('extra', 'write')
     let data = await promisify(extra.get('lastSynced'))
@@ -280,12 +280,12 @@ export class IndexedStore {
     await promisify(extra.put(data))
   }
 
-  os (name, write) {
+  os(name, write) {
     let mode = write ? 'readwrite' : 'readonly'
     return this.db.transaction(name, mode).objectStore(name)
   }
 
-  async clean () {
+  async clean() {
     let store = await this.init()
     store.db.close()
     await promisify(indexedDB.deleteDatabase(store.name))

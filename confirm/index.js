@@ -1,9 +1,9 @@
-function block (e) {
+function block(e) {
   e.returnValue = 'unsynced'
   return 'unsynced'
 }
 
-export function confirm (client) {
+export function confirm(client) {
   let disconnected = client.state === 'disconnected'
   let wait = false
 

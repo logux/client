@@ -1,4 +1,4 @@
-export function status (client, callback, options = {}) {
+export function status(client, callback, options = {}) {
   let observable = client.on ? client : client.node
   let disconnected = observable.state === 'disconnected'
   let wait = false
@@ -10,7 +10,7 @@ export function status (client, callback, options = {}) {
   let unbind = []
   let processing = {}
 
-  function setSynchronized () {
+  function setSynchronized() {
     if (Object.keys(processing).length === 0) {
       if (wait) {
         wait = false
@@ -24,7 +24,7 @@ export function status (client, callback, options = {}) {
     }
   }
 
-  function changeState () {
+  function changeState() {
     clearTimeout(timeout)
 
     if (old) return

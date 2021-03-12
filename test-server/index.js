@@ -3,7 +3,7 @@ import stringify from 'fast-json-stable-stringify'
 import { delay } from 'nanodelay'
 
 export class TestServer {
-  constructor () {
+  constructor() {
     this.time = new TestTime()
     this.log = this.time.nextLog({ nodeId: 'server:id' })
     this.undo = []
@@ -30,7 +30,7 @@ export class TestServer {
     })
   }
 
-  connect (nodeId, connection) {
+  connect(nodeId, connection) {
     let node = new ServerNode('server:id', this.log, connection, {
       outFilter: async (action, meta) => {
         if (meta.channels) {
@@ -46,10 +46,10 @@ export class TestServer {
           !action.type.startsWith('logux/') && !meta.channels && !meta.nodes
         )
       },
-      async inMap (action, meta) {
+      async inMap(action, meta) {
         return [action, { ...meta, subprotocol: node.remoteSubprotocol }]
       },
-      async outMap (action, meta) {
+      async outMap(action, meta) {
         let cleaned = {}
         for (let i in meta) {
           if (i !== 'nodes' && i !== 'channels') cleaned[i] = meta[i]
@@ -66,19 +66,19 @@ export class TestServer {
     })
   }
 
-  undoNext (reason, extra) {
+  undoNext(reason, extra) {
     this.undo.push([reason || 'error', extra || {}])
   }
 
-  undoAction (action, reason, extra) {
+  undoAction(action, reason, extra) {
     this.bad[stringify(action)] = [reason || 'error', extra || {}]
   }
 
-  onChannel (channel, response) {
+  onChannel(channel, response) {
     this.channels[channel] = response
   }
 
-  async freezeProcessing (test) {
+  async freezeProcessing(test) {
     this.frozen = true
     await test()
     this.frozen = false
@@ -89,11 +89,11 @@ export class TestServer {
     await delay(20)
   }
 
-  resend (type, resend) {
+  resend(type, resend) {
     this.resenders[type] = resend
   }
 
-  sendUndo (action, meta, record) {
+  sendUndo(action, meta, record) {
     if (!record) return false
     let [reason, extra] = record
     this.log.add(
@@ -103,7 +103,7 @@ export class TestServer {
     return true
   }
 
-  process (action, meta) {
+  process(action, meta) {
     let id = meta.id
     let nodeId = parseId(id).nodeId
     let nodes = [nodeId]

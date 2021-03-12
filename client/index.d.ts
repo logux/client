@@ -129,7 +129,7 @@ export class Client<H extends object = {}, L extends Log = Log<ClientMeta>> {
   /**
    * @param opts Client options.
    */
-  constructor (opts: ClientOptions)
+  constructor(opts: ClientOptions)
 
   /**
    * Client options.
@@ -207,7 +207,7 @@ export class Client<H extends object = {}, L extends Log = Log<ClientMeta>> {
    * client.start()
    * ```
    */
-  start (): void
+  start(): void
 
   /**
    * Send action to the server (by setting `meta.sync` and adding to the log)
@@ -229,7 +229,7 @@ export class Client<H extends object = {}, L extends Log = Log<ClientMeta>> {
    * @param meta Optional meta.
    * @returns Promise for server processing.
    */
-  sync (action: AnyAction, meta?: Partial<ClientMeta>): Promise<ClientMeta>
+  sync(action: AnyAction, meta?: Partial<ClientMeta>): Promise<ClientMeta>
 
   /**
    * Add listener for adding action with specific type.
@@ -246,7 +246,7 @@ export class Client<H extends object = {}, L extends Log = Log<ClientMeta>> {
    * @param event
    * @returns Unbind listener from event.
    */
-  type<A extends Action = Action, T extends string = A['type']> (
+  type<A extends Action = Action, T extends string = A['type']>(
     type: T,
     listener: ClientActionListener<A>,
     opts?: { id?: string; event?: 'preadd' | 'add' | 'clean' }
@@ -273,12 +273,12 @@ export class Client<H extends object = {}, L extends Log = Log<ClientMeta>> {
    * @param listener The listener function.
    * @returns Unbind listener from event.
    */
-  on (event: 'state', listener: () => void): Unsubscribe
-  on (
+  on(event: 'state', listener: () => void): Unsubscribe
+  on(
     event: 'preadd' | 'add' | 'clean',
     listener: ClientActionListener<Action>
   ): Unsubscribe
-  on (event: 'user', listener: (userId: string) => void): Unsubscribe
+  on(event: 'user', listener: (userId: string) => void): Unsubscribe
 
   /**
    * Disconnect from the server, update user, and connect again
@@ -298,7 +298,7 @@ export class Client<H extends object = {}, L extends Log = Log<ClientMeta>> {
    * @param userId The new user ID.
    * @param token Credentials for new user.
    */
-  changeUser (userId: string, token?: string): void
+  changeUser(userId: string, token?: string): void
 
   /**
    * Wait for specific state of the leader tab.
@@ -310,7 +310,7 @@ export class Client<H extends object = {}, L extends Log = Log<ClientMeta>> {
    *
    * @param state State name
    */
-  waitFor (state: ClientNode['state']): Promise<void>
+  waitFor(state: ClientNode['state']): Promise<void>
 
   /**
    * Disconnect and stop synchronization.
@@ -321,7 +321,7 @@ export class Client<H extends object = {}, L extends Log = Log<ClientMeta>> {
    * })
    * ```
    */
-  destroy (): void
+  destroy(): void
 
   /**
    * Clear stored data. Removes action log from `IndexedDB` if you used it.
@@ -334,5 +334,5 @@ export class Client<H extends object = {}, L extends Log = Log<ClientMeta>> {
    *
    * @returns Promise when all data will be removed.
    */
-  clean (): Promise<void>
+  clean(): Promise<void>
 }

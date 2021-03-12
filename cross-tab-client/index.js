@@ -2,11 +2,11 @@ import { LoguxError, actionEvents } from '@logux/core'
 
 import { Client } from '../client/index.js'
 
-function storageKey (client, name) {
+function storageKey(client, name) {
   return client.options.prefix + ':' + client.options.userId + ':' + name
 }
 
-function sendToTabs (client, event, data) {
+function sendToTabs(client, event, data) {
   if (!client.isLocalStorage) return
   let key = storageKey(client, event)
   let json = JSON.stringify(data)
@@ -21,25 +21,25 @@ function sendToTabs (client, event, data) {
   }
 }
 
-function getLeader (client) {
+function getLeader(client) {
   let data = localStorage.getItem(storageKey(client, 'leader'))
   let json = []
   if (typeof data === 'string') json = JSON.parse(data)
   return json
 }
 
-function leaderPing (client) {
+function leaderPing(client) {
   sendToTabs(client, 'leader', [client.tabId, Date.now()])
 }
 
-function onDeadLeader (client) {
+function onDeadLeader(client) {
   if (client.state !== 'disconnected') {
     setState(client, 'disconnected')
   }
   startElection(client)
 }
 
-function watchForLeader (client) {
+function watchForLeader(client) {
   clearTimeout(client.watching)
   client.watching = setTimeout(() => {
     if (!isActiveLeader(client)) {
@@ -50,7 +50,7 @@ function watchForLeader (client) {
   }, client.roleTimeout)
 }
 
-function compareSubprotocols (left, right) {
+function compareSubprotocols(left, right) {
   let leftParts = left.split('.')
   let rightParts = right.split('.')
   for (let i = 0; i < 3; i++) {
@@ -65,7 +65,7 @@ function compareSubprotocols (left, right) {
   return 0
 }
 
-function setRole (client, role) {
+function setRole(client, role) {
   if (client.role !== role) {
     let node = client.node
     client.role = role
@@ -100,12 +100,12 @@ function setRole (client, role) {
   }
 }
 
-function isActiveLeader (client) {
+function isActiveLeader(client) {
   let leader = getLeader(client)
   return leader[1] && leader[1] >= Date.now() - client.leaderTimeout
 }
 
-function startElection (client) {
+function startElection(client) {
   leaderPing(client)
   setRole(client, 'candidate')
   client.elections = setTimeout(() => {
@@ -119,18 +119,18 @@ function startElection (client) {
   }, client.electionDelay)
 }
 
-function setState (client, state) {
+function setState(client, state) {
   client.state = state
   client.emitter.emit('state')
   sendToTabs(client, 'state', client.state)
 }
 
-function isMemory (store) {
+function isMemory(store) {
   return Array.isArray(store.entries) && Array.isArray(store.added)
 }
 
 export class CrossTabClient extends Client {
-  constructor (opts = {}) {
+  constructor(opts = {}) {
     super(opts)
 
     this.role = 'candidate'
@@ -171,15 +171,15 @@ export class CrossTabClient extends Client {
     }
   }
 
-  get state () {
+  get state() {
     return this.leaderState
   }
 
-  set state (value) {
+  set state(value) {
     this.leaderState = value
   }
 
-  start () {
+  start() {
     this.cleanPrevActions()
 
     if (!this.isLocalStorage) {
@@ -197,7 +197,7 @@ export class CrossTabClient extends Client {
     }
   }
 
-  destroy () {
+  destroy() {
     super.destroy()
 
     clearTimeout(this.watching)
@@ -208,7 +208,7 @@ export class CrossTabClient extends Client {
     }
   }
 
-  clean () {
+  clean() {
     if (this.isLocalStorage) {
       localStorage.removeItem(storageKey(this, 'add'))
       localStorage.removeItem(storageKey(this, 'state'))
@@ -218,12 +218,12 @@ export class CrossTabClient extends Client {
     return super.clean()
   }
 
-  changeUser (userId, token) {
+  changeUser(userId, token) {
     sendToTabs(this, 'user', [this.tabId, userId])
     super.changeUser(userId, token)
   }
 
-  type (type, listener, opts = {}) {
+  type(type, listener, opts = {}) {
     if (opts.event === 'preadd') {
       return this.log.type(type, listener, opts)
     } else {
@@ -233,7 +233,7 @@ export class CrossTabClient extends Client {
     }
   }
 
-  on (event, listener) {
+  on(event, listener) {
     if (event === 'preadd') {
       return this.log.emitter.on(event, listener)
     } else {
@@ -241,7 +241,7 @@ export class CrossTabClient extends Client {
     }
   }
 
-  onStorage (e) {
+  onStorage(e) {
     if (e.newValue === null) return
 
     let data
@@ -295,7 +295,7 @@ export class CrossTabClient extends Client {
     }
   }
 
-  onUnload () {
+  onUnload() {
     if (this.role === 'leader') {
       this.unloading = true
       sendToTabs(this, 'leader', [])
@@ -303,7 +303,7 @@ export class CrossTabClient extends Client {
     super.onUnload()
   }
 
-  getClientId () {
+  getClientId() {
     let key = storageKey(this, 'client')
     if (!this.isLocalStorage) {
       return super.getClientId()

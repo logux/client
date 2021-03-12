@@ -1,25 +1,25 @@
-function sha256 (string) {
+function sha256(string) {
   return crypto.subtle.digest('SHA-256', new TextEncoder().encode(string))
 }
 
-function bytesToObj (bytes) {
+function bytesToObj(bytes) {
   return JSON.parse(new TextDecoder().decode(bytes))
 }
 
-function objToBytes (object) {
+function objToBytes(object) {
   return new TextEncoder().encode(JSON.stringify(object))
 }
 
-function aes (iv) {
+function aes(iv) {
   return { name: 'AES-GCM', iv }
 }
 
-function bytesToBase64 (bytes) {
+function bytesToBase64(bytes) {
   let binaryString = String.fromCharCode.apply(null, bytes)
   return window.btoa(binaryString)
 }
 
-function base64ToBytes (string) {
+function base64ToBytes(string) {
   let binaryString = window.atob(string)
   let length = binaryString.length
   let bytes = new Uint8Array(length)
@@ -29,7 +29,7 @@ function base64ToBytes (string) {
   return bytes
 }
 
-async function encrypt (action, key) {
+async function encrypt(action, key) {
   let iv = crypto.getRandomValues(new Uint8Array(12))
   let crypted = await crypto.subtle.encrypt(aes(iv), key, objToBytes(action))
   return {
@@ -39,7 +39,7 @@ async function encrypt (action, key) {
   }
 }
 
-async function decrypt (action, key) {
+async function decrypt(action, key) {
   let bytes = await crypto.subtle.decrypt(
     aes(base64ToBytes(action.iv)),
     key,
@@ -48,9 +48,9 @@ async function decrypt (action, key) {
   return bytesToObj(bytes)
 }
 
-export function encryptActions (client, secret, opts = {}) {
+export function encryptActions(client, secret, opts = {}) {
   let key
-  async function getKey () {
+  async function getKey() {
     key = await crypto.subtle.importKey(
       'raw',
       await sha256(secret),
@@ -62,7 +62,7 @@ export function encryptActions (client, secret, opts = {}) {
   }
 
   let ignore = new Set(opts.ignore || [])
-  async function outMap (action, meta) {
+  async function outMap(action, meta) {
     if (action.type === '0/clean' || ignore.has(action.type)) {
       return [action, meta]
     } else {
@@ -72,7 +72,7 @@ export function encryptActions (client, secret, opts = {}) {
     }
   }
 
-  async function inMap (action, meta) {
+  async function inMap(action, meta) {
     if (action.type === '0') {
       if (!key) key = await getKey()
       let decrypted = await decrypt(action, key)

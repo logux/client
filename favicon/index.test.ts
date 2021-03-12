@@ -2,7 +2,7 @@ import { LoguxError, TestPair } from '@logux/core'
 
 import { CrossTabClient, favicon } from '../index.js'
 
-function getFavNode (): HTMLLinkElement {
+function getFavNode(): HTMLLinkElement {
   let node = document.querySelector('link[rel~="icon"]')
   if (node === null || !(node instanceof HTMLLinkElement)) {
     throw new Error('Favicon tag was not found')
@@ -11,23 +11,23 @@ function getFavNode (): HTMLLinkElement {
   }
 }
 
-function getFavHref (): string {
+function getFavHref(): string {
   return getFavNode().href.replace('http://localhost', '')
 }
 
-function setFavHref (href: string): void {
+function setFavHref(href: string): void {
   getFavNode().href = href
 }
 
-function setState (node: any, state: string): void {
+function setState(node: any, state: string): void {
   node.setState(state)
 }
 
-function emit (obj: any, event: string, ...args: any[]): void {
+function emit(obj: any, event: string, ...args: any[]): void {
   obj.emitter.emit(event, ...args)
 }
 
-async function createClient (): Promise<CrossTabClient> {
+async function createClient(): Promise<CrossTabClient> {
   let pair = new TestPair()
   let client = new CrossTabClient({
     subprotocol: '1.0.0',

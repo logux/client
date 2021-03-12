@@ -1,23 +1,23 @@
 let errorOnSet
 
-export function setLocalStorage () {
+export function setLocalStorage() {
   errorOnSet = undefined
   Object.defineProperty(global, '_localStorage', {
     value: {
       storage: {},
-      setItem (key, value) {
+      setItem(key, value) {
         if (errorOnSet) throw errorOnSet
         this[key] = value
         this.storage[key] = String(value)
       },
-      getItem (key) {
+      getItem(key) {
         if (key in this.storage) {
           return this.storage[key]
         } else {
           return null
         }
       },
-      removeItem (key) {
+      removeItem(key) {
         delete this[key]
         delete this.storage[key]
       }
@@ -25,10 +25,10 @@ export function setLocalStorage () {
   })
 }
 
-export function breakLocalStorage (error) {
+export function breakLocalStorage(error) {
   errorOnSet = error
 }
 
-export function emitStorage (key, newValue) {
+export function emitStorage(key, newValue) {
   window.dispatchEvent(new StorageEvent('storage', { key, newValue }))
 }

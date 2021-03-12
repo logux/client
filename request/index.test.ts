@@ -9,14 +9,14 @@ type Test = {
   response(answer: AnyAction): Promise<void>
 }
 
-async function createTest (
+async function createTest(
   action: AnyAction,
   opts: Partial<RequestOptions> = {}
 ): Promise<Test> {
   let test: Test = {
     pair: new TestPair(),
     answer: undefined,
-    async response (answer) {
+    async response(answer) {
       test.pair.right.send(['synced', 1])
       test.pair.right.send(['sync', 2, answer, { id: 2, time: 2 }])
       await delay(15)
@@ -41,7 +41,7 @@ async function createTest (
   return test
 }
 
-async function connectTest (
+async function connectTest(
   action: AnyAction,
   opts: Partial<RequestOptions> = {}
 ): Promise<Test> {

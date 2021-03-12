@@ -5,7 +5,7 @@ import { TestServer } from '../test-server/index.js'
 import { Client } from '../client/index.js'
 
 export class TestClient extends Client {
-  constructor (userId, opts = {}) {
+  constructor(userId, opts = {}) {
     let server = opts.server || new TestServer()
     let pair = new TestPair()
     super({
@@ -19,17 +19,17 @@ export class TestClient extends Client {
     this.server = server
   }
 
-  connect () {
+  connect() {
     this.server.connect(this.nodeId, this.pair.right)
     this.node.connection.connect()
     return this.node.waitFor('synchronized')
   }
 
-  disconnect () {
+  disconnect() {
     this.node.connection.disconnect()
   }
 
-  async sent (test) {
+  async sent(test) {
     let actions = []
     let unbind = this.log.on('add', (action, meta) => {
       if (meta.sync && meta.id.includes(` ${this.nodeId} `)) {
@@ -42,7 +42,7 @@ export class TestClient extends Client {
     return actions
   }
 
-  subscribed (channel) {
+  subscribed(channel) {
     let nodes = this.server.subscriptions[channel] || {}
     return !!nodes[this.nodeId]
   }
