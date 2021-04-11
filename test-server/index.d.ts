@@ -121,7 +121,7 @@ export class TestServer {
    * @param action Action.
    * @param meta Action‘s meta.
    */
-  sendAll<A extends Actions = AnyAction>(
+  sendAll<A extends Action = AnyAction>(
     action: A,
     meta?: Partial<Meta>
   ): Promise<void>
