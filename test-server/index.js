@@ -13,6 +13,7 @@ export class TestServer {
     this.deferred = []
     this.channels = {}
     this.resenders = {}
+    this.connected = new Set()
     this.log.on('preadd', (action, meta) => {
       if (this.resenders[action.type]) {
         let channels = this.resenders[action.type](action, meta)
@@ -31,6 +32,7 @@ export class TestServer {
   }
 
   connect(nodeId, connection) {
+    this.connected.add(nodeId)
     let node = new ServerNode('server:id', this.log, connection, {
       outFilter: async (action, meta) => {
         if (meta.channels) {
@@ -59,6 +61,7 @@ export class TestServer {
     })
     node.on('state', () => {
       if (node.state === 'disconnected' && nodeId) {
+        this.connected.delete(nodeId)
         for (let channel in this.subscriptions) {
           delete this.subscriptions[channel][nodeId]
         }
@@ -101,6 +104,11 @@ export class TestServer {
       { nodes: [parseId(meta.id).nodeId] }
     )
     return true
+  }
+
+  async sendAll(action, meta = {}) {
+    await this.log.add(action, { ...meta, nodes: Array.from(this.connected) })
+    await delay(10)
   }
 
   process(action, meta) {

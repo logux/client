@@ -69,7 +69,7 @@ it('connects, sends, and processes actions', async () => {
 
   client.disconnect()
 
-  await client.server.log.add({ type: 'offline2' }, { nodes: [client.nodeId] })
+  await client.server.sendAll({ type: 'offline2' })
   expect(client.server.log.actions()).toEqual([
     { type: 'offline1' },
     { type: 'logux/processed', id: '2 10:2:2 0' },

@@ -106,4 +106,16 @@ export class TestServer {
    * @returns Promise until `test` will be finished.
    */
   freezeProcessing(test: () => Promise<void>): Promise<void>
+
+  /**
+   * Send action to all connected clients.
+   *
+   * ```js
+   * client.server.sendAll(action)
+   * ```
+   *
+   * @param action Action.
+   * @param meta Action‘s meta.
+   */
+  sendAll(action: Action, meta?: Partial<Meta>): Promise<void>
 }
