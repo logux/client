@@ -88,6 +88,10 @@ export function log(client, messages = {}) {
           } else {
             showLog(message, { Action: action })
           }
+        } else if (action.type === 'logux/subscribed') {
+          showLog(
+            'subscribed to ' + bold(action.channel) + ' channel by server'
+          )
         } else if (action.type === 'logux/unsubscribe') {
           message = 'unsubscribed from channel ' + bold(action.channel)
           if (Object.keys(action).length === 2) {

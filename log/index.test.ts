@@ -112,6 +112,10 @@ it('prints log', async () => {
   setState(client, 'sending')
   setState(client, 'synchronized')
   await client.node.log.add(
+    { type: 'logux/subscribed', channel: 'users/1' },
+    { sync: true }
+  )
+  await client.node.log.add(
     { type: 'A' },
     { sync: true, id: '2 server:uuid 1' }
   )

@@ -27,9 +27,10 @@ exports[`prints log 1`] = `
 [33m[1mLogux[22m[39m subscribing to [1musers[22m channel
 [33m[1mLogux[22m[39m state is [1msending[22m
 [33m[1mLogux[22m[39m state is [1msynchronized[22m
+[33m[1mLogux[22m[39m subscribed to [1musers/1[22m channel by server
 [33m[1mLogux[22m[39m added [1mA[22m action
   Action {\\"type\\":\\"A\\"}
-  Meta {\\"sync\\":true,\\"id\\":\\"2 server:uuid 1\\",\\"time\\":2,\\"reasons\\":[\\"syncing\\"],\\"added\\":3}
+  Meta {\\"sync\\":true,\\"id\\":\\"2 server:uuid 1\\",\\"time\\":2,\\"reasons\\":[\\"syncing\\"],\\"added\\":4}
   From: [1mserver:uuid[22m
 [33m[1mLogux[22m[39m subscribed to [1musers[22m channel
   Processed Action {\\"type\\":\\"logux/subscribe\\",\\"channel\\":\\"users\\"}
@@ -53,14 +54,11 @@ exports[`prints log 1`] = `
   Action {\\"type\\":\\"logux/unsubscribe\\",\\"channel\\":\\"users\\",\\"bad\\":true}
 [33m[1mLogux[22m[39m added [1mB[22m action
   Action {\\"type\\":\\"B\\"}
-  Meta {\\"sync\\":true,\\"id\\":\\"7 10:1:1 0\\",\\"time\\":7,\\"reasons\\":[\\"syncing\\"],\\"subprotocol\\":\\"1.0.0\\",\\"added\\":7}
+  Meta {\\"sync\\":true,\\"id\\":\\"8 10:1:1 0\\",\\"time\\":8,\\"reasons\\":[\\"syncing\\"],\\"subprotocol\\":\\"1.0.0\\",\\"added\\":8}
 [33m[1mLogux[22m[39m state is [1msending[22m
 [33m[1mLogux[22m[39m state is [1msynchronized[22m
-[33m[1mLogux[22m[39m cleaned [1mB[22m action
-  Action {\\"type\\":\\"B\\"}
-  Meta {\\"sync\\":true,\\"id\\":\\"7 10:1:1 0\\",\\"time\\":7,\\"reasons\\":[],\\"subprotocol\\":\\"1.0.0\\",\\"added\\":7}
-[33m[1mLogux[22m[39m action [1mB[22m was processed
-  Processed Action {\\"type\\":\\"B\\"}
+[33m[1mLogux[22m[39m action [1mlogux/unsubscribe[22m was processed
+  Processed Action {\\"type\\":\\"logux/unsubscribe\\",\\"channel\\":\\"users\\",\\"bad\\":true}
 [33m[1mLogux[22m[39m action [1m200 10:1:1 0[22m was processed
 [33m[1mLogux[22m[39m action [1mB[22m was undone because of [1merror[22m
   Reverted Action {\\"type\\":\\"B\\"}
