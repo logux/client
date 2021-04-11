@@ -54,7 +54,11 @@ export class TestServer {
    * @param reason Optional code for reason. Default is `'error'`.
    * @param extra Extra fields to `logux/undo` action.
    */
-  undoAction(action: AnyAction, reason?: string, extra?: object): void
+  undoAction<A extends Action = AnyAction>(
+    action: A,
+    reason?: string,
+    extra?: object
+  ): void
 
   /**
    * Define server’s responses for specific channel.
@@ -117,5 +121,8 @@ export class TestServer {
    * @param action Action.
    * @param meta Action‘s meta.
    */
-  sendAll(action: Action, meta?: Partial<Meta>): Promise<void>
+  sendAll<A extends Actions = AnyAction>(
+    action: A,
+    meta?: Partial<Meta>
+  ): Promise<void>
 }

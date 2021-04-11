@@ -22,6 +22,14 @@ export class TestServer {
       }
     })
     this.log.on('add', (action, meta) => {
+      if (action.type === 'logux/subscribed') {
+        if (!this.subscriptions[action.channel]) {
+          this.subscriptions[action.channel] = {}
+        }
+        for (let nodeId of meta.nodes || []) {
+          this.subscriptions[action.channel][nodeId] = true
+        }
+      }
       if (meta.id.includes(' server:')) return
       if (this.frozen) {
         this.deferred.push([action, meta])

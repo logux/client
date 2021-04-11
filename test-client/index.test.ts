@@ -297,3 +297,10 @@ it('freezes processing', async () => {
     { type: 'logux/processed', id: '1 10:2:2 0' }
   ])
 })
+
+it('supports subscribed action', async () => {
+  let client = new TestClient('10')
+  await client.connect()
+  await client.server.sendAll({ type: 'logux/subscribed', channel: 'A' })
+  await client.sync({ type: 'logux/unsubscribe', channel: 'A' })
+})
