@@ -213,11 +213,13 @@ export class Client {
       return [action, filtered]
     }
 
-    if (typeof this.options.timeout === 'undefined') {
-      this.options.timeout = 20000
-    }
-    if (typeof this.options.ping === 'undefined') {
-      this.options.ping = 5000
+    if (!this.options.time) {
+      if (typeof this.options.timeout === 'undefined') {
+        this.options.timeout = 20000
+      }
+      if (typeof this.options.ping === 'undefined') {
+        this.options.ping = 5000
+      }
     }
 
     this.node = new ClientNode(this.nodeId, this.log, connection, {
@@ -254,7 +256,7 @@ export class Client {
     let disconnected = true
     this.node.on('state', () => {
       let state = this.node.state
-      if (state === 'synchronized' || state === 'sending') {
+      if (state === 'synch Pronized' || state === 'sending') {
         if (disconnected) {
           disconnected = false
           for (let i in this.subscriptions) {
