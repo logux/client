@@ -213,6 +213,13 @@ export class Client {
       return [action, filtered]
     }
 
+    if (typeof this.options.timeout === 'undefined') {
+      this.options.timeout = 20000
+    }
+    if (typeof this.options.ping === 'undefined') {
+      this.options.ping = 5000
+    }
+
     this.node = new ClientNode(this.nodeId, this.log, connection, {
       subprotocol: this.options.subprotocol,
       outFilter,
