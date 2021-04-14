@@ -359,7 +359,7 @@ it('cleans own actions on unload', async () => {
     { tab: client.tabId, reasons: ['tab' + client.tabId] }
   )
   window.dispatchEvent(new Event('unload'))
-  await delay(1)
+  await delay(10)
   expect(client.log.actions()).toHaveLength(0)
   expect(localStorage.getItem('test:tab:' + client.tabId)).toBeNull()
 })
