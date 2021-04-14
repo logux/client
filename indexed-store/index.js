@@ -17,27 +17,6 @@ function promisify(request) {
   })
 }
 
-function nextEntry(request, filter = {}) {
-  return cursor => {
-    if (cursor) {
-      if (filter.index && !cursor.value.indexes.includes(filter.index)) {
-        cursor.continue()
-        return promisify(request).then(nextEntry(request, filter))
-      }
-      cursor.value.meta.added = cursor.value.added
-      return {
-        entries: [[cursor.value.action, cursor.value.meta]],
-        next() {
-          cursor.continue()
-          return promisify(request).then(nextEntry(request, filter))
-        }
-      }
-    } else {
-      return { entries: [] }
-    }
-  }
-}
-
 function isDefined(value) {
   return typeof value !== 'undefined'
 }
@@ -91,26 +70,39 @@ export class IndexedStore {
     return this.initing
   }
 
-  async get(opts) {
-    let { index, order } = opts
+  async get({ index, order }) {
     let store = await this.init()
-    let log = store.os('log')
-    let request
-    let filter
-    if (index) {
-      if (order === 'created') {
-        filter = { index }
+    return new Promise((resolve, reject) => {
+      let log = store.os('log')
+      let request
+      if (index) {
+        if (order === 'created') {
+          request = log.index('created').openCursor(null, 'prev')
+        } else {
+          let keyRange = IDBKeyRange.only(index)
+          request = log.index('indexes').openCursor(keyRange, 'prev')
+        }
+      } else if (order === 'created') {
         request = log.index('created').openCursor(null, 'prev')
       } else {
-        let keyRange = IDBKeyRange.only(index)
-        request = log.index('indexes').openCursor(keyRange, 'prev')
+        request = log.openCursor(null, 'prev')
       }
-    } else if (order === 'created') {
-      request = log.index('created').openCursor(null, 'prev')
-    } else {
-      request = log.openCursor(null, 'prev')
-    }
-    return promisify(request).then(nextEntry(request, filter))
+      rejectify(request, reject)
+
+      let entries = []
+      request.onsuccess = function (e) {
+        let cursor = e.target.result
+        if (!cursor) {
+          resolve({ entries })
+          return
+        }
+        if (!index || cursor.value.indexes.includes(index)) {
+          cursor.value.meta.added = cursor.value.added
+          entries.unshift([cursor.value.action, cursor.value.meta])
+        }
+        cursor.continue()
+      }
+    })
   }
 
   async byId(id) {
@@ -125,12 +117,11 @@ export class IndexedStore {
 
   async remove(id) {
     let store = await this.init()
-    let log = store.os('log', 'write')
-    let entry = await promisify(log.index('id').get(id))
+    let entry = await promisify(store.os('log').index('id').get(id))
     if (!entry) {
       return false
     } else {
-      await promisify(log.delete(entry.added))
+      await promisify(store.os('log', 'write').delete(entry.added))
       entry.meta.added = entry.added
       return [entry.action, entry.meta]
     }
@@ -154,12 +145,11 @@ export class IndexedStore {
     this.adding[entry.created] = true
 
     let store = await this.init()
-    let log = store.os('log', 'write')
-    let exist = await promisify(log.index('id').get(meta.id))
+    let exist = await promisify(store.os('log').index('id').get(meta.id))
     if (exist) {
       return false
     } else {
-      let added = await promisify(log.add(entry))
+      let added = await promisify(store.os('log', 'write').add(entry))
       delete store.adding[entry.created]
       meta.added = added
       return meta
@@ -168,23 +158,21 @@ export class IndexedStore {
 
   async changeMeta(id, diff) {
     let store = await this.init()
-    let log = store.os('log', 'write')
-    let entry = await promisify(log.index('id').get(id))
+    let entry = await promisify(store.os('log').index('id').get(id))
     if (!entry) {
       return false
     } else {
       for (let key in diff) entry.meta[key] = diff[key]
       if (diff.reasons) entry.reasons = diff.reasons
-      await promisify(log.put(entry))
+      await promisify(store.os('log', 'write').put(entry))
       return true
     }
   }
 
   async removeReason(reason, criteria, callback) {
     let store = await this.init()
-    let log = store.os('log', 'write')
     if (criteria.id) {
-      let entry = await promisify(log.index('id').get(criteria.id))
+      let entry = await promisify(store.os('log').index('id').get(criteria.id))
       if (entry) {
         let index = entry.meta.reasons.indexOf(reason)
         if (index !== -1) {
@@ -192,15 +180,16 @@ export class IndexedStore {
           entry.reasons = entry.meta.reasons
           if (entry.meta.reasons.length === 0) {
             callback(entry.action, entry.meta)
-            await promisify(log.delete(entry.added))
+            await promisify(store.os('log', 'write').delete(entry.added))
           } else {
-            await promisify(log.put(entry))
+            await promisify(store.os('log', 'write').put(entry))
           }
         }
       }
     } else {
-      let request = log.index('reasons').openCursor(reason)
       await new Promise((resolve, reject) => {
+        let log = store.os('log', 'write')
+        let request = log.index('reasons').openCursor(reason)
         rejectify(request, reject)
         request.onsuccess = function (e) {
           if (!e.target.result) {
@@ -268,8 +257,7 @@ export class IndexedStore {
 
   async setLastSynced(values) {
     let store = await this.init()
-    let extra = store.os('extra', 'write')
-    let data = await promisify(extra.get('lastSynced'))
+    let data = await promisify(store.os('extra').get('lastSynced'))
     if (!data) data = { key: 'lastSynced', sent: 0, received: 0 }
     if (typeof values.sent !== 'undefined') {
       data.sent = values.sent
@@ -277,7 +265,7 @@ export class IndexedStore {
     if (typeof values.received !== 'undefined') {
       data.received = values.received
     }
-    await promisify(extra.put(data))
+    await promisify(store.os('extra', 'write').put(data))
   }
 
   os(name, write) {
