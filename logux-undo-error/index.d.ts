@@ -14,7 +14,7 @@ import { LoguxSubscribeAction, LoguxUndoAction } from '@logux/actions'
  * ```
  */
 export class LoguxUndoError<
-  A extends LoguxUndoAction = LoguxUndoAction
+  RevertedAction extends LoguxUndoAction = LoguxUndoAction
 > extends Error {
   /**
    * The better way to check error, than `instanceof`.
@@ -33,9 +33,9 @@ export class LoguxUndoError<
    * console.log(error.action.action.type ' was undid')
    * ```
    */
-  action: A
+  action: RevertedAction
 
-  constructor(action: A)
+  constructor(action: RevertedAction)
 }
 
 export type ChannelNotFoundError = LoguxUndoError<

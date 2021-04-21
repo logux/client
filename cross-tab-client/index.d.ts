@@ -25,9 +25,9 @@ import { Client, ClientActionListener, ClientMeta } from '../client/index.js'
  * ```
  */
 export class CrossTabClient<
-  H extends object = {},
-  L extends Log = Log<ClientMeta>
-> extends Client<H, L> {
+  Headers extends object = {},
+  ClientLog extends Log = Log<ClientMeta>
+> extends Client<Headers, ClientLog> {
   /**
    * Current tab role. Only `leader` tab connects to server. `followers` just
    * listen to events from `leader`.

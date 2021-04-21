@@ -3,9 +3,9 @@ import { TestLog, TestPair, Action } from '@logux/core'
 import { Client, ClientMeta } from '../client/index.js'
 import { TestServer } from '../test-server/index.js'
 
-export type TestClientOptions<H> = {
+export interface TestClientOptions<Headers> {
   subprotocol?: string
-  headers?: H
+  headers?: Headers
   server?: TestServer
 }
 
@@ -29,8 +29,8 @@ export type TestClientOptions<H> = {
  * })
  * ```
  */
-export class TestClient<H extends object = {}> extends Client<
-  H,
+export class TestClient<Headers extends object = {}> extends Client<
+  Headers,
   TestLog<ClientMeta>
 > {
   /**
@@ -53,7 +53,7 @@ export class TestClient<H extends object = {}> extends Client<
    * @param userId User ID.
    * @param opts Other options.
    */
-  constructor(userId: string, opts?: TestClientOptions<H>)
+  constructor(userId: string, opts?: TestClientOptions<Headers>)
 
   /**
    * Connect to virtual server.

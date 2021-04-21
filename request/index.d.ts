@@ -2,7 +2,7 @@ import { Action, AnyAction } from '@logux/core'
 
 import { ClientOptions } from '../client/index.js'
 
-export type RequestOptions = Omit<ClientOptions, 'userId'> & {
+export interface RequestOptions extends Omit<ClientOptions, 'userId'> {
   userId?: string
 }
 
@@ -30,7 +30,7 @@ export type RequestOptions = Omit<ClientOptions, 'userId'> & {
  * @param action Action which we need to send to the server.
  * @return Action of server response.
  */
-export function request<A extends Action = Action>(
+export function request<SentAction extends Action = Action>(
   action: AnyAction,
   opts: RequestOptions
-): Promise<A>
+): Promise<SentAction>

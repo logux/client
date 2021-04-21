@@ -1,6 +1,6 @@
 import { Client } from '../client/index.js'
 
-export type BadgeMessages = {
+export interface BadgeMessages {
   synchronized: string
   disconnected: string
   wait: string
@@ -11,7 +11,7 @@ export type BadgeMessages = {
   protocolError: string
 }
 
-export type BadgeStyles = {
+export interface BadgeStyles {
   base: object
   text: object
   synchronized: object
@@ -31,7 +31,7 @@ export type BadgeStyles = {
   }
 }
 
-type BadgeOptions = {
+interface BadgeOptions {
   /**
    * Widget text for different states.
    */

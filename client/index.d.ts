@@ -13,11 +13,11 @@ import {
 
 type TabID = string
 
-export interface ClientActionListener<A extends Action> {
-  (action: A, meta: ClientMeta): void
+export interface ClientActionListener<ListenAction extends Action> {
+  (action: ListenAction, meta: ClientMeta): void
 }
 
-export type ClientMeta = Meta & {
+export interface ClientMeta extends Meta {
   /**
    * Action should be visible only for browser tab with the same `client.tabId`.
    */
@@ -34,7 +34,7 @@ export type ClientMeta = Meta & {
   noAutoReason?: boolean
 }
 
-export type ClientOptions = {
+export interface ClientOptions {
   /**
    * Server URL.
    */
@@ -125,7 +125,10 @@ export type ClientOptions = {
  * client.start()
  * ```
  */
-export class Client<H extends object = {}, L extends Log = Log<ClientMeta>> {
+export class Client<
+  Headers extends object = {},
+  ClientLog extends Log = Log<ClientMeta>
+> {
   /**
    * @param opts Client options.
    */
@@ -170,7 +173,7 @@ export class Client<H extends object = {}, L extends Log = Log<ClientMeta>> {
    * client.log.add(action)
    * ```
    */
-  log: L
+  log: ClientLog
 
   /**
    * Node instance to synchronize logs.
@@ -179,7 +182,7 @@ export class Client<H extends object = {}, L extends Log = Log<ClientMeta>> {
    * if (client.node.state === 'synchronized')
    * ```
    */
-  node: ClientNode<H, L>
+  node: ClientNode<Headers, ClientLog>
 
   /**
    * Leader tab synchronization state. It can differs
@@ -246,9 +249,9 @@ export class Client<H extends object = {}, L extends Log = Log<ClientMeta>> {
    * @param event
    * @returns Unbind listener from event.
    */
-  type<A extends Action = Action, T extends string = A['type']>(
-    type: T,
-    listener: ClientActionListener<A>,
+  type<TypeAction extends Action = Action>(
+    type: TypeAction['type'],
+    listener: ClientActionListener<TypeAction>,
     opts?: { id?: string; event?: 'preadd' | 'add' | 'clean' }
   ): Unsubscribe
 

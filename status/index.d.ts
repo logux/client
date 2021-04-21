@@ -25,7 +25,7 @@ interface StatusListener {
   ): void
 }
 
-type StatusOptions = {
+interface StatusOptions {
   /**
    * Synchronized state duration. Default is `3000`.
    */

@@ -1,6 +1,6 @@
 import { Client } from '../client/index.js'
 
-type FaviconLinks = {
+interface FaviconLinks {
   /**
    * Default favicon link. By default, it will be taken from current favicon.
    */

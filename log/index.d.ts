@@ -1,6 +1,6 @@
 import { Client } from '../client/index.js'
 
-type LogMessages = {
+interface LogMessages {
   /**
    * Disable action messages with specific types.
    */

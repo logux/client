@@ -54,8 +54,8 @@ export class TestServer {
    * @param reason Optional code for reason. Default is `'error'`.
    * @param extra Extra fields to `logux/undo` action.
    */
-  undoAction<A extends Action = AnyAction>(
-    action: A,
+  undoAction<RevertedAction extends Action = AnyAction>(
+    action: RevertedAction,
     reason?: string,
     extra?: object
   ): void
@@ -87,9 +87,9 @@ export class TestServer {
    * @param type Action type.
    * @param resend Callback returns channel name.
    */
-  resend<A extends Action = AnyAction>(
-    type: A['type'],
-    resend: (action: A, meta: Meta) => string | string[]
+  resend<ResentAction extends Action = AnyAction>(
+    type: ResentAction['type'],
+    resend: (action: ResentAction, meta: Meta) => string | string[]
   ): void
 
   /**
@@ -121,8 +121,8 @@ export class TestServer {
    * @param action Action.
    * @param meta Action‘s meta.
    */
-  sendAll<A extends Action = AnyAction>(
-    action: A,
+  sendAll<SentAction extends Action = AnyAction>(
+    action: SentAction,
     meta?: Partial<Meta>
   ): Promise<void>
 }
