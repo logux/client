@@ -1,4 +1,4 @@
-import { eachStoreCheck, Action, Meta, Page } from '@logux/core'
+import { eachStoreCheck, Action, Meta, LogPage } from '@logux/core'
 import { jest } from '@jest/globals'
 
 import { IndexedStore } from '../index.js'
@@ -38,7 +38,7 @@ function promisify(request: IDBRequest): Promise<any> {
 }
 
 async function all(
-  request: Promise<Page>,
+  request: Promise<LogPage>,
   list: Entry[] = []
 ): Promise<Entry[]> {
   let page = await request
