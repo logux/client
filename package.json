@@ -74,7 +74,7 @@
     "jest": "^27.0.0-next.2",
     "lint-staged": "^10.5.4",
     "parcel": "^2.0.0-nightly.640",
-    "postcss": "^8.2.10",
+    "postcss": "^8.2.12",
     "prettier": "^2.2.1",
     "print-snapshots": "^0.3.2",
     "rimraf": "^3.0.2",
