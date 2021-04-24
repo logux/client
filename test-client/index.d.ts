@@ -3,7 +3,7 @@ import { TestLog, TestPair, Action } from '@logux/core'
 import { Client, ClientMeta } from '../client/index.js'
 import { TestServer } from '../test-server/index.js'
 
-export interface TestClientOptions<Headers> {
+export interface TestClientOptions<Headers extends object> {
   subprotocol?: string
   headers?: Headers
   server?: TestServer
