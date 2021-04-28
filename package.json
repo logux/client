@@ -130,6 +130,7 @@
     "extends": "@logux/eslint-config/esm",
     "rules": {
       "no-console": "off",
+      "jest/no-conditional-expect": "off",
       "@typescript-eslint/no-explicit-any": "off"
     },
     "overrides": [
