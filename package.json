@@ -60,6 +60,7 @@
     "@typescript-eslint/eslint-plugin": "^4.22.0",
     "@typescript-eslint/parser": "^4.22.0",
     "check-dts": "^0.4.4",
+    "clean-publish": "^2.1.1",
     "colorette": "^1.2.2",
     "eslint": "^7.25.0",
     "eslint-config-standard": "^16.0.2",
