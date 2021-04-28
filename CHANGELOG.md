@@ -1,6 +1,20 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.10
+* Moved project to ESM-only type. Applications must use ESM too.
+* Dropped Node.js 10 support.
+* Added `Client#sync()`.
+* Added `track()`.
+* Added `Client#type()`.
+* Added action encryption.
+* Added `request()`.
+* Added `TestServer#sendAll()`.
+* Added `logux/subscribed` support to `log()`.
+* Fixed `IndexedStore` with `Promise`.
+* Fixed `TextClient#sent` by adding small delay.
+* Fixed types performance by replacing `type` to `interface`.
+
 ## 0.9.3
 * Fix `changeUser()` for cross-tab client case (by Sergey Korolev).
 
