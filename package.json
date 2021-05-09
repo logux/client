@@ -40,10 +40,10 @@
     "nanoid": "^3.1.22"
   },
   "devDependencies": {
-    "@babel/core": "^7.13.16",
+    "@babel/core": "^7.14.0",
     "@logux/core": "^0.7.0",
-    "@logux/eslint-config": "^45.4.1",
-    "@logux/sharec-config": "^0.10.1",
+    "@logux/eslint-config": "^45.4.2",
+    "@logux/sharec-config": "^0.10.2",
     "@parcel/optimizer-cssnano": "^2.0.0-nightly.640",
     "@parcel/optimizer-htmlnano": "^2.0.0-nightly.640",
     "@parcel/packager-css": "^2.0.0-nightly.640",
@@ -55,14 +55,14 @@
     "@peculiar/webcrypto": "^1.1.6",
     "@size-limit/preset-small-lib": "^4.10.2",
     "@types/jest": "^26.0.23",
-    "@types/node": "^15.0.1",
+    "@types/node": "^15.0.2",
     "@types/ws": "^7.4.2",
-    "@typescript-eslint/eslint-plugin": "^4.22.0",
-    "@typescript-eslint/parser": "^4.22.0",
+    "@typescript-eslint/eslint-plugin": "^4.22.1",
+    "@typescript-eslint/parser": "^4.22.1",
     "check-dts": "^0.4.4",
-    "clean-publish": "^2.1.1",
+    "clean-publish": "^2.2.0",
     "colorette": "^1.2.2",
-    "eslint": "^7.25.0",
+    "eslint": "^7.26.0",
     "eslint-config-standard": "^16.0.2",
     "eslint-plugin-es5": "^1.5.0",
     "eslint-plugin-import": "^2.22.1",
@@ -71,12 +71,12 @@
     "eslint-plugin-prefer-let": "^1.1.0",
     "eslint-plugin-promise": "^5.1.0",
     "eslint-plugin-security": "^1.4.0",
-    "eslint-plugin-unicorn": "^31.0.0",
+    "eslint-plugin-unicorn": "^32.0.0",
     "fake-indexeddb": "^3.1.2",
     "jest": "^27.0.0-next.2",
-    "lint-staged": "^10.5.4",
+    "lint-staged": "^11.0.0",
     "parcel": "^2.0.0-nightly.640",
-    "postcss": "^8.2.13",
+    "postcss": "^8.2.14",
     "prettier": "^2.2.1",
     "print-snapshots": "^0.3.2",
     "rimraf": "^3.0.2",
@@ -196,6 +196,6 @@
   },
   "sharec": {
     "config": "@logux/sharec-config",
-    "version": "0.10.1"
+    "version": "0.10.2"
   }
 }
