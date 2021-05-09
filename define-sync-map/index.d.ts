@@ -68,7 +68,7 @@ export interface SyncMapBuilder<Value extends SyncMapValues = any>
  * Store will resolve client’s edit conflicts with last write wins strategy.
  *
  * ```ts
- * import { defineSyncMap } from '@logux/state/sync'
+ * import { defineSyncMap } from '@logux/client'
  *
  * export const User = defineSyncMap<{
  *   login: string,
@@ -97,7 +97,7 @@ export function defineSyncMap<Value extends SyncMapValues>(
  * will update the list.
  *
  * ```js
- * import { createSyncMap } from '@logux/state'
+ * import { createSyncMap } from '@logux/client'
  *
  * showLoader()
  * await createSyncMap(client, User, {
@@ -123,7 +123,7 @@ export function createSyncMap<Value extends SyncMapValues>(
  * Send create action and build store instance.
  *
  * ```js
- * import { buildNewSyncMap } from '@logux/state'
+ * import { buildNewSyncMap } from '@logux/client'
  *
  * let userStore = buildNewSyncMap(client, User, {
  *   id: nanoid(),
@@ -146,7 +146,7 @@ export function buildNewSyncMap<Value extends SyncMapValues>(
  * Change store without store instance just by store ID.
  *
  * ```js
- * import { changeSyncMapById } from '@logux/state'
+ * import { changeSyncMapById } from '@logux/client'
  *
  * let userStore = changeSyncMapById(client, User, 'user:4hs2jd83mf', {
  *   name: 'New name'
@@ -181,7 +181,7 @@ export function changeSyncMapById<
  * Change keys in the store’s value.
  *
  * ```js
- * import { changeSyncMap } from '@logux/state'
+ * import { changeSyncMap } from '@logux/client'
  *
  * showLoader()
  * await changeSyncMap(userStore, { name: 'New name' })
@@ -210,7 +210,7 @@ export function changeSyncMap<
  * Delete store without store instance just by store ID.
  *
  * ```js
- * import { deleteSyncMapById } from '@logux/state'
+ * import { deleteSyncMapById } from '@logux/client'
  *
  * showLoader()
  * deleteSyncMapById(client, User, 'user:4hs2jd83mf')
@@ -232,7 +232,7 @@ export function deleteSyncMapById(
  * Delete store.
  *
  * ```js
- * import { deleteSyncMapById } from '@logux/state'
+ * import { deleteSyncMapById } from '@logux/client'
  *
  * showLoader()
  * deleteSyncMapById(client, User, 'user:4hs2jd83mf')

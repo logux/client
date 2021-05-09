@@ -37,7 +37,7 @@ export interface FilterStore<
  * subscribe to list from server (for remote maps).
  *
  * ```js
- * import { createFilter } from '@logux/state/sync'
+ * import { createFilter } from '@logux/client'
  * import { getValue } from '@logux/state'
  *
  * import { User } from '../store'

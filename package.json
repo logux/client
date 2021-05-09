@@ -24,6 +24,7 @@
   "types": "./index.d.ts",
   "exports": {
     ".": "./index.js",
+    "./react": "./react/index.js",
     "./package.json": "./package.json"
   },
   "engines": {
@@ -31,7 +32,13 @@
   },
   "peerDependencies": {
     "@logux/core": "^0.7.0",
-    "@logux/state": "^0.0.0"
+    "@logux/state": "^0.0.0",
+    "react": ">=16.8.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
   },
   "dependencies": {
     "@logux/actions": "^0.1.0",
@@ -56,8 +63,12 @@
     "@parcel/transformer-posthtml": "^2.0.0-nightly.640",
     "@peculiar/webcrypto": "^1.1.6",
     "@size-limit/preset-small-lib": "^4.10.2",
+    "@testing-library/jest-dom": "^5.12.0",
+    "@testing-library/react": "^11.2.6",
     "@types/jest": "^26.0.23",
     "@types/node": "^15.0.2",
+    "@types/react": "^17.0.5",
+    "@types/react-dom": "^17.0.3",
     "@types/ws": "^7.4.2",
     "@typescript-eslint/eslint-plugin": "^4.22.1",
     "@typescript-eslint/parser": "^4.22.1",
@@ -81,6 +92,8 @@
     "postcss": "^8.2.14",
     "prettier": "^2.3.0",
     "print-snapshots": "^0.3.2",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
     "rimraf": "^3.0.2",
     "simple-git-hooks": "^2.4.1",
     "size-limit": "^4.10.2",
@@ -169,6 +182,14 @@
         "./badge/styles/index.js": "{ badgeStyles }"
       },
       "limit": "3 KB"
+    },
+    {
+      "name": "React",
+      "import": {
+        "./index.js": "{ CrossTabClient, defineSyncMap, changeSyncMap }",
+        "./react/index.js": "{ ClientContext, useSync, ChannelErrors, useFilter }"
+      },
+      "limit": "6 KB"
     }
   ],
   "yaspeller": {

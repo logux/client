@@ -22,8 +22,7 @@ interface PrepareForTest {
  * or storybook.
  *
  * ```js
- * import { prepareForTest, cleanStores } from '@logux/state/sync'
- * import { TestClient } from '@logux/client'
+ * import { prepareForTest, cleanStores, TestClient } from '@logux/client'
  *
  * import { User } from '../store'
  *
@@ -50,7 +49,7 @@ export const prepareForTest: PrepareForTest
  * Disable loader for filter for this builder.
  *
  * ```js
- * import { emptyInTest, cleanStores } from '@logux/state/sync'
+ * import { emptyInTest, cleanStores } from '@logux/client'
  *
  * beforeEach(() => {
  *   prepareForTest(client, User, { name: 'Test user 1' })
