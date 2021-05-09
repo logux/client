@@ -1,18 +1,38 @@
 export {
-  badge,
+  LoadedSyncMapValue,
+  deleteSyncMapById,
+  changeSyncMapById,
+  buildNewSyncMap,
+  SyncMapBuilder,
+  defineSyncMap,
+  createSyncMap,
+  changeSyncMap,
+  deleteSyncMap,
+  SyncMapStore,
+  SyncMapValue
+} from './define-sync-map/index.js'
+export {
+  BadgeMessages,
+  BadgeStyles,
   badgeEn,
   badgeRu,
-  BadgeMessages,
-  BadgeStyles
+  badge
 } from './badge/index.js'
 export {
-  LoguxUndoError,
   ChannelNotFoundError,
   ChannelDeniedError,
   ChannelServerError,
+  LoguxUndoError,
   ChannelError
 } from './logux-undo-error/index.js'
+export {
+  FilterOptions,
+  createFilter,
+  FilterStore,
+  Filter
+} from './create-filter/index.js'
 export { Client, ClientMeta, ClientOptions } from './client/index.js'
+export { prepareForTest, emptyInTest } from './prepare-for-test/index.js'
 export { request, RequestOptions } from './request/index.js'
 export { encryptActions } from './encrypt-actions/index.js'
 export { CrossTabClient } from './cross-tab-client/index.js'
