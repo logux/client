@@ -10,7 +10,7 @@ import { Action, AnyAction, Meta, TestLog } from '@logux/core'
  */
 export class TestServer {
   /**
-   * All actions recieved from the client.
+   * All actions received from the client.
    *
    * ```js
    * expect(client.server.log.actions()).toEqual([
