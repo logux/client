@@ -691,3 +691,22 @@ it('has shortcut to check size', async () => {
   })
   expect(getValue(posts).isEmpty).toBe(false)
 })
+
+it('clean filters', () => {
+  let client = new TestClient('10')
+  client.log.keepActions()
+
+  let filter1a = createFilter(client, Post, { projectId: '1' })
+  let filter2a = createFilter(client, Post, { projectId: '2' })
+  filter2a.listen(() => {})
+
+  cleanStores(Post)
+
+  let filter1b = createFilter(client, Post, { projectId: '1' })
+  let filter2b = createFilter(client, Post, { projectId: '2' })
+  filter2b.listen(() => {})
+  expect(filter1a).not.toBe(filter1b)
+  expect(filter2a).not.toBe(filter2b)
+
+  expect(client.log.actions()).toHaveLength(3)
+})
