@@ -154,7 +154,8 @@ export class TestServer {
         // istanbul ignore next
         throw new Error(
           `Client was not subscribed to ${action.channel} ` +
-            'but it try to unsubscribe from it'
+            (action.filter ? `with filter ${action.filter} ` : '') +
+            'but it tries to unsubscribe from it'
         )
       }
     }
