@@ -16,7 +16,7 @@ import { ChannelError } from '../logux-undo-error/index.js'
 import { Client } from '../client/index.js'
 
 export type Refable<Type> = Ref<Type> | Type
-export type ReadonlyRef<Type> = DeepReadonly<{ value: UnwrapRef<Type> }>
+type ReadonlyRef<Type> = DeepReadonly<{ value: UnwrapRef<Type> }>
 
 export const ClientKey: InjectionKey<Client>
 export const ErrorsKey: InjectionKey<ChannelErrorsSlotProps>
