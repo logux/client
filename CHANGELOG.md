@@ -1,6 +1,15 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.11
+* Added `@logux/state` peer dependency.
+* Added `SyncMap`.
+* Added `Filter`.
+* Added `prepareForTest` for `SyncMap`.
+* Added React helpers for `SyncMap`.
+* Added Vue.js helpers for `SyncMap` (by Eduard Aksamitov).
+* Fixed `TestServer` error text (by Aleksandr Slepchenkov).
+
 ## 0.10
 * Moved project to ESM-only type. Applications must use ESM too.
 * Dropped Node.js 10 support.

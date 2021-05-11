@@ -1,6 +1,6 @@
 {
   "name": "@logux/client",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "Logux base components to build web client",
   "keywords": [
     "logux",
@@ -231,7 +231,8 @@
       "WebSocket",
       "roadmap",
       "ESM",
-      "js"
+      "js",
+      "Vue"
     ]
   },
   "sharec": {
