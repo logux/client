@@ -33,7 +33,7 @@
   },
   "peerDependencies": {
     "@logux/core": "^0.7.0",
-    "@logux/state": "^0.0.0",
+    "@logux/state": "^0.1.0",
     "react": ">=16.8.0",
     "vue": ">=3.0.11"
   },
@@ -57,7 +57,7 @@
     "@logux/core": "^0.7.0",
     "@logux/eslint-config": "^45.4.2",
     "@logux/sharec-config": "^0.10.2",
-    "@logux/state": "logux/state",
+    "@logux/state": "^0.1.0",
     "@parcel/optimizer-cssnano": "^2.0.0-nightly.640",
     "@parcel/optimizer-htmlnano": "^2.0.0-nightly.640",
     "@parcel/packager-css": "^2.0.0-nightly.640",
