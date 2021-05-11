@@ -1,6 +1,9 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.11.1
+* Added `badge/styles` export (by @TrentWest7190).
+
 ## 0.11
 * Added `@logux/state` peer dependency.
 * Added `SyncMap`.
