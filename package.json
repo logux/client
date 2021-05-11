@@ -26,7 +26,8 @@
     ".": "./index.js",
     "./vue": "./vue/index.js",
     "./react": "./react/index.js",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./badge/styles": "./badge/styles/index.js"
   },
   "engines": {
     "node": "^12.0.0 || ^14.0.0 || >=16.0.0"
