@@ -2099,10 +2099,10 @@
   dependencies:
     "@types/jest" "*"
 
-"@types/ws@^7.4.3":
-  version "7.4.3"
-  resolved "https://registry.yarnpkg.com/@types/ws/-/ws-7.4.3.tgz#eb68ffe017489566164f859cd88513907f50a18a"
-  integrity sha512-LiMEM1yWxVHbFLGn00ADIg/EKjZsX7B29pioAr8Qe4yZtqSEl+aRcuGukxqA7I/7aZqOfrYdJpFEPNKB0cmhbg==
+"@types/ws@^7.4.4":
+  version "7.4.4"
+  resolved "https://registry.yarnpkg.com/@types/ws/-/ws-7.4.4.tgz#93e1e00824c1de2608c30e6de4303ab3b4c0c9bc"
+  integrity sha512-d/7W23JAXPodQNbOZNXvl2K+bqAQrCMwlh/nuQsPSQk6Fq0opHoPrUw43aHsvSbIiQPr8Of2hkFbnz1XBFVyZQ==
   dependencies:
     "@types/node" "*"
 
