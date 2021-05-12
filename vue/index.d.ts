@@ -2,7 +2,6 @@ import {
   ComponentPublicInstance,
   DeepReadonly,
   InjectionKey,
-  UnwrapRef,
   Component,
   App,
   Ref
@@ -16,7 +15,7 @@ import { ChannelError } from '../logux-undo-error/index.js'
 import { Client } from '../client/index.js'
 
 export type Refable<Type> = Ref<Type> | Type
-type ReadonlyRef<Type> = DeepReadonly<{ value: UnwrapRef<Type> }>
+type ReadonlyRef<Type> = DeepReadonly<Ref<Type>>
 
 export const ClientKey: InjectionKey<Client>
 export const ErrorsKey: InjectionKey<ChannelErrorsSlotProps>
@@ -143,12 +142,10 @@ export function useFilter<Value extends SyncMapValues>(
 export const ChannelErrors: Component
 
 export interface ChannelErrorsSlotProps {
-  error: DeepReadonly<
-    Ref<{
-      data: ChannelError
-      instance: ComponentPublicInstance
-      info: string
-    } | null>
-  >
-  code: DeepReadonly<Ref<number | null>>
+  error: ReadonlyRef<{
+    data: ChannelError
+    instance: ComponentPublicInstance
+    info: string
+  } | null>
+  code: ReadonlyRef<number | null>
 }
