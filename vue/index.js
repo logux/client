@@ -30,7 +30,7 @@ export function loguxClient(app, client) {
 }
 
 export function useClient() {
-  return getCurrentInstance && inject(ClientKey)
+  return inject(ClientKey)
 }
 
 function checkErrorProcessor() {
