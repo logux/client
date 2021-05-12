@@ -59,8 +59,7 @@ export function useClient(): Client
  * export default {
  *   props: ['id'],
  *   setup (props) {
- *     let { id } = toRefs(props)
- *     let user = useSync(User, id)
+ *     let user = useSync(User, props.id)
  *     return { user }
  *   },
  *   template: `
