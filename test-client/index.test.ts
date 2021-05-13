@@ -93,7 +93,6 @@ it('supports channels', async () => {
   let client = new TestClient('10')
   client.log.keepActions()
 
-  client.server.onChannel('users/1', { type: 'name', userId: '1' })
   client.server.onChannel('users/1', { type: 'name', userId: '1', name: 'A' })
 
   client.server.onChannel('users/2', [
