@@ -37,7 +37,7 @@ export const ErrorsKey: InjectionKey<ChannelErrorsSlotProps>
 export function loguxClient(app: App, client: Client): void
 
 /**
- * Returns the Logux Client that was installed through `loguxClient` plugin.
+ * Returns the Logux Client instance.
  *
  * ```js
  * let client = useClient()
