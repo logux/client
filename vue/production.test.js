@@ -2,7 +2,7 @@ import VueTesting from '@testing-library/vue'
 import Vue from 'vue'
 
 import '../test/set-production.js'
-import { loguxClient, useSync, ChannelErrors } from './index.js'
+import { loguxPlugin, useSync, ChannelErrors } from './index.js'
 import { defineSyncMap, TestClient } from '../index.js'
 
 let { render, screen } = VueTesting
@@ -23,7 +23,7 @@ async function getText(component) {
     ),
     {
       global: {
-        plugins: [[loguxClient, client]]
+        plugins: [[loguxPlugin, client]]
       }
     }
   )

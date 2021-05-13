@@ -16,7 +16,7 @@ import {
 import {
   ChannelErrorsSlotProps,
   ChannelErrors,
-  loguxClient,
+  loguxPlugin,
   useClient,
   useFilter,
   useSync
@@ -42,7 +42,7 @@ function renderWithClient(component: Component, client?: TestClient): void {
   client = client || new TestClient('10')
   render(component, {
     global: {
-      plugins: [[loguxClient, client]]
+      plugins: [[loguxPlugin, client]]
     }
   })
 }
@@ -55,7 +55,7 @@ async function getText(component: Component): Promise<string | null> {
     ),
     {
       global: {
-        plugins: [[loguxClient, client]]
+        plugins: [[loguxPlugin, client]]
       }
     }
   )
@@ -189,8 +189,8 @@ it('throws on missed logux client dependency', () => {
     })
   )
   expect(errors).toEqual([
-    `Sync Map or Map Store was instantiated before calling\n` +
-      `app.use(loguxClient, client)`
+    `Sync Map or Map Store was instantiated without Logux Client. ` +
+      `Make sure you provide client using "loguxPlugin".`
   ])
   spy.mockRestore()
 })

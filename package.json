@@ -205,7 +205,7 @@
       "name": "Vue",
       "import": {
         "./index.js": "{ CrossTabClient, defineSyncMap, changeSyncMap }",
-        "./vue/index.js": "{ loguxClient, useSync, ChannelErrors, useFilter }"
+        "./vue/index.js": "{ loguxPlugin, useSync, ChannelErrors, useFilter }"
       },
       "limit": "6 KB"
     }

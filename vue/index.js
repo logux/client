@@ -24,7 +24,7 @@ const createSymbol = name => {
 export const ClientKey = /*#__PURE__*/ createSymbol('logux-client')
 export const ErrorsKey = /*#__PURE__*/ createSymbol('logux-errors')
 
-export function loguxClient(app, client) {
+export function loguxPlugin(app, client) {
   app.provide(ClientKey, client)
   app.config.globalProperties.$logux = client
 }
@@ -63,8 +63,8 @@ function useSyncStore(store) {
     } catch (e) {
       if (e.message === 'Missed Logux client') {
         throw new Error(
-          `Sync Map or Map Store was instantiated before calling\n` +
-            `app.use(loguxClient, client)`
+          `Sync Map or Map Store was instantiated without Logux Client. ` +
+            `Make sure you provide client using "loguxPlugin".`
         )
       } else {
         throw e

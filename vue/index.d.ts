@@ -25,16 +25,16 @@ export const ErrorsKey: InjectionKey<ChannelErrorsSlotProps>
  *
  * ```js
  * import { createApp } from 'vue'
- * import { loguxClient } from '@logux/client/vue'
+ * import { loguxPlugin } from '@logux/client/vue'
  * import { CrossTabClient } from '@logux/client'
  *
  * let client = new CrossTabClient(…)
  * let app = createApp(…)
  *
- * app.use(loguxClient, client)
+ * app.use(loguxPlugin, client)
  * ```
  */
-export function loguxClient(app: App, client: Client): void
+export function loguxPlugin(app: App, client: Client): void
 
 /**
  * Returns the Logux Client instance.
