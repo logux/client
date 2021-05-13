@@ -175,3 +175,30 @@ export let ChannelErrors = {
     }
   }
 }
+
+export function useAuth(client) {
+  client = client || useClient()
+  let userId = ref(client.options.userId)
+  let isAuthenticated = ref(false)
+
+  client.on('user', newUserId => {
+    userId.value = newUserId
+  })
+
+  client.node.on('state', () => {
+    if (client.node.state === 'synchronized') {
+      isAuthenticated.value = true
+    }
+  })
+
+  client.node.catch(error => {
+    if (error.type === 'wrong-credentials') {
+      isAuthenticated.value = false
+    }
+  })
+
+  return {
+    userId: readonly(userId),
+    isAuthenticated: readonly(isAuthenticated)
+  }
+}

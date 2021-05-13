@@ -155,3 +155,8 @@ export interface ChannelErrorsSlotProps {
   } | null>
   code: ReadonlyRef<number | null>
 }
+
+export function useAuth(client?: Client): {
+  userId: ReadonlyRef<string>
+  isAuthenticated: ReadonlyRef<boolean>
+}
