@@ -51,7 +51,13 @@ export function useClient(): Client
 /**
  * Create store by ID, subscribe to store changes and get store’s value.
  *
- * ```js
+ * ```html
+ * <template>
+ *   <loader v-if="user.isLoading" />
+ *   <h1 v-else>{{ user.name }}</h1>
+ * </template>
+ *
+ * <script>
  * import { useSync } from '@logux/client/vue'
  *
  * import { User } from '../store'
@@ -61,12 +67,9 @@ export function useClient(): Client
  *   setup (props) {
  *     let user = useSync(User, props.id)
  *     return { user }
- *   },
- *   template: `
- *     <loading v-if="user.isLoading" />
- *     <h1 v-else>{{ user.name }}</h1>
- *   `
+ *   }
  * }
+ * </script>
  * ```
  *
  * @param Builder Store builder.
@@ -87,7 +90,13 @@ export function useSync<Value extends object, Args extends any[]>(
 /**
  * The way to {@link createFilter} in Vue.
  *
- * ```js
+ * ```html
+ * <template>
+ *   <loader v-if="users.isLoading" />
+ *   <user v-else v-for="user in users" :user="user" />
+ * </template>
+ *
+ * <script>
  * import { useFilter } from '@logux/client/vue'
  *
  * import { User } from '../store'
@@ -97,14 +106,9 @@ export function useSync<Value extends object, Args extends any[]>(
  *   setup (props) {
  *     let users = useFilter(User, { projectId: props.projectId })
  *     return { users }
- *   },
- *   template: `
- *     <div>
- *       <user v-for="user in users" :user="user" />
- *       <loader v-if="users.isLoading" />
- *     </div>
- *   `
+ *   }
  * }
+ * </script>
  * ```
  *
  * @param Builder Store class.
@@ -122,20 +126,23 @@ export function useFilter<Value extends SyncMapValues>(
  * Show error message to user on subscription errors in components
  * deep in the tree.
  *
- * ```js
+ * ```html
+ * <template>
+ *   <channel-errors v-slot="{ code, error }">
+ *     <layout v-if="!error" />
+ *     <error v-else-if="code === 500" />
+ *     <error-not-found v-else-if="code === 404" />
+ *     <error-access-denied v-else-if="code === 403" />
+ *   </channel-errors>
+ * </template>
+ *
+ * <script>
  * import { ChannelErrors } from '@logux/client/vue'
  *
  * export default {
- *   components: { ChannelErrors },
- *   template: `
- *     <channel-errors v-slot="{ code, error }">
- *       <layout v-if="!error" />
- *       <error v-else-if="code === 500" />
- *       <error-not-found v-else-if="code === 404" />
- *       <error-access-denied v-else-if="code === 403" />
- *     </channel-errors>
- *   `
+ *   components: { ChannelErrors }
  * }
+ * </script>
  * ```
  */
 export const ChannelErrors: Component
