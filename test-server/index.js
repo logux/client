@@ -27,7 +27,10 @@ export class TestServer {
           this.subscriptions[action.channel] = {}
         }
         for (let nodeId of meta.nodes || []) {
-          this.subscriptions[action.channel][nodeId] = true
+          if (!this.subscriptions[action.channel][nodeId]) {
+            this.subscriptions[action.channel][nodeId] = []
+          }
+          this.subscriptions[action.channel][nodeId].push(action.filter || true)
         }
       }
       if (meta.id.includes(' server:')) return
@@ -131,7 +134,10 @@ export class TestServer {
       if (!this.subscriptions[action.channel]) {
         this.subscriptions[action.channel] = {}
       }
-      this.subscriptions[action.channel][nodeId] = true
+      if (!this.subscriptions[action.channel][nodeId]) {
+        this.subscriptions[action.channel][nodeId] = []
+      }
+      this.subscriptions[action.channel][nodeId].push(action.filter || true)
       let responses = this.channels[action.channel] || []
       if (Array.isArray(responses)) {
         for (let response of responses) {
@@ -145,11 +151,23 @@ export class TestServer {
         this.log.add(responses, { nodes })
       }
     } else if (action.type === 'logux/unsubscribe') {
+      let hasValue
+      if (action.filter) {
+        hasValue = it => !compareFilters(action.filter, it)
+      } else {
+        hasValue = it => it !== true
+      }
       if (
         this.subscriptions[action.channel] &&
-        this.subscriptions[action.channel][nodeId]
+        this.subscriptions[action.channel][nodeId] &&
+        !this.subscriptions[action.channel][nodeId].every(hasValue)
       ) {
-        delete this.subscriptions[action.channel][nodeId]
+        this.subscriptions[action.channel][nodeId] = this.subscriptions[
+          action.channel
+        ][nodeId].filter(hasValue)
+        if (this.subscriptions[action.channel][nodeId].length === 0) {
+          delete this.subscriptions[action.channel][nodeId]
+        }
       } else {
         // istanbul ignore next
         throw new Error(
@@ -161,4 +179,12 @@ export class TestServer {
     }
     this.log.add({ type: 'logux/processed', id }, { nodes })
   }
+}
+
+function compareFilters(first, second) {
+  let firstKeys = Object.keys(first)
+  return (
+    firstKeys.every(key => first[key] === second[key]) &&
+    firstKeys.length === Object.keys(second).length
+  )
 }

@@ -304,3 +304,61 @@ it('supports subscribed action', async () => {
   await client.server.sendAll({ type: 'logux/subscribed', channel: 'A' })
   await client.sync({ type: 'logux/unsubscribe', channel: 'A' })
 })
+
+it('allows subscribing to the same channel with multiple filters', async () => {
+  let client = new TestClient('10')
+  await client.connect()
+  await client.sync({
+    channel: 'nodes',
+    filter: {
+      projectId: 'project0'
+    },
+    type: 'logux/subscribe'
+  })
+  await client.sync({
+    channel: 'nodes',
+    filter: {
+      projectId: 'project1'
+    },
+    type: 'logux/subscribe'
+  })
+  client.log.keepActions()
+  await client.sync({
+    channel: 'nodes',
+    filter: {
+      projectId: 'project0'
+    },
+    type: 'logux/unsubscribe'
+  })
+  await client.sync({
+    channel: 'nodes',
+    filter: {
+      projectId: 'project1'
+    },
+    type: 'logux/unsubscribe'
+  })
+  expect(client.log.actions()).toEqual([
+    {
+      channel: 'nodes',
+      filter: {
+        projectId: 'project0'
+      },
+      type: 'logux/unsubscribe'
+    },
+    {
+      id: '5 10:2:2 0',
+      type: 'logux/processed'
+    },
+    {
+      channel: 'nodes',
+      filter: {
+        projectId: 'project1'
+      },
+      type: 'logux/unsubscribe'
+    },
+    {
+      id: '7 10:2:2 0',
+      type: 'logux/processed'
+    }
+  ])
+})
