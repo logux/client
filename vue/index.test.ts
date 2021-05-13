@@ -189,8 +189,7 @@ it('throws on missed logux client dependency', () => {
     })
   )
   expect(errors).toEqual([
-    `Sync Map or Map Store was instantiated without Logux Client. ` +
-      `Make sure you provide client using "loguxPlugin".`
+    `Install Logux Client using loguxPlugin: ` + `app.use(loguxPlugin, client).`
   ])
   spy.mockRestore()
 })

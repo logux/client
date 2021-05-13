@@ -63,8 +63,8 @@ function useSyncStore(store) {
     } catch (e) {
       if (e.message === 'Missed Logux client') {
         throw new Error(
-          `Sync Map or Map Store was instantiated without Logux Client. ` +
-            `Make sure you provide client using "loguxPlugin".`
+          `Install Logux Client using loguxPlugin: ` +
+            `app.use(loguxPlugin, client).`
         )
       } else {
         throw e
