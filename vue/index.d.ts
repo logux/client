@@ -2,6 +2,7 @@ import {
   ComponentPublicInstance,
   DeepReadonly,
   InjectionKey,
+  ComputedRef,
   Component,
   App,
   Ref
@@ -178,6 +179,6 @@ export interface ChannelErrorsSlotProps {
  * @param client Logux Client instance.
  */
 export function useAuth(client?: Client): {
-  userId: ReadonlyRef<string>
-  isAuthenticated: ReadonlyRef<boolean>
+  userId: ComputedRef<string>
+  isAuthenticated: ComputedRef<boolean>
 }

@@ -448,55 +448,36 @@ it('recreating filter on args changes', async () => {
   expect(renders).toEqual(['list', 'list', '1', '3', 'list', 'list', '2'])
 })
 
-function defineAuthTest(): Component {
-  return defineComponent(() => {
-    let { isAuthenticated, userId } = useAuth()
-    return () =>
-      h(
-        'div',
-        {
-          'data-testid': 'test'
-        },
-        isAuthenticated.value ? userId.value : 'loading'
-      )
-  })
-}
-
-it('returns the state of authentication', async () => {
+it('renders authentication state', async () => {
   let client = new TestClient('10')
-  renderWithClient(defineAuthTest(), client)
+  renderWithClient(
+    defineComponent(() => {
+      let { isAuthenticated, userId } = useAuth()
+      return () =>
+        h(
+          'div',
+          {
+            'data-testid': 'test'
+          },
+          isAuthenticated.value ? userId.value : 'loading'
+        )
+    }),
+    client
+  )
   expect(screen.getByTestId('test').textContent).toEqual('loading')
 
   await client.connect()
   expect(screen.getByTestId('test').textContent).toEqual('10')
+
+  emit(client, 'user', '20')
+  await nextTick()
+  expect(screen.getByTestId('test').textContent).toEqual('20')
+
+  client.disconnect()
+  await nextTick()
+  expect(screen.getByTestId('test').textContent).toEqual('20')
 
   emit(client.node, 'error', { type: 'wrong-credentials' })
   await nextTick()
   expect(screen.getByTestId('test').textContent).toEqual('loading')
-})
-
-it('doesn’t change authentication state on disconnection', async () => {
-  let client = new TestClient('10')
-  renderWithClient(defineAuthTest(), client)
-  expect(screen.getByTestId('test').textContent).toEqual('loading')
-
-  await client.connect()
-  expect(screen.getByTestId('test').textContent).toEqual('10')
-
-  client.disconnect()
-  await nextTick()
-  expect(screen.getByTestId('test').textContent).toEqual('10')
-})
-
-it('updates user Id after user change', async () => {
-  let client = new TestClient('10')
-  renderWithClient(defineAuthTest(), client)
-  expect(screen.getByTestId('test').textContent).toEqual('loading')
-
-  await client.connect()
-  expect(screen.getByTestId('test').textContent).toEqual('10')
-
-  client.changeUser('20', 'token')
-  await nextTick()
-  expect(screen.getByTestId('test').textContent).toEqual('20')
 })

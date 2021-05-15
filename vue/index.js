@@ -1,3 +1,4 @@
+import { useStore } from '@logux/state/vue'
 import {
   getCurrentInstance,
   onBeforeUnmount,
@@ -16,6 +17,7 @@ import {
 } from 'vue'
 
 import { createFilter } from '../create-filter/index.js'
+import { Auth } from '../auth-store/index.js'
 
 const createSymbol = name => {
   return process.env.NODE_ENV !== 'production' ? Symbol(name) : Symbol()
@@ -178,27 +180,9 @@ export let ChannelErrors = {
 
 export function useAuth(client) {
   client = client || useClient()
-  let userId = ref(client.options.userId)
-  let isAuthenticated = ref(false)
-
-  client.on('user', newUserId => {
-    userId.value = newUserId
-  })
-
-  client.node.on('state', () => {
-    if (client.node.state === 'synchronized') {
-      isAuthenticated.value = true
-    }
-  })
-
-  client.node.catch(error => {
-    if (error.type === 'wrong-credentials') {
-      isAuthenticated.value = false
-    }
-  })
-
+  let auth = useStore(Auth(client))
   return {
-    userId: readonly(userId),
-    isAuthenticated: readonly(isAuthenticated)
+    userId: computed(() => auth.value.userId),
+    isAuthenticated: computed(() => auth.value.isAuthenticated)
   }
 }
