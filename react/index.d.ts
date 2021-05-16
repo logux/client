@@ -10,6 +10,7 @@ import {
 import { FilterOptions, FilterStore, Filter } from '../create-filter/index.js'
 import { SyncMapBuilder, SyncMapValue } from '../define-sync-map/index.js'
 import { Client } from '../client/index.js'
+import { Auth } from '../create-auth/index.js'
 
 /**
  * Context to send Logux Client or object space to components deep in the tree.
@@ -131,3 +132,21 @@ export function useFilter<Value extends SyncMapValues>(
   filter?: Filter<Value>,
   opts?: FilterOptions
 ): StoreValue<FilterStore<Value>>
+
+/**
+ * Hook to return Logux client, which you set by `<ClientContext.Provider>`.
+ *
+ * ```js
+ * import { useAuth } from '@logux/client/react'
+ *
+ * export const UserPage = () => {
+ *   let { isAuthenticated, userId } = useAuth()
+ *   if (isAuthenticated) {
+ *     return <User id={userId} />
+ *   } else {
+ *     return <Loader />
+ *   }
+ * }
+ * ```
+ */
+export function useAuth(): StoreValue<Auth>
