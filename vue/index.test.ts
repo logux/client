@@ -174,10 +174,6 @@ let BrokenStore = defineMap<
   })
 })
 
-function emit(obj: any, event: string, ...args: any[]): void {
-  obj.emitter.emit(event, ...args)
-}
-
 afterEach(() => {
   cleanStores(BrokenStore, LocalPostStore, RemotePostStore)
 })
@@ -469,15 +465,18 @@ it('renders authentication state', async () => {
   await client.connect()
   expect(screen.getByTestId('test').textContent).toEqual('10')
 
-  emit(client, 'user', '20')
-  await nextTick()
-  expect(screen.getByTestId('test').textContent).toEqual('20')
-
   client.disconnect()
   await nextTick()
+  expect(screen.getByTestId('test').textContent).toEqual('10')
+
+  client.changeUser('20', 'token')
+  await delay(1)
+  await client.connect()
   expect(screen.getByTestId('test').textContent).toEqual('20')
 
-  emit(client.node, 'error', { type: 'wrong-credentials' })
-  await nextTick()
+  client.pair.right.send(['error', 'wrong-credentials'])
+  client.pair.right.disconnect()
+  await client.pair.wait()
+  await delay(1)
   expect(screen.getByTestId('test').textContent).toEqual('loading')
 })
