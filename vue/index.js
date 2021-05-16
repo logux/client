@@ -17,7 +17,7 @@ import {
 } from 'vue'
 
 import { createFilter } from '../create-filter/index.js'
-import { createAuth } from '../auth-store/index.js'
+import { createAuth } from '../create-auth/index.js'
 
 const createSymbol = name => {
   return process.env.NODE_ENV !== 'production' ? Symbol(name) : Symbol()
