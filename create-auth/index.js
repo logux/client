@@ -4,7 +4,7 @@ export function createAuth(client) {
   let auth = createStore(() => {
     auth.set({
       userId: client.options.userId,
-      isAuthenticated: false
+      isAuthenticated: client.node.state === 'synchronized'
     })
 
     let stateBinded = false
