@@ -134,7 +134,7 @@ export function useFilter<Value extends SyncMapValues>(
 ): StoreValue<FilterStore<Value>>
 
 /**
- * Hook to return Logux client, which you set by `<ClientContext.Provider>`.
+ * Hook to return user's current authentication state and ID.
  *
  * ```js
  * import { useAuth } from '@logux/client/react'
