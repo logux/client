@@ -1,6 +1,6 @@
 import { createStore } from '@logux/state'
 
-export function Auth(client) {
+export function createAuth(client) {
   let auth = createStore(() => {
     auth.set({
       userId: client.options.userId,

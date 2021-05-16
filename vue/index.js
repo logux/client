@@ -17,7 +17,7 @@ import {
 } from 'vue'
 
 import { createFilter } from '../create-filter/index.js'
-import { Auth } from '../auth-store/index.js'
+import { createAuth } from '../auth-store/index.js'
 
 const createSymbol = name => {
   return process.env.NODE_ENV !== 'production' ? Symbol(name) : Symbol()
@@ -180,7 +180,7 @@ export let ChannelErrors = {
 
 export function useAuth(client) {
   client = client || useClient()
-  let auth = useStore(Auth(client))
+  let auth = useStore(createAuth(client))
   return {
     userId: computed(() => auth.value.userId),
     isAuthenticated: computed(() => auth.value.isAuthenticated)

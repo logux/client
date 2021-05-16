@@ -2,7 +2,7 @@ import { getValue } from '@logux/state'
 import { delay } from 'nanodelay'
 
 import { TestClient } from '../index.js'
-import { Auth } from './index.js'
+import { createAuth } from './index.js'
 
 function emit(obj: any, event: string, ...args: any[]): void {
   obj.emitter.emit(event, ...args)
@@ -14,7 +14,7 @@ function getEventsCount(obj: any, event: string): number {
 
 it('returns the state of authentication', async () => {
   let client = new TestClient('10')
-  let auth = Auth(client)
+  let auth = createAuth(client)
 
   auth.listen(() => {})
   expect(getValue(auth).userId).toBe('10')
@@ -26,7 +26,7 @@ it('returns the state of authentication', async () => {
 
 it('change state on wrong credentials', async () => {
   let client = new TestClient('10')
-  let auth = Auth(client)
+  let auth = createAuth(client)
 
   auth.listen(() => {})
   await client.connect()
@@ -39,7 +39,7 @@ it('change state on wrong credentials', async () => {
 
 it('doesn’t change state on disconnection', async () => {
   let client = new TestClient('10')
-  let auth = Auth(client)
+  let auth = createAuth(client)
 
   auth.listen(() => {})
   await client.connect()
@@ -52,7 +52,7 @@ it('doesn’t change state on disconnection', async () => {
 
 it('updates user id after user change', async () => {
   let client = new TestClient('10')
-  let auth = Auth(client)
+  let auth = createAuth(client)
 
   auth.listen(() => {})
   await client.connect()
@@ -65,7 +65,7 @@ it('updates user id after user change', async () => {
 
 it('unbinds client events', async () => {
   let client = new TestClient('10')
-  let auth = Auth(client)
+  let auth = createAuth(client)
 
   expect(getEventsCount(client, 'user')).toBe(0)
   expect(getEventsCount(client.node, 'error')).toBe(0)
