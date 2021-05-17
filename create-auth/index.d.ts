@@ -11,9 +11,7 @@ export type Auth = MapStore<{
 }>
 
 /**
- * Create {@link Auth} store.
- *
- * It subscribes to changes in the user’s authentication state.
+ * Create store with user’s authentication state.
  *
  * ```js
  * import { createAuth } from '@logux/client'
