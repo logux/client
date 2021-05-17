@@ -6,13 +6,7 @@ import { Client } from '../client/index.js'
  * Auth store. Use {@link createAuth} to create it.
  */
 export type Auth = Store<{
-  /**
-   * Current user’s id.
-   */
   userId: string
-  /**
-   * Current state of user authentication.
-   */
   isAuthenticated: boolean
 }>
 
