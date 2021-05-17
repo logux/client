@@ -1,3 +1,4 @@
+import { useStore } from '@logux/state/vue'
 import {
   getCurrentInstance,
   onBeforeUnmount,
@@ -16,6 +17,7 @@ import {
 } from 'vue'
 
 import { createFilter } from '../create-filter/index.js'
+import { createAuth } from '../create-auth/index.js'
 
 const createSymbol = name => {
   return process.env.NODE_ENV !== 'production' ? Symbol(name) : Symbol()
@@ -173,5 +175,14 @@ export let ChannelErrors = {
     return () => {
       return slots.default ? slots.default({ code, error }) : null
     }
+  }
+}
+
+export function useAuth(client) {
+  client = client || useClient()
+  let auth = useStore(createAuth(client))
+  return {
+    userId: computed(() => auth.value.userId),
+    isAuthenticated: computed(() => auth.value.isAuthenticated)
   }
 }

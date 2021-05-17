@@ -19,7 +19,8 @@ import {
   loguxPlugin,
   useClient,
   useFilter,
-  useSync
+  useSync,
+  useAuth
 } from './index.js'
 
 let { render, screen } = VueTesting
@@ -441,4 +442,41 @@ it('recreating filter on args changes', async () => {
   ])
   expect(screen.getByTestId('test').textContent).toEqual(' 0:Y')
   expect(renders).toEqual(['list', 'list', '1', '3', 'list', 'list', '2'])
+})
+
+it('renders authentication state', async () => {
+  let client = new TestClient('10')
+  renderWithClient(
+    defineComponent(() => {
+      let { isAuthenticated, userId } = useAuth()
+      return () =>
+        h(
+          'div',
+          {
+            'data-testid': 'test'
+          },
+          isAuthenticated.value ? userId.value : 'loading'
+        )
+    }),
+    client
+  )
+  expect(screen.getByTestId('test').textContent).toEqual('loading')
+
+  await client.connect()
+  expect(screen.getByTestId('test').textContent).toEqual('10')
+
+  client.disconnect()
+  await nextTick()
+  expect(screen.getByTestId('test').textContent).toEqual('10')
+
+  client.changeUser('20', 'token')
+  await delay(1)
+  await client.connect()
+  expect(screen.getByTestId('test').textContent).toEqual('20')
+
+  client.pair.right.send(['error', 'wrong-credentials'])
+  client.pair.right.disconnect()
+  await client.pair.wait()
+  await delay(1)
+  expect(screen.getByTestId('test').textContent).toEqual('loading')
 })

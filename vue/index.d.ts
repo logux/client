@@ -2,6 +2,7 @@ import {
   ComponentPublicInstance,
   DeepReadonly,
   InjectionKey,
+  ComputedRef,
   Component,
   App,
   Ref
@@ -154,4 +155,30 @@ export interface ChannelErrorsSlotProps {
     info: string
   } | null>
   code: ReadonlyRef<number | null>
+}
+
+/**
+ * Returns user's current authentication state and ID.
+ *
+ * ```html
+ * <template>
+ *   <user v-if="isAuthenticated" :id="userId" />
+ *   <sign-in v-else />
+ * </template>
+ *
+ * <script>
+ * import { useAuth } from '@logux/client/vue'
+ *
+ * export default () => {
+ *   let { isAuthenticated, userId } = useAuth()
+ *   return { isAuthenticated, userId }
+ * }
+ * </script>
+ * ```
+ *
+ * @param client Logux Client instance.
+ */
+export function useAuth(client?: Client): {
+  userId: ComputedRef<string>
+  isAuthenticated: ComputedRef<boolean>
 }

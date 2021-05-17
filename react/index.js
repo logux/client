@@ -1,7 +1,9 @@
+import { useStore } from '@logux/state/react'
 import { getValue } from '@logux/state'
 import React from 'react'
 
 import { createFilter } from '../create-filter/index.js'
+import { createAuth } from '../create-auth/index.js'
 
 export let ClientContext = /*#__PURE__*/ React.createContext()
 
@@ -139,4 +141,8 @@ export class ChannelErrors extends React.Component {
       throw error
     }
   }
+}
+
+export function useAuth() {
+  return useStore(createAuth(useClient()))
 }

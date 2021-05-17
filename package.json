@@ -197,7 +197,7 @@
       "name": "React",
       "import": {
         "./index.js": "{ CrossTabClient, defineSyncMap, changeSyncMap }",
-        "./react/index.js": "{ ClientContext, useSync, ChannelErrors, useFilter }"
+        "./react/index.js": "{ ClientContext, useSync, ChannelErrors, useFilter, useAuth }"
       },
       "limit": "6 KB"
     },
@@ -205,9 +205,9 @@
       "name": "Vue",
       "import": {
         "./index.js": "{ CrossTabClient, defineSyncMap, changeSyncMap }",
-        "./vue/index.js": "{ loguxPlugin, useSync, ChannelErrors, useFilter }"
+        "./vue/index.js": "{ loguxPlugin, useSync, ChannelErrors, useFilter, useAuth }"
       },
-      "limit": "6 KB"
+      "limit": "7 KB"
     }
   ],
   "yaspeller": {
