@@ -1,11 +1,9 @@
-import { createStore } from '@logux/state'
+import { createMap } from '@logux/state'
 
 export function createAuth(client) {
-  let auth = createStore(() => {
-    auth.set({
-      userId: client.options.userId,
-      isAuthenticated: client.node.state === 'synchronized'
-    })
+  let auth = createMap(() => {
+    auth.setKey('userId', client.options.userId)
+    auth.setKey('isAuthenticated', client.node.state === 'synchronized')
 
     let stateBinded = false
     let unbindState
@@ -14,7 +12,7 @@ export function createAuth(client) {
       stateBinded = true
       unbindState = client.node.on('state', () => {
         if (client.node.state === 'synchronized') {
-          auth.set({ ...auth.value, isAuthenticated: true })
+          auth.setKey('isAuthenticated', true)
           unbindState()
           stateBinded = false
         }
@@ -25,12 +23,12 @@ export function createAuth(client) {
 
     let unbindError = client.node.catch(error => {
       if (error.type === 'wrong-credentials') {
-        !stateBinded && bindState()
-        auth.set({ ...auth.value, isAuthenticated: false })
+        if (!stateBinded) bindState()
+        auth.setKey('isAuthenticated', false)
       }
     })
     let unbindUser = client.on('user', newUserId => {
-      auth.set({ ...auth.value, userId: newUserId })
+      auth.setKey('userId', newUserId)
     })
 
     return () => {

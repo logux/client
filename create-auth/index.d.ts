@@ -1,11 +1,11 @@
-import { Store } from '@logux/state'
+import { MapStore } from '@logux/state'
 
 import { Client } from '../client/index.js'
 
 /**
  * Auth store. Use {@link createAuth} to create it.
  */
-export type Auth = Store<{
+export type Auth = MapStore<{
   userId: string
   isAuthenticated: boolean
 }>
@@ -13,14 +13,16 @@ export type Auth = Store<{
 /**
  * Create {@link Auth} store.
  *
- * It subscribes to changes in the user’s authentication state and id.
+ * It subscribes to changes in the user’s authentication state.
  *
  * ```js
  * import { createAuth } from '@logux/client'
  * import { getValue } from '@logux/state'
  *
  * let auth = createAuth(client)
- * let { isAuthenticated, userId } = getValue(auth)
+ * auth.subscribe(({ isAuthenticated, userId }) => {
+ *   console.log(isAuthenticated, userId)
+ * })
  * ```
  *
  * @param client Logux Client.
