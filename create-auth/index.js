@@ -23,21 +23,20 @@ export function createAuth(client) {
 
     bindState()
 
-    let unbinds = [
-      client.node.catch(error => {
-        if (error.type === 'wrong-credentials') {
-          !stateBinded && bindState()
-          auth.set({ ...auth.value, isAuthenticated: false })
-        }
-      }),
-      client.on('user', newUserId => {
-        auth.set({ ...auth.value, userId: newUserId })
-      })
-    ]
+    let unbindError = client.node.catch(error => {
+      if (error.type === 'wrong-credentials') {
+        !stateBinded && bindState()
+        auth.set({ ...auth.value, isAuthenticated: false })
+      }
+    })
+    let unbindUser = client.on('user', newUserId => {
+      auth.set({ ...auth.value, userId: newUserId })
+    })
 
     return () => {
       unbindState()
-      for (let unbind of unbinds) unbind()
+      unbindError()
+      unbindUser()
     }
   })
 
