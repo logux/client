@@ -162,9 +162,8 @@ export class TestServer {
         this.subscriptions[action.channel][nodeId] &&
         !this.subscriptions[action.channel][nodeId].every(hasValue)
       ) {
-        this.subscriptions[action.channel][nodeId] = this.subscriptions[
-          action.channel
-        ][nodeId].filter(hasValue)
+        this.subscriptions[action.channel][nodeId] =
+          this.subscriptions[action.channel][nodeId].filter(hasValue)
         if (this.subscriptions[action.channel][nodeId].length === 0) {
           delete this.subscriptions[action.channel][nodeId]
         }
@@ -172,7 +171,9 @@ export class TestServer {
         // istanbul ignore next
         throw new Error(
           `Client was not subscribed to ${action.channel} ` +
-            (action.filter ? `with filter ${JSON.stringify(action.filter)} ` : '') +
+            (action.filter
+              ? `with filter ${JSON.stringify(action.filter)} `
+              : '') +
             'but it tries to unsubscribe from it'
         )
       }
@@ -184,7 +185,7 @@ export class TestServer {
 function compareFilters(first, second) {
   let firstKeys = Object.keys(first)
   return (
-    firstKeys.every(key => first[key] === second[key]) &&
-    firstKeys.length === Object.keys(second).length
+    firstKeys.length === Object.keys(second).length &&
+    firstKeys.every(key => first[key] === second[key])
   )
 }

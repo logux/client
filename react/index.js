@@ -123,24 +123,17 @@ export class ChannelErrors extends React.Component {
     ) {
       throw error
     } else if (
-      error.name === 'LoguxNotFoundError' ||
-      error.action.reason === 'notFound'
+      (error.name === 'LoguxNotFoundError' ||
+        error.action.reason === 'notFound') &&
+      this.props.NotFound
     ) {
-      if (this.props.NotFound) {
-        return h(this.props.NotFound, { error })
-      } else if (this.props.Error) {
-        return h(this.props.Error, { error })
-      } else {
-        throw error
-      }
-    } else if (error.action.reason === 'denied') {
-      if (this.props.AccessDenied) {
-        return h(this.props.AccessDenied, { error })
-      } else if (this.props.Error) {
-        return h(this.props.Error, { error })
-      } else {
-        throw error
-      }
+      return h(this.props.NotFound, { error })
+    } else if (
+      error.action &&
+      error.action.reason === 'denied' &&
+      this.props.AccessDenied
+    ) {
+      return h(this.props.AccessDenied, { error })
     } else if (this.props.Error) {
       return h(this.props.Error, { error })
     } else {
