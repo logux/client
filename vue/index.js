@@ -149,10 +149,10 @@ export let ChannelErrors = {
       if (!error.value) {
         return null
       } else {
-        let { reason } = error.value.data.action
-        if (reason === 'notFound') {
+        let { action, name } = error.value.data
+        if (name === 'LoguxNotFoundError' || action.reason === 'notFound') {
           return 404
-        } else if (reason === 'denied') {
+        } else if (action.reason === 'denied') {
           return 403
         } else {
           return 500
@@ -165,7 +165,7 @@ export let ChannelErrors = {
     }
 
     onErrorCaptured((e, instance, info) => {
-      if (e.name === 'LoguxUndoError') {
+      if (e.name === 'LoguxUndoError' || e.name === 'LoguxNotFoundError') {
         error.value = { data: e, instance, info }
         return false
       }

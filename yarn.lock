@@ -557,10 +557,10 @@
     "@types/yargs" "^16.0.0"
     chalk "^4.0.0"
 
-"@logux/actions@^0.1.0":
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/@logux/actions/-/actions-0.1.0.tgz#4ee83b3d26101f2fde21b3a198e6605fb032fd8b"
-  integrity sha512-TPz7g3fW7BhmwMU4XEEe2y9dSimPMutw64AjpHTNHqIVgRL4KyUHc1tkOxSursdq05zGJtnSmy5y1R2PleVmNw==
+"@logux/actions@^0.2.0":
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/@logux/actions/-/actions-0.2.0.tgz#ba09a8b6e73f7c303f1103000ae455ceb09c6c95"
+  integrity sha512-i1occXt0XcJXHI2wsq/soZiMGd+CpyeKfxnF0WCY0VfMJiYSObBl7v0jEXQuFgBVWcK1CR2b6DLkdVOYvWC45Q==
 
 "@logux/core@^0.7.0":
   version "0.7.0"

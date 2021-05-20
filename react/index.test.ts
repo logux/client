@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom/extend-expect'
 import { cleanStores, createStore, defineMap, MapBuilder } from '@logux/state'
 import React, { ReactElement, FC, ReactNode } from 'react'
+import { LoguxNotFoundError } from '@logux/actions'
 import ReactTesting from '@testing-library/react'
 import { delay } from 'nanodelay'
 import { jest } from '@jest/globals'
@@ -122,9 +123,8 @@ async function catchLoadingError(
 ): Promise<string | null> {
   jest.spyOn(console, 'error').mockImplementation(() => {})
   let Bad: FC = () => h('div', 'bad')
-  let NotFound: FC<{ error: ChannelNotFoundError }> = props => {
-    return h('div', {}, `404 ${props.error.action.reason}`)
-  }
+  let NotFound: FC<{ error: ChannelNotFoundError | LoguxNotFoundError }> = p =>
+    h('div', {}, `404 ${p.error.name}`)
   let AccessDenied: FC<{ error: ChannelDeniedError }> = props => {
     return h('div', {}, `403 ${props.error.action.reason}`)
   }
@@ -202,7 +202,13 @@ it('throws on missed ID for builder', async () => {
 })
 
 it('throws and catches not found error', async () => {
-  expect(await catchLoadingError('notFound')).toEqual('404 notFound')
+  expect(await catchLoadingError(new LoguxNotFoundError())).toEqual(
+    '404 LoguxNotFoundError'
+  )
+})
+
+it('throws and catches not found error from server', async () => {
+  expect(await catchLoadingError('notFound')).toEqual('404 LoguxUndoError')
 })
 
 it('throws and catches access denied error', async () => {

@@ -47,7 +47,7 @@
     }
   },
   "dependencies": {
-    "@logux/actions": "^0.1.0",
+    "@logux/actions": "^0.2.0",
     "fast-json-stable-stringify": "^2.1.0",
     "nanodelay": "^2.0.0",
     "nanoevents": "^6.0.0",

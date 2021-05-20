@@ -1,6 +1,6 @@
 import { Context as ReactContext, Component, ComponentType } from 'react'
+import { SyncMapValues, LoguxNotFoundError } from '@logux/actions'
 import { StoreValue, MapBuilder } from '@logux/state'
-import { SyncMapValues } from '@logux/actions'
 
 import {
   ChannelNotFoundError,
@@ -67,7 +67,7 @@ export function useClient(): Client
  * ```
  */
 export class ChannelErrors extends Component<{
-  NotFound?: ComponentType<{ error: ChannelNotFoundError }>
+  NotFound?: ComponentType<{ error: ChannelNotFoundError | LoguxNotFoundError }>
   AccessDenied?: ComponentType<{ error: ChannelDeniedError }>
   Error?: ComponentType<{ error: ChannelError }>
 }> {}

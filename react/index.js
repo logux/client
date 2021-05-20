@@ -117,9 +117,15 @@ export class ChannelErrors extends React.Component {
       } else {
         return h(ErrorsCheckerProvider, this.props)
       }
-    } else if (error.name !== 'LoguxUndoError') {
+    } else if (
+      error.name !== 'LoguxUndoError' &&
+      error.name !== 'LoguxNotFoundError'
+    ) {
       throw error
-    } else if (error.action.reason === 'notFound') {
+    } else if (
+      error.name === 'LoguxNotFoundError' ||
+      error.action.reason === 'notFound'
+    ) {
       if (this.props.NotFound) {
         return h(this.props.NotFound, { error })
       } else if (this.props.Error) {

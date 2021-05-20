@@ -7,8 +7,8 @@ import {
   App,
   Ref
 } from 'vue'
+import { SyncMapValues, LoguxNotFoundError } from '@logux/actions'
 import { StoreValue, MapBuilder } from '@logux/state'
-import { SyncMapValues } from '@logux/actions'
 
 import { FilterOptions, FilterStore, Filter } from '../create-filter/index.js'
 import { SyncMapBuilder, SyncMapValue } from '../define-sync-map/index.js'
@@ -150,7 +150,7 @@ export const ChannelErrors: Component
 
 export interface ChannelErrorsSlotProps {
   error: ReadonlyRef<{
-    data: ChannelError
+    data: ChannelError | LoguxNotFoundError
     instance: ComponentPublicInstance
     info: string
   } | null>
