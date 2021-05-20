@@ -1,8 +1,15 @@
 import '@testing-library/jest-dom/extend-expect'
+import {
+  FunctionComponent as FC,
+  ComponentChild,
+  Component,
+  VNode,
+  h
+} from 'preact'
 import { cleanStores, createStore, defineMap, MapBuilder } from '@logux/state'
-import React, { ReactElement, FC, ReactNode } from 'react'
 import { LoguxNotFoundError } from '@logux/actions'
-import ReactTesting from '@testing-library/react'
+import PreactTesting from '@testing-library/preact'
+import { useState } from 'preact/hooks'
 import { delay } from 'nanodelay'
 import { jest } from '@jest/globals'
 
@@ -26,8 +33,7 @@ import {
   useAuth
 } from './index.js'
 
-let { render, screen, act } = ReactTesting
-let { createElement: h, Component, useState } = React
+let { render, screen, act } = PreactTesting
 
 function getCatcher(cb: () => void): [string[], FC] {
   let errors: string[] = []
@@ -79,26 +85,24 @@ let SyncTest: FC<{ Builder: SyncMapBuilder }> = ({ Builder }) => {
   return h('div', {}, store.isLoading ? 'loading' : store.id)
 }
 
-function getText(component: ReactElement): string | null {
+function getText(component: VNode): string | null {
   let client = new TestClient('10')
   render(
-    h(
-      ClientContext.Provider,
-      { value: client },
-      h('div', { 'data-testid': 'test' }, component)
-    )
+    h(ClientContext.Provider, {
+      value: client,
+      children: h('div', { 'data-testid': 'test' }, component)
+    })
   )
   return screen.getByTestId('test').textContent
 }
 
-function runWithClient(component: ReactElement): void {
+function runWithClient(component: VNode): void {
   let client = new TestClient('10')
   render(
-    h(
-      ClientContext.Provider,
-      { value: client },
-      h(ChannelErrors, { Error: () => null }, component)
-    )
+    h(ClientContext.Provider, {
+      value: client,
+      children: h(ChannelErrors, { Error: () => null }, component)
+    })
   )
 }
 
@@ -109,7 +113,7 @@ class ErrorCatcher extends Component {
     return { message: e.message }
   }
 
-  render(): ReactNode {
+  render(): ComponentChild {
     if (typeof this.state.message === 'string') {
       return h('div', {}, this.state.message)
     } else {
@@ -176,7 +180,7 @@ it('throws on missed context for sync map', () => {
   let [errors, Catcher] = getCatcher(() => {
     useSync(Test, 'ID')
   })
-  render(h(Catcher))
+  render(h(Catcher, null))
   expect(errors).toEqual(['Wrap components in Logux <ClientContext.Provider>'])
 })
 
@@ -187,7 +191,7 @@ it('throws store init errors', () => {
   let [errors, Catcher] = getCatcher(() => {
     useSync(Builder, 'id')
   })
-  render(h(Catcher))
+  render(h(Catcher, null))
   expect(errors).toEqual(['Test'])
 })
 
@@ -197,7 +201,7 @@ it('throws on missed ID for builder', async () => {
     // @ts-expect-error
     useSync(store)
   })
-  render(h(Catcher))
+  render(h(Catcher, null))
   expect(errors).toEqual(['Use useStore() from @logux/state/react for stores'])
 })
 
@@ -311,7 +315,9 @@ it('has hook to get client', () => {
   }
   let client = new TestClient('10')
   expect(
-    getText(h(ClientContext.Provider, { value: client }, h(Test)))
+    getText(
+      h(ClientContext.Provider, { value: client, children: h(Test, null) })
+    )
   ).toEqual('10')
 })
 
@@ -333,11 +339,10 @@ it('renders filter', async () => {
   }
 
   render(
-    h(
-      ClientContext.Provider,
-      { value: client },
-      h(ChannelErrors, { Error: () => null }, h(TestList))
-    )
+    h(ClientContext.Provider, {
+      value: client,
+      children: h(ChannelErrors, { Error: () => null }, h(TestList, null))
+    })
   )
   expect(screen.getByTestId('test').textContent).toEqual('')
   expect(renders).toEqual(['list'])
@@ -407,11 +412,10 @@ it('recreating filter on args changes', async () => {
   }
 
   render(
-    h(
-      ClientContext.Provider,
-      { value: client },
-      h(ChannelErrors, { Error: () => null }, h(TestList))
-    )
+    h(ClientContext.Provider, {
+      value: client,
+      children: h(ChannelErrors, { Error: () => null }, h(TestList, null))
+    })
   )
   expect(screen.getByTestId('test').textContent).toEqual('')
   expect(renders).toEqual(['list'])
@@ -457,11 +461,10 @@ it('renders authentication state', async () => {
     )
   }
   render(
-    h(
-      ClientContext.Provider,
-      { value: client },
-      h(ChannelErrors, { Error: () => null }, h(TestProfile))
-    )
+    h(ClientContext.Provider, {
+      value: client,
+      children: h(ChannelErrors, { Error: () => null }, h(TestProfile, null))
+    })
   )
   expect(screen.getByTestId('test').textContent).toEqual('loading')
 
