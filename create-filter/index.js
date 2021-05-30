@@ -165,7 +165,9 @@ export function createFilter(client, Builder, filter = {}, opts = {}) {
               .then(() => {
                 if (isLoading) {
                   isLoading = false
-                  filterStore.setKey('isLoading', false)
+                  if (filterStore.value) {
+                    filterStore.setKey('isLoading', false)
+                  }
                   resolve()
                 }
               })
