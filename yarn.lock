@@ -1236,9 +1236,10 @@
   dependencies:
     sharec "^2.9.0"
 
-"@logux/state@logux/state":
-  version "0.1.0"
-  resolved "https://codeload.github.com/logux/state/tar.gz/97379393991279697a616233a15bdf4a21e0689b"
+"@logux/state@^0.2.0":
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/@logux/state/-/state-0.2.0.tgz#4d91f5445107bae401e6a66160f8e6729c88a781"
+  integrity sha512-XtX7PJ6yxhj8OmMnBAMSWNUhyJdmUPQvI9nSYEYwuKpo4hSIF9KIlcNMd18CzoKvm1BaAY7Xn/uD0xQ3QJhbWg==
 
 "@nodelib/fs.scandir@2.1.4":
   version "2.1.4"

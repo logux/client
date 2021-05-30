@@ -62,7 +62,7 @@
     "@logux/core": "^0.7.0",
     "@logux/eslint-config": "^45.4.3",
     "@logux/sharec-config": "^0.10.2",
-    "@logux/state": "logux/state",
+    "@logux/state": "^0.2.0",
     "@parcel/optimizer-cssnano": "2.0.0-beta.2",
     "@parcel/optimizer-htmlnano": "2.0.0-beta.2",
     "@parcel/packager-css": "2.0.0-beta.2",
