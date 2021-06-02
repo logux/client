@@ -1,5 +1,5 @@
-import { useStore } from '@logux/state/react'
-import { getValue } from '@logux/state'
+import { useStore } from 'nanostores/react'
+import { getValue } from 'nanostores'
 import React from 'react'
 
 import { createFilter } from '../create-filter/index.js'
@@ -72,7 +72,7 @@ function useSyncStore(store) {
 export function useSync(Builder, id, ...builderArgs) {
   if (process.env.NODE_ENV !== 'production') {
     if (typeof Builder !== 'function') {
-      throw new Error('Use useStore() from @logux/state/react for stores')
+      throw new Error('Use useStore() from nanostores/react for stores')
     }
   }
 

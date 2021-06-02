@@ -1,4 +1,4 @@
-import { MapBuilder, MapStore } from '@logux/state'
+import { MapBuilder, MapStore } from 'nanostores'
 import { SyncMapValues } from '@logux/actions'
 import { Action, Meta } from '@logux/core'
 

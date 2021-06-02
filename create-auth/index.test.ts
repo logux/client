@@ -1,4 +1,4 @@
-import { getValue } from '@logux/state'
+import { getValue } from 'nanostores'
 import { delay } from 'nanodelay'
 
 import { TestClient } from '../index.js'

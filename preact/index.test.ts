@@ -6,7 +6,7 @@ import {
   VNode,
   h
 } from 'preact'
-import { cleanStores, createStore, defineMap, MapBuilder } from '@logux/state'
+import { cleanStores, createStore, defineMap, MapBuilder } from 'nanostores'
 import { LoguxNotFoundError } from '@logux/actions'
 import PreactTesting from '@testing-library/preact'
 import { useState } from 'preact/hooks'
@@ -202,7 +202,7 @@ it('throws on missed ID for builder', async () => {
     useSync(store)
   })
   render(h(Catcher, null))
-  expect(errors).toEqual(['Use useStore() from @logux/state/react for stores'])
+  expect(errors).toEqual(['Use useStore() from nanostores/react for stores'])
 })
 
 it('throws and catches not found error', async () => {

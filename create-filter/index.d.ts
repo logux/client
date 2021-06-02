@@ -1,5 +1,5 @@
 import { SyncMapValues } from '@logux/actions'
-import { MapStore } from '@logux/state'
+import { MapStore } from 'nanostores'
 
 import {
   LoadedSyncMapValue,
@@ -38,7 +38,7 @@ export interface FilterStore<
  *
  * ```js
  * import { createFilter } from '@logux/client'
- * import { getValue } from '@logux/state'
+ * import { getValue } from 'nanostores'
  *
  * import { User } from '../store'
  *

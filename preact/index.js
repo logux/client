@@ -1,7 +1,7 @@
 import { useState, useContext, useEffect } from 'preact/hooks'
 import { createContext, h, Component } from 'preact'
-import { useStore } from '@logux/state/preact'
-import { getValue } from '@logux/state'
+import { useStore } from 'nanostores/preact'
+import { getValue } from 'nanostores'
 
 import { createFilter } from '../create-filter/index.js'
 import { createAuth } from '../create-auth/index.js'
@@ -73,7 +73,7 @@ function useSyncStore(store) {
 export function useSync(Builder, id, ...builderArgs) {
   if (process.env.NODE_ENV !== 'production') {
     if (typeof Builder !== 'function') {
-      throw new Error('Use useStore() from @logux/state/react for stores')
+      throw new Error('Use useStore() from nanostores/react for stores')
     }
   }
 

@@ -1,6 +1,6 @@
 import { Context as PreactContext, Component, ComponentType } from 'preact'
 import { SyncMapValues, LoguxNotFoundError } from '@logux/actions'
-import { StoreValue, MapBuilder } from '@logux/state'
+import { StoreValue, MapBuilder } from 'nanostores'
 
 import {
   ChannelNotFoundError,

@@ -1,4 +1,4 @@
-import { cleanStores, defineMap, getValue } from '@logux/state'
+import { cleanStores, defineMap, getValue } from 'nanostores'
 
 import {
   prepareForTest,

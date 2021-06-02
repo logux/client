@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/extend-expect'
-import { cleanStores, createStore, defineMap, MapBuilder } from '@logux/state'
+import { cleanStores, createStore, defineMap, MapBuilder } from 'nanostores'
 import React, { ReactElement, FC, ReactNode } from 'react'
 import { LoguxNotFoundError } from '@logux/actions'
 import ReactTesting from '@testing-library/react'
@@ -198,7 +198,7 @@ it('throws on missed ID for builder', async () => {
     useSync(store)
   })
   render(h(Catcher))
-  expect(errors).toEqual(['Use useStore() from @logux/state/react for stores'])
+  expect(errors).toEqual(['Use useStore() from nanostores/react for stores'])
 })
 
 it('throws and catches not found error', async () => {

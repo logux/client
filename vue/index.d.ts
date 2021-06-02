@@ -8,7 +8,7 @@ import {
   Ref
 } from 'vue'
 import { SyncMapValues, LoguxNotFoundError } from '@logux/actions'
-import { StoreValue, MapBuilder } from '@logux/state'
+import { StoreValue, MapBuilder } from 'nanostores'
 
 import { FilterOptions, FilterStore, Filter } from '../create-filter/index.js'
 import { SyncMapBuilder, SyncMapValue } from '../define-sync-map/index.js'

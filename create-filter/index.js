@@ -1,5 +1,5 @@
 import { isFirstOlder } from '@logux/core'
-import { createMap } from '@logux/state'
+import { createMap } from 'nanostores'
 
 import { track } from '../track/index.js'
 

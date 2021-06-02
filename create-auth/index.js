@@ -1,4 +1,4 @@
-import { createMap } from '@logux/state'
+import { createMap } from 'nanostores'
 
 export function createAuth(client) {
   let auth = createMap(() => {

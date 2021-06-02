@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/extend-expect'
-import { cleanStores, createStore, defineMap, MapBuilder } from '@logux/state'
+import { cleanStores, createStore, defineMap, MapBuilder } from 'nanostores'
 import Vue, { Component, isReadonly } from 'vue'
 import { LoguxNotFoundError } from '@logux/actions'
 import VueTesting from '@testing-library/vue'
@@ -204,7 +204,7 @@ it('throws on missed ID for builder', () => {
     useSync(store)
   })
   render(h(Catcher))
-  expect(errors).toEqual(['Use useStore() from @logux/state/vue for stores'])
+  expect(errors).toEqual(['Use useStore() from nanostores/vue for stores'])
   spy.mockRestore()
 })
 

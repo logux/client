@@ -1,4 +1,4 @@
-import { MapStore } from '@logux/state'
+import { MapStore } from 'nanostores'
 
 import { Client } from '../client/index.js'
 
@@ -15,7 +15,7 @@ export type Auth = MapStore<{
  *
  * ```js
  * import { createAuth } from '@logux/client'
- * import { getValue } from '@logux/state'
+ * import { getValue } from 'nanostores'
  *
  * let auth = createAuth(client)
  * auth.subscribe(({ isAuthenticated, userId }) => {

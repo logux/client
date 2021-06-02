@@ -1,4 +1,3 @@
-import { useStore } from '@logux/state/vue'
 import {
   getCurrentInstance,
   onBeforeUnmount,
@@ -15,6 +14,7 @@ import {
   toRef,
   ref
 } from 'vue'
+import { useStore } from 'nanostores/vue'
 
 import { createFilter } from '../create-filter/index.js'
 import { createAuth } from '../create-auth/index.js'
@@ -91,7 +91,7 @@ function useSyncStore(store) {
 export function useSync(Builder, id, ...builderArgs) {
   if (process.env.NODE_ENV !== 'production') {
     if (typeof Builder !== 'function') {
-      throw new Error('Use useStore() from @logux/state/vue for stores')
+      throw new Error('Use useStore() from nanostores/vue for stores')
     }
   }
 

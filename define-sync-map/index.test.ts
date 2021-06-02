@@ -1,5 +1,5 @@
 import { defineChangeSyncMap, defineChangedSyncMap } from '@logux/actions'
-import { cleanStores, getValue } from '@logux/state'
+import { cleanStores, getValue } from 'nanostores'
 import { delay } from 'nanodelay'
 
 import {

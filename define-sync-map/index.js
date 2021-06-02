@@ -1,4 +1,4 @@
-import { defineMap, getValue, clean } from '@logux/state'
+import { defineMap, getValue, clean } from 'nanostores'
 import { isFirstOlder } from '@logux/core'
 
 import { LoguxUndoError } from '../logux-undo-error/index.js'
