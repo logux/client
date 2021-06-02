@@ -1,6 +1,12 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.12
+* Moved from `@logux/state` to `nanostores`.
+* Added Preact support.
+* Added `filter` support to `TestServer` (by Aleksandr Slepchenkov).
+* Fixed docs (by Eduard Aksamitov).
+
 ## 0.11.1
 * Added `badge/styles` export (by @TrentWest7190).
 
