@@ -37,9 +37,15 @@ export const ClientContext: ReactContext<Client>
  * Hook to return Logux client, which you set by `<ClientContext.Provider>`.
  *
  * ```js
- * let client = useClient()
- * let onAdd = data => {
- *   Post.create(client, data)
+ * import { useClient } from '@logux/client/react'
+ *
+ * import { User } from '../stores/user'
+ *
+ * export const NewUserForm = () => {
+ *   let client = useClient()
+ *   let onAdd = data => {
+ *     User.create(client, data)
+ *   }
  * }
  * ```
  */
@@ -78,7 +84,7 @@ export class ChannelErrors extends Component<{
  * ```js
  * import { useSync } from '@logux/client/react'
  *
- * import { User } from '../store'
+ * import { User } from '../stores/user'
  *
  * export const UserPage: FC = ({ id }) => {
  *   let user = useSync(User, id)
@@ -111,7 +117,7 @@ export function useSync<Value extends object, Args extends any[]>(
  * ```js
  * import { useFilter } from '@logux/client/react'
  *
- * import { User } from '../store'
+ * import { User } from '../stores/user'
  *
  * export const Users = ({ projectId }) => {
  *   let users = useFilter(User, { projectId })

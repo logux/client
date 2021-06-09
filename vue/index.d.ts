@@ -40,11 +40,17 @@ export function loguxPlugin(app: App, client: Client): void
 /**
  * Returns the Logux Client instance.
  *
- * ```js
+ * ```html
+ * <script>
+ * import { useClient } from '@logux/client/vue'
+ *
+ * import { User } from '../stores/user'
+ *
  * let client = useClient()
  * let onAdd = data => {
- *   Post.create(client, data)
+ *   User.create(client, data)
  * }
+ * </script>
  * ```
  */
 export function useClient(): Client
@@ -61,7 +67,7 @@ export function useClient(): Client
  * <script>
  * import { useSync } from '@logux/client/vue'
  *
- * import { User } from '../store'
+ * import { User } from '../stores/user'
  *
  * export default {
  *   props: ['id'],
@@ -100,7 +106,7 @@ export function useSync<Value extends object, Args extends any[]>(
  * <script>
  * import { useFilter } from '@logux/client/vue'
  *
- * import { User } from '../store'
+ * import { User } from '../stores/user'
  *
  * export default {
  *   props: ['projectId'],
