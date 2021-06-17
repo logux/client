@@ -213,7 +213,7 @@
         "./index.js": "{ CrossTabClient, defineSyncMap, changeSyncMap }",
         "./vue/index.js": "{ loguxPlugin, useSync, ChannelErrors, useFilter, useAuth }"
       },
-      "limit": "7 KB"
+      "limit": "6 KB"
     }
   ],
   "yaspeller": {
