@@ -38,7 +38,7 @@ function checkErrorProcessor() {
   let processor = getCurrentInstance() && inject(ErrorsKey, null)
   if (!processor) {
     throw new Error(
-      'Wrap components in Logux ' + '<channel-errors v-slot="{ code, error }">'
+      'Wrap components in Logux <channel-errors v-slot="{ code, error }">'
     )
   }
 }
