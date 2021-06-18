@@ -213,7 +213,7 @@ export function changeSyncMap<
  * import { deleteSyncMapById } from '@logux/client'
  *
  * showLoader()
- * deleteSyncMapById(client, User, 'user:4hs2jd83mf')
+ * await deleteSyncMapById(client, User, 'user:4hs2jd83mf')
  * ```
  *
  * @param client Logux Client instance.
@@ -232,10 +232,10 @@ export function deleteSyncMapById(
  * Delete store.
  *
  * ```js
- * import { deleteSyncMapById } from '@logux/client'
+ * import { deleteSyncMap } from '@logux/client'
  *
  * showLoader()
- * deleteSyncMapById(client, User, 'user:4hs2jd83mf')
+ * await deleteSyncMap(User)
  * ```
  *
  * @param store Store’s instance.
