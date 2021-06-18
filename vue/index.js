@@ -2,7 +2,6 @@ import {
   getCurrentInstance,
   onBeforeUnmount,
   onErrorCaptured,
-  watchEffect,
   triggerRef,
   reactive,
   readonly,
@@ -36,20 +35,17 @@ export function useClient() {
 }
 
 function checkErrorProcessor() {
-  if (process.env.NODE_ENV !== 'production') {
-    let errorProcessor = getCurrentInstance() && inject(ErrorsKey, null)
-    if (!errorProcessor) {
-      throw new Error(
-        'Wrap components in Logux ' +
-          '<channel-errors v-slot="{ code, error }">'
-      )
-    }
+  let processor = getCurrentInstance() && inject(ErrorsKey, null)
+  if (!processor) {
+    throw new Error(
+      'Wrap components in Logux <channel-errors v-slot="{ code, error }">'
+    )
   }
 }
 
 function useSyncStore(store) {
   let error = ref(null)
-  let state = ref(null)
+  let state = ref()
   let unsubscribe
 
   let listener = newState => {
@@ -75,8 +71,8 @@ function useSyncStore(store) {
   }
 
   if (store.loading) {
-    watchEffect(() => {
-      if (error.value) throw error.value
+    watch(error, () => {
+      throw error.value
     })
     store.loading.catch(e => {
       error.value = e
@@ -99,46 +95,52 @@ export function useSync(Builder, id, ...builderArgs) {
     id = ref(id)
   }
 
-  let client = useClient()
-  checkErrorProcessor()
+  if (process.env.NODE_ENV !== 'production') {
+    checkErrorProcessor()
+  }
 
-  let state = reactive({ value: null })
-  let readonlyState = readonly(toRef(state, 'value'))
-  let store
+  let client = useClient()
+  let state = reactive({})
 
   watch(
     id,
     () => {
-      store = Builder(id.value, client, ...builderArgs)
-      state.value = useSyncStore(store)
+      state.value = useSyncStore(Builder(id.value, client, ...builderArgs))
     },
     { immediate: true }
   )
 
-  return readonlyState
+  if (process.env.NODE_ENV !== 'production') {
+    return readonly(toRef(state, 'value'))
+  }
+  return toRef(state, 'value')
 }
 
 export function useFilter(Builder, filter = {}, opts = {}) {
   if (!isRef(filter)) filter = ref(filter)
   if (!isRef(opts)) opts = ref(opts)
 
-  let client = useClient()
-  checkErrorProcessor()
+  if (process.env.NODE_ENV !== 'production') {
+    checkErrorProcessor()
+  }
 
-  let store
-  let state = reactive({ value: null })
-  let readonlyState = readonly(toRef(state, 'value'))
+  let client = useClient()
+  let state = reactive({})
 
   watch(
     [filter, opts],
     () => {
-      store = createFilter(client, Builder, filter.value, opts.value)
-      state.value = useSyncStore(store)
+      state.value = useSyncStore(
+        createFilter(client, Builder, filter.value, opts.value)
+      )
     },
     { deep: true, immediate: true }
   )
 
-  return readonlyState
+  if (process.env.NODE_ENV !== 'production') {
+    return readonly(toRef(state, 'value'))
+  }
+  return toRef(state, 'value')
 }
 
 export let ChannelErrors = {
@@ -147,7 +149,7 @@ export let ChannelErrors = {
     let error = ref(null)
     let code = computed(() => {
       if (!error.value) {
-        return null
+        return undefined
       } else {
         let { action, name } = error.value.data
         if (name === 'LoguxNotFoundError' || action.reason === 'notFound') {
@@ -172,15 +174,12 @@ export let ChannelErrors = {
       return undefined
     })
 
-    return () => {
-      return slots.default ? slots.default({ code, error }) : null
-    }
+    return () => slots.default({ code, error }) || null
   }
 }
 
 export function useAuth(client) {
-  client = client || useClient()
-  let auth = useStore(createAuth(client))
+  let auth = useStore(createAuth(client || useClient()))
   return {
     userId: computed(() => auth.value.userId),
     isAuthenticated: computed(() => auth.value.isAuthenticated)

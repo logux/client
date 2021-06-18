@@ -2,11 +2,11 @@ import VueTesting from '@testing-library/vue'
 import Vue from 'vue'
 
 import '../test/set-production.js'
-import { loguxPlugin, useSync, ChannelErrors } from './index.js'
+import { loguxPlugin, useSync, ChannelErrors, useFilter } from './index.js'
 import { defineSyncMap, TestClient } from '../index.js'
 
+let { defineComponent, h, isReadonly, nextTick } = Vue
 let { render, screen } = VueTesting
-let { defineComponent, h, nextTick } = Vue
 
 let Store = defineSyncMap('test')
 
@@ -30,6 +30,24 @@ async function getText(component) {
   await nextTick()
   return screen.getByTestId('test').textContent
 }
+
+it('does not return readonly state in production mode', () => {
+  let client = new TestClient('10')
+  render(
+    defineComponent(() => {
+      let state = useSync(Store, 'ID')
+      let list = useFilter(Store)
+      expect(isReadonly(state)).toEqual(false)
+      expect(isReadonly(list)).toEqual(false)
+      return () => null
+    }),
+    {
+      global: {
+        plugins: [[loguxPlugin, client]]
+      }
+    }
+  )
+})
 
 it('does not have ChannelErrors check in production mode', async () => {
   expect(

@@ -160,7 +160,7 @@ export interface ChannelErrorsSlotProps {
     instance: ComponentPublicInstance
     info: string
   } | null>
-  code: ReadonlyRef<number | null>
+  code: ReadonlyRef<number | undefined>
 }
 
 /**
