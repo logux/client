@@ -21,7 +21,7 @@ beforeEach(() => {
   class WebSocket {
     close(): void {}
   }
-  global.WebSocket = WebSocket
+  global.WebSocket = WebSocket as any
   setLocalStorage()
 })
 
