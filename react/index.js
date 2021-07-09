@@ -143,5 +143,8 @@ export class ChannelErrors extends React.Component {
 }
 
 export function useAuth() {
-  return useStore(createAuth(useClient()))
+  let client = useClient()
+  let authRef = React.useRef()
+  if (!authRef.current) authRef.current = createAuth(client)
+  return useStore(authRef.current)
 }

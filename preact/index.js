@@ -1,4 +1,4 @@
-import { useState, useContext, useEffect } from 'preact/hooks'
+import { useState, useContext, useEffect, useRef } from 'preact/hooks'
 import { createContext, h, Component } from 'preact'
 import { useStore } from 'nanostores/preact'
 import { getValue } from 'nanostores'
@@ -139,5 +139,8 @@ export class ChannelErrors extends Component {
 }
 
 export function useAuth() {
-  return useStore(createAuth(useClient()))
+  let client = useClient()
+  let authRef = useRef()
+  if (!authRef.current) authRef.current = createAuth(client)
+  return useStore(authRef.current)
 }
