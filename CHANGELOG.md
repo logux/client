@@ -1,6 +1,10 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.12.1
+* Moved to React own batching.
+* Fixed `useAuth()`.
+
 ## 0.12
 * Moved from `@logux/state` to `nanostores`.
 * Added Preact support.
