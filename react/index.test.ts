@@ -320,7 +320,6 @@ it('renders filter', async () => {
   let renders: string[] = []
   let TestList: FC = () => {
     let posts = useFilter(LocalPost, { projectId: '1' })
-    expect(posts.stores.size).toEqual(posts.list.length)
     renders.push('list')
     return h(
       'ul',
@@ -351,14 +350,43 @@ it('renders filter', async () => {
     await delay(10)
   })
   expect(screen.getByTestId('test').textContent).toEqual(' 0:Y 1:A')
-  expect(renders).toEqual(['list', 'list', '1', '3'])
+  expect(renders).toEqual([
+    'list',
+    'list',
+    'list',
+    'list',
+    '1',
+    'list',
+    '1',
+    'list',
+    '1',
+    'list',
+    '1',
+    '3'
+  ])
 
   await act(async () => {
     await changeSyncMapById(client, LocalPost, '3', 'title', 'B')
     await delay(10)
   })
   expect(screen.getByTestId('test').textContent).toEqual(' 0:Y 1:B')
-  expect(renders).toEqual(['list', 'list', '1', '3', 'list', '1', '3'])
+  expect(renders).toEqual([
+    'list',
+    'list',
+    'list',
+    'list',
+    '1',
+    'list',
+    '1',
+    'list',
+    '1',
+    'list',
+    '1',
+    '3',
+    'list',
+    '1',
+    '3'
+  ])
 
   await act(async () => {
     await changeSyncMapById(client, LocalPost, '3', 'title', 'Z')
@@ -367,6 +395,14 @@ it('renders filter', async () => {
   expect(screen.getByTestId('test').textContent).toEqual(' 0:Y 1:Z')
   expect(renders).toEqual([
     'list',
+    'list',
+    'list',
+    'list',
+    '1',
+    'list',
+    '1',
+    'list',
+    '1',
     'list',
     '1',
     '3',
@@ -425,13 +461,40 @@ it('recreating filter on args changes', async () => {
     await delay(10)
   })
   expect(screen.getByTestId('test').textContent).toEqual(' 0:Y 1:A')
-  expect(renders).toEqual(['list', 'list', '1', '3'])
+  expect(renders).toEqual([
+    'list',
+    'list',
+    'list',
+    'list',
+    '1',
+    'list',
+    '1',
+    'list',
+    '1',
+    'list',
+    '1',
+    '3'
+  ])
 
   await act(async () => {
     screen.getByTestId('change').click()
     await delay(10)
   })
-  expect(renders).toEqual(['list', 'list', '1', '3', 'list'])
+  expect(renders).toEqual([
+    'list',
+    'list',
+    'list',
+    'list',
+    '1',
+    'list',
+    '1',
+    'list',
+    '1',
+    'list',
+    '1',
+    '3',
+    'list'
+  ])
 
   await act(async () => {
     await Promise.all([
@@ -443,7 +506,26 @@ it('recreating filter on args changes', async () => {
   })
   await delay(10)
   expect(screen.getByTestId('test').textContent).toEqual(' 0:Y')
-  expect(renders).toEqual(['list', 'list', '1', '3', 'list', 'list', '2'])
+  expect(renders).toEqual([
+    'list',
+    'list',
+    'list',
+    'list',
+    '1',
+    'list',
+    '1',
+    'list',
+    '1',
+    'list',
+    '1',
+    '3',
+    'list',
+    'list',
+    'list',
+    '2',
+    'list',
+    '2'
+  ])
 })
 
 it('renders authentication state', async () => {
