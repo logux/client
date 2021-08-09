@@ -1,5 +1,5 @@
 import { defineChangeSyncMap, defineChangedSyncMap } from '@logux/actions'
-import { cleanStores, getValue } from 'nanostores'
+import { cleanStores, getValue, allEffects } from 'nanostores'
 import { delay } from 'nanodelay'
 
 import {
@@ -118,7 +118,7 @@ it('subscribes and unsubscribes', async () => {
     expect(getValue(post).isLoading).toBe(true)
   })
 
-  await delay(10)
+  await Promise.resolve()
   expect(getValue(post).isLoading).toBe(false)
   expect(client.subscribed('posts/ID')).toBe(true)
 
@@ -163,7 +163,7 @@ it('changes key', async () => {
     title: '1'
   })
 
-  await delay(1)
+  await allEffects()
   expect(getValue(post)).toEqual({
     id: 'ID',
     isLoading: false,
@@ -176,7 +176,7 @@ it('changes key', async () => {
   })
   expect(actions).toEqual([changeAction({ title: '2' })])
 
-  await client.log.add(changeAction({ title: '3' }))
+  await client.log.add(changeAction({ title: '3' }), { sync: true })
   expect(getValue(post)).toEqual({
     id: 'ID',
     isLoading: false,
@@ -185,7 +185,7 @@ it('changes key', async () => {
   })
 
   client.server.log.add(changedAction({ title: '4' }))
-  await delay(20)
+  await allEffects()
   expect(getValue(post)).toEqual({
     id: 'ID',
     isLoading: false,
@@ -237,9 +237,9 @@ it('ignores old actions', async () => {
   post.listen(() => {})
 
   await changeSyncMap(post, 'title', 'New')
-  await client.log.add(changeAction({ title: 'Old 1' }), { time: 0 })
+  await client.sync(changeAction({ title: 'Old 1' }), { time: 0 })
   await client.server.log.add(changedAction({ title: 'Old 2' }), { time: 0 })
-  await delay(10)
+  await allEffects()
 
   expect(getValue(post)).toEqual({
     id: 'ID',
@@ -269,7 +269,7 @@ it('reverts changes for simple case', async () => {
   let error = await catchError(() => promise)
   expect(error.message).toEqual('Server undid posts/change because of error')
 
-  await delay(10)
+  await allEffects()
   expect(getValue(post)).toEqual({
     id: 'ID',
     isLoading: false,
@@ -287,7 +287,7 @@ it('reverts changes for multiple actions case', async () => {
   client.server.undoAction(changeAction({ title: 'Bad' }))
   await changeSyncMap(post, 'title', 'Good 1')
   await client.server.freezeProcessing(async () => {
-    changeSyncMap(post, 'title', 'Bad')
+    changeSyncMap(post, 'title', 'Bad').catch(() => {})
     await delay(10)
     await client.log.add(changedAction({ title: 'Good 2' }), { time: 4 })
   })
@@ -313,8 +313,8 @@ it('filters action by ID', async () => {
   await client.log.add(changedAction({ title: 'C' }, '2'))
 
   client.server.undoNext()
-  changeSyncMap(post1, 'title', 'Bad')
-  await delay(20)
+  changeSyncMap(post1, 'title', 'Bad').catch(() => {})
+  await allEffects()
 
   expect(getValue(post1)).toEqual({
     id: '1',
@@ -339,7 +339,7 @@ it('supports bulk changes', async () => {
   await changeSyncMap(post, { title: '1', category: 'demo' })
   await changeSyncMap(post, { title: '1' })
   await changeSyncMap(post, { title: '3' })
-  await client.log.add(changeAction({ title: '2', author: 'Yaropolk' }), {
+  await client.sync(changeAction({ title: '2', author: 'Yaropolk' }), {
     time: 4
   })
   expect(getValue(post)).toEqual({
@@ -351,8 +351,8 @@ it('supports bulk changes', async () => {
   })
 
   client.server.undoNext()
-  changeSyncMap(post, { category: 'bad', author: 'Badly' })
-  await delay(50)
+  changeSyncMap(post, { category: 'bad', author: 'Badly' }).catch(() => {})
+  await allEffects()
 
   expect(getValue(post)).toEqual({
     id: 'ID',
@@ -385,10 +385,8 @@ it('could cache specific stores without server', async () => {
   expect(sent).toEqual([])
 
   await changeSyncMap(post, 'title', 'The post')
-  await delay(10)
-
   unbind()
-  await delay(10)
+  await allEffects()
 
   expect(client.log.actions()).toEqual([
     {
@@ -428,7 +426,7 @@ it('throws on error from server', async () => {
     error = e
   }
 
-  await delay(50)
+  await allEffects()
   expect(error?.message).toEqual(
     'Server undid logux/subscribe because of error'
   )
@@ -465,10 +463,8 @@ it('could cache specific stores and use server', async () => {
   ])
 
   await changeSyncMap(post, 'title', 'The post')
-  await delay(10)
-
   unbind()
-  await delay(20)
+  await allEffects()
 
   expect(client.log.actions()).toEqual([
     { type: 'cachedPosts/changed', id: 'ID', fields: { title: 'The post' } }
@@ -476,8 +472,7 @@ it('could cache specific stores and use server', async () => {
 
   let restored = CachedPost('ID', client)
   restored.listen(() => {})
-  await restored.loading
-  await delay(10)
+  await allEffects()
   expect(getValue(restored)).toEqual({
     id: 'ID',
     isLoading: false,
@@ -585,7 +580,7 @@ it('uses created and delete during undo', async () => {
 
   client.server.undoNext()
   await changeSyncMap(post2, { title: 'Bad', author: 'Bad' }).catch(() => {})
-  await delay(20)
+  await allEffects()
   expect(getValue(post2)).toEqual({
     id: 'ID',
     isLoading: false,
@@ -632,7 +627,7 @@ it('undos delete', async () => {
     .catch(() => {
       deleted = false
     })
-  await delay(20)
+  await allEffects()
   expect(deleted).toBe(false)
   expect(client.log.actions()).toEqual([
     { type: 'posts/change', id: 'DEL', fields: { title: 'Deleted' } }

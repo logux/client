@@ -1,5 +1,4 @@
-import { unstable_batchedUpdates } from 'react-dom'
-import { useStore } from 'nanostores/react'
+import { useStore, batch } from 'nanostores/react'
 import { getValue } from 'nanostores'
 import React from 'react'
 
@@ -48,7 +47,7 @@ function useSyncStore(store) {
 
   React.useEffect(() => {
     let unbind = store.listen(() => {
-      unstable_batchedUpdates(() => {
+      batch(() => {
         forceRender({})
       })
     })

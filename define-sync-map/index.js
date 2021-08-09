@@ -1,4 +1,4 @@
-import { defineMap, getValue, clean } from 'nanostores'
+import { defineMap, getValue, clean, startEffect, effect } from 'nanostores'
 import { isFirstOlder } from '@logux/core'
 
 import { LoguxUndoError } from '../logux-undo-error/index.js'
@@ -79,10 +79,17 @@ export function defineSyncMap(plural, opts = {}) {
           client.log.add({ ...subscribe, creating: true }, { sync: true })
         }
       } else {
+        let endEffect = startEffect()
         let loadingResolve, loadingReject
         store.loading = new Promise((resolve, reject) => {
-          loadingResolve = resolve
-          loadingReject = reject
+          loadingResolve = () => {
+            resolve()
+            endEffect()
+          }
+          loadingReject = e => {
+            reject(e)
+            endEffect()
+          }
         })
         if (store.remote) {
           client
@@ -173,12 +180,14 @@ export function defineSyncMap(plural, opts = {}) {
         client.type(
           deleteType,
           async (action, meta) => {
-            try {
-              await track(client, meta.id)
-              removeReasons()
-            } catch {
-              client.log.changeMeta(meta.id, { reasons: [] })
-            }
+            await effect(async () => {
+              try {
+                await track(client, meta.id)
+                removeReasons()
+              } catch {
+                await client.log.changeMeta(meta.id, { reasons: [] })
+              }
+            })
           },
           { id }
         ),
@@ -187,6 +196,7 @@ export function defineSyncMap(plural, opts = {}) {
         client.type(
           changeType,
           async (action, meta) => {
+            let endEffect = startEffect()
             changeIfLast(store, action.fields, meta)
             try {
               await track(client, meta.id)
@@ -197,6 +207,7 @@ export function defineSyncMap(plural, opts = {}) {
                   { time: meta.time }
                 )
               }
+              endEffect()
             } catch {
               client.log.changeMeta(meta.id, { reasons: [] })
               let reverting = new Set(Object.keys(action.fields))
@@ -233,6 +244,7 @@ export function defineSyncMap(plural, opts = {}) {
                   for (let key of reverting) {
                     store.setKey(key, undefined)
                   }
+                  endEffect()
                 })
             }
           },
@@ -282,20 +294,26 @@ export function defineSyncMap(plural, opts = {}) {
   return Builder
 }
 
+function addSyncAction(client, Builder, action) {
+  let meta = { indexes: getIndexes(Builder.plural, action.id) }
+  if (!Builder.remote) {
+    action.type += 'd'
+  }
+  if (Builder.remote) {
+    return effect(() => client.sync(action, meta))
+  } else {
+    return effect(() => client.log.add(action, meta))
+  }
+}
+
 export function createSyncMap(client, Builder, fields) {
   let id = fields.id
   delete fields.id
-  let indexes = { indexes: getIndexes(Builder.plural, id) }
-  if (Builder.remote) {
-    return client
-      .sync({ type: `${Builder.plural}/create`, id, fields }, indexes)
-      .catch(() => {})
-  } else {
-    return client.log.add(
-      { type: `${Builder.plural}/created`, id, fields },
-      indexes
-    )
-  }
+  return addSyncAction(client, Builder, {
+    type: `${Builder.plural}/create`,
+    id,
+    fields
+  })
 }
 
 export async function buildNewSyncMap(client, Builder, fields) {
@@ -312,7 +330,7 @@ export async function buildNewSyncMap(client, Builder, fields) {
     indexes: getIndexes(Builder.plural, id)
   }
   if (Builder.remote) meta.sync = true
-  await client.log.add(action, meta)
+  await effect(() => client.log.add(action, meta))
 
   let store = Builder(id, client, action, meta)
   return store
@@ -320,25 +338,11 @@ export async function buildNewSyncMap(client, Builder, fields) {
 
 export function changeSyncMapById(client, Builder, id, fields, value) {
   if (value) fields = { [fields]: value }
-  if (Builder.remote) {
-    return client.sync(
-      {
-        type: `${Builder.plural}/change`,
-        id,
-        fields
-      },
-      { indexes: getIndexes(Builder.plural, id) }
-    )
-  } else {
-    return client.log.add(
-      {
-        type: `${Builder.plural}/changed`,
-        id,
-        fields
-      },
-      { indexes: getIndexes(Builder.plural, id) }
-    )
-  }
+  return addSyncAction(client, Builder, {
+    type: `${Builder.plural}/change`,
+    id,
+    fields
+  })
 }
 
 export function changeSyncMap(store, fields, value) {
@@ -348,17 +352,10 @@ export function changeSyncMap(store, fields, value) {
 }
 
 export function deleteSyncMapById(client, Builder, id) {
-  if (Builder.remote) {
-    return client.sync(
-      { type: `${Builder.plural}/delete`, id },
-      { indexes: getIndexes(Builder.plural, id) }
-    )
-  } else {
-    return client.log.add(
-      { type: `${Builder.plural}/deleted`, id },
-      { indexes: getIndexes(Builder.plural, id) }
-    )
-  }
+  return addSyncAction(client, Builder, {
+    type: `${Builder.plural}/delete`,
+    id
+  })
 }
 
 export function deleteSyncMap(store) {

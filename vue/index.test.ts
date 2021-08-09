@@ -448,7 +448,17 @@ it('recreating filter on args changes', async () => {
     })
   ])
   expect(screen.getByTestId('test').textContent).toEqual(' 0:Y')
-  expect(renders).toEqual(['list', 'list', '1', '3', 'list', 'list', '2'])
+  expect(renders).toEqual([
+    'list',
+    'list',
+    '1',
+    '3',
+    'list',
+    'list',
+    '2',
+    'list',
+    '2'
+  ])
 })
 
 it('renders authentication state', async () => {

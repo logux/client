@@ -1,4 +1,4 @@
-import { cleanStores, getValue } from 'nanostores'
+import { allEffects, cleanStores, getValue } from 'nanostores'
 import { delay } from 'nanodelay'
 
 import {
@@ -13,12 +13,11 @@ import {
   TestClient
 } from '../index.js'
 
-let Post =
-  defineSyncMap<{
-    title: string
-    authorId: string
-    projectId: string
-  }>('posts')
+let Post = defineSyncMap<{
+  title: string
+  authorId: string
+  projectId: string
+}>('posts')
 
 let LocalPost = defineSyncMap<{
   title: string
@@ -181,7 +180,7 @@ it('does not subscribe if server did it for client', async () => {
 
   let posts = createFilter(client, Post)
   let unbind = posts.listen(() => {})
-  await delay(10)
+  await allEffects()
 
   await client.server.sendAll({ type: 'logux/subscribed', channel: 'posts/1' })
   await client.server.sendAll({
@@ -189,7 +188,7 @@ it('does not subscribe if server did it for client', async () => {
     id: '1',
     fields: { title: 'A' }
   })
-  await delay(10)
+  await allEffects()
   expect(getValue(posts).list).toEqual([
     { id: '1', isLoading: false, title: 'A' }
   ])
@@ -281,7 +280,7 @@ it('supports both offline and remote stores', async () => {
     expect(getSize(posts)).toEqual(1)
     expect(getValue(posts).isLoading).toBe(true)
   })
-  await delay(10)
+  await allEffects()
   expect(getValue(posts).isLoading).toBe(false)
   expect(Array.from(getValue(posts).stores.keys())).toEqual(['ID'])
 })
@@ -551,7 +550,7 @@ it('is ready create/delete/change undo', async () => {
       title: '1',
       authorId: '1',
       projectId: '1'
-    })
+    }).catch(() => {})
     await delay(1)
     expect(getSize(posts)).toEqual(1)
   })
@@ -567,7 +566,7 @@ it('is ready create/delete/change undo', async () => {
 
   client.server.undoNext()
   await client.server.freezeProcessing(async () => {
-    deleteSyncMapById(client, Post, '2')
+    deleteSyncMapById(client, Post, '2').catch(() => {})
     await delay(1)
     expect(getSize(posts)).toEqual(0)
   })
@@ -575,7 +574,7 @@ it('is ready create/delete/change undo', async () => {
 
   client.server.undoNext()
   await client.server.freezeProcessing(async () => {
-    changeSyncMapById(client, Post, '2', 'projectId', 'wrong')
+    changeSyncMapById(client, Post, '2', 'projectId', 'wrong').catch(() => {})
     await delay(1)
     expect(getSize(posts)).toEqual(0)
   })
@@ -594,7 +593,7 @@ it('is ready create/delete/change undo', async () => {
 
   client.server.undoNext()
   await client.server.freezeProcessing(async () => {
-    changeSyncMap(post3, 'projectId', '1')
+    changeSyncMap(post3, 'projectId', '1').catch(() => {})
     await delay(1)
     expect(getSize(posts)).toEqual(2)
   })
@@ -602,7 +601,7 @@ it('is ready create/delete/change undo', async () => {
 
   client.server.undoNext()
   await client.server.freezeProcessing(async () => {
-    changeSyncMap(post3, 'projectId', '1')
+    changeSyncMap(post3, 'projectId', '1').catch(() => {})
     client.log.add({
       type: 'posts/changed',
       id: '3',
@@ -643,7 +642,7 @@ it('loads store on change action without cache', async () => {
     { type: 'logux/subscribe', channel: 'posts/1' },
     { type: 'logux/subscribe', channel: 'posts/2' }
   ])
-  await delay(20)
+  await allEffects()
   expect(getSize(posts)).toEqual(2)
 })
 
@@ -664,13 +663,13 @@ it('is ready for subscription error', async () => {
     }
   })
 
-  await delay(10)
+  await allEffects()
   expect(catched).toBe(true)
 
   expect(
     await client.sent(async () => {
       unbind()
-      await delay(10)
+      await allEffects()
     })
   ).toEqual([])
 })

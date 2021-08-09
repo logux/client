@@ -1,5 +1,5 @@
 import { isFirstOlder } from '@logux/core'
-import { createMap } from 'nanostores'
+import { createMap, startEffect } from 'nanostores'
 
 import { track } from '../track/index.js'
 
@@ -96,6 +96,7 @@ export function createFilter(client, Builder, filter = {}, opts = {}) {
 
       let subscriptionError
 
+      let endEffect = startEffect()
       filterStore.loading = new Promise((resolve, reject) => {
         async function loadAndCheck(child) {
           let clear = child.listen(() => {})
@@ -115,6 +116,7 @@ export function createFilter(client, Builder, filter = {}, opts = {}) {
           if (Builder.mocked) {
             load = false
             filterStore.setKey('isLoading', false)
+            endEffect()
             resolve()
           }
         }
@@ -150,6 +152,7 @@ export function createFilter(client, Builder, filter = {}, opts = {}) {
                 if (!Builder.remote && isLoading) {
                   isLoading = false
                   filterStore.setKey('isLoading', false)
+                  endEffect()
                   resolve()
                 }
               })
@@ -168,12 +171,14 @@ export function createFilter(client, Builder, filter = {}, opts = {}) {
                   if (filterStore.value) {
                     filterStore.setKey('isLoading', false)
                   }
+                  endEffect()
                   resolve()
                 }
               })
               .catch(e => {
                 subscriptionError = true
                 reject(e)
+                endEffect()
               })
           }
         }
