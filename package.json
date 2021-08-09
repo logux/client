@@ -34,7 +34,7 @@
   },
   "peerDependencies": {
     "@logux/core": "^0.7.0",
-    "nanostores": "^0.4.1",
+    "nanostores": "^0.4.3",
     "preact": ">=10.0.0",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0",
