@@ -1,6 +1,10 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.13
+* Moved to Nano Stores 0.4.
+* Added Nano Stores effects to `SyncMap` and `Filter`.
+
 ## 0.12.1
 * Moved to React own batching.
 * Fixed `useAuth()`.
