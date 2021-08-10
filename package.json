@@ -26,6 +26,7 @@
     ".": "./index.js",
     "./vue": "./vue/index.js",
     "./react": "./react/index.js",
+    "./preact": "./preact/index.js",
     "./package.json": "./package.json",
     "./badge/styles": "./badge/styles/index.js"
   },
