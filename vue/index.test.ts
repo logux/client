@@ -191,7 +191,23 @@ it('throws on missed logux client dependency', () => {
     })
   )
   expect(errors).toEqual([
-    `Install Logux Client using loguxPlugin: ` + `app.use(loguxPlugin, client).`
+    `Install Logux Client using loguxPlugin: app.use(loguxPlugin, client).`
+  ])
+  spy.mockRestore()
+})
+
+it('throws on missed logux client dependency for useClient', () => {
+  let spy = jest.spyOn(console, 'warn').mockImplementation(() => {})
+  let [errors, Catcher] = getCatcher(() => {
+    useClient()
+  })
+  render(
+    h(ChannelErrors, null, {
+      default: () => h(Catcher)
+    })
+  )
+  expect(errors).toEqual([
+    `Install Logux Client using loguxPlugin: app.use(loguxPlugin, client).`
   ])
   spy.mockRestore()
 })
@@ -216,7 +232,7 @@ it('throws store init errors', () => {
   let [errors, Catcher] = getCatcher(() => {
     useSync(Builder, 'id')
   })
-  render(
+  renderWithClient(
     h(ChannelErrors, null, {
       default: () => h(Catcher)
     })

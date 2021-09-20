@@ -184,6 +184,14 @@ it('throws on missed context for sync map', () => {
   expect(errors).toEqual(['Wrap components in Logux <ClientContext.Provider>'])
 })
 
+it('throws on missed context for useClient', () => {
+  let [errors, Catcher] = getCatcher(() => {
+    useClient()
+  })
+  render(h(Catcher, null))
+  expect(errors).toEqual(['Wrap components in Logux <ClientContext.Provider>'])
+})
+
 it('throws store init errors', () => {
   let Builder = defineMap(() => {
     throw new Error('Test')
@@ -191,7 +199,7 @@ it('throws store init errors', () => {
   let [errors, Catcher] = getCatcher(() => {
     useSync(Builder, 'id')
   })
-  render(h(Catcher, null))
+  runWithClient(h(Catcher, null))
   expect(errors).toEqual(['Test'])
 })
 
