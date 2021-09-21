@@ -5,7 +5,7 @@ import { delay } from 'nanodelay'
 
 import { Client, encryptActions } from '../index.js'
 
-global.crypto = new Crypto()
+global.crypto = new Crypto() as any
 global.TextEncoder = TextEncoder
 // @ts-expect-error
 global.TextDecoder = TextDecoder

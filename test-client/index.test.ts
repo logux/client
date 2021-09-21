@@ -1,21 +1,18 @@
-import { LoguxUndoAction } from '@logux/actions'
 import { delay } from 'nanodelay'
 
-import { TestClient, LoguxUndoError } from '../index.js'
+import { TestClient } from '../index.js'
 
 interface NameAction {
   type: 'name'
   userId: string
 }
 
-type LoguxUndoWithKeyAction = LoguxUndoAction & { key?: number }
-
 async function catchError(cb: () => Promise<any>): Promise<any> {
-  let error: LoguxUndoError<LoguxUndoWithKeyAction> | undefined
+  let error: Error | undefined
   try {
     await cb()
   } catch (e) {
-    error = e
+    if (e instanceof Error) error = e
   }
   if (!error) throw new Error('Error was no raised')
   return error

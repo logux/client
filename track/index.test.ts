@@ -20,7 +20,7 @@ it('tracks action processing', async () => {
       await track(client, meta.id)
       results.push('processed ' + meta.id)
     } catch (e) {
-      results.push(e.message)
+      if (e instanceof Error) results.push(e.message)
     }
   })
 

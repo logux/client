@@ -6,7 +6,6 @@ import {
   changeSyncMapById,
   deleteSyncMapById,
   buildNewSyncMap,
-  LoguxUndoError,
   defineSyncMap,
   changeSyncMap,
   createSyncMap,
@@ -16,11 +15,11 @@ import {
 } from '../index.js'
 
 async function catchError(cb: () => Promise<any> | void): Promise<Error> {
-  let error: LoguxUndoError | undefined
+  let error: Error | undefined
   try {
     await cb()
   } catch (e) {
-    error = e
+    if (e instanceof Error) error = e
   }
   if (!error) throw new Error('Error was no raised')
   return error
@@ -423,7 +422,7 @@ it('throws on error from server', async () => {
   try {
     await post.loading
   } catch (e) {
-    error = e
+    if (e instanceof Error) error = e
   }
 
   await allEffects()
@@ -444,7 +443,7 @@ it('throws 404 on missing offline map in local log', async () => {
   try {
     await post.loading
   } catch (e) {
-    error = e
+    if (e instanceof Error) error = e
   }
 
   expect(error?.message).toEqual(

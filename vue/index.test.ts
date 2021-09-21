@@ -33,7 +33,7 @@ function getCatcher(cb: () => void): [string[], Component] {
     try {
       cb()
     } catch (e) {
-      errors.push(e.message)
+      if (e instanceof Error) errors.push(e.message)
     }
     return () => null
   })
