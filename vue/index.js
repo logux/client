@@ -31,7 +31,14 @@ export function loguxPlugin(app, client) {
 }
 
 export function useClient() {
-  return inject(ClientKey)
+  let client = inject(ClientKey)
+  if (process.env.NODE_ENV !== 'production' && !client) {
+    throw new Error(
+      `Install Logux Client using loguxPlugin: ` +
+        `app.use(loguxPlugin, client).`
+    )
+  }
+  return client
 }
 
 function checkErrorProcessor() {
@@ -53,22 +60,7 @@ function useSyncStore(store) {
     triggerRef(state)
   }
 
-  if (process.env.NODE_ENV === 'production') {
-    unsubscribe = store.subscribe(listener)
-  } else {
-    try {
-      unsubscribe = store.subscribe(listener)
-    } catch (e) {
-      if (e.message === 'Missed Logux client') {
-        throw new Error(
-          `Install Logux Client using loguxPlugin: ` +
-            `app.use(loguxPlugin, client).`
-        )
-      } else {
-        throw e
-      }
-    }
-  }
+  unsubscribe = store.subscribe(listener)
 
   if (store.loading) {
     watch(error, () => {

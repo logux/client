@@ -10,27 +10,17 @@ export let ClientContext = /*#__PURE__*/ React.createContext()
 let ErrorsContext = /*#__PURE__*/ React.createContext()
 
 export function useClient() {
-  return React.useContext(ClientContext)
+  let client = React.useContext(ClientContext)
+  if (process.env.NODE_ENV !== 'production' && !client) {
+    throw new Error('Wrap components in Logux <ClientContext.Provider>')
+  }
+  return client
 }
 
 function useSyncStore(store) {
   let [error, setError] = React.useState(null)
   let [, forceRender] = React.useState({})
-
-  let value
-  if (process.env.NODE_ENV === 'production') {
-    value = getValue(store)
-  } else {
-    try {
-      value = getValue(store)
-    } catch (e) {
-      if (e.message === 'Missed Logux client') {
-        throw new Error('Wrap components in Logux <ClientContext.Provider>')
-      } else {
-        throw e
-      }
-    }
-  }
+  let value = getValue(store)
 
   if (process.env.NODE_ENV !== 'production') {
     let errorProcessors = React.useContext(ErrorsContext) || {}
