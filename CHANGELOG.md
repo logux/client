@@ -1,6 +1,9 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.13.3
+* Replaced `colorette` with `nanocolors`.
+
 ## 0.13.2
 * Throw an error on missed client in `useClient()` (by Aleksandr Slepchenkov).
 
