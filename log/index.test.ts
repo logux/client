@@ -1,5 +1,5 @@
 import { TestPair, TestTime, TestLog } from '@logux/core'
-import { yellow, bold } from 'colorette'
+import { yellow, bold } from 'nanocolors'
 import { jest } from '@jest/globals'
 
 import { CrossTabClient, ClientMeta, log } from '../index.js'
