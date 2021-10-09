@@ -1,6 +1,6 @@
 import { TestPair, TestTime, TestLog } from '@logux/core'
-import { yellow, bold } from 'nanocolors'
 import { jest } from '@jest/globals'
+import pico from 'picocolors'
 
 import { CrossTabClient, ClientMeta, log } from '../index.js'
 
@@ -52,8 +52,8 @@ function format(...args: (string | object)[]): string {
       .map(i => {
         if (typeof i === 'string') {
           return i
-            .replace(/%cLogux%c/, yellow(bold('Logux')))
-            .replace(/%c([^%]+)(%c)?/g, bold('$1'))
+            .replace(/%cLogux%c/, pico.yellow(pico.bold('Logux')))
+            .replace(/%c([^%]+)(%c)?/g, pico.bold('$1'))
         } else {
           return JSON.stringify(i)
         }
