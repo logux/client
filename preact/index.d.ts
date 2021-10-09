@@ -10,7 +10,7 @@ import {
 import { FilterOptions, FilterStore, Filter } from '../create-filter/index.js'
 import { SyncMapBuilder, SyncMapValue } from '../define-sync-map/index.js'
 import { Client } from '../client/index.js'
-import { Auth } from '../create-auth/index.js'
+import { AuthStore } from '../create-auth/index.js'
 
 /**
  * Context to send Logux Client or object space to components deep in the tree.
@@ -155,4 +155,4 @@ export function useFilter<Value extends SyncMapValues>(
  * }
  * ```
  */
-export function useAuth(): StoreValue<Auth>
+export function useAuth(): StoreValue<AuthStore>
