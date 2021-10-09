@@ -6,8 +6,9 @@ export function createAuth(client) {
     auth.setKey('isAuthenticated', client.node.state === 'synchronized')
 
     let load
-    let loaded = false
+    let loaded = auth.value.isAuthenticated
     auth.loading = new Promise(resolve => {
+      if (loaded) resolve()
       load = () => {
         loaded = true
         resolve()
