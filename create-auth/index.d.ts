@@ -5,10 +5,16 @@ import { Client } from '../client/index.js'
 /**
  * Auth store. Use {@link createAuth} to create it.
  */
-export type Auth = MapStore<{
-  userId: string
-  isAuthenticated: boolean
-}>
+export interface AuthStore
+  extends MapStore<{
+    userId: string
+    isAuthenticated: boolean
+  }> {
+  /**
+   * While store is loading initial state.
+   */
+  readonly loading: Promise<void>
+}
 
 /**
  * Create store with user’s authentication state.
@@ -18,11 +24,10 @@ export type Auth = MapStore<{
  * import { getValue } from 'nanostores'
  *
  * let auth = createAuth(client)
- * auth.subscribe(({ isAuthenticated, userId }) => {
- *   console.log(isAuthenticated, userId)
- * })
+ * await auth.loading
+ * console.log(getValue(auth))
  * ```
  *
  * @param client Logux Client.
  */
-export function createAuth(client: Client): Auth
+export function createAuth(client: Client): AuthStore

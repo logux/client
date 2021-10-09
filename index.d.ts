@@ -35,7 +35,7 @@ export {
 export { Client, ClientMeta, ClientOptions } from './client/index.js'
 export { prepareForTest, emptyInTest } from './prepare-for-test/index.js'
 export { request, RequestOptions } from './request/index.js'
-export { createAuth, Auth } from './create-auth/index.js'
+export { createAuth, AuthStore } from './create-auth/index.js'
 export { encryptActions } from './encrypt-actions/index.js'
 export { CrossTabClient } from './cross-tab-client/index.js'
 export { IndexedStore } from './indexed-store/index.js'
