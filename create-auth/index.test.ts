@@ -23,7 +23,7 @@ it('returns the state of authentication', async () => {
   expect(getValue(auth).isAuthenticated).toBe(true)
 })
 
-it('has loading state', async () => {
+it('switches loading state on connect', async () => {
   let client = new TestClient('10')
   client.connect()
 
@@ -34,6 +34,17 @@ it('has loading state', async () => {
 
   await auth.loading
   expect(getValue(auth).isAuthenticated).toBe(true)
+})
+
+it('switches loading state on catch error', async () => {
+  let client = new TestClient('10')
+  let auth = createAuth(client)
+
+  expect(getValue(auth).isAuthenticated).toBe(false)
+
+  emit(client.node, 'error', { type: 'wrong-credentials' })
+  await auth.loading
+  expect(getValue(auth).isAuthenticated).toBe(false)
 })
 
 it('change state on wrong credentials', async () => {
@@ -81,8 +92,18 @@ it('unbinds client events', async () => {
   expect(getEventsCount(client.node, 'state')).toBe(1)
 
   let destroy = auth.listen(() => {})
+  expect(getValue(auth).isAuthenticated).toBe(false)
   expect(getEventsCount(client, 'user')).toBe(1)
   expect(getEventsCount(client.node, 'error')).toBe(1)
+  expect(getEventsCount(client.node, 'state')).toBe(2)
+
+  await client.connect()
+  expect(getValue(auth).isAuthenticated).toBe(true)
+  expect(getEventsCount(client.node, 'state')).toBe(1)
+
+  emit(client.node, 'error', { type: 'wrong-credentials' })
+  await delay(1)
+  expect(getValue(auth).isAuthenticated).toBe(false)
   expect(getEventsCount(client.node, 'state')).toBe(2)
 
   destroy()
