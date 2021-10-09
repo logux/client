@@ -11,7 +11,7 @@ export interface AuthStore
     isAuthenticated: boolean
   }> {
   /**
-   * While store is loading initial data from server or log.
+   * While store is loading initial state.
    */
   readonly loading: Promise<void>
 }
