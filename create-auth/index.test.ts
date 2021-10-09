@@ -16,7 +16,6 @@ it('returns the state of authentication', async () => {
   let client = new TestClient('10')
   let auth = createAuth(client)
 
-  auth.listen(() => {})
   expect(getValue(auth).userId).toBe('10')
   expect(getValue(auth).isAuthenticated).toBe(false)
 
@@ -24,11 +23,23 @@ it('returns the state of authentication', async () => {
   expect(getValue(auth).isAuthenticated).toBe(true)
 })
 
+it('has loading state', async () => {
+  let client = new TestClient('10')
+  client.connect()
+
+  let auth = createAuth(client)
+
+  expect(getValue(auth).userId).toBe('10')
+  expect(getValue(auth).isAuthenticated).toBe(false)
+
+  await auth.loading
+  expect(getValue(auth).isAuthenticated).toBe(true)
+})
+
 it('change state on wrong credentials', async () => {
   let client = new TestClient('10')
   let auth = createAuth(client)
 
-  auth.listen(() => {})
   await client.connect()
   expect(getValue(auth).isAuthenticated).toBe(true)
 
@@ -41,7 +52,6 @@ it('doesn’t change state on disconnection', async () => {
   let client = new TestClient('10')
   let auth = createAuth(client)
 
-  auth.listen(() => {})
   await client.connect()
   expect(getValue(auth).isAuthenticated).toBe(true)
 
@@ -54,7 +64,6 @@ it('updates user id after user change', async () => {
   let client = new TestClient('10')
   let auth = createAuth(client)
 
-  auth.listen(() => {})
   await client.connect()
   expect(getValue(auth).userId).toBe('10')
 
