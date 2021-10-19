@@ -254,7 +254,6 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
           client.type(changeType, async (action, meta) => {
             await Promise.resolve()
             if (stores.has(action.id)) {
-              console.log('has')
               if (!checkAllFields(stores.get(action.id).value)) {
                 removeAndListen(action.id, meta.id)
               }
