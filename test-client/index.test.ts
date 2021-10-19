@@ -20,7 +20,7 @@ async function catchError(cb: () => Promise<any>): Promise<any> {
 
 it('sets node ID', () => {
   let client = new TestClient('10')
-  expect(client.nodeId).toEqual('10:2:2')
+  expect(client.nodeId).toBe('10:2:2')
 })
 
 it('collects actions', async () => {
@@ -147,7 +147,7 @@ it('supports undo', async () => {
 
   client.server.undoNext()
   let error1 = await catchError(() => client.sync({ type: 'test' }))
-  expect(error1.message).toEqual('Server undid test because of error')
+  expect(error1.message).toBe('Server undid test because of error')
 
   await client.sync({ type: 'test' })
 
@@ -155,11 +155,11 @@ it('supports undo', async () => {
   client.server.undoNext('test', { key: 1 })
 
   let error2 = await catchError(() => client.sync({ type: 'test' }))
-  expect(error2.message).toEqual('Server undid test because of test')
+  expect(error2.message).toBe('Server undid test because of test')
 
   let error3 = await catchError(() => client.sync({ type: 'test' }))
-  expect(error3.message).toEqual('Server undid test because of test')
-  expect(error3.action.key).toEqual(1)
+  expect(error3.message).toBe('Server undid test because of test')
+  expect(error3.action.key).toBe(1)
 })
 
 it('supports undo for specific action', async () => {
@@ -169,7 +169,7 @@ it('supports undo for specific action', async () => {
   client.server.undoAction({ extra: 1, type: 'B' })
   await client.sync({ type: 'A' })
   let error = await catchError(() => client.sync({ type: 'B', extra: 1 }))
-  expect(error.name).toEqual('LoguxUndoError')
+  expect(error.name).toBe('LoguxUndoError')
 })
 
 it('supports multiple clients with same server', async () => {
@@ -269,14 +269,14 @@ it('supports subprotocols', async () => {
     { type: 'logux/processed', id: '1 10:2:2 0' },
     { type: 'client2' }
   ])
-  expect(client1.log.entries()[2][1].subprotocol).toEqual('1.0.1')
+  expect(client1.log.entries()[2][1].subprotocol).toBe('1.0.1')
 
   expect(client2.log.actions()).toEqual([
     { type: 'client1' },
     { type: 'client2' },
     { type: 'logux/processed', id: '3 20:3:3 0' }
   ])
-  expect(client2.log.entries()[0][1].subprotocol).toEqual('0.0.0')
+  expect(client2.log.entries()[0][1].subprotocol).toBe('0.0.0')
 })
 
 it('freezes processing', async () => {

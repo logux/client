@@ -112,7 +112,7 @@ it('saves options', () => {
     server: 'wss://localhost:1337',
     userId: '10'
   })
-  expect(client.options.subprotocol).toEqual('1.0.0')
+  expect(client.options.subprotocol).toBe('1.0.0')
 })
 
 it('throws on missed server', () => {
@@ -262,7 +262,7 @@ it('sends options to connection', () => {
     maxDelay: 500,
     attempts: 5
   })
-  expect(privateMethods(client.node.connection).connection.url).toEqual(
+  expect(privateMethods(client.node.connection).connection.url).toBe(
     'wss://localhost:1337'
   )
 })
@@ -276,15 +276,15 @@ it('sends options to node', () => {
     token: 'token',
     ping: 1000
   })
-  expect(client.node.options.subprotocol).toEqual('1.0.0')
-  expect(client.node.options.token).toEqual('token')
-  expect(client.node.options.timeout).toEqual(2000)
-  expect(client.node.options.ping).toEqual(1000)
+  expect(client.node.options.subprotocol).toBe('1.0.0')
+  expect(client.node.options.token).toBe('token')
+  expect(client.node.options.timeout).toBe(2000)
+  expect(client.node.options.ping).toBe(1000)
 })
 
 it('uses test time', () => {
   let client = createClient()
-  expect(client.log.generateId()).toEqual('1 10:1:1 0')
+  expect(client.log.generateId()).toBe('1 10:1:1 0')
 })
 
 it('connects', () => {
@@ -382,7 +382,7 @@ it('cleans other tab action after timeout', async () => {
 it('adds current subprotocol to meta', async () => {
   let client = createClient()
   await client.log.add({ type: 'A' }, { reasons: ['test'] })
-  expect(client.log.entries()[0][1].subprotocol).toEqual('1.0.0')
+  expect(client.log.entries()[0][1].subprotocol).toBe('1.0.0')
 })
 
 it('adds current subprotocol only to own actions', async () => {
@@ -400,7 +400,7 @@ it('allows to override subprotocol in meta', async () => {
     { type: 'A' },
     { subprotocol: '0.1.0', reasons: ['test'] }
   )
-  expect(client.log.entries()[0][1].subprotocol).toEqual('0.1.0')
+  expect(client.log.entries()[0][1].subprotocol).toBe('0.1.0')
 })
 
 it('sends only special actions', async () => {
@@ -666,7 +666,7 @@ it('changes user ID', async () => {
   })
   client.changeUser('20', 'token')
   expect(users).toEqual(['20'])
-  expect(client.node.state).toEqual('connecting')
+  expect(client.node.state).toBe('connecting')
   pair.right.send(['connected', client.node.localProtocol, 'server', [0, 0]])
   await client.node.waitFor('synchronized')
 })
@@ -677,7 +677,7 @@ it('changes user ID of disconnected node', async () => {
   client.changeUser('20', 'token')
   let clientId = client.clientId.split(':')[1]
   expect(client.node.localNodeId).toEqual(`20:${clientId}:1`)
-  expect(client.node.state).toEqual('disconnected')
+  expect(client.node.state).toBe('disconnected')
   let meta = await client.log.add({ type: 'test' })
   if (meta === false) throw new Error('Action was not found')
   expect(meta.id).toContain(` 20:${clientId}:1 `)
@@ -731,20 +731,20 @@ it('tracks server processing of action', async () => {
   client
     .sync({ type: 'logux/subscribe' })
     .then(meta => {
-      expect(typeof meta.id).toEqual('string')
+      expect(typeof meta.id).toBe('string')
       result = 'processed'
     })
     .catch(() => {
       result = 'error'
     })
 
-  expect(result).toEqual('none')
+  expect(result).toBe('none')
   expect(client.log.entries()[0][1].sync).toBe(true)
   let id = client.log.entries()[0][1].id
   client.log.add({ type: 'logux/processed', id })
   await delay(10)
 
-  expect(result).toEqual('processed')
+  expect(result).toBe('processed')
 })
 
 it('tracks server error of action', async () => {
@@ -757,17 +757,17 @@ it('tracks server error of action', async () => {
       result = 'processed'
     })
     .catch(e => {
-      expect(e.name).toEqual('LoguxUndoError')
-      expect(e.message).toEqual('Server undid action because of test')
-      expect(e.action.type).toEqual('logux/undo')
+      expect(e.name).toBe('LoguxUndoError')
+      expect(e.message).toBe('Server undid action because of test')
+      expect(e.action.type).toBe('logux/undo')
       result = 'error'
     })
 
-  expect(result).toEqual('none')
+  expect(result).toBe('none')
   client.log.add({ type: 'logux/undo', id: '2 10:1:1 0', reason: 'test' })
   await delay(10)
 
-  expect(result).toEqual('error')
+  expect(result).toBe('error')
 })
 
 it('copies state from node', async () => {
@@ -778,11 +778,11 @@ it('copies state from node', async () => {
     events.push(client.state)
   })
 
-  expect(client.state).toEqual('connecting')
+  expect(client.state).toBe('connecting')
   expect(client.connected).toBe(false)
 
   await delay(10)
-  expect(client.state).toEqual('synchronized')
+  expect(client.state).toBe('synchronized')
   expect(client.connected).toBe(true)
   await client.waitFor('synchronized')
 

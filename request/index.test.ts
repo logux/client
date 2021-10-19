@@ -74,7 +74,7 @@ it('waits for logux/undo', async () => {
   ])
 
   await test.response({ type: 'logux/undo', id: '1 10:1:1 0', reason: 'test' })
-  expect(test.answer?.message).toEqual('Server undid action because of test')
+  expect(test.answer?.message).toBe('Server undid action because of test')
 })
 
 it('throws Logux errors', async () => {
@@ -83,6 +83,6 @@ it('throws Logux errors', async () => {
   test.pair.right.send(['error', 'wrong-subprotocol', { supported: '2.0.0' }])
   await delay(20)
 
-  expect(test.answer?.name).toEqual('LoguxError')
+  expect(test.answer?.name).toBe('LoguxError')
   expect(test.answer?.message).toContain('Logux received wrong-subprotocol')
 })

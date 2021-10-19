@@ -214,25 +214,25 @@ it('throws on missed ID for builder', async () => {
 })
 
 it('throws and catches not found error', async () => {
-  expect(await catchLoadingError(new LoguxNotFoundError())).toEqual(
+  expect(await catchLoadingError(new LoguxNotFoundError())).toBe(
     '404 LoguxNotFoundError'
   )
 })
 
 it('throws and catches not found error from server', async () => {
-  expect(await catchLoadingError('notFound')).toEqual('404 LoguxUndoError')
+  expect(await catchLoadingError('notFound')).toBe('404 LoguxUndoError')
 })
 
 it('throws and catches access denied error', async () => {
-  expect(await catchLoadingError('denied')).toEqual('403 denied')
+  expect(await catchLoadingError('denied')).toBe('403 denied')
 })
 
 it('throws and catches access server error during loading', async () => {
-  expect(await catchLoadingError('error')).toEqual('500 error')
+  expect(await catchLoadingError('error')).toBe('500 error')
 })
 
 it('ignores unknown error', async () => {
-  expect(await catchLoadingError(new Error('Test Error'))).toEqual('Test Error')
+  expect(await catchLoadingError(new Error('Test Error'))).toBe('Test Error')
 })
 
 it('could process denied via common error component', async () => {
@@ -313,7 +313,7 @@ it('does not throw on ChannelErrors with 404 and 403', async () => {
         h(SyncTest, { Builder: RemotePost })
       )
     )
-  ).toEqual('loading')
+  ).toBe('loading')
 })
 
 it('has hook to get client', () => {
@@ -326,7 +326,7 @@ it('has hook to get client', () => {
     getText(
       h(ClientContext.Provider, { value: client, children: h(Test, null) })
     )
-  ).toEqual('10')
+  ).toBe('10')
 })
 
 it('renders filter', async () => {
@@ -352,7 +352,7 @@ it('renders filter', async () => {
       children: h(ChannelErrors, { Error: () => null }, h(TestList, null))
     })
   )
-  expect(screen.getByTestId('test').textContent).toEqual('')
+  expect(screen.getByTestId('test').textContent).toBe('')
   expect(renders).toEqual(['list'])
 
   await act(async () => {
@@ -363,21 +363,21 @@ it('renders filter', async () => {
     ])
     await delay(10)
   })
-  expect(screen.getByTestId('test').textContent).toEqual(' 0:Y 1:A')
+  expect(screen.getByTestId('test').textContent).toBe(' 0:Y 1:A')
   expect(renders).toEqual(['list', 'list', '1', '3'])
 
   await act(async () => {
     await changeSyncMapById(client, LocalPost, '3', 'title', 'B')
     await delay(10)
   })
-  expect(screen.getByTestId('test').textContent).toEqual(' 0:Y 1:B')
+  expect(screen.getByTestId('test').textContent).toBe(' 0:Y 1:B')
   expect(renders).toEqual(['list', 'list', '1', '3', 'list', '1', '3'])
 
   await act(async () => {
     await changeSyncMapById(client, LocalPost, '3', 'title', 'Z')
     await delay(10)
   })
-  expect(screen.getByTestId('test').textContent).toEqual(' 0:Y 1:Z')
+  expect(screen.getByTestId('test').textContent).toBe(' 0:Y 1:Z')
   expect(renders).toEqual([
     'list',
     'list',
@@ -425,7 +425,7 @@ it('recreating filter on args changes', async () => {
       children: h(ChannelErrors, { Error: () => null }, h(TestList, null))
     })
   )
-  expect(screen.getByTestId('test').textContent).toEqual('')
+  expect(screen.getByTestId('test').textContent).toBe('')
   expect(renders).toEqual(['list'])
 
   await act(async () => {
@@ -436,7 +436,7 @@ it('recreating filter on args changes', async () => {
     ])
     await delay(10)
   })
-  expect(screen.getByTestId('test').textContent).toEqual(' 0:Y 1:A')
+  expect(screen.getByTestId('test').textContent).toBe(' 0:Y 1:A')
   expect(renders).toEqual(['list', 'list', '1', '3'])
 
   await act(async () => {
@@ -454,7 +454,7 @@ it('recreating filter on args changes', async () => {
     await delay(10)
   })
   await delay(10)
-  expect(screen.getByTestId('test').textContent).toEqual(' 0:Y')
+  expect(screen.getByTestId('test').textContent).toBe(' 0:Y')
   expect(renders).toEqual(['list', 'list', '1', '3', 'list', 'list', '2'])
 })
 
@@ -474,26 +474,26 @@ it('renders authentication state', async () => {
       children: h(ChannelErrors, { Error: () => null }, h(TestProfile, null))
     })
   )
-  expect(screen.getByTestId('test').textContent).toEqual('loading')
+  expect(screen.getByTestId('test').textContent).toBe('loading')
 
   await act(async () => {
     await client.connect()
     await delay(1)
   })
-  expect(screen.getByTestId('test').textContent).toEqual('10')
+  expect(screen.getByTestId('test').textContent).toBe('10')
 
   await act(async () => {
     client.disconnect()
     await delay(10)
   })
-  expect(screen.getByTestId('test').textContent).toEqual('10')
+  expect(screen.getByTestId('test').textContent).toBe('10')
 
   await act(async () => {
     client.changeUser('20', 'token')
     await client.connect()
     await delay(1)
   })
-  expect(screen.getByTestId('test').textContent).toEqual('20')
+  expect(screen.getByTestId('test').textContent).toBe('20')
 
   await act(async () => {
     client.pair.right.send(['error', 'wrong-credentials'])
@@ -501,5 +501,5 @@ it('renders authentication state', async () => {
     await client.pair.wait()
     await delay(1)
   })
-  expect(screen.getByTestId('test').textContent).toEqual('loading')
+  expect(screen.getByTestId('test').textContent).toBe('loading')
 })

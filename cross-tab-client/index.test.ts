@@ -66,7 +66,7 @@ it('saves options', () => {
     server: 'wss://localhost:1337',
     userId: '10'
   })
-  expect(client.options.subprotocol).toEqual('1.0.0')
+  expect(client.options.subprotocol).toBe('1.0.0')
 })
 
 it('saves client ID', () => {
@@ -232,7 +232,7 @@ it('synchronizes actions from follower tabs', async () => {
 
 it('uses candidate role from beggining', () => {
   client = createClient()
-  expect(client.role).toEqual('candidate')
+  expect(client.role).toBe('candidate')
 })
 
 it('becomes leader without localStorage', () => {
@@ -270,11 +270,11 @@ it('stops election on second candidate', async () => {
   client = createClient()
 
   client.start()
-  expect(client.role).toEqual('candidate')
+  expect(client.role).toBe('candidate')
 
   localStorage.setItem('logux:10:leader', `["",${Date.now() - 10}]`)
   await delay(ELECTION_DELAY + 10)
-  expect(client.role).toEqual('follower')
+  expect(client.role).toBe('follower')
   expect(privateMethods(client).watching).toBeDefined()
 })
 
@@ -282,11 +282,11 @@ it('stops election in leader check', async () => {
   client = createClient()
 
   client.start()
-  expect(client.role).toEqual('candidate')
+  expect(client.role).toBe('candidate')
 
   localStorage.setItem('logux:10:leader', `["",${Date.now()}]`)
   await delay(ELECTION_DELAY + 10)
-  expect(client.role).toEqual('follower')
+  expect(client.role).toBe('follower')
   expect(privateMethods(client).watching).toBeDefined()
 })
 
@@ -298,9 +298,9 @@ it('pings on leader role', async () => {
   localStorage.setItem('logux:10:leader', `["",${last}]`)
 
   client.start()
-  expect(client.role).toEqual('candidate')
+  expect(client.role).toBe('candidate')
   await delay(ELECTION_DELAY + 10)
-  expect(client.role).toEqual('leader')
+  expect(client.role).toBe('leader')
   expect(privateMethods(client).watching).toBeUndefined()
   await delay(LEADER_PING + 10)
   let leader = localStorage.getItem('logux:10:leader')
@@ -310,7 +310,7 @@ it('pings on leader role', async () => {
   expect(Date.now() - data[1]).toBeLessThan(100)
 
   emitStorage('logux:10:leader', `["",${Date.now()}]`)
-  expect(client.role).toEqual('follower')
+  expect(client.role).toBe('follower')
   expect(privateMethods(client).watching).toBeDefined()
 })
 
@@ -330,9 +330,9 @@ it('replaces dead leader', async () => {
   client.start()
 
   await delay(LEADER_TIMEOUT / 2)
-  expect(client.role).toEqual('follower')
+  expect(client.role).toBe('follower')
   await delay(1.5 * LEADER_TIMEOUT)
-  expect(client.role).not.toEqual('follower')
+  expect(client.role).not.toBe('follower')
 })
 
 it('disconnects on leader changes', async () => {
@@ -354,13 +354,13 @@ it('updates state if tab is a leader', async () => {
   client = createClient()
 
   client.start()
-  expect(client.state).toEqual('disconnected')
+  expect(client.state).toBe('disconnected')
 
   await delay(ELECTION_DELAY + 10)
   client.node.state = 'synchronized'
   emit(client.node, 'state')
-  expect(client.state).toEqual('synchronized')
-  expect(localStorage.getItem('logux:10:state')).toEqual('"synchronized"')
+  expect(client.state).toBe('synchronized')
+  expect(localStorage.getItem('logux:10:state')).toBe('"synchronized"')
 })
 
 it('listens for leader state', () => {
@@ -420,13 +420,13 @@ it('works on IE storage event', async () => {
   emitStorage('logux:10:leader', localStorage.getItem('logux:10:leader'))
 
   await delay(ELECTION_DELAY + 10)
-  expect(client.role).toEqual('leader')
+  expect(client.role).toBe('leader')
 
   emitStorage(
     'logux:10:add',
     `["${client.tabId}",{},{"id":"0 A 0","reasons":[]}]`
   )
-  expect(events).toEqual(0)
+  expect(events).toBe(0)
 })
 
 it('sends unleader event on tab closing', async () => {
@@ -434,7 +434,7 @@ it('sends unleader event on tab closing', async () => {
   client.start()
   await delay(ELECTION_DELAY + 10)
   window.dispatchEvent(new Event('unload'))
-  expect(localStorage.getItem('logux:10:leader')).toEqual('[]')
+  expect(localStorage.getItem('logux:10:leader')).toBe('[]')
 })
 
 it('sends unleader event on destroy', async () => {
@@ -442,7 +442,7 @@ it('sends unleader event on destroy', async () => {
   client.start()
   await delay(ELECTION_DELAY + 10)
   client.destroy()
-  expect(localStorage.getItem('logux:10:leader')).toEqual('[]')
+  expect(localStorage.getItem('logux:10:leader')).toBe('[]')
 })
 
 it('does not sends event on tab closing in following mode', async () => {
@@ -465,9 +465,9 @@ it('starts election on leader unload', async () => {
   client.start()
   await delay(ELECTION_DELAY + 10)
   emitStorage('logux:10:leader', '[]')
-  expect(client.role).toEqual('candidate')
-  expect(client.state).toEqual('disconnected')
-  expect(localStorage.getItem('logux:10:state')).toEqual('"disconnected"')
+  expect(client.role).toBe('candidate')
+  expect(client.state).toBe('disconnected')
+  expect(localStorage.getItem('logux:10:state')).toBe('"disconnected"')
   expect(localStorage.getItem('logux:10:leader')).toContain(client.tabId)
 })
 
@@ -479,7 +479,7 @@ it('changes state on dead leader', () => {
   localStorage.setItem('logux:10:state', '"connecting"')
 
   client.start()
-  expect(client.state).toEqual('disconnected')
+  expect(client.state).toBe('disconnected')
 })
 
 it('changes state on leader death', async () => {
@@ -492,8 +492,8 @@ it('changes state on leader death', async () => {
 
   client.start()
   await delay(30)
-  expect(client.state).toEqual('disconnected')
-  expect(localStorage.getItem('logux:10:state')).toEqual('"disconnected"')
+  expect(client.state).toBe('disconnected')
+  expect(localStorage.getItem('logux:10:state')).toBe('"disconnected"')
 })
 
 it('cleans tab-specific action after timeout', async () => {
@@ -537,7 +537,7 @@ it('copies actions on memory store', () => {
 
 it('detects higher subprotocol from other tab', () => {
   client = createClient()
-  expect(localStorage.storage['logux:10:subprotocol']).toEqual('"1.0.0"')
+  expect(localStorage.storage['logux:10:subprotocol']).toBe('"1.0.0"')
 
   let error: Error | undefined
   client.node.on('error', e => {
@@ -552,13 +552,13 @@ it('detects higher subprotocol from other tab', () => {
 it('detects lower subprotocol from other tab', () => {
   client = createClient()
   emitStorage('logux:10:subprotocol', '"0.9.9"')
-  expect(localStorage.storage['logux:10:subprotocol']).toEqual('"1.0.0"')
+  expect(localStorage.storage['logux:10:subprotocol']).toBe('"1.0.0"')
 })
 
 it('detects the same subprotocol from other tab', () => {
   client = createClient()
   emitStorage('logux:10:subprotocol', '"1.0.0"')
-  expect(localStorage.storage['logux:10:subprotocol']).toEqual('"1.0.0"')
+  expect(localStorage.storage['logux:10:subprotocol']).toBe('"1.0.0"')
 })
 
 it('does not show alert on higher subprotocol', () => {
@@ -627,7 +627,7 @@ it('disables cross-tab communication on localStorage error', async () => {
   breakLocalStorage(error)
   client.log.add({ type: 'A' })
 
-  expect(client.role).toEqual('leader')
+  expect(client.role).toBe('leader')
   expect(console.error).toHaveBeenCalledWith(error)
   expect(client.node.connection.connect).toHaveBeenCalledTimes(1)
 

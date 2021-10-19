@@ -83,7 +83,7 @@ afterEach(async () => {
 })
 
 it('saves options to class', () => {
-  expect(CachedPost.plural).toEqual('cachedPosts')
+  expect(CachedPost.plural).toBe('cachedPosts')
   expect(CachedPost.offline).toBe(true)
   expect(CachedPost.remote).toBe(true)
   expect(LocalPost.remote).toBe(false)
@@ -93,7 +93,7 @@ it('saves options to store', () => {
   let client = new TestClient('10')
   let cached = CachedPost('ID', client)
   cached.listen(() => {})
-  expect(cached.plural).toEqual('cachedPosts')
+  expect(cached.plural).toBe('cachedPosts')
   expect(cached.offline).toBe(true)
   expect(cached.remote).toBe(true)
 })
@@ -266,7 +266,7 @@ it('reverts changes for simple case', async () => {
   })
 
   let error = await catchError(() => promise)
-  expect(error.message).toEqual('Server undid posts/change because of error')
+  expect(error.message).toBe('Server undid posts/change because of error')
 
   await allEffects()
   expect(getValue(post)).toEqual({
@@ -426,9 +426,7 @@ it('throws on error from server', async () => {
   }
 
   await allEffects()
-  expect(error?.message).toEqual(
-    'Server undid logux/subscribe because of error'
-  )
+  expect(error?.message).toBe('Server undid logux/subscribe because of error')
 
   unbind()
   await delay(50)
@@ -446,7 +444,7 @@ it('throws 404 on missing offline map in local log', async () => {
     if (e instanceof Error) error = e
   }
 
-  expect(error?.message).toEqual(
+  expect(error?.message).toBe(
     'Server undid logux/subscribe because of notFound'
   )
 })
@@ -652,8 +650,8 @@ it('allows to send create action and return instance', async () => {
         author: 'Ivan',
         category: 'none'
       })
-      expect(post.createdAt?.id).toEqual('1 10:2:2 0')
-      expect(post.createdAt?.time).toEqual(1)
+      expect(post.createdAt?.id).toBe('1 10:2:2 0')
+      expect(post.createdAt?.time).toBe(1)
     })
   ).toEqual([
     {

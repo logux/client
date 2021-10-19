@@ -277,7 +277,7 @@ it('supports both offline and remote stores', async () => {
   await client.server.freezeProcessing(async () => {
     posts.listen(() => {})
     await delay(10)
-    expect(getSize(posts)).toEqual(1)
+    expect(getSize(posts)).toBe(1)
     expect(getValue(posts).isLoading).toBe(true)
   })
   await allEffects()
@@ -319,7 +319,7 @@ it('updates list on store create/deleted/change', async () => {
   })
 
   await posts.loading
-  expect(getSize(posts)).toEqual(0)
+  expect(getSize(posts)).toBe(0)
   expect(changes).toEqual(['isLoading'])
 
   await createSyncMap(client, Post, {
@@ -328,7 +328,7 @@ it('updates list on store create/deleted/change', async () => {
     projectId: '1',
     authorId: '1'
   })
-  expect(getSize(posts)).toEqual(1)
+  expect(getSize(posts)).toBe(1)
   expect(changes).toEqual(['isLoading', 'stores', 'list', 'isEmpty'])
 
   let post2 = await buildNewSyncMap(client, Post, {
@@ -338,16 +338,16 @@ it('updates list on store create/deleted/change', async () => {
     authorId: '2'
   })
   post2.listen(() => {})
-  expect(getSize(posts)).toEqual(1)
+  expect(getSize(posts)).toBe(1)
 
   await changeSyncMapById(client, Post, '2', 'title', '1')
-  expect(getSize(posts)).toEqual(1)
+  expect(getSize(posts)).toBe(1)
 
   await changeSyncMapById(client, Post, '2', 'projectId', '1')
-  expect(getSize(posts)).toEqual(1)
+  expect(getSize(posts)).toBe(1)
 
   await changeSyncMapById(client, Post, '2', 'authorId', '1')
-  expect(getSize(posts)).toEqual(2)
+  expect(getSize(posts)).toBe(2)
   expect(changes).toEqual([
     'isLoading',
     'stores',
@@ -358,7 +358,7 @@ it('updates list on store create/deleted/change', async () => {
   ])
 
   await changeSyncMapById(client, Post, '2', 'authorId', '2')
-  expect(getSize(posts)).toEqual(1)
+  expect(getSize(posts)).toBe(1)
   expect(changes).toEqual([
     'isLoading',
     'stores',
@@ -372,7 +372,7 @@ it('updates list on store create/deleted/change', async () => {
   ])
 
   await deleteSyncMapById(client, Post, '1')
-  expect(getSize(posts)).toEqual(0)
+  expect(getSize(posts)).toBe(0)
   expect(changes).toEqual([
     'isLoading',
     'stores',
@@ -400,7 +400,7 @@ it('updates list on store created/deleted/changed', async () => {
   posts.listen(() => {})
 
   await posts.loading
-  expect(getSize(posts)).toEqual(0)
+  expect(getSize(posts)).toBe(0)
 
   await createSyncMap(client, LocalPost, {
     id: '1',
@@ -408,7 +408,7 @@ it('updates list on store created/deleted/changed', async () => {
     projectId: '1',
     category: 'test'
   })
-  expect(getSize(posts)).toEqual(1)
+  expect(getSize(posts)).toBe(1)
 
   let post2 = await buildNewSyncMap(client, LocalPost, {
     id: '2',
@@ -417,22 +417,22 @@ it('updates list on store created/deleted/changed', async () => {
     category: 'wrong'
   })
   post2.listen(() => {})
-  expect(getSize(posts)).toEqual(1)
+  expect(getSize(posts)).toBe(1)
 
   await changeSyncMap(post2, 'title', '1')
-  expect(getSize(posts)).toEqual(1)
+  expect(getSize(posts)).toBe(1)
 
   await changeSyncMap(post2, 'projectId', '1')
-  expect(getSize(posts)).toEqual(1)
+  expect(getSize(posts)).toBe(1)
 
   await changeSyncMap(post2, 'category', 'test')
-  expect(getSize(posts)).toEqual(2)
+  expect(getSize(posts)).toBe(2)
 
   await changeSyncMap(post2, 'category', 'wrong')
-  expect(getSize(posts)).toEqual(1)
+  expect(getSize(posts)).toBe(1)
 
   await deleteSyncMapById(client, LocalPost, '1')
-  expect(getSize(posts)).toEqual(0)
+  expect(getSize(posts)).toBe(0)
 })
 
 it('unsubscribes from store on delete', async () => {
@@ -469,13 +469,13 @@ it('uses time for delete actions', async () => {
     authorId: '1',
     projectId: '1'
   })
-  expect(getSize(posts)).toEqual(1)
+  expect(getSize(posts)).toBe(1)
 
   await client.sync({ type: 'posts/delete', id: 'ID' }, { id: oldId, time: 0 })
-  expect(getSize(posts)).toEqual(1)
+  expect(getSize(posts)).toBe(1)
 
   await client.sync({ type: 'posts/delete', id: 'ID' })
-  expect(getSize(posts)).toEqual(0)
+  expect(getSize(posts)).toBe(0)
 })
 
 it('triggers on child changes', async () => {
@@ -552,9 +552,9 @@ it('is ready create/delete/change undo', async () => {
       projectId: '1'
     }).catch(() => {})
     await delay(1)
-    expect(getSize(posts)).toEqual(1)
+    expect(getSize(posts)).toBe(1)
   })
-  expect(getSize(posts)).toEqual(0)
+  expect(getSize(posts)).toBe(0)
 
   await createSyncMap(client, Post, {
     id: '2',
@@ -562,23 +562,23 @@ it('is ready create/delete/change undo', async () => {
     authorId: '1',
     projectId: '1'
   })
-  expect(getSize(posts)).toEqual(1)
+  expect(getSize(posts)).toBe(1)
 
   client.server.undoNext()
   await client.server.freezeProcessing(async () => {
     deleteSyncMapById(client, Post, '2').catch(() => {})
     await delay(1)
-    expect(getSize(posts)).toEqual(0)
+    expect(getSize(posts)).toBe(0)
   })
-  expect(getSize(posts)).toEqual(1)
+  expect(getSize(posts)).toBe(1)
 
   client.server.undoNext()
   await client.server.freezeProcessing(async () => {
     changeSyncMapById(client, Post, '2', 'projectId', 'wrong').catch(() => {})
     await delay(1)
-    expect(getSize(posts)).toEqual(0)
+    expect(getSize(posts)).toBe(0)
   })
-  expect(getSize(posts)).toEqual(1)
+  expect(getSize(posts)).toBe(1)
   expect(getValue(Post('2', client))).toEqual({
     id: '2',
     isLoading: false,
@@ -595,9 +595,9 @@ it('is ready create/delete/change undo', async () => {
   await client.server.freezeProcessing(async () => {
     changeSyncMap(post3, 'projectId', '1').catch(() => {})
     await delay(1)
-    expect(getSize(posts)).toEqual(2)
+    expect(getSize(posts)).toBe(2)
   })
-  expect(getSize(posts)).toEqual(1)
+  expect(getSize(posts)).toBe(1)
 
   client.server.undoNext()
   await client.server.freezeProcessing(async () => {
@@ -608,9 +608,9 @@ it('is ready create/delete/change undo', async () => {
       fields: { projectId: '1' }
     })
     await delay(1)
-    expect(getSize(posts)).toEqual(2)
+    expect(getSize(posts)).toBe(2)
   })
-  expect(getSize(posts)).toEqual(2)
+  expect(getSize(posts)).toBe(2)
 
   cleanStores(Post)
   await delay(50)
@@ -643,7 +643,7 @@ it('loads store on change action without cache', async () => {
     { type: 'logux/subscribe', channel: 'posts/2' }
   ])
   await allEffects()
-  expect(getSize(posts)).toEqual(2)
+  expect(getSize(posts)).toBe(2)
 })
 
 it('is ready for subscription error', async () => {

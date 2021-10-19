@@ -84,15 +84,15 @@ eachStoreCheck((desc, creator) => {
 it('use logux as default name', async () => {
   store = new IndexedStore()
   await privateMethods(store).init()
-  expect(privateMethods(store).db.name).toEqual('logux')
-  expect(store.name).toEqual('logux')
+  expect(privateMethods(store).db.name).toBe('logux')
+  expect(store.name).toBe('logux')
 })
 
 it('allows to change DB name', async () => {
   store = new IndexedStore('custom')
   await privateMethods(store).init()
-  expect(privateMethods(store).db.name).toEqual('custom')
-  expect(store.name).toEqual('custom')
+  expect(privateMethods(store).db.name).toBe('custom')
+  expect(store.name).toBe('custom')
 })
 
 it('reloads page on database update', async () => {

@@ -66,8 +66,8 @@ afterEach(() => {
 
 it('injects base widget styles', async () => {
   await createTest()
-  expect(badgeStyle().position).toEqual('fixed')
-  expect(badgeChildStyle().display).toEqual('table-cell')
+  expect(badgeStyle().position).toBe('fixed')
+  expect(badgeChildStyle().display).toBe('table-cell')
 })
 
 it('shows synchronized state', async () => {
@@ -75,7 +75,7 @@ it('shows synchronized state', async () => {
 
   test.leftNode.connected = true
   setState(test.leftNode, 'synchronized')
-  expect(badgeStyle().display).toEqual('none')
+  expect(badgeStyle().display).toBe('none')
 
   test.leftNode.connected = false
   setState(test.leftNode, 'disconnected')
@@ -85,15 +85,15 @@ it('shows synchronized state', async () => {
   test.leftNode.connected = true
   setState(test.leftNode, 'sending')
   setState(test.leftNode, 'synchronized')
-  expect(badgeStyle().display).toEqual('block')
-  expect(badgeStyle().backgroundImage).toEqual('url(IMAGE_MOCK)')
+  expect(badgeStyle().display).toBe('block')
+  expect(badgeStyle().backgroundImage).toBe('url(IMAGE_MOCK)')
   test.leftNode.log.add({ type: 'logux/processed', id: '1 1:1:1 0' })
   await delay(1)
 
   expect(getBadgeMessage()).toEqual(badgeEn.synchronized)
   await delay(10)
 
-  expect(badgeStyle().display).toEqual('none')
+  expect(badgeStyle().display).toBe('none')
 })
 
 it('shows disconnected state', async () => {
@@ -102,8 +102,8 @@ it('shows disconnected state', async () => {
   setState(test.leftNode, 'connected')
   test.leftNode.connected = false
   setState(test.leftNode, 'disconnected')
-  expect(badgeStyle().display).toEqual('block')
-  expect(badgeStyle().backgroundImage).toEqual('url(IMAGE_MOCK)')
+  expect(badgeStyle().display).toBe('block')
+  expect(badgeStyle().backgroundImage).toBe('url(IMAGE_MOCK)')
   expect(getBadgeMessage()).toEqual(badgeEn.disconnected)
 })
 
@@ -113,8 +113,8 @@ it('shows wait state', async () => {
   setState(test.leftNode, 'disconnected')
   setState(test.leftNode, 'wait')
   await test.leftNode.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
-  expect(badgeStyle().display).toEqual('block')
-  expect(badgeStyle().backgroundImage).toEqual('url(IMAGE_MOCK)')
+  expect(badgeStyle().display).toBe('block')
+  expect(badgeStyle().backgroundImage).toBe('url(IMAGE_MOCK)')
   expect(getBadgeMessage()).toEqual(badgeEn.wait)
 })
 
@@ -131,8 +131,8 @@ it('shows sending state', async () => {
   await test.leftNode.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
 
   setState(test.leftNode, 'connecting')
-  expect(badgeStyle().display).toEqual('block')
-  expect(badgeStyle().backgroundImage).toEqual('url(IMAGE_MOCK)')
+  expect(badgeStyle().display).toBe('block')
+  expect(badgeStyle().backgroundImage).toBe('url(IMAGE_MOCK)')
   expect(getBadgeMessage()).toEqual(badgeEn.wait)
   await delay(105)
 
@@ -144,8 +144,8 @@ it('shows sending state', async () => {
 it('shows error', async () => {
   let test = await createTest()
   emit(test.leftNode, 'error', { type: 'any error' })
-  expect(badgeStyle().display).toEqual('block')
-  expect(badgeStyle().backgroundImage).toEqual('url(IMAGE_MOCK)')
+  expect(badgeStyle().display).toBe('block')
+  expect(badgeStyle().backgroundImage).toBe('url(IMAGE_MOCK)')
   expect(getBadgeMessage()).toEqual(badgeEn.syncError)
 })
 
@@ -156,8 +156,8 @@ it('shows server errors', async () => {
     used: '0.1.0'
   })
   emit(test.leftNode, 'error', protocol)
-  expect(badgeStyle().display).toEqual('block')
-  expect(badgeStyle().backgroundImage).toEqual('url(IMAGE_MOCK)')
+  expect(badgeStyle().display).toBe('block')
+  expect(badgeStyle().backgroundImage).toBe('url(IMAGE_MOCK)')
   expect(getBadgeMessage()).toEqual(badgeEn.protocolError)
 
   let subprotocol = new LoguxError('wrong-subprotocol', {
@@ -165,8 +165,8 @@ it('shows server errors', async () => {
     used: '0.1.0'
   })
   emit(test.leftNode, 'error', subprotocol)
-  expect(badgeStyle().display).toEqual('block')
-  expect(badgeStyle().backgroundImage).toEqual('url(IMAGE_MOCK)')
+  expect(badgeStyle().display).toBe('block')
+  expect(badgeStyle().backgroundImage).toBe('url(IMAGE_MOCK)')
   expect(getBadgeMessage()).toEqual(badgeEn.protocolError)
 })
 
@@ -175,52 +175,52 @@ it('shows client error', async () => {
   let error = new LoguxError('timeout', 10, true)
   emit(test.leftNode, 'clientError', error)
 
-  expect(badgeStyle().display).toEqual('block')
-  expect(badgeStyle().backgroundImage).toEqual('url(IMAGE_MOCK)')
+  expect(badgeStyle().display).toBe('block')
+  expect(badgeStyle().backgroundImage).toBe('url(IMAGE_MOCK)')
   expect(getBadgeMessage()).toEqual(badgeEn.syncError)
 })
 
 it('shows error undo actions', async () => {
   let test = await createTest()
   test.leftNode.log.add({ type: 'logux/undo', reason: 'error' })
-  expect(badgeStyle().display).toEqual('block')
-  expect(badgeStyle().backgroundImage).toEqual('url(IMAGE_MOCK)')
+  expect(badgeStyle().display).toBe('block')
+  expect(badgeStyle().backgroundImage).toBe('url(IMAGE_MOCK)')
   expect(getBadgeMessage()).toEqual(badgeEn.error)
 })
 
 it('shows denied undo actions', async () => {
   let test = await createTest()
   test.leftNode.log.add({ type: 'logux/undo', reason: 'denied' })
-  expect(badgeStyle().display).toEqual('block')
-  expect(badgeStyle().backgroundImage).toEqual('url(IMAGE_MOCK)')
+  expect(badgeStyle().display).toBe('block')
+  expect(badgeStyle().backgroundImage).toBe('url(IMAGE_MOCK)')
   expect(getBadgeMessage()).toEqual(badgeEn.denied)
 })
 
 it('supports bottom and left side of position setting', async () => {
   await createTest({ position: 'bottom-left' })
-  expect(badgeStyle().bottom).toEqual('0px')
-  expect(badgeStyle().left).toEqual('0px')
+  expect(badgeStyle().bottom).toBe('0px')
+  expect(badgeStyle().left).toBe('0px')
 })
 
 it('supports middle and right side of position setting', async () => {
   await createTest({ position: 'middle-right' })
-  expect(badgeStyle().top).toEqual('50%')
-  expect(badgeStyle().right).toEqual('0px')
-  expect(badgeStyle().transform).toEqual('translateY(-50%)')
+  expect(badgeStyle().top).toBe('50%')
+  expect(badgeStyle().right).toBe('0px')
+  expect(badgeStyle().transform).toBe('translateY(-50%)')
 })
 
 it('supports bottom and center side of position setting', async () => {
   await createTest({ position: 'bottom-center' })
-  expect(badgeStyle().bottom).toEqual('0px')
-  expect(badgeStyle().left).toEqual('50%')
-  expect(badgeStyle().transform).toEqual('translateX(-50%)')
+  expect(badgeStyle().bottom).toBe('0px')
+  expect(badgeStyle().left).toBe('50%')
+  expect(badgeStyle().transform).toBe('translateX(-50%)')
 })
 
 it('supports middle-center position setting', async () => {
   await createTest({ position: 'middle-center' })
-  expect(badgeStyle().top).toEqual('50%')
-  expect(badgeStyle().left).toEqual('50%')
-  expect(badgeStyle().transform).toEqual('translate(-50%, -50%)')
+  expect(badgeStyle().top).toBe('50%')
+  expect(badgeStyle().left).toBe('50%')
+  expect(badgeStyle().transform).toBe('translate(-50%, -50%)')
 })
 
 it('removes badge from DOM', () => {

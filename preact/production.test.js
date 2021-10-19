@@ -28,5 +28,5 @@ function getText(component) {
 }
 
 it('does not have ChannelErrors check in production mode', async () => {
-  expect(getText(h(ChannelErrors, {}, h(IdTest)))).toEqual('loading')
+  expect(getText(h(ChannelErrors, {}, h(IdTest)))).toBe('loading')
 })

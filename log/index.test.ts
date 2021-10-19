@@ -205,7 +205,7 @@ it('returns unbind function', async () => {
   unbind()
   emit(client, 'role')
 
-  expect(out).toEqual('')
+  expect(out).toBe('')
 })
 
 it('supports cross-tab synchronization', async () => {
@@ -227,7 +227,7 @@ it('ignores different tab actions', async () => {
   await client.node.log.add({ type: 'A' }, { tab: 'X', reasons: ['test'] })
   await client.node.log.removeReason('test')
 
-  expect(out).toEqual('')
+  expect(out).toBe('')
 })
 
 it('ignores actions by request', async () => {

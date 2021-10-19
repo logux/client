@@ -37,8 +37,8 @@ it('generates IDs', () => {
   let user1 = prepareForTest(client, User, { name: 'Test 1' })
   let user2 = prepareForTest(client, User, { name: 'Test 2' })
 
-  expect(getValue(user1).id).toEqual('users:1')
-  expect(getValue(user2).id).toEqual('users:2')
+  expect(getValue(user1).id).toBe('users:1')
+  expect(getValue(user2).id).toBe('users:2')
 })
 
 it('works with maps', () => {
@@ -49,7 +49,7 @@ it('works with maps', () => {
   let store1 = prepareForTest(client, Store, { name: 'Test 1' })
   let store2 = prepareForTest(client, Store, { name: 'Test 2' })
 
-  expect(typeof getValue(store1).id).toEqual('string')
+  expect(typeof getValue(store1).id).toBe('string')
   expect(getValue(store1).id).not.toEqual(getValue(store2).id)
   expect(getValue(store1)).toEqual({
     id: getValue(store1).id,

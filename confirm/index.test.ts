@@ -70,12 +70,12 @@ it('confirms close', async () => {
   expect(beforeunloader).toBe(false)
 
   await client.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
-  expect(callBeforeloader({})).toEqual('unsynced')
+  expect(callBeforeloader({})).toBe('unsynced')
 
   setState(client, 'sending')
   let e: any = {}
   callBeforeloader(e)
-  expect(e.returnValue).toEqual('unsynced')
+  expect(e.returnValue).toBe('unsynced')
 })
 
 it('does not confirm on synchronized state', async () => {

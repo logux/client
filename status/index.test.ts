@@ -11,9 +11,7 @@ function emit(obj: any, event: string, ...args: any[]): void {
   obj.emitter.emit(event, ...args)
 }
 
-async function createTest(options?: {
-  duration?: number
-}): Promise<{
+async function createTest(options?: { duration?: number }): Promise<{
   client: CrossTabClient<{}, TestLog>
   calls: string[]
   args: any[]
@@ -177,8 +175,8 @@ it('notifies about server error', async () => {
   await test.client.node.connection.connect()
   test.client.node.log.add({ type: 'logux/undo', reason: 'error' })
   expect(test.calls).toEqual(['disconnected', 'error'])
-  expect(test.args[1].action.type).toEqual('logux/undo')
-  expect(test.args[1].meta.time).toEqual(1)
+  expect(test.args[1].action.type).toBe('logux/undo')
+  expect(test.args[1].meta.time).toBe(1)
 })
 
 it('notifies about problem with access', async () => {
@@ -186,8 +184,8 @@ it('notifies about problem with access', async () => {
   await test.client.node.connection.connect()
   test.client.node.log.add({ type: 'logux/undo', reason: 'denied' })
   expect(test.calls).toEqual(['disconnected', 'denied'])
-  expect(test.args[1].action.type).toEqual('logux/undo')
-  expect(test.args[1].meta.time).toEqual(1)
+  expect(test.args[1].action.type).toBe('logux/undo')
+  expect(test.args[1].meta.time).toBe(1)
 })
 
 it('removes listeners', () => {
@@ -210,5 +208,5 @@ it('removes listeners', () => {
   unbind()
   client.log.add({ type: 'logux/undo', reason: 'denied' })
 
-  expect(calls).toEqual(1)
+  expect(calls).toBe(1)
 })

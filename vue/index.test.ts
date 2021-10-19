@@ -242,25 +242,25 @@ it('throws store init errors', () => {
 })
 
 it('throws and catches not found error', async () => {
-  expect(await catchLoadingError(new LoguxNotFoundError())).toEqual(
+  expect(await catchLoadingError(new LoguxNotFoundError())).toBe(
     '404 LoguxNotFoundError'
   )
 })
 
 it('throws and catches not found error from server', async () => {
-  expect(await catchLoadingError('notFound')).toEqual('404 LoguxUndoError')
+  expect(await catchLoadingError('notFound')).toBe('404 LoguxUndoError')
 })
 
 it('throws and catches access denied error', async () => {
-  expect(await catchLoadingError('denied')).toEqual('403 LoguxUndoError')
+  expect(await catchLoadingError('denied')).toBe('403 LoguxUndoError')
 })
 
 it('throws and catches access server error during loading', async () => {
-  expect(await catchLoadingError('error')).toEqual('500 LoguxUndoError')
+  expect(await catchLoadingError('error')).toBe('500 LoguxUndoError')
 })
 
 it('ignores unknown error', async () => {
-  expect(await catchLoadingError(new Error('Test Error'))).toEqual('Test Error')
+  expect(await catchLoadingError(new Error('Test Error'))).toBe('Test Error')
 })
 
 it('throws an error on missed ChannelErrors', async () => {
@@ -275,9 +275,7 @@ it('throws an error on missed ChannelErrors', async () => {
           })
       )
     )
-  ).toEqual(
-    'Wrap components in Logux <channel-errors v-slot="{ code, error }">'
-  )
+  ).toBe('Wrap components in Logux <channel-errors v-slot="{ code, error }">')
   spy.mockRestore()
 })
 
@@ -289,7 +287,7 @@ it('has composable to get client', async () => {
         return () => h('div', client.options.userId)
       })
     )
-  ).toEqual('10')
+  ).toBe('10')
 })
 
 it('composables return readonly', () => {
@@ -302,8 +300,8 @@ it('composables return readonly', () => {
               defineComponent(() => {
                 let state = useSync(RemotePostStore, 'ID')
                 let list = useFilter(RemotePostStore)
-                expect(isReadonly(state)).toEqual(true)
-                expect(isReadonly(list)).toEqual(true)
+                expect(isReadonly(state)).toBe(true)
+                expect(isReadonly(list)).toBe(true)
                 return () => null
               })
             )
@@ -340,7 +338,7 @@ it('renders filter', async () => {
     ),
     client
   )
-  expect(screen.getByTestId('test').textContent).toEqual('')
+  expect(screen.getByTestId('test').textContent).toBe('')
   expect(renders).toEqual(['list'])
 
   await Promise.all([
@@ -361,17 +359,17 @@ it('renders filter', async () => {
     })
   ])
   await nextTick()
-  expect(screen.getByTestId('test').textContent).toEqual(' 0:Y 1:A')
+  expect(screen.getByTestId('test').textContent).toBe(' 0:Y 1:A')
   expect(renders).toEqual(['list', 'list', '1', '3'])
 
   await changeSyncMapById(client, LocalPostStore, '3', 'title', 'B')
   await nextTick()
-  expect(screen.getByTestId('test').textContent).toEqual(' 0:Y 1:B')
+  expect(screen.getByTestId('test').textContent).toBe(' 0:Y 1:B')
   expect(renders).toEqual(['list', 'list', '1', '3', 'list', '1', '3'])
 
   await changeSyncMapById(client, LocalPostStore, '3', 'title', 'Z')
   await nextTick()
-  expect(screen.getByTestId('test').textContent).toEqual(' 0:Y 1:Z')
+  expect(screen.getByTestId('test').textContent).toBe(' 0:Y 1:Z')
   expect(renders).toEqual([
     'list',
     'list',
@@ -422,7 +420,7 @@ it('recreating filter on args changes', async () => {
     ),
     client
   )
-  expect(screen.getByTestId('test').textContent).toEqual('')
+  expect(screen.getByTestId('test').textContent).toBe('')
   expect(renders).toEqual(['list'])
 
   await Promise.all([
@@ -442,7 +440,7 @@ it('recreating filter on args changes', async () => {
       title: 'A'
     })
   ])
-  expect(screen.getByTestId('test').textContent).toEqual(' 0:Y 1:A')
+  expect(screen.getByTestId('test').textContent).toBe(' 0:Y 1:A')
   expect(renders).toEqual(['list', 'list', '1', '3'])
 
   screen.getByTestId('change').click()
@@ -463,7 +461,7 @@ it('recreating filter on args changes', async () => {
       title: 'A'
     })
   ])
-  expect(screen.getByTestId('test').textContent).toEqual(' 0:Y')
+  expect(screen.getByTestId('test').textContent).toBe(' 0:Y')
   expect(renders).toEqual([
     'list',
     'list',
@@ -493,23 +491,23 @@ it('renders authentication state', async () => {
     }),
     client
   )
-  expect(screen.getByTestId('test').textContent).toEqual('loading')
+  expect(screen.getByTestId('test').textContent).toBe('loading')
 
   await client.connect()
-  expect(screen.getByTestId('test').textContent).toEqual('10')
+  expect(screen.getByTestId('test').textContent).toBe('10')
 
   client.disconnect()
   await nextTick()
-  expect(screen.getByTestId('test').textContent).toEqual('10')
+  expect(screen.getByTestId('test').textContent).toBe('10')
 
   client.changeUser('20', 'token')
   await delay(1)
   await client.connect()
-  expect(screen.getByTestId('test').textContent).toEqual('20')
+  expect(screen.getByTestId('test').textContent).toBe('20')
 
   client.pair.right.send(['error', 'wrong-credentials'])
   client.pair.right.disconnect()
   await client.pair.wait()
   await delay(1)
-  expect(screen.getByTestId('test').textContent).toEqual('loading')
+  expect(screen.getByTestId('test').textContent).toBe('loading')
 })

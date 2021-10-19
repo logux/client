@@ -46,14 +46,14 @@ it('receives errors', async () => {
   let client = await createClient()
   attention(client)
   emit(client.node, 'error', new Error('test'))
-  expect(document.title).toEqual('* title')
+  expect(document.title).toBe('* title')
 })
 
 it('receives undo', async () => {
   let client = await createClient()
   attention(client)
   client.log.add({ type: 'logux/undo', reason: 'error' })
-  expect(document.title).toEqual('* title')
+  expect(document.title).toBe('* title')
 })
 
 it('returns unbind function', async () => {
@@ -68,13 +68,13 @@ it('allows to miss timeout error', async () => {
   let client = await createClient()
   attention(client)
   emit(client.node, 'error', new LoguxError('timeout'))
-  expect(document.title).toEqual('title')
+  expect(document.title).toBe('title')
 })
 
 it('sets old title when user open a tab', async () => {
   let listener: undefined | (() => void)
   document.addEventListener = (name: string, callback: any) => {
-    expect(name).toEqual('visibilitychange')
+    expect(name).toBe('visibilitychange')
     listener = callback
   }
 
@@ -82,12 +82,12 @@ it('sets old title when user open a tab', async () => {
   attention(client)
 
   emit(client.node, 'error', new Error('test'))
-  expect(document.title).toEqual('* title')
+  expect(document.title).toBe('* title')
 
   nextHidden = false
   if (typeof listener === 'undefined') throw new Error('lister was not set')
   listener()
-  expect(document.title).toEqual('title')
+  expect(document.title).toBe('title')
 })
 
 it('does not double title changes', async () => {
@@ -96,7 +96,7 @@ it('does not double title changes', async () => {
 
   emit(client.node, 'error', new Error('test'))
   emit(client.node, 'error', new Error('test'))
-  expect(document.title).toEqual('* title')
+  expect(document.title).toBe('* title')
 })
 
 it('does not change title of visible tab', async () => {
@@ -105,5 +105,5 @@ it('does not change title of visible tab', async () => {
 
   nextHidden = false
   emit(client.node, 'error', new Error('test'))
-  expect(document.title).toEqual('title')
+  expect(document.title).toBe('title')
 })

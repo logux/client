@@ -37,8 +37,8 @@ it('does not return readonly state in production mode', () => {
     defineComponent(() => {
       let state = useSync(Store, 'ID')
       let list = useFilter(Store)
-      expect(isReadonly(state)).toEqual(false)
-      expect(isReadonly(list)).toEqual(false)
+      expect(isReadonly(state)).toBe(false)
+      expect(isReadonly(list)).toBe(false)
       return () => null
     }),
     {
@@ -59,5 +59,5 @@ it('does not have ChannelErrors check in production mode', async () => {
           })
       )
     )
-  ).toEqual('loading')
+  ).toBe('loading')
 })
