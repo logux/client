@@ -3,7 +3,7 @@ export {
   deleteSyncMapById,
   changeSyncMapById,
   buildNewSyncMap,
-  SyncMapBuilder,
+  SyncMapTemplate,
   defineSyncMap,
   createSyncMap,
   changeSyncMap,

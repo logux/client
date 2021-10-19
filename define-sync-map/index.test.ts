@@ -1,5 +1,5 @@
 import { defineChangeSyncMap, defineChangedSyncMap } from '@logux/actions'
-import { cleanStores, getValue, allEffects } from 'nanostores'
+import { cleanStores, allTasks } from 'nanostores'
 import { delay } from 'nanodelay'
 
 import {
@@ -114,11 +114,11 @@ it('subscribes and unsubscribes', async () => {
   let unbind = (): void => {}
   await client.server.freezeProcessing(async () => {
     unbind = post.listen(() => {})
-    expect(getValue(post).isLoading).toBe(true)
+    expect(post.get().isLoading).toBe(true)
   })
 
   await Promise.resolve()
-  expect(getValue(post).isLoading).toBe(false)
+  expect(post.get().isLoading).toBe(false)
   expect(client.subscribed('posts/ID')).toBe(true)
 
   unbind()
@@ -136,7 +136,7 @@ it('changes key', async () => {
     changes.push(clone(value))
   })
 
-  expect(getValue(post)).toEqual({
+  expect(post.get()).toEqual({
     id: 'ID',
     isLoading: true
   })
@@ -144,7 +144,7 @@ it('changes key', async () => {
   await post.loading
 
   changeSyncMap(post, 'title', '1')
-  expect(getValue(post)).toEqual({
+  expect(post.get()).toEqual({
     id: 'ID',
     isLoading: false,
     title: '1'
@@ -156,14 +156,14 @@ it('changes key', async () => {
   ])
 
   changeSyncMapById(client, Post, 'ID', 'category', 'demo')
-  expect(getValue(post)).toEqual({
+  expect(post.get()).toEqual({
     id: 'ID',
     isLoading: false,
     title: '1'
   })
 
-  await allEffects()
-  expect(getValue(post)).toEqual({
+  await allTasks()
+  expect(post.get()).toEqual({
     id: 'ID',
     isLoading: false,
     title: '1',
@@ -176,7 +176,7 @@ it('changes key', async () => {
   expect(actions).toEqual([changeAction({ title: '2' })])
 
   await client.log.add(changeAction({ title: '3' }), { sync: true })
-  expect(getValue(post)).toEqual({
+  expect(post.get()).toEqual({
     id: 'ID',
     isLoading: false,
     title: '3',
@@ -184,8 +184,8 @@ it('changes key', async () => {
   })
 
   client.server.log.add(changedAction({ title: '4' }))
-  await allEffects()
-  expect(getValue(post)).toEqual({
+  await allTasks()
+  expect(post.get()).toEqual({
     id: 'ID',
     isLoading: false,
     title: '4',
@@ -238,9 +238,9 @@ it('ignores old actions', async () => {
   await changeSyncMap(post, 'title', 'New')
   await client.sync(changeAction({ title: 'Old 1' }), { time: 0 })
   await client.server.log.add(changedAction({ title: 'Old 2' }), { time: 0 })
-  await allEffects()
+  await allTasks()
 
-  expect(getValue(post)).toEqual({
+  expect(post.get()).toEqual({
     id: 'ID',
     isLoading: false,
     title: 'New'
@@ -259,7 +259,7 @@ it('reverts changes for simple case', async () => {
 
   client.server.undoNext()
   let promise = changeSyncMap(post, 'title', 'Bad')
-  expect(getValue(post)).toEqual({
+  expect(post.get()).toEqual({
     id: 'ID',
     isLoading: false,
     title: 'Bad'
@@ -268,8 +268,8 @@ it('reverts changes for simple case', async () => {
   let error = await catchError(() => promise)
   expect(error.message).toBe('Server undid posts/change because of error')
 
-  await allEffects()
-  expect(getValue(post)).toEqual({
+  await allTasks()
+  expect(post.get()).toEqual({
     id: 'ID',
     isLoading: false,
     title: 'Good'
@@ -291,7 +291,7 @@ it('reverts changes for multiple actions case', async () => {
     await client.log.add(changedAction({ title: 'Good 2' }), { time: 4 })
   })
 
-  expect(getValue(post)).toEqual({
+  expect(post.get()).toEqual({
     id: 'ID',
     isLoading: false,
     title: 'Good 2'
@@ -313,14 +313,14 @@ it('filters action by ID', async () => {
 
   client.server.undoNext()
   changeSyncMap(post1, 'title', 'Bad').catch(() => {})
-  await allEffects()
+  await allTasks()
 
-  expect(getValue(post1)).toEqual({
+  expect(post1.get()).toEqual({
     id: '1',
     isLoading: false,
     title: 'A'
   })
-  expect(getValue(post2)).toEqual({
+  expect(post2.get()).toEqual({
     id: '2',
     isLoading: false,
     title: 'C'
@@ -341,7 +341,7 @@ it('supports bulk changes', async () => {
   await client.sync(changeAction({ title: '2', author: 'Yaropolk' }), {
     time: 4
   })
-  expect(getValue(post)).toEqual({
+  expect(post.get()).toEqual({
     id: 'ID',
     isLoading: false,
     title: '3',
@@ -351,9 +351,9 @@ it('supports bulk changes', async () => {
 
   client.server.undoNext()
   changeSyncMap(post, { category: 'bad', author: 'Badly' }).catch(() => {})
-  await allEffects()
+  await allTasks()
 
-  expect(getValue(post)).toEqual({
+  expect(post.get()).toEqual({
     id: 'ID',
     isLoading: false,
     title: '3',
@@ -385,7 +385,7 @@ it('could cache specific stores without server', async () => {
 
   await changeSyncMap(post, 'title', 'The post')
   unbind()
-  await allEffects()
+  await allTasks()
 
   expect(client.log.actions()).toEqual([
     {
@@ -402,7 +402,7 @@ it('could cache specific stores without server', async () => {
   let restored = LocalPost('ID', client)
   restored.listen(() => {})
   await restored.loading
-  expect(getValue(restored)).toEqual({
+  expect(restored.get()).toEqual({
     id: 'ID',
     isLoading: false,
     title: 'The post',
@@ -425,7 +425,7 @@ it('throws on error from server', async () => {
     if (e instanceof Error) error = e
   }
 
-  await allEffects()
+  await allTasks()
   expect(error?.message).toBe('Server undid logux/subscribe because of error')
 
   unbind()
@@ -461,7 +461,7 @@ it('could cache specific stores and use server', async () => {
 
   await changeSyncMap(post, 'title', 'The post')
   unbind()
-  await allEffects()
+  await allTasks()
 
   expect(client.log.actions()).toEqual([
     { type: 'cachedPosts/changed', id: 'ID', fields: { title: 'The post' } }
@@ -469,8 +469,8 @@ it('could cache specific stores and use server', async () => {
 
   let restored = CachedPost('ID', client)
   restored.listen(() => {})
-  await allEffects()
-  expect(getValue(restored)).toEqual({
+  await allTasks()
+  expect(restored.get()).toEqual({
     id: 'ID',
     isLoading: false,
     title: 'The post'
@@ -553,7 +553,7 @@ it('creates and deletes local maps', async () => {
   let post2 = LocalPost('DEL', client)
   post2.listen(() => {})
   await post2.loading
-  expect(getValue(post2)).toEqual({
+  expect(post2.get()).toEqual({
     id: 'DEL',
     isLoading: false,
     title: 'New'
@@ -577,8 +577,8 @@ it('uses created and delete during undo', async () => {
 
   client.server.undoNext()
   await changeSyncMap(post2, { title: 'Bad', author: 'Bad' }).catch(() => {})
-  await allEffects()
-  expect(getValue(post2)).toEqual({
+  await allTasks()
+  expect(post2.get()).toEqual({
     id: 'ID',
     isLoading: false,
     title: 'New'
@@ -624,7 +624,7 @@ it('undos delete', async () => {
     .catch(() => {
       deleted = false
     })
-  await allEffects()
+  await allTasks()
   expect(deleted).toBe(false)
   expect(client.log.actions()).toEqual([
     { type: 'posts/change', id: 'DEL', fields: { title: 'Deleted' } }
@@ -643,7 +643,7 @@ it('allows to send create action and return instance', async () => {
         category: 'none'
       })
       post.listen(() => {})
-      expect(getValue(post)).toEqual({
+      expect(post.get()).toEqual({
         id: 'ID',
         isLoading: false,
         title: 'Test',
@@ -679,7 +679,7 @@ it('does not send subscription on local store creation', async () => {
         category: 'none'
       })
       post.listen(() => {})
-      expect(getValue(post)).toEqual({
+      expect(post.get()).toEqual({
         id: 'ID',
         isLoading: false,
         title: 'Test',
@@ -709,7 +709,7 @@ it('loads data by created action', async () => {
     id: '1',
     fields: { title: 'A', category: 'demo' }
   })
-  expect(getValue(post)).toEqual({
+  expect(post.get()).toEqual({
     id: '1',
     isLoading: true,
     title: 'A',

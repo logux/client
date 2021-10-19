@@ -13,7 +13,7 @@ import {
   toRef,
   ref
 } from 'vue'
-import { useStore } from 'nanostores/vue'
+import { useStore } from '@nanostores/vue'
 
 import { createFilter } from '../create-filter/index.js'
 import { createAuth } from '../create-auth/index.js'
@@ -76,10 +76,10 @@ function useSyncStore(store) {
   return state
 }
 
-export function useSync(Builder, id, ...builderArgs) {
+export function useSync(Template, id, ...builderArgs) {
   if (process.env.NODE_ENV !== 'production') {
-    if (typeof Builder !== 'function') {
-      throw new Error('Use useStore() from nanostores/vue for stores')
+    if (typeof Template !== 'function') {
+      throw new Error('Use useStore() from @nanostores/vue for stores')
     }
   }
 
@@ -97,7 +97,7 @@ export function useSync(Builder, id, ...builderArgs) {
   watch(
     id,
     () => {
-      state.value = useSyncStore(Builder(id.value, client, ...builderArgs))
+      state.value = useSyncStore(Template(id.value, client, ...builderArgs))
     },
     { immediate: true }
   )
@@ -108,7 +108,7 @@ export function useSync(Builder, id, ...builderArgs) {
   return toRef(state, 'value')
 }
 
-export function useFilter(Builder, filter = {}, opts = {}) {
+export function useFilter(Template, filter = {}, opts = {}) {
   if (!isRef(filter)) filter = ref(filter)
   if (!isRef(opts)) opts = ref(opts)
 
@@ -123,7 +123,7 @@ export function useFilter(Builder, filter = {}, opts = {}) {
     [filter, opts],
     () => {
       state.value = useSyncStore(
-        createFilter(client, Builder, filter.value, opts.value)
+        createFilter(client, Template, filter.value, opts.value)
       )
     },
     { deep: true, immediate: true }

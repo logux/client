@@ -1,6 +1,6 @@
 import { Context as ReactContext, Component, ComponentType } from 'react'
 import { SyncMapValues, LoguxNotFoundError } from '@logux/actions'
-import { StoreValue, MapBuilder } from 'nanostores'
+import { StoreValue, MapTemplate } from 'nanostores'
 
 import {
   ChannelNotFoundError,
@@ -8,9 +8,9 @@ import {
   ChannelError
 } from '../logux-undo-error/index.js'
 import { FilterOptions, FilterStore, Filter } from '../create-filter/index.js'
-import { SyncMapBuilder, SyncMapValue } from '../define-sync-map/index.js'
-import { Client } from '../client/index.js'
+import { SyncMapTemplate, SyncMapValue } from '../define-sync-map/index.js'
 import { AuthStore } from '../create-auth/index.js'
+import { Client } from '../client/index.js'
 
 /**
  * Context to send Logux Client or object space to components deep in the tree.
@@ -96,17 +96,17 @@ export class ChannelErrors extends Component<{
  * }
  * ```
  *
- * @param Builder Store builder.
+ * @param Template Store builder.
  * @param id Store ID.
  * @param args Other store arguments.
  * @returns Store value.
  */
 export function useSync<Value extends SyncMapValues>(
-  Builder: SyncMapBuilder<Value>,
+  Template: SyncMapTemplate<Value>,
   id: string
 ): SyncMapValue<Value>
 export function useSync<Value extends object, Args extends any[]>(
-  Builder: MapBuilder<Value, [Client, ...Args]>,
+  Template: MapTemplate<Value, [Client, ...Args]>,
   id: string,
   ...args: Args
 ): Value
@@ -128,13 +128,13 @@ export function useSync<Value extends object, Args extends any[]>(
  * }
  * ```
  *
- * @param Builder Store class.
+ * @param Template Store template.
  * @param filter Key-value filter for stores.
  * @param opts Filter options.
  * @returns Filter store to use with map.
  */
 export function useFilter<Value extends SyncMapValues>(
-  Builder: SyncMapBuilder<Value>,
+  Template: SyncMapTemplate<Value>,
   filter?: Filter<Value>,
   opts?: FilterOptions
 ): StoreValue<FilterStore<Value>>

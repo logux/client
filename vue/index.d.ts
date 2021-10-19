@@ -8,10 +8,10 @@ import {
   Ref
 } from 'vue'
 import { SyncMapValues, LoguxNotFoundError } from '@logux/actions'
-import { StoreValue, MapBuilder } from 'nanostores'
+import { StoreValue, MapTemplate } from 'nanostores'
 
 import { FilterOptions, FilterStore, Filter } from '../create-filter/index.js'
-import { SyncMapBuilder, SyncMapValue } from '../define-sync-map/index.js'
+import { SyncMapTemplate, SyncMapValue } from '../define-sync-map/index.js'
 import { ChannelError } from '../logux-undo-error/index.js'
 import { Client } from '../client/index.js'
 
@@ -79,17 +79,17 @@ export function useClient(): Client
  * </script>
  * ```
  *
- * @param Builder Store builder.
+ * @param Template Store template.
  * @param id Store ID.
  * @param args Other store arguments.
  * @returns Store value.
  */
 export function useSync<Value extends SyncMapValues>(
-  Builder: SyncMapBuilder<Value>,
+  Template: SyncMapTemplate<Value>,
   id: Refable<string>
 ): ReadonlyRef<SyncMapValue<Value>>
 export function useSync<Value extends object, Args extends any[]>(
-  Builder: MapBuilder<Value, [Client, ...Args]>,
+  Template: MapTemplate<Value, [Client, ...Args]>,
   id: Refable<string>,
   ...args: Args
 ): ReadonlyRef<Value>
@@ -118,13 +118,13 @@ export function useSync<Value extends object, Args extends any[]>(
  * </script>
  * ```
  *
- * @param Builder Store class.
+ * @param Template Store class.
  * @param filter Key-value filter for stores.
  * @param opts Filter options.
  * @returns Filter store to use with map.
  */
 export function useFilter<Value extends SyncMapValues>(
-  Builder: SyncMapBuilder<Value>,
+  Template: SyncMapTemplate<Value>,
   filter?: Refable<Filter<Value>>,
   opts?: Refable<FilterOptions>
 ): ReadonlyRef<StoreValue<FilterStore<Value>>>

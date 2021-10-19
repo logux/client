@@ -1,18 +1,18 @@
-import { MapBuilder, MapStore } from 'nanostores'
+import { MapTemplate, MapStore } from 'nanostores'
 import { SyncMapValues } from '@logux/actions'
 
-import { SyncMapBuilder, SyncMapStore } from '../define-sync-map/index.js'
+import { SyncMapTemplate, SyncMapStore } from '../define-sync-map/index.js'
 import { Client } from '../client/index.js'
 
 interface PrepareForTest {
   <Value extends SyncMapValues>(
     client: Client,
-    Builder: SyncMapBuilder<Value>,
+    Template: SyncMapTemplate<Value>,
     value: Omit<Value, 'id'> & { id?: string }
   ): SyncMapStore<Value>
   <Value extends object>(
     client: Client,
-    Builder: MapBuilder<Value>,
+    Template: MapTemplate<Value>,
     value: Omit<Value, 'id'> & { id?: string }
   ): MapStore<Value>
 }
@@ -39,7 +39,7 @@ interface PrepareForTest {
  * ```
  *
  * @param client `TestClient` instance.
- * @param Builder Store builder.
+ * @param Template Store builder.
  * @param value Store values.
  * @returns The mocked store.
  */
@@ -61,6 +61,6 @@ export const prepareForTest: PrepareForTest
  * })
  * ```
  *
- * @param Builder Store builder.
+ * @param Template Store builder.
  */
-export function emptyInTest(Builder: SyncMapBuilder): void
+export function emptyInTest(Template: SyncMapTemplate): void

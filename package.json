@@ -35,6 +35,9 @@
   },
   "peerDependencies": {
     "@logux/core": "^0.7.0",
+    "@nanostores/preact": "^0.0.0",
+    "@nanostores/react": "^0.0.0",
+    "@nanostores/vue": "^0.0.0",
     "nanostores": "^0.4.3",
     "preact": ">=10.0.0",
     "react": ">=16.8.0",
@@ -42,6 +45,15 @@
     "vue": ">=3.2.4"
   },
   "peerDependenciesMeta": {
+    "@nanostores/preact": {
+      "optional": true
+    },
+    "@nanostores/react": {
+      "optional": true
+    },
+    "@nanostores/vue": {
+      "optional": true
+    },
     "preact": {
       "optional": true
     },
@@ -67,6 +79,9 @@
     "@logux/core": "^0.7.2",
     "@logux/eslint-config": "^46.0.0",
     "@logux/sharec-config": "^0.12.2",
+    "@nanostores/preact": "nanostores/preact",
+    "@nanostores/react": "nanostores/react",
+    "@nanostores/vue": "nanostores/vue",
     "@parcel/optimizer-cssnano": "2.0.0",
     "@parcel/optimizer-htmlnano": "2.0.0",
     "@parcel/packager-css": "2.0.0",
@@ -100,10 +115,10 @@
     "eslint-plugin-promise": "^5.1.0",
     "eslint-plugin-security": "^1.4.0",
     "eslint-plugin-unicorn": "^37.0.1",
-    "fake-indexeddb": "^3.1.4",
+    "fake-indexeddb": "3.1.4",
     "jest": "^27.3.1",
     "lint-staged": "^11.2.3",
-    "nanostores": "^0.4.9",
+    "nanostores": "nanostores/nanostores#next",
     "parcel": "^2.0.0",
     "picocolors": "^1.0.0",
     "postcss": "^8.3.9",

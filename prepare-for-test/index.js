@@ -1,22 +1,22 @@
 let lastId = 0
 
-export function emptyInTest(Builder) {
-  if (!Builder.mocks) Builder.mocked = true
+export function emptyInTest(Template) {
+  if (!Template.mocks) Template.mocked = true
 }
 
-export function prepareForTest(client, Builder, value) {
-  if (!Builder.mocks) Builder.mocked = true
+export function prepareForTest(client, Template, value) {
+  if (!Template.mocks) Template.mocked = true
 
   let { id, ...keys } = value
   if (!id) {
-    if (Builder.plural) {
-      id = `${Builder.plural}:${Object.keys(Builder.cache).length + 1}`
+    if (Template.plural) {
+      id = `${Template.plural}:${Object.keys(Template.cache).length + 1}`
     } else {
       id = `${lastId++}`
     }
   }
 
-  let store = Builder(id, client)
+  let store = Template(id, client)
   store.listen(() => {})
 
   if ('isLoading' in store.value) {

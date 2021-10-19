@@ -1,4 +1,4 @@
-import { MapBuilder, MapStore } from 'nanostores'
+import { MapTemplate, MapStore } from 'nanostores'
 import { SyncMapValues } from '@logux/actions'
 import { Action, Meta } from '@logux/core'
 
@@ -50,8 +50,8 @@ export type SyncMapStore<Value extends SyncMapValues = any> = MapStore<
 > &
   SyncMapStoreExt
 
-export interface SyncMapBuilder<Value extends SyncMapValues = any>
-  extends MapBuilder<
+export interface SyncMapTemplate<Value extends SyncMapValues = any>
+  extends MapTemplate<
     SyncMapValue<Value>,
     [Client] | [Client, Action, Meta, boolean | undefined],
     SyncMapStoreExt
@@ -88,7 +88,7 @@ export function defineSyncMap<Value extends SyncMapValues>(
     offline?: boolean
     remote?: boolean
   }
-): SyncMapBuilder<Value>
+): SyncMapTemplate<Value>
 
 /**
  * Send create action to the server or to the log.
@@ -108,14 +108,14 @@ export function defineSyncMap<Value extends SyncMapValues>(
  * ```
  *
  * @param client Logux Client instance.
- * @param Builder Store class from {@link defineSyncMap}.
+ * @param Template Store class from {@link defineSyncMap}.
  * @param values Initial value.
  * @return Promise until server validation for remote classes
  *         or saving action to the log of fully offline classes.
  */
 export function createSyncMap<Value extends SyncMapValues>(
   client: Client,
-  Builder: SyncMapBuilder<Value>,
+  Template: SyncMapTemplate<Value>,
   values: Value & { id: string }
 ): Promise<void>
 
@@ -132,13 +132,13 @@ export function createSyncMap<Value extends SyncMapValues>(
  * ```
  *
  * @param client Logux Client instance.
- * @param Builder Store class from {@link defineSyncMap}.
+ * @param Template Store class from {@link defineSyncMap}.
  * @param values Initial value.
  * @return Promise with store instance.
  */
 export function buildNewSyncMap<Value extends SyncMapValues>(
   client: Client,
-  Builder: SyncMapBuilder<Value>,
+  Template: SyncMapTemplate<Value>,
   values: Value & { id: string }
 ): Promise<SyncMapStore<Value>>
 
@@ -154,7 +154,7 @@ export function buildNewSyncMap<Value extends SyncMapValues>(
  * ```
  *
  * @param client Logux Client instance.
- * @param Builder Store class from {@link defineSyncMap}.
+ * @param Template Store class from {@link defineSyncMap}.
  * @param id Store’s ID.
  * @param diff Store’s changes.
  * @return Promise until server validation for remote classes
@@ -162,7 +162,7 @@ export function buildNewSyncMap<Value extends SyncMapValues>(
  */
 export function changeSyncMapById<Value extends SyncMapValues>(
   client: Client,
-  Builder: SyncMapBuilder<Value>,
+  Template: SyncMapTemplate<Value>,
   id: string | { id: string },
   diff: Partial<Value>
 ): Promise<void>
@@ -171,7 +171,7 @@ export function changeSyncMapById<
   ValueKey extends keyof Value
 >(
   client: Client,
-  Builder: SyncMapBuilder<Value>,
+  Template: SyncMapTemplate<Value>,
   id: string | { id: string },
   key: ValueKey,
   value: Value[ValueKey]
@@ -217,14 +217,14 @@ export function changeSyncMap<
  * ```
  *
  * @param client Logux Client instance.
- * @param Builder Store class from {@link defineSyncMap}.
+ * @param Template Store class from {@link defineSyncMap}.
  * @param id Store’s ID.
  * @return Promise until server validation for remote classes
  *         or saving action to the log of fully offline classes.
  */
 export function deleteSyncMapById(
   client: Client,
-  Builder: SyncMapBuilder,
+  Template: SyncMapTemplate,
   id: string | { id: string }
 ): Promise<void>
 

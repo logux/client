@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/extend-expect'
-import { cleanStores, createStore, defineMap, MapBuilder } from 'nanostores'
+import { cleanStores, atom, mapTemplate, MapTemplate } from 'nanostores'
 import React, { ReactElement, FC, ReactNode } from 'react'
 import { LoguxNotFoundError } from '@logux/actions'
 import ReactTesting from '@testing-library/react'
@@ -10,7 +10,7 @@ import {
   ChannelNotFoundError,
   ChannelDeniedError,
   changeSyncMapById,
-  SyncMapBuilder,
+  SyncMapTemplate,
   createSyncMap,
   defineSyncMap,
   LoguxUndoError,
@@ -42,7 +42,7 @@ function getCatcher(cb: () => void): [string[], FC] {
   return [errors, Catcher]
 }
 
-let Broken = defineMap<
+let Broken = mapTemplate<
   { isLoading: boolean },
   [],
   { loading: Promise<void>; reject(e: Error | string): void }
@@ -69,13 +69,15 @@ let Broken = defineMap<
   })
 })
 
-let IdTest: FC<{ Builder: SyncMapBuilder | MapBuilder }> = ({ Builder }) => {
-  let store = useSync(Builder, 'ID')
+let IdTest: FC<{ Template: SyncMapTemplate | MapTemplate }> = ({
+  Template
+}) => {
+  let store = useSync(Template, 'ID')
   return h('div', {}, store.isLoading ? 'loading' : store.id)
 }
 
-let SyncTest: FC<{ Builder: SyncMapBuilder }> = ({ Builder }) => {
-  let store = useSync(Builder, 'ID')
+let SyncTest: FC<{ Template: SyncMapTemplate }> = ({ Template }) => {
+  let store = useSync(Template, 'ID')
   return h('div', {}, store.isLoading ? 'loading' : store.id)
 }
 
@@ -145,7 +147,7 @@ async function catchLoadingError(
           h(
             ChannelErrors,
             { NotFound },
-            h(ChannelErrors, {}, h(IdTest, { Builder: Broken }))
+            h(ChannelErrors, {}, h(IdTest, { Template: Broken }))
           )
         )
       )
@@ -189,24 +191,24 @@ it('throws on missed context for useClient', () => {
 })
 
 it('throws store init errors', () => {
-  let Builder = defineMap(() => {
+  let Template = mapTemplate(() => {
     throw new Error('Test')
   })
   let [errors, Catcher] = getCatcher(() => {
-    useSync(Builder, 'id')
+    useSync(Template, 'id')
   })
   runWithClient(h(Catcher))
   expect(errors).toEqual(['Test'])
 })
 
 it('throws on missed ID for builder', async () => {
-  let store = createStore<undefined>()
+  let store = atom<undefined>()
   let [errors, Catcher] = getCatcher(() => {
     // @ts-expect-error
     useSync(store)
   })
   render(h(Catcher))
-  expect(errors).toEqual(['Use useStore() from nanostores/react for stores'])
+  expect(errors).toEqual(['Use useStore() from @nanostores/react for stores'])
 })
 
 it('throws and catches not found error', async () => {
@@ -240,7 +242,7 @@ it('could process denied via common error component', async () => {
     h(
       'div',
       { 'data-testid': 'test' },
-      h(ChannelErrors, { Error }, h(IdTest, { Builder: Broken }))
+      h(ChannelErrors, { Error }, h(IdTest, { Template: Broken }))
     )
   )
   await act(async () => {
@@ -259,7 +261,7 @@ it('could process not found via common error component', async () => {
     h(
       'div',
       { 'data-testid': 'test' },
-      h(ChannelErrors, { Error }, h(IdTest, { Builder: Broken }))
+      h(ChannelErrors, { Error }, h(IdTest, { Template: Broken }))
     )
   )
   await act(async () => {
@@ -272,7 +274,7 @@ it('could process not found via common error component', async () => {
 it('throws an error on missed ChannelErrors', async () => {
   jest.spyOn(console, 'error').mockImplementation(() => {})
   expect(
-    getText(h(ErrorCatcher, {}, h(SyncTest, { Builder: RemotePost })))
+    getText(h(ErrorCatcher, {}, h(SyncTest, { Template: RemotePost })))
   ).toEqual(
     'Wrap components in Logux ' +
       '<ChannelErrors NotFound={Page404} AccessDenied={Page403}>'
@@ -289,7 +291,7 @@ it('throws an error on ChannelErrors with missed argument', async () => {
         h(
           ChannelErrors,
           { NotFound: () => null },
-          h(SyncTest, { Builder: RemotePost })
+          h(SyncTest, { Template: RemotePost })
         )
       )
     )
@@ -306,7 +308,7 @@ it('does not throw on ChannelErrors with 404 and 403', async () => {
       h(
         ChannelErrors,
         { NotFound: () => null, AccessDenied: () => null },
-        h(SyncTest, { Builder: RemotePost })
+        h(SyncTest, { Template: RemotePost })
       )
     )
   ).toBe('loading')
@@ -334,7 +336,7 @@ it('renders filter', async () => {
       { 'data-testid': 'test' },
       posts.list.map((post, index) => {
         renders.push(post.id)
-        return h('li', {}, ` ${index}:${post.title}`)
+        return h('li', { key: post.id }, ` ${index}:${post.title}`)
       })
     )
   }
@@ -362,9 +364,6 @@ it('renders filter', async () => {
     'list',
     'list',
     'list',
-    'list',
-    '1',
-    'list',
     '1',
     'list',
     '1',
@@ -381,9 +380,6 @@ it('renders filter', async () => {
   expect(renders).toEqual([
     'list',
     'list',
-    'list',
-    'list',
-    '1',
     'list',
     '1',
     'list',
@@ -404,9 +400,6 @@ it('renders filter', async () => {
   expect(renders).toEqual([
     'list',
     'list',
-    'list',
-    'list',
-    '1',
     'list',
     '1',
     'list',
@@ -473,9 +466,6 @@ it('recreating filter on args changes', async () => {
     'list',
     'list',
     'list',
-    'list',
-    '1',
-    'list',
     '1',
     'list',
     '1',
@@ -491,9 +481,6 @@ it('recreating filter on args changes', async () => {
   expect(renders).toEqual([
     'list',
     'list',
-    'list',
-    'list',
-    '1',
     'list',
     '1',
     'list',
@@ -518,16 +505,12 @@ it('recreating filter on args changes', async () => {
     'list',
     'list',
     'list',
-    'list',
-    '1',
-    'list',
     '1',
     'list',
     '1',
     'list',
     '1',
     '3',
-    'list',
     'list',
     'list',
     '2',

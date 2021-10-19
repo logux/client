@@ -1,5 +1,4 @@
-import { useStore, batch } from 'nanostores/react'
-import { getValue } from 'nanostores'
+import { useStore, batch } from '@nanostores/react'
 import React from 'react'
 
 import { createFilter } from '../create-filter/index.js'
@@ -20,7 +19,7 @@ export function useClient() {
 function useSyncStore(store) {
   let [error, setError] = React.useState(null)
   let [, forceRender] = React.useState({})
-  let value = getValue(store)
+  let value = store.get()
 
   if (process.env.NODE_ENV !== 'production') {
     let errorProcessors = React.useContext(ErrorsContext) || {}
@@ -55,15 +54,15 @@ function useSyncStore(store) {
   return value
 }
 
-export function useSync(Builder, id, ...builderArgs) {
+export function useSync(Template, id, ...builderArgs) {
   if (process.env.NODE_ENV !== 'production') {
-    if (typeof Builder !== 'function') {
-      throw new Error('Use useStore() from nanostores/react for stores')
+    if (typeof Template !== 'function') {
+      throw new Error('Use useStore() from @nanostores/react for stores')
     }
   }
 
   let client = useClient()
-  let store = Builder(id, client, ...builderArgs)
+  let store = Template(id, client, ...builderArgs)
 
   return useSyncStore(store)
 }

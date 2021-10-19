@@ -1,7 +1,6 @@
 import { useState, useContext, useEffect, useRef } from 'preact/hooks'
 import { createContext, h, Component } from 'preact'
-import { useStore } from 'nanostores/preact'
-import { getValue } from 'nanostores'
+import { useStore } from '@nanostores/preact'
 
 import { createFilter } from '../create-filter/index.js'
 import { createAuth } from '../create-auth/index.js'
@@ -21,8 +20,7 @@ export function useClient() {
 function useSyncStore(store) {
   let [error, setError] = useState(null)
   let [, forceRender] = useState({})
-
-  let value = getValue(store)
+  let value = store.get()
 
   if (process.env.NODE_ENV !== 'production') {
     let errorProcessors = useContext(ErrorsContext) || {}
@@ -61,15 +59,15 @@ function useSyncStore(store) {
   return value
 }
 
-export function useSync(Builder, id, ...builderArgs) {
+export function useSync(Template, id, ...builderArgs) {
   if (process.env.NODE_ENV !== 'production') {
-    if (typeof Builder !== 'function') {
-      throw new Error('Use useStore() from nanostores/react for stores')
+    if (typeof Template !== 'function') {
+      throw new Error('Use useStore() from @nanostores/preact for stores')
     }
   }
 
   let client = useClient()
-  let store = Builder(id, client, ...builderArgs)
+  let store = Template(id, client, ...builderArgs)
 
   return useSyncStore(store)
 }

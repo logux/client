@@ -10,14 +10,6 @@ import { LogStore } from '@logux/core'
  *   store: new IndexedStore()
  * })
  * ```
- *
- * ```js
- * import IndexedStore from '@logux/client/indexed-store'
- * const createStore = createLoguxCreator({
- *   …,
- *   store: new IndexedStore()
- * })
- * ```
  */
 export class IndexedStore extends LogStore {
   /**

@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/extend-expect'
-import { cleanStores, createStore, defineMap, MapBuilder } from 'nanostores'
+import { cleanStores, atom, mapTemplate, MapTemplate } from 'nanostores'
 import Vue, { Component, isReadonly } from 'vue'
 import { LoguxNotFoundError } from '@logux/actions'
 import VueTesting from '@testing-library/vue'
@@ -8,7 +8,7 @@ import { jest } from '@jest/globals'
 
 import {
   changeSyncMapById,
-  SyncMapBuilder,
+  SyncMapTemplate,
   LoguxUndoError,
   defineSyncMap,
   createSyncMap,
@@ -65,18 +65,18 @@ async function getText(component: Component): Promise<string | null> {
   return screen.getByTestId('test').textContent
 }
 
-let defineIdTest = (Builder: SyncMapBuilder | MapBuilder): Component => {
+let defineIdTest = (Template: SyncMapTemplate | MapTemplate): Component => {
   return defineComponent(() => {
-    let store = useSync(Builder, 'ID')
+    let store = useSync(Template, 'ID')
     return () => {
       return h('div', store.value.isLoading ? 'loading' : store.value.id)
     }
   })
 }
 
-let defineSyncTest = (Builder: SyncMapBuilder): Component => {
+let defineSyncTest = (Template: SyncMapTemplate): Component => {
   return defineComponent(() => {
-    let store = useSync(Builder, 'ID')
+    let store = useSync(Template, 'ID')
     return () => h('div', store.value.isLoading ? 'loading' : store.value.id)
   })
 }
@@ -148,7 +148,7 @@ let LocalPostStore = defineSyncMap<{ projectId: string; title: string }>(
 
 let RemotePostStore = defineSyncMap<{ title?: string }>('posts')
 
-let BrokenStore = defineMap<
+let BrokenStore = mapTemplate<
   { isLoading: boolean },
   [],
   { loading: Promise<void>; reject(e: Error | string): void }
@@ -214,23 +214,23 @@ it('throws on missed logux client dependency for useClient', () => {
 
 it('throws on missed ID for builder', () => {
   let spy = jest.spyOn(console, 'warn').mockImplementation(() => {})
-  let store = createStore<undefined>()
+  let store = atom<undefined>()
   let [errors, Catcher] = getCatcher(() => {
     // @ts-expect-error
     useSync(store)
   })
   render(h(Catcher))
-  expect(errors).toEqual(['Use useStore() from nanostores/vue for stores'])
+  expect(errors).toEqual(['Use useStore() from @nanostores/vue for stores'])
   spy.mockRestore()
 })
 
 it('throws store init errors', () => {
   let spy = jest.spyOn(console, 'warn').mockImplementation(() => {})
-  let Builder = defineMap(() => {
+  let Template = mapTemplate(() => {
     throw new Error('Test')
   })
   let [errors, Catcher] = getCatcher(() => {
-    useSync(Builder, 'id')
+    useSync(Template, 'id')
   })
   renderWithClient(
     h(ChannelErrors, null, {

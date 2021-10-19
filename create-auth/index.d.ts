@@ -1,4 +1,4 @@
-import { MapStore } from 'nanostores'
+import { ReadableAtom } from 'nanostores'
 
 import { Client } from '../client/index.js'
 
@@ -6,7 +6,7 @@ import { Client } from '../client/index.js'
  * Auth store. Use {@link createAuth} to create it.
  */
 export interface AuthStore
-  extends MapStore<{
+  extends ReadableAtom<{
     userId: string
     isAuthenticated: boolean
   }> {
@@ -20,12 +20,11 @@ export interface AuthStore
  * Create store with user’s authentication state.
  *
  * ```js
- * import { createAuth } from '@logux/client'
- * import { getValue } from 'nanostores'
+ * import { createAuth } from '@logux/client'\
  *
  * let auth = createAuth(client)
  * await auth.loading
- * console.log(getValue(auth))
+ * console.log(auth.get())
  * ```
  *
  * @param client Logux Client.

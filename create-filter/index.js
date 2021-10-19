@@ -1,20 +1,25 @@
+import { map, onMount, startTask } from 'nanostores'
 import { isFirstOlder } from '@logux/core'
-import { createMap, startEffect } from 'nanostores'
 
 import { track } from '../track/index.js'
 
-export function createFilter(client, Builder, filter = {}, opts = {}) {
-  let id = Builder.plural + JSON.stringify(filter) + JSON.stringify(opts)
-  if (!Builder.filters) Builder.filters = {}
+export function createFilter(client, Template, filter = {}, opts = {}) {
+  let id = Template.plural + JSON.stringify(filter) + JSON.stringify(opts)
+  if (!Template.filters) Template.filters = {}
 
-  if (!Builder.filters[id]) {
-    let filterStore = createMap(() => {
+  if (!Template.filters[id]) {
+    let filterStore = map()
+
+    onMount(filterStore, () => {
       let listener
       if (opts.listChangesOnly) {
         listener = () => {}
       } else {
-        listener = (childValue, key) => {
-          filterStore.notify(`${childValue.id}.${key}`)
+        listener = () => {
+          filterStore.setKey(
+            'list',
+            Array.from(stores.values()).map(i => i.value)
+          )
         }
       }
 
@@ -27,14 +32,14 @@ export function createFilter(client, Builder, filter = {}, opts = {}) {
       let list = []
       filterStore.setKey('list', list)
 
-      let channelPrefix = Builder.plural + '/'
+      let channelPrefix = Template.plural + '/'
 
-      let createdType = `${Builder.plural}/created`
-      let createType = `${Builder.plural}/create`
-      let changedType = `${Builder.plural}/changed`
-      let changeType = `${Builder.plural}/change`
-      let deletedType = `${Builder.plural}/deleted`
-      let deleteType = `${Builder.plural}/delete`
+      let createdType = `${Template.plural}/created`
+      let createType = `${Template.plural}/create`
+      let changedType = `${Template.plural}/changed`
+      let changeType = `${Template.plural}/change`
+      let deletedType = `${Template.plural}/deleted`
+      let deleteType = `${Template.plural}/delete`
 
       let unbinds = []
       let unbindIds = new Map()
@@ -48,7 +53,6 @@ export function createFilter(client, Builder, filter = {}, opts = {}) {
         }
         unbindIds.set(child.value.id, unbindChild)
         stores.set(child.value.id, child)
-        filterStore.notify('stores')
         filterStore.setKey(
           'list',
           Array.from(stores.values()).map(i => i.value)
@@ -62,7 +66,6 @@ export function createFilter(client, Builder, filter = {}, opts = {}) {
           unbindIds.get(childId)()
           unbindIds.delete(childId)
           stores.delete(childId)
-          filterStore.notify('stores')
           filterStore.setKey(
             'list',
             Array.from(stores.values()).map(i => i.value)
@@ -96,7 +99,7 @@ export function createFilter(client, Builder, filter = {}, opts = {}) {
 
       let subscriptionError
 
-      let endEffect = startEffect()
+      let endTask = startTask()
       filterStore.loading = new Promise((resolve, reject) => {
         async function loadAndCheck(child) {
           let clear = child.listen(() => {})
@@ -107,16 +110,16 @@ export function createFilter(client, Builder, filter = {}, opts = {}) {
           clear()
         }
 
-        for (let i in Builder.cache) {
-          loadAndCheck(Builder.cache[i])
+        for (let i in Template.cache) {
+          loadAndCheck(Template.cache[i])
         }
 
         let load = true
         if (process.env.NODE_ENV !== 'production') {
-          if (Builder.mocked) {
+          if (Template.mocked) {
             load = false
             filterStore.setKey('isLoading', false)
-            endEffect()
+            endTask()
             resolve()
           }
         }
@@ -124,9 +127,9 @@ export function createFilter(client, Builder, filter = {}, opts = {}) {
         if (load) {
           let ignore = new Set()
           let checking = []
-          if (Builder.offline) {
+          if (Template.offline) {
             client.log
-              .each({ index: Builder.plural }, async action => {
+              .each({ index: Template.plural }, async action => {
                 if (action.id && !ignore.has(action.id)) {
                   let type = action.type
                   if (
@@ -137,7 +140,7 @@ export function createFilter(client, Builder, filter = {}, opts = {}) {
                   ) {
                     if (checkSomeFields(action.fields)) {
                       let check = async () => {
-                        loadAndCheck(Builder(action.id, client))
+                        loadAndCheck(Template(action.id, client))
                       }
                       checking.push(check())
                       ignore.add(action.id)
@@ -149,20 +152,20 @@ export function createFilter(client, Builder, filter = {}, opts = {}) {
               })
               .then(async () => {
                 await Promise.all(checking)
-                if (!Builder.remote && isLoading) {
+                if (!Template.remote && isLoading) {
                   isLoading = false
                   filterStore.setKey('isLoading', false)
-                  endEffect()
+                  endTask()
                   resolve()
                 }
               })
           }
 
-          if (Builder.remote) {
+          if (Template.remote) {
             client
               .sync({
                 type: 'logux/subscribe',
-                channel: Builder.plural,
+                channel: Template.plural,
                 filter
               })
               .then(() => {
@@ -171,14 +174,14 @@ export function createFilter(client, Builder, filter = {}, opts = {}) {
                   if (filterStore.value) {
                     filterStore.setKey('isLoading', false)
                   }
-                  endEffect()
+                  endTask()
                   resolve()
                 }
               })
               .catch(e => {
                 subscriptionError = true
                 reject(e)
-                endEffect()
+                endTask()
               })
           }
         }
@@ -190,11 +193,11 @@ export function createFilter(client, Builder, filter = {}, opts = {}) {
         }
 
         function createAt(childId) {
-          return Builder.cache[childId].createdAt
+          return Template.cache[childId].createdAt
         }
 
         let removeAndListen = (childId, actionId) => {
-          let child = Builder(childId, client)
+          let child = Template(childId, client)
           let clear = child.listen(() => {})
           remove(childId)
           track(client, actionId)
@@ -217,7 +220,7 @@ export function createFilter(client, Builder, filter = {}, opts = {}) {
           client.type(createdType, async (action, meta) => {
             if (checkAllFields(action.fields)) {
               add(
-                Builder(
+                Template(
                   action.id,
                   client,
                   action,
@@ -229,7 +232,7 @@ export function createFilter(client, Builder, filter = {}, opts = {}) {
           }),
           client.type(createType, async (action, meta) => {
             if (checkAllFields(action.fields)) {
-              let child = Builder(action.id, client, action, meta)
+              let child = Template(action.id, client, action, meta)
               try {
                 add(child)
                 track(client, meta.id).catch(() => {
@@ -245,17 +248,18 @@ export function createFilter(client, Builder, filter = {}, opts = {}) {
                 remove(action.id)
               }
             } else if (checkSomeFields(action.fields)) {
-              loadAndCheck(Builder(action.id, client))
+              loadAndCheck(Template(action.id, client))
             }
           }),
           client.type(changeType, async (action, meta) => {
             await Promise.resolve()
             if (stores.has(action.id)) {
+              console.log('has')
               if (!checkAllFields(stores.get(action.id).value)) {
                 removeAndListen(action.id, meta.id)
               }
             } else if (checkSomeFields(action.fields)) {
-              let child = Builder(action.id, client)
+              let child = Template(action.id, client)
               let clear = child.listen(() => {})
               if (child.value.isLoading) await child.loading
               if (checkAllFields(child.value)) {
@@ -294,12 +298,12 @@ export function createFilter(client, Builder, filter = {}, opts = {}) {
       return () => {
         for (let unbind of unbinds) unbind()
         for (let unbindChild of unbindIds.values()) unbindChild()
-        if (Builder.remote) {
+        if (Template.remote) {
           if (!subscriptionError) {
             client.log.add(
               {
                 type: 'logux/unsubscribe',
-                channel: Builder.plural,
+                channel: Template.plural,
                 filter
               },
               { sync: true }
@@ -307,10 +311,10 @@ export function createFilter(client, Builder, filter = {}, opts = {}) {
           }
         }
         client.log.removeReason(id)
-        delete Builder.filters[id]
+        delete Template.filters[id]
       }
     })
-    Builder.filters[id] = filterStore
+    Template.filters[id] = filterStore
   }
-  return Builder.filters[id]
+  return Template.filters[id]
 }

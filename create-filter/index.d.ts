@@ -3,7 +3,7 @@ import { MapStore } from 'nanostores'
 
 import {
   LoadedSyncMapValue,
-  SyncMapBuilder,
+  SyncMapTemplate,
   SyncMapStore
 } from '../define-sync-map/index.js'
 import { Client } from '../client/index.js'
@@ -38,23 +38,22 @@ export interface FilterStore<
  *
  * ```js
  * import { createFilter } from '@logux/client'
- * import { getValue } from 'nanostores'
  *
  * import { User } from '../store'
  *
  * let usersInProject = createFilter(client, User, { projectId })
  * await usersInProject.loading
- * console.log(getValue(usersInProject))
+ * console.log(usersInProject.get())
  * ```
  *
  * @param client Logux Client.
- * @param Builder Store class from {@link defineSyncMap}.
+ * @param Template Store class from {@link defineSyncMap}.
  * @param filter Key-value to filter stores.
  * @param opts Loading options.
  */
 export function createFilter<Value extends SyncMapValues>(
   client: Client,
-  Builder: SyncMapBuilder<Value>,
+  Template: SyncMapTemplate<Value>,
   filter?: Filter<Value>,
   opts?: FilterOptions
 ): FilterStore<Value>
