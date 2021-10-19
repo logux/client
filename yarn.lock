@@ -6243,7 +6243,7 @@ nanospinner@^0.3.0:
 
 nanostores@nanostores/nanostores#next:
   version "0.4.9"
-  resolved "https://codeload.github.com/nanostores/nanostores/tar.gz/4f0e9ed7b1311f77fdaddd7e1c32b1c2921b3b6b"
+  resolved "https://codeload.github.com/nanostores/nanostores/tar.gz/ea929f58d2988bcdc57d5125461a4da3ba135359"
 
 natural-compare@^1.4.0:
   version "1.4.0"
