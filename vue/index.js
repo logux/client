@@ -2,7 +2,6 @@ import {
   getCurrentInstance,
   onBeforeUnmount,
   onErrorCaptured,
-  triggerRef,
   reactive,
   readonly,
   computed,
@@ -53,14 +52,10 @@ function checkErrorProcessor() {
 function useSyncStore(store) {
   let error = ref(null)
   let state = ref()
-  let unsubscribe
 
-  let listener = newState => {
-    state.value = newState
-    triggerRef(state)
-  }
-
-  unsubscribe = store.subscribe(listener)
+  let unsubscribe = store.subscribe(value => {
+    state.value = value
+  })
 
   if (store.loading) {
     watch(error, () => {
