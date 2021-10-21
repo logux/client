@@ -9,8 +9,8 @@ import { jest } from '@jest/globals'
 import {
   changeSyncMapById,
   SyncMapTemplate,
+  syncMapTemplate,
   LoguxUndoError,
-  defineSyncMap,
   createSyncMap,
   TestClient
 } from '../index.js'
@@ -138,7 +138,7 @@ async function catchLoadingError(
   return screen.getByTestId('test').textContent
 }
 
-let LocalPostStore = defineSyncMap<{ projectId: string; title: string }>(
+let LocalPostStore = syncMapTemplate<{ projectId: string; title: string }>(
   'local',
   {
     offline: true,
@@ -146,7 +146,7 @@ let LocalPostStore = defineSyncMap<{ projectId: string; title: string }>(
   }
 )
 
-let RemotePostStore = defineSyncMap<{ title?: string }>('posts')
+let RemotePostStore = syncMapTemplate<{ title?: string }>('posts')
 
 let BrokenStore = mapTemplate<
   { isLoading: boolean },
@@ -181,7 +181,7 @@ afterEach(() => {
 
 it('throws on missed logux client dependency', () => {
   let spy = jest.spyOn(console, 'warn').mockImplementation(() => {})
-  let Test = defineSyncMap<{ name: string }>('test')
+  let Test = syncMapTemplate<{ name: string }>('test')
   let [errors, Catcher] = getCatcher(() => {
     useSync(Test, 'ID')
   })

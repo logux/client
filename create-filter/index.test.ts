@@ -5,21 +5,21 @@ import {
   changeSyncMapById,
   deleteSyncMapById,
   buildNewSyncMap,
+  syncMapTemplate,
   createSyncMap,
-  defineSyncMap,
   changeSyncMap,
   createFilter,
   FilterStore,
   TestClient
 } from '../index.js'
 
-let Post = defineSyncMap<{
+let Post = syncMapTemplate<{
   title: string
   authorId: string
   projectId: string
 }>('posts')
 
-let LocalPost = defineSyncMap<{
+let LocalPost = syncMapTemplate<{
   title: string
   authorId?: string
   projectId: string
@@ -29,14 +29,14 @@ let LocalPost = defineSyncMap<{
   remote: false
 })
 
-let CachedPost = defineSyncMap<{
+let CachedPost = syncMapTemplate<{
   title: string
   projectId: string
 }>('cached', {
   offline: true
 })
 
-let User = defineSyncMap<{ name: string; projectId: string }>('users')
+let User = syncMapTemplate<{ name: string; projectId: string }>('users')
 
 afterEach(() => {
   cleanStores(Post, LocalPost, CachedPost, User)

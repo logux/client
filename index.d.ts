@@ -4,7 +4,7 @@ export {
   changeSyncMapById,
   buildNewSyncMap,
   SyncMapTemplate,
-  defineSyncMap,
+  syncMapTemplate,
   createSyncMap,
   changeSyncMap,
   deleteSyncMap,

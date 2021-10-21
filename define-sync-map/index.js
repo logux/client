@@ -21,7 +21,7 @@ function getIndexes(plural, id) {
   return [plural, `${plural}/${id}`]
 }
 
-export function defineSyncMap(plural, opts = {}) {
+export function syncMapTemplate(plural, opts = {}) {
   let Template = mapTemplate(
     (store, id, client, createAction, createMeta, alreadySubscribed) => {
       if (!client) {

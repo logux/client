@@ -1,8 +1,8 @@
 export {
   deleteSyncMapById,
   changeSyncMapById,
+  syncMapTemplate,
   buildNewSyncMap,
-  defineSyncMap,
   createSyncMap,
   changeSyncMap,
   deleteSyncMap

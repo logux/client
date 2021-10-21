@@ -18,8 +18,8 @@ import {
   ChannelDeniedError,
   changeSyncMapById,
   SyncMapTemplate,
+  syncMapTemplate,
   createSyncMap,
-  defineSyncMap,
   LoguxUndoError,
   ChannelError,
   TestClient
@@ -166,19 +166,19 @@ async function catchLoadingError(
   return screen.getByTestId('test').textContent
 }
 
-let LocalPost = defineSyncMap<{ projectId: string; title: string }>('local', {
+let LocalPost = syncMapTemplate<{ projectId: string; title: string }>('local', {
   offline: true,
   remote: false
 })
 
-let RemotePost = defineSyncMap<{ title?: string }>('posts')
+let RemotePost = syncMapTemplate<{ title?: string }>('posts')
 
 afterEach(() => {
   cleanStores(Broken, LocalPost, RemotePost)
 })
 
 it('throws on missed context for sync map', () => {
-  let Test = defineSyncMap<{ name: string }>('test')
+  let Test = syncMapTemplate<{ name: string }>('test')
   let [errors, Catcher] = getCatcher(() => {
     useSync(Test, 'ID')
   })

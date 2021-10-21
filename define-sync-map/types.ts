@@ -1,6 +1,6 @@
 import {
   buildNewSyncMap,
-  defineSyncMap,
+  syncMapTemplate,
   changeSyncMap,
   createSyncMap,
   Client
@@ -12,11 +12,10 @@ let client = new Client({
   userId: '10'
 })
 
-let User =
-  defineSyncMap<{
-    name: string
-    age?: number
-  }>('users')
+let User = syncMapTemplate<{
+  name: string
+  age?: number
+}>('users')
 
 let user = User('user:id', client)
 changeSyncMap(user, { name: 'Ivan' })

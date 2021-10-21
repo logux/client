@@ -47,7 +47,7 @@ export interface FilterStore<
  * ```
  *
  * @param client Logux Client.
- * @param Template Store class from {@link defineSyncMap}.
+ * @param Template Store template from {@link syncMapTemplate}.
  * @param filter Key-value to filter stores.
  * @param opts Loading options.
  */

@@ -3,12 +3,12 @@ import React from 'preact'
 
 import '../test/set-production.js'
 import { useSync, ClientContext, ChannelErrors } from './index.js'
-import { defineSyncMap, TestClient } from '../index.js'
+import { syncMapTemplate, TestClient } from '../index.js'
 
 let { render, screen } = ReactTesting
 let h = React.createElement
 
-let Store = defineSyncMap('test')
+let Store = syncMapTemplate('test')
 
 let IdTest = () => {
   let value = useSync(Store, 'ID')

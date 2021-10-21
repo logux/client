@@ -3,12 +3,12 @@ import Vue from 'vue'
 
 import '../test/set-production.js'
 import { loguxPlugin, useSync, ChannelErrors, useFilter } from './index.js'
-import { defineSyncMap, TestClient } from '../index.js'
+import { syncMapTemplate, TestClient } from '../index.js'
 
 let { defineComponent, h, isReadonly, nextTick } = Vue
 let { render, screen } = VueTesting
 
-let Store = defineSyncMap('test')
+let Store = syncMapTemplate('test')
 
 let IdTest = defineComponent(() => {
   let store = useSync(Store, 'ID')

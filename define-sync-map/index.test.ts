@@ -6,7 +6,7 @@ import {
   changeSyncMapById,
   deleteSyncMapById,
   buildNewSyncMap,
-  defineSyncMap,
+  syncMapTemplate,
   changeSyncMap,
   createSyncMap,
   deleteSyncMap,
@@ -31,15 +31,15 @@ type PostValue = {
   author?: string
 }
 
-let Post = defineSyncMap<PostValue>('posts')
+let Post = syncMapTemplate<PostValue>('posts')
 
-let CachedPost = defineSyncMap<{
+let CachedPost = syncMapTemplate<{
   title: string
 }>('cachedPosts', {
   offline: true
 })
 
-let LocalPost = defineSyncMap<{
+let LocalPost = syncMapTemplate<{
   title: string
   category?: string
 }>('localPosts', {

@@ -1,15 +1,15 @@
 import { cleanStores, mapTemplate } from 'nanostores'
 
 import {
+  syncMapTemplate,
   prepareForTest,
-  defineSyncMap,
   createFilter,
   emptyInTest,
   TestClient
 } from '../index.js'
 
 let client = new TestClient('10')
-let User = defineSyncMap<{ name: string }>('users')
+let User = syncMapTemplate<{ name: string }>('users')
 
 afterEach(() => {
   cleanStores(User)

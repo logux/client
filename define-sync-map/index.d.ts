@@ -68,9 +68,9 @@ export interface SyncMapTemplate<Value extends SyncMapValues = any>
  * Store will resolve client’s edit conflicts with last write wins strategy.
  *
  * ```ts
- * import { defineSyncMap } from '@logux/client'
+ * import { syncMapTemplate } from '@logux/client'
  *
- * export const User = defineSyncMap<{
+ * export const User = syncMapTemplate<{
  *   login: string,
  *   name?: string,
  *   isAdmin: boolean
@@ -82,7 +82,7 @@ export interface SyncMapTemplate<Value extends SyncMapValues = any>
  * @param opts Options to disable server validation or keep actions in log
  *             for offline support.
  */
-export function defineSyncMap<Value extends SyncMapValues>(
+export function syncMapTemplate<Value extends SyncMapValues>(
   plural: string,
   opts?: {
     offline?: boolean
@@ -108,7 +108,7 @@ export function defineSyncMap<Value extends SyncMapValues>(
  * ```
  *
  * @param client Logux Client instance.
- * @param Template Store class from {@link defineSyncMap}.
+ * @param Template Store template from {@link syncMapTemplate}.
  * @param values Initial value.
  * @return Promise until server validation for remote classes
  *         or saving action to the log of fully offline classes.
@@ -132,7 +132,7 @@ export function createSyncMap<Value extends SyncMapValues>(
  * ```
  *
  * @param client Logux Client instance.
- * @param Template Store class from {@link defineSyncMap}.
+ * @param Template Store template from {@link syncMapTemplate}.
  * @param values Initial value.
  * @return Promise with store instance.
  */
@@ -154,7 +154,7 @@ export function buildNewSyncMap<Value extends SyncMapValues>(
  * ```
  *
  * @param client Logux Client instance.
- * @param Template Store class from {@link defineSyncMap}.
+ * @param Template Store template from {@link syncMapTemplate}.
  * @param id Store’s ID.
  * @param diff Store’s changes.
  * @return Promise until server validation for remote classes
@@ -217,7 +217,7 @@ export function changeSyncMap<
  * ```
  *
  * @param client Logux Client instance.
- * @param Template Store class from {@link defineSyncMap}.
+ * @param Template Store template from {@link syncMapTemplate}.
  * @param id Store’s ID.
  * @return Promise until server validation for remote classes
  *         or saving action to the log of fully offline classes.
