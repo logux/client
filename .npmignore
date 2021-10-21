@@ -5,7 +5,7 @@ test/
 coverage/
 **/types.ts
 **/errors.ts
-**/*.test.ts
+**/*.test.*
 tsconfig.json
 
 global.d.ts
