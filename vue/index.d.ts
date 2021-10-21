@@ -11,7 +11,7 @@ import { SyncMapValues, LoguxNotFoundError } from '@logux/actions'
 import { StoreValue, MapTemplate } from 'nanostores'
 
 import { FilterOptions, FilterStore, Filter } from '../create-filter/index.js'
-import { SyncMapTemplate, SyncMapValue } from '../define-sync-map/index.js'
+import { SyncMapTemplate, SyncMapValue } from '../sync-map-template/index.js'
 import { ChannelError } from '../logux-undo-error/index.js'
 import { Client } from '../client/index.js'
 

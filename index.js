@@ -6,7 +6,7 @@ export {
   createSyncMap,
   changeSyncMap,
   deleteSyncMap
-} from './define-sync-map/index.js'
+} from './sync-map-template/index.js'
 export { prepareForTest, emptyInTest } from './prepare-for-test/index.js'
 export { badge, badgeRu, badgeEn } from './badge/index.js'
 export { LoguxUndoError } from './logux-undo-error/index.js'

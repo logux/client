@@ -10,7 +10,7 @@ export {
   deleteSyncMap,
   SyncMapStore,
   SyncMapValue
-} from './define-sync-map/index.js'
+} from './sync-map-template/index.js'
 export {
   BadgeMessages,
   BadgeStyles,

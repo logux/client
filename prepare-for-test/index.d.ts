@@ -1,7 +1,7 @@
 import { MapTemplate, MapStore } from 'nanostores'
 import { SyncMapValues } from '@logux/actions'
 
-import { SyncMapTemplate, SyncMapStore } from '../define-sync-map/index.js'
+import { SyncMapTemplate, SyncMapStore } from '../sync-map-template/index.js'
 import { Client } from '../client/index.js'
 
 interface PrepareForTest {

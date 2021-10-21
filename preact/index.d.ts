@@ -8,7 +8,7 @@ import {
   ChannelError
 } from '../logux-undo-error/index.js'
 import { FilterOptions, FilterStore, Filter } from '../create-filter/index.js'
-import { SyncMapTemplate, SyncMapValue } from '../define-sync-map/index.js'
+import { SyncMapTemplate, SyncMapValue } from '../sync-map-template/index.js'
 import { Client } from '../client/index.js'
 import { AuthStore } from '../create-auth/index.js'
 

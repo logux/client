@@ -5,7 +5,7 @@ import {
   LoadedSyncMapValue,
   SyncMapTemplate,
   SyncMapStore
-} from '../define-sync-map/index.js'
+} from '../sync-map-template/index.js'
 import { Client } from '../client/index.js'
 
 export type Filter<Value extends object> = {
