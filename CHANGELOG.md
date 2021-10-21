@@ -1,6 +1,11 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.14
+* Renamed `defineSyncMap()` to `syncMapTemplate()`.
+* Moved to Nano Stores 0.5.
+* Added `AuthStore#loading` (by Eduard Aksamitov).
+
 ## 0.13.3
 * Replaced `colorette` with `nanocolors`.
 
