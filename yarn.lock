@@ -612,10 +612,10 @@
   resolved "https://registry.yarnpkg.com/@nanostores/react/-/react-0.1.0.tgz#c70d6e506d71f3d9b0146b4a9d79d201e8f0c09d"
   integrity sha512-nA9iyBSoY9SPcpMgBCsjZxQSluh5w6ivIaETgfc7kNZ/xdPHRGshNFa01dmCSVl6BXoYuzRJbV+uNuPXY6kmBA==
 
-"@nanostores/vue@^0.1.0":
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/@nanostores/vue/-/vue-0.1.0.tgz#bb116c39ba0afdd9339346ea03355b1ef7de7213"
-  integrity sha512-190tZ94CS3pO/nNUkI18lTLvYM8+ukbOlrDnsh+I0pf6GF3yquNZ/gsigSduRruKesRrvKxVjlFnMsH0VTxsnw==
+"@nanostores/vue@^0.2.1":
+  version "0.2.1"
+  resolved "https://registry.yarnpkg.com/@nanostores/vue/-/vue-0.2.1.tgz#bd893d9b0a9e6b08f78928f7ea0ad583a1c6c437"
+  integrity sha512-nVNiAjalUh2Ia/1OVN1yvhwfQ5P4YPWPcZv9fqzd13Cr5DOET/ixNBpy6OpOkKiuX71MAXp5ZDFyZdvEQZpnkw==
 
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
