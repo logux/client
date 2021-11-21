@@ -1,6 +1,9 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.14.3
+* Updated `@nanostores/vue`.
+
 ## 0.14.2
 * Moved to Nano Stores Vue 0.2 (by Eduard Aksamitov).
 
