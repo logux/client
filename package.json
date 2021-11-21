@@ -198,10 +198,9 @@
     {
       "name": "Helpers",
       "import": {
-        "./index.js": "{ attention, confirm, favicon, status, log, badge, badgeEn }",
-        "./badge/styles/index.js": "{ badgeStyles }"
+        "./index.js": "{ attention, confirm, favicon, status, log, badge, badgeEn }"
       },
-      "limit": "4 KB"
+      "limit": "3 KB"
     },
     {
       "name": "React",
