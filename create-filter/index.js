@@ -7,6 +7,19 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
   let id = Template.plural + JSON.stringify(filter) + JSON.stringify(opts)
   if (!Template.filters) Template.filters = {}
 
+  if (opts.singleSubscription) {
+    let OldTemplate = Template
+    // eslint-disable-next-line no-shadow
+    Template = Object.assign((id, client, createAction, createMeta) =>
+      OldTemplate(
+        id,
+        client,
+        createAction,
+        createMeta,
+        true
+      ), Template)
+  }
+
   if (!Template.filters[id]) {
     let filterStore = map()
 
@@ -45,7 +58,7 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
       let unbindIds = new Map()
       let subscribed = new Set()
 
-      async function add(child) {
+      function add(child) {
         let unbindChild = child.listen(listener)
         if (stores.has(child.value.id)) {
           unbindChild()

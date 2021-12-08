@@ -14,6 +14,7 @@ export type Filter<Value extends object> = {
 
 export interface FilterOptions {
   listChangesOnly?: boolean
+  singleSubscription?: boolean
 }
 
 export interface FilterStore<

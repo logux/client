@@ -692,3 +692,41 @@ it('clean filters', () => {
 
   expect(client.log.actions()).toHaveLength(3)
 })
+
+it('doesn\'t subscribe to children  with singleSubscription option', async () => {
+  let client = new TestClient('10')
+  await client.connect()
+  client.log.keepActions()
+
+  let posts = createFilter(client, Post, { authorId: '10' }, { singleSubscription: true })
+  posts.listen(() => {})
+  await createSyncMap(client, Post, {
+    id: '1',
+    title: '1',
+    authorId: '10',
+    projectId: '20'
+  })
+  expect(
+    client.log.actions()
+  ).toEqual([
+    { type: 'logux/subscribe', channel: 'posts', filter: { authorId: '10' } },
+    {
+      'fields': {
+        'authorId': '10',
+        'projectId': '20',
+        'title': '1'
+      },
+      'id': '1',
+      'type': 'posts/create'
+    },
+    {
+      'id': '1 10:2:2 0',
+      'type': 'logux/processed'
+    },
+    {
+      'id': '2 10:2:2 0',
+      'type': 'logux/processed'
+    }
+  ])
+  await allTasks()
+})
