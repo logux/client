@@ -1,6 +1,10 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.14.4
+* Fixed logger for clean events (by Aleksandr Slepchenkov).
+* Updated `@nanostores/vue`.
+
 ## 0.14.3
 * Updated `@nanostores/vue`.
 
