@@ -171,7 +171,7 @@ export function log(client, messages = {}) {
           delete cleaned[meta.id]
           return
         }
-        if (meta.tab && meta.tab !== client.id) return
+        if (meta.tab && meta.tab !== client.tabId) return
         if (ignore[action.type]) return
         if (action.type.startsWith('logux/')) return
         let message = 'cleaned ' + bold(action.type) + ' action'
