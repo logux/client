@@ -11,9 +11,9 @@
   ],
   "scripts": {
     "clean": "rm -Rf coverage/ test/demo/build/ test/demo/.cache",
-    "test": "node --experimental-vm-modules node_modules/.bin/jest --coverage && eslint . && check-dts && size-limit && yarn build",
-    "build": "cd test/demo && yarn build",
-    "start": "cd test/demo && yarn start"
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage && eslint . && check-dts && size-limit && pnpm build",
+    "build": "cd test/demo && pnpm build",
+    "start": "cd test/demo && pnpm start"
   },
   "author": "Andrey Sitnik <andrey@sitnik.ru>",
   "license": "MIT",
@@ -76,11 +76,14 @@
   },
   "devDependencies": {
     "@babel/core": "^7.16.5",
+    "@jest/globals": "^27.4.4",
     "@logux/core": "^0.7.2",
     "@logux/eslint-config": "^46.1.1",
     "@nanostores/preact": "^0.1.3",
     "@nanostores/react": "^0.1.5",
     "@nanostores/vue": "^0.5.3",
+    "@parcel/config-default": "^2.0.1",
+    "@parcel/core": "^2.0.1",
     "@parcel/optimizer-cssnano": "2.0.1",
     "@parcel/optimizer-htmlnano": "2.0.1",
     "@parcel/packager-css": "2.0.1",
@@ -89,6 +92,7 @@
     "@parcel/transformer-html": "2.0.1",
     "@parcel/transformer-postcss": "2.0.1",
     "@parcel/transformer-posthtml": "2.0.1",
+    "@parcel/transformer-raw": "^2.0.1",
     "@parcel/transformer-svg": "^2.0.1",
     "@peculiar/webcrypto": "^1.2.3",
     "@size-limit/preset-small-lib": "^7.0.4",
