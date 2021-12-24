@@ -48,6 +48,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Run unit tests
-        run: node --experimental-vm-modules node_modules/.bin/jest
+        run: node --experimental-vm-modules node_modules/jest/bin/jest.js
         env:
           FORCE_COLOR: 2
