@@ -10,6 +10,7 @@ import {
   watch,
   isRef,
   toRef,
+  unref,
   ref
 } from 'vue'
 import { useStore } from '@nanostores/vue'
@@ -102,30 +103,37 @@ export function useSync(Template, id, ...builderArgs) {
 }
 
 export function useFilter(Template, filter = {}, opts = {}) {
-  if (!isRef(filter)) filter = ref(filter)
-  if (!isRef(opts)) opts = ref(opts)
-
   if (process.env.NODE_ENV !== 'production') {
     checkErrorProcessor()
   }
 
   let client = useClient()
-  let state = reactive({})
 
-  watch(
-    [filter, opts],
-    () => {
-      state.value = useSyncStore(
-        createFilter(client, Template, { ...filter.value }, { ...opts.value })
+  if (!isRef(filter) && !isRef(opts)) {
+    if (process.env.NODE_ENV !== 'production') {
+      return readonly(
+        useSyncStore(createFilter(client, Template, filter, opts))
       )
-    },
-    { deep: true, immediate: true }
-  )
+    }
+    return useSyncStore(createFilter(client, Template, filter, opts))
+  } else {
+    let state = reactive({})
 
-  if (process.env.NODE_ENV !== 'production') {
-    return readonly(toRef(state, 'value'))
+    watch(
+      () => ([unref(filter), unref(opts)]),
+      () => {
+        state.value = useSyncStore(
+          createFilter(client, Template, { ...filter.value }, { ...opts.value })
+        )
+      },
+      { deep: true, immediate: true }
+    )
+
+    if (process.env.NODE_ENV !== 'production') {
+      return readonly(toRef(state, 'value'))
+    }
+    return toRef(state, 'value')
   }
-  return toRef(state, 'value')
 }
 
 export let ChannelErrors = {

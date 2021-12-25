@@ -45,6 +45,10 @@ it('does not return readonly state in production mode', () => {
       let list = useFilter(Store)
       expect(isReadonly(list)).toBe(false)
 
+      let filter = ref({ projectId: 'ID' })
+      let listWithReactiveFilter = useFilter(Store, filter)
+      expect(isReadonly(listWithReactiveFilter)).toBe(false)
+
       return () => null
     }),
     {
