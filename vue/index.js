@@ -1,6 +1,7 @@
 import {
   getCurrentInstance,
   onErrorCaptured,
+  shallowRef,
   reactive,
   readonly,
   computed,
@@ -49,7 +50,7 @@ function checkErrorProcessor() {
 }
 
 function useSyncStore(store) {
-  let error = ref(null)
+  let error = shallowRef(null)
   let state = useStore(store)
 
   if (store.loading) {
