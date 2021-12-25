@@ -290,6 +290,47 @@ it('has composable to get client', async () => {
   ).toBe('10')
 })
 
+it('recreates state on id changes', async () => {
+  let client = new TestClient('10')
+  let Test = defineComponent(() => {
+    let id = ref('1')
+    let state = useSync(RemotePostStore, id)
+    return () =>
+      h(
+        'div',
+        {
+          'data-testid': 'test',
+          'onClick': () => {
+            id.value = '2'
+          }
+        },
+        state.value.isLoading ? 'loading' : state.value.id
+      )
+  })
+
+  renderWithClient(
+    defineComponent(
+      () => () =>
+        h(ChannelErrors, null, {
+          default: () => h(Test)
+        })
+    ),
+    client
+  )
+  expect(screen.getByTestId('test').textContent).toBe('loading')
+
+  await client.connect()
+  await createSyncMap(client, RemotePostStore, { id: '1' })
+  await createSyncMap(client, RemotePostStore, { id: '2' })
+  expect(screen.getByTestId('test').textContent).toBe('1')
+
+  screen.getByTestId('test').click()
+  await nextTick()
+  expect(screen.getByTestId('test').textContent).toBe('loading')
+  await delay(10)
+  expect(screen.getByTestId('test').textContent).toBe('2')
+})
+
 it('composables return readonly', () => {
   renderWithClient(
     defineComponent(
@@ -384,7 +425,7 @@ it('renders filter', async () => {
   ])
 })
 
-it('recreating filter on args changes', async () => {
+it('recreates filter on args changes', async () => {
   let client = new TestClient('10')
   let renders: string[] = []
   let TestList = defineComponent(() => {
@@ -396,7 +437,7 @@ it('recreating filter on args changes', async () => {
         h('button', {
           'data-testid': 'change',
           'onClick': () => {
-            filter.value.projectId = '2'
+            filter.value.projectId = filter.value.projectId === '2' ? '1' : '2'
           }
         }),
         h(
@@ -444,6 +485,7 @@ it('recreating filter on args changes', async () => {
   expect(renders).toEqual(['list', 'list', '1', '3'])
 
   screen.getByTestId('change').click()
+  await nextTick()
   await Promise.all([
     createSyncMap(client, LocalPostStore, {
       id: '1',
@@ -469,10 +511,13 @@ it('recreating filter on args changes', async () => {
     '3',
     'list',
     'list',
-    '2',
     'list',
     '2'
   ])
+
+  screen.getByTestId('change').click()
+  await nextTick()
+  expect(screen.getByTestId('test').textContent).toBe(' 0:Y 1:A')
 })
 
 it('renders authentication state', async () => {

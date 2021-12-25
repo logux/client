@@ -37,7 +37,7 @@
     "@logux/core": "^0.7.0",
     "@nanostores/preact": "^0.0.0",
     "@nanostores/react": "^0.0.0",
-    "@nanostores/vue": "^0.4.1",
+    "@nanostores/vue": ">=0.5.3",
     "nanostores": "^0.5.0",
     "preact": ">=10.0.0",
     "react": ">=16.8.0",
