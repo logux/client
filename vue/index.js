@@ -10,8 +10,7 @@ import {
   watch,
   isRef,
   toRef,
-  unref,
-  ref
+  unref
 } from 'vue'
 import { useStore } from '@nanostores/vue'
 
@@ -139,7 +138,7 @@ export function useFilter(Template, filter = {}, opts = {}) {
 export let ChannelErrors = {
   name: 'LoguxChannelErrors',
   setup(props, { slots }) {
-    let error = ref(null)
+    let error = shallowRef(null)
     let code = computed(() => {
       if (!error.value) {
         return undefined
