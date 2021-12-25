@@ -290,6 +290,47 @@ it('has composable to get client', async () => {
   ).toBe('10')
 })
 
+it('recreates state on id changes', async () => {
+  let client = new TestClient('10')
+  let Test = defineComponent(() => {
+    let id = ref('1')
+    let state = useSync(RemotePostStore, id)
+    return () =>
+      h(
+        'div',
+        {
+          'data-testid': 'test',
+          'onClick': () => {
+            id.value = '2'
+          }
+        },
+        state.value.isLoading ? 'loading' : state.value.id
+      )
+  })
+
+  renderWithClient(
+    defineComponent(
+      () => () =>
+        h(ChannelErrors, null, {
+          default: () => h(Test)
+        })
+    ),
+    client
+  )
+  expect(screen.getByTestId('test').textContent).toBe('loading')
+
+  await client.connect()
+  await createSyncMap(client, RemotePostStore, { id: '1' })
+  await createSyncMap(client, RemotePostStore, { id: '2' })
+  expect(screen.getByTestId('test').textContent).toBe('1')
+
+  screen.getByTestId('test').click()
+  await nextTick()
+  expect(screen.getByTestId('test').textContent).toBe('loading')
+  await delay(10)
+  expect(screen.getByTestId('test').textContent).toBe('2')
+})
+
 it('composables return readonly', () => {
   renderWithClient(
     defineComponent(

@@ -5,7 +5,7 @@ import '../test/set-production.js'
 import { loguxPlugin, useSync, ChannelErrors, useFilter } from './index.js'
 import { syncMapTemplate, TestClient } from '../index.js'
 
-let { defineComponent, h, isReadonly, nextTick } = Vue
+let { defineComponent, h, isReadonly, nextTick, ref } = Vue
 let { render, screen } = VueTesting
 
 let Store = syncMapTemplate('test')
@@ -36,9 +36,15 @@ it('does not return readonly state in production mode', () => {
   render(
     defineComponent(() => {
       let state = useSync(Store, 'ID')
-      let list = useFilter(Store)
       expect(isReadonly(state)).toBe(false)
+
+      let id = ref('ID')
+      let stateWithReactiveId = useSync(Store, id)
+      expect(isReadonly(stateWithReactiveId)).toBe(false)
+
+      let list = useFilter(Store)
       expect(isReadonly(list)).toBe(false)
+
       return () => null
     }),
     {

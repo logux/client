@@ -72,29 +72,33 @@ export function useSync(Template, id, ...builderArgs) {
     }
   }
 
-  if (typeof id === 'string') {
-    id = ref(id)
-  }
-
   if (process.env.NODE_ENV !== 'production') {
     checkErrorProcessor()
   }
 
   let client = useClient()
-  let state = reactive({})
 
-  watch(
-    id,
-    () => {
-      state.value = useSyncStore(Template(id.value, client, ...builderArgs))
-    },
-    { immediate: true }
-  )
+  if (!isRef(id)) {
+    if (process.env.NODE_ENV !== 'production') {
+      return readonly(useSyncStore(Template(id, client, ...builderArgs)))
+    }
+    return useSyncStore(Template(id, client, ...builderArgs))
+  } else {
+    let state = reactive({})
 
-  if (process.env.NODE_ENV !== 'production') {
-    return readonly(toRef(state, 'value'))
+    watch(
+      id,
+      () => {
+        state.value = useSyncStore(Template(id.value, client, ...builderArgs))
+      },
+      { immediate: true }
+    )
+
+    if (process.env.NODE_ENV !== 'production') {
+      return readonly(toRef(state, 'value'))
+    }
+    return toRef(state, 'value')
   }
-  return toRef(state, 'value')
 }
 
 export function useFilter(Template, filter = {}, opts = {}) {
