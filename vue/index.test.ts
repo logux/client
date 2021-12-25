@@ -384,7 +384,7 @@ it('renders filter', async () => {
   ])
 })
 
-it('recreating filter on args changes', async () => {
+it('recreates filter on args changes', async () => {
   let client = new TestClient('10')
   let renders: string[] = []
   let TestList = defineComponent(() => {
@@ -396,7 +396,7 @@ it('recreating filter on args changes', async () => {
         h('button', {
           'data-testid': 'change',
           'onClick': () => {
-            filter.value.projectId = '2'
+            filter.value.projectId = filter.value.projectId === '2' ? '1' : '2'
           }
         }),
         h(
@@ -444,6 +444,7 @@ it('recreating filter on args changes', async () => {
   expect(renders).toEqual(['list', 'list', '1', '3'])
 
   screen.getByTestId('change').click()
+  await nextTick()
   await Promise.all([
     createSyncMap(client, LocalPostStore, {
       id: '1',
@@ -469,10 +470,13 @@ it('recreating filter on args changes', async () => {
     '3',
     'list',
     'list',
-    '2',
     'list',
     '2'
   ])
+
+  screen.getByTestId('change').click()
+  await nextTick()
+  expect(screen.getByTestId('test').textContent).toBe(' 0:Y 1:A')
 })
 
 it('renders authentication state', async () => {

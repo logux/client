@@ -111,7 +111,7 @@ export function useFilter(Template, filter = {}, opts = {}) {
     [filter, opts],
     () => {
       state.value = useSyncStore(
-        createFilter(client, Template, filter.value, opts.value)
+        createFilter(client, Template, { ...filter.value }, { ...opts.value })
       )
     },
     { deep: true, immediate: true }
