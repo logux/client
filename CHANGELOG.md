@@ -1,7 +1,7 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## next
+## 0.14.5
 * Fixed Vue `useFilter()` working with reactive filter (by Eduard Aksamitov).
 * Improved Vue `useFilter()` performance (by Eduard Aksamitov).
 * Improved Vue `useSync()` performance (by Eduard Aksamitov).
