@@ -22,11 +22,11 @@ specifiers:
   '@parcel/transformer-raw': ^2.0.1
   '@parcel/transformer-svg': ^2.0.1
   '@peculiar/webcrypto': ^1.2.3
-  '@size-limit/preset-small-lib': ^7.0.4
+  '@size-limit/preset-small-lib': ^7.0.5
   '@testing-library/jest-dom': ^5.16.1
   '@testing-library/preact': ^2.0.1
   '@testing-library/react': ^12.1.2
-  '@testing-library/vue': ^6.4.0
+  '@testing-library/vue': ^6.5.0
   '@types/jest': ^27.0.3
   '@types/node': ^17.0.4
   '@types/react': ^17.0.38
@@ -35,7 +35,7 @@ specifiers:
   '@typescript-eslint/eslint-plugin': ^5.8.0
   '@typescript-eslint/parser': ^5.8.0
   '@vue/compiler-sfc': ^3.2.26
-  check-dts: ^0.6.5
+  check-dts: ^0.6.6
   clean-publish: ^3.4.4
   eslint: ^8.5.0
   eslint-config-standard: ^16.0.3
@@ -57,11 +57,11 @@ specifiers:
   print-snapshots: ^0.4.2
   react: ^17.0.2
   react-dom: ^17.0.2
-  size-limit: ^7.0.4
+  size-limit: ^7.0.5
   svgo: ^2.8.0
   ts-jest: ^27.1.2
   typescript: ^4.5.4
-  vue: ^3.2.4
+  vue: ^3.2.26
 
 dependencies:
   '@logux/actions': 0.2.1_@logux+core@0.7.2
@@ -91,7 +91,7 @@ devDependencies:
   '@parcel/transformer-raw': 2.0.1_@parcel+core@2.0.1
   '@parcel/transformer-svg': 2.0.1_@parcel+core@2.0.1
   '@peculiar/webcrypto': 1.2.3
-  '@size-limit/preset-small-lib': 7.0.4_size-limit@7.0.4
+  '@size-limit/preset-small-lib': 7.0.5_size-limit@7.0.5
   '@testing-library/jest-dom': 5.16.1
   '@testing-library/preact': 2.0.1_preact@10.6.4
   '@testing-library/react': 12.1.2_react-dom@17.0.2+react@17.0.2
@@ -104,7 +104,7 @@ devDependencies:
   '@typescript-eslint/eslint-plugin': 5.8.0_836011a006f4f5d67178564baf2b6d34
   '@typescript-eslint/parser': 5.8.0_eslint@8.5.0+typescript@4.5.4
   '@vue/compiler-sfc': 3.2.26
-  check-dts: 0.6.5_typescript@4.5.4
+  check-dts: 0.6.6_typescript@4.5.4
   clean-publish: 3.4.4
   eslint: 8.5.0
   eslint-config-standard: 16.0.3_4cecef3480376bac71ded249816d1e72
@@ -122,7 +122,7 @@ devDependencies:
   print-snapshots: 0.4.2
   react: 17.0.2
   react-dom: 17.0.2_react@17.0.2
-  size-limit: 7.0.4
+  size-limit: 7.0.5
   svgo: 2.8.0
   ts-jest: 27.1.2_23cdfcab08939333322143e4faaefcdd
   typescript: 4.5.4
@@ -682,7 +682,7 @@ packages:
     dependencies:
       '@jest/console': 27.4.2
       '@jest/types': 27.4.2
-      '@types/istanbul-lib-coverage': 2.0.3
+      '@types/istanbul-lib-coverage': 2.0.4
       collect-v8-coverage: 1.0.1
     dev: true
 
@@ -725,7 +725,7 @@ packages:
     resolution: {integrity: sha512-fC6QCp7Sc5sX6g8Tvbmj4XUTbyrik0akgRy03yjXbQaBWWNWGE7SGtJk98m0N8nzegD/7SggrUlivxo5ax4KWQ==}
     engines: {node: '>= 10.14.2'}
     dependencies:
-      '@types/istanbul-lib-coverage': 2.0.3
+      '@types/istanbul-lib-coverage': 2.0.4
       '@types/istanbul-reports': 3.0.1
       '@types/node': 17.0.4
       '@types/yargs': 15.0.14
@@ -736,7 +736,7 @@ packages:
     resolution: {integrity: sha512-j35yw0PMTPpZsUoOBiuHzr1zTYoad1cVIE0ajEjcrJONxxrko/IRGKkXx3os0Nsi4Hu3+5VmDbVfq5WhG/pWAg==}
     engines: {node: ^10.13.0 || ^12.13.0 || ^14.15.0 || >=15.0.0}
     dependencies:
-      '@types/istanbul-lib-coverage': 2.0.3
+      '@types/istanbul-lib-coverage': 2.0.4
       '@types/istanbul-reports': 3.0.1
       '@types/node': 17.0.4
       '@types/yargs': 16.0.4
@@ -1625,35 +1625,35 @@ packages:
       '@sinonjs/commons': 1.8.3
     dev: true
 
-  /@size-limit/esbuild/7.0.4_size-limit@7.0.4:
-    resolution: {integrity: sha512-gfkr96LQ8zCWKDGTfnBed8K4kmQccB/cQxnqK7bMis/X0qSpeMFwDG9WO9JrjDgNRVjbncB26Qtnain58KC2Xw==}
+  /@size-limit/esbuild/7.0.5_size-limit@7.0.5:
+    resolution: {integrity: sha512-ec/XfgTHcfXFflEDgs83gs3XMfB8sn4BISZM7CPHCS72tNkcjVwNRxrKWisb11JZ2kN4glBgCmsXZpoSaEGzXg==}
     engines: {node: ^12.0.0 || ^14.0.0 || >=16.0.0}
     peerDependencies:
-      size-limit: 7.0.4
+      size-limit: 7.0.5
     dependencies:
       esbuild: 0.14.8
       nanoid: 3.1.30
-      size-limit: 7.0.4
+      size-limit: 7.0.5
     dev: true
 
-  /@size-limit/file/7.0.4_size-limit@7.0.4:
-    resolution: {integrity: sha512-/UfiOp8bDIdmNs0c8IQgGKlByo1esoayZ6+Pr/LQCJPZWPyQWVeGTo+J/+aYa9+5+r6ezvmAF5aR7VVt+rvW2Q==}
+  /@size-limit/file/7.0.5_size-limit@7.0.5:
+    resolution: {integrity: sha512-DqyuUkmCSHwML6GVmeRr0v6Ih/P3pwmCu6RDWh2QxdDSec1ZnShmFUmcC6rLQDX7KW5aCjK3cs5FNd22Eaqapw==}
     engines: {node: ^12.0.0 || ^14.0.0 || >=16.0.0}
     peerDependencies:
-      size-limit: 7.0.4
+      size-limit: 7.0.5
     dependencies:
       semver: 7.3.5
-      size-limit: 7.0.4
+      size-limit: 7.0.5
     dev: true
 
-  /@size-limit/preset-small-lib/7.0.4_size-limit@7.0.4:
-    resolution: {integrity: sha512-FS3qDDfcks3ZNKciGYxhSfiyVIQ64N6oZZABsWneHvZjOpR6KUjwPVboX2rBZGKT2an1KHs5CkHoM+oscxGWEw==}
+  /@size-limit/preset-small-lib/7.0.5_size-limit@7.0.5:
+    resolution: {integrity: sha512-cWwXDCx9BEpHIjbpHlhpS0JBt+J1U5LCaHHyBhAxevOX7W0aX7nCJwPUmd5liGHq9ui5VyWOtV3lhxce96Qd8A==}
     peerDependencies:
-      size-limit: 7.0.4
+      size-limit: 7.0.5
     dependencies:
-      '@size-limit/esbuild': 7.0.4_size-limit@7.0.4
-      '@size-limit/file': 7.0.4_size-limit@7.0.4
-      size-limit: 7.0.4
+      '@size-limit/esbuild': 7.0.5_size-limit@7.0.5
+      '@size-limit/file': 7.0.5_size-limit@7.0.5
+      size-limit: 7.0.5
     dev: true
 
   /@swc/helpers/0.2.14:
@@ -1799,14 +1799,14 @@ packages:
       '@types/node': 17.0.4
     dev: true
 
-  /@types/istanbul-lib-coverage/2.0.3:
-    resolution: {integrity: sha512-sz7iLqvVUg1gIedBOvlkxPlc8/uVzyS5OwGz1cKjXzkl3FpL3al0crU8YGU1WoHkxn0Wxbw5tyi6hvzJKNzFsw==}
+  /@types/istanbul-lib-coverage/2.0.4:
+    resolution: {integrity: sha512-z/QT1XN4K4KYuslS23k62yDIDLwLFkzxOuMplDtObz0+y7VqJCaO2o+SPwHCvLFZh7xazvvoor2tA/hPz9ee7g==}
     dev: true
 
   /@types/istanbul-lib-report/3.0.0:
     resolution: {integrity: sha512-plGgXAPfVKFoYfa9NpYDAkseG+g6Jr294RqeqcqDixSbU34MZVJRi/P+7Y8GDpzkEwLaGZZOpKIEmeVZNtKsrg==}
     dependencies:
-      '@types/istanbul-lib-coverage': 2.0.3
+      '@types/istanbul-lib-coverage': 2.0.4
     dev: true
 
   /@types/istanbul-reports/3.0.1:
@@ -2576,7 +2576,7 @@ packages:
     hasBin: true
     dependencies:
       caniuse-lite: 1.0.30001292
-      electron-to-chromium: 1.4.27
+      electron-to-chromium: 1.4.28
       escalade: 3.1.1
       node-releases: 2.0.1
       picocolors: 1.0.0
@@ -2704,15 +2704,15 @@ packages:
     engines: {node: '>=10'}
     dev: true
 
-  /check-dts/0.6.5_typescript@4.5.4:
-    resolution: {integrity: sha512-/ETEH8AdxxXDXsFyzw4aiXUiO423m1ndErSSCTmE31az2IZP4DIb0qwHbVHEHiDo1z4QY2xTD0fLGn2s5UJ1tQ==}
+  /check-dts/0.6.6_typescript@4.5.4:
+    resolution: {integrity: sha512-2KzynoH1f8wVhZXUeqxeW2dOOFliktitYlyyOsLfZBk5K5n1U1B3uzJLFiJfwqlwoT1Ug7RNbi8xmMpUKKmwhg==}
     engines: {node: '>=12.16.0'}
     hasBin: true
     peerDependencies:
       typescript: '>=4.0.0'
     dependencies:
       fast-glob: 3.2.7
-      nanospinner: 0.5.0
+      nanospinner: 0.6.0
       picocolors: 1.0.0
       typescript: 4.5.4
       vfile-location: 4.0.1
@@ -3371,8 +3371,8 @@ packages:
       jake: 10.8.2
     dev: true
 
-  /electron-to-chromium/1.4.27:
-    resolution: {integrity: sha512-uZ95szi3zUbzRDx1zx/xnsCG+2xgZyy57pDOeaeO4r8zx5Dqe8Jv1ti8cunvBwJHVI5LzPuw8umKwZb3WKYxSQ==}
+  /electron-to-chromium/1.4.28:
+    resolution: {integrity: sha512-Gzbf0wUtKfyPaqf0Plz+Ctinf9eQIzxEqBHwSvbGfeOm9GMNdLxyu1dNiCUfM+x6r4BE0xUJNh3Nmg9gfAtTmg==}
     dev: true
 
   /elliptic/6.5.4:
@@ -5562,8 +5562,8 @@ packages:
       msgpackr: 1.5.2
       nan: 2.15.0
       node-gyp-build: 4.3.0
-      ordered-binary: 1.2.2
-      weak-lru-cache: 1.2.0
+      ordered-binary: 1.2.3
+      weak-lru-cache: 1.2.1
     dev: true
 
   /loader-utils/1.4.0:
@@ -5822,8 +5822,8 @@ packages:
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
-  /nanospinner/0.5.0:
-    resolution: {integrity: sha512-VaEzZRHgdgvru4qr5Oe7SjalSGQsoCZrl42FEnAYHp8R+ghcok6u8Yo5U37kD+ABOjRh1IUOA64qqff+TznDfg==}
+  /nanospinner/0.6.0:
+    resolution: {integrity: sha512-G2QQwVJListXbtsBW5r5kJs8WXybsO9/SQxzcvSmPRSIOQOeR0v/ETI9hncOna0tzWscdjjcCZUVCJoR4eJlag==}
     dependencies:
       picocolors: 1.0.0
     dev: true
@@ -6011,8 +6011,8 @@ packages:
       wcwidth: 1.0.1
     dev: true
 
-  /ordered-binary/1.2.2:
-    resolution: {integrity: sha512-fs9eFLmnFleZNi9oPp/XJdUjUuX90ucllnreN10boTKVje4U2QGjadxl1WAxCmBQRpvSMdALPN34ubDjFGeLyg==}
+  /ordered-binary/1.2.3:
+    resolution: {integrity: sha512-fEwMk8TNUtzQDjXKYS2ANW3fNZ/gMReCPOAsLHaqw+UDnq/8ddXAcX4lGRpTK7kAghAjkmJs1EXXbcrDbg+ruw==}
     dev: true
 
   /os-browserify/0.3.0:
@@ -7143,8 +7143,8 @@ packages:
     resolution: {integrity: sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg==}
     dev: true
 
-  /size-limit/7.0.4:
-    resolution: {integrity: sha512-IkY30erk6psU6UCg/R0crNUIWIQsTTVv1/tMtY0ifOtq6Y2F2cUC3Z0zXNAmKcncnl9HJjUIQhw2WNYRlDiv0Q==}
+  /size-limit/7.0.5:
+    resolution: {integrity: sha512-dve+Vaq/a6H7QZhFbozAUBKNO9ZnZkPX3EF1ETI8yv3YCMdC7e63HmVZDXKB//o3FCTHqtZQ0p3ZtOwN/PSiqQ==}
     engines: {node: ^12.0.0 || ^14.0.0 || >=16.0.0}
     hasBin: true
     dependencies:
@@ -7154,7 +7154,7 @@ packages:
       globby: 11.0.4
       lilconfig: 2.0.4
       mkdirp: 1.0.4
-      nanospinner: 0.5.0
+      nanospinner: 0.6.0
       picocolors: 1.0.0
     dev: true
 
@@ -7771,7 +7771,7 @@ packages:
     resolution: {integrity: sha512-/PRhfd8aTNp9Ggr62HPzXg2XasNFGy5PBt0Rp04du7/8GNNSgxFL6WBTkgMKSL9bFjH+8kKEG3f37FmxiTqUUA==}
     engines: {node: '>=10.12.0'}
     dependencies:
-      '@types/istanbul-lib-coverage': 2.0.3
+      '@types/istanbul-lib-coverage': 2.0.4
       convert-source-map: 1.8.0
       source-map: 0.7.3
     dev: true
@@ -7855,8 +7855,8 @@ packages:
       defaults: 1.0.3
     dev: true
 
-  /weak-lru-cache/1.2.0:
-    resolution: {integrity: sha512-/m09N7scntxHqtypoF+1KJnHYntYTwVXAq3y2P3YPNIMyKexGPVCs/DTm/nS1NhD0max+sLvIPJacSeNFQ9lNg==}
+  /weak-lru-cache/1.2.1:
+    resolution: {integrity: sha512-O5ag1F0Xk6ui+Fg5LlosTcVAyHs6DeyiDDbOapNtFCx/KjZ82B3U9stM9hvzbVclKWn9ABPjaINX/nQkGkJkKg==}
     dev: true
 
   /webcrypto-core/1.4.0:
