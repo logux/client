@@ -1,4 +1,4 @@
-import { useState, useContext, useEffect, useRef } from 'preact/hooks'
+import { useState, useContext, useEffect, useRef, useLayoutEffect } from 'preact/hooks'
 import { createContext, h, Component } from 'preact'
 import { useStore } from '@nanostores/preact'
 
@@ -8,6 +8,8 @@ import { createAuth } from '../create-auth/index.js'
 export let ClientContext = /*#__PURE__*/ createContext()
 
 let ErrorsContext = /*#__PURE__*/ createContext()
+
+let useIsomorphicLayoutEffect = typeof document !== 'undefined' ? useLayoutEffect : useEffect
 
 export function useClient() {
   let client = useContext(ClientContext)
@@ -35,7 +37,7 @@ function useSyncStore(store) {
     }
   }
 
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     let batching
     let unbind = store.listen(() => {
       if (batching) return

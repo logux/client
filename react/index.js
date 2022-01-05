@@ -8,6 +8,8 @@ export let ClientContext = /*#__PURE__*/ React.createContext()
 
 let ErrorsContext = /*#__PURE__*/ React.createContext()
 
+let useIsomorphicLayoutEffect = typeof document !== 'undefined' ? React.useLayoutEffect : React.useEffect
+
 export function useClient() {
   let client = React.useContext(ClientContext)
   if (process.env.NODE_ENV !== 'production' && !client) {
@@ -34,7 +36,7 @@ function useSyncStore(store) {
     }
   }
 
-  React.useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     let unbind = store.listen(() => {
       batch(() => {
         forceRender({})
