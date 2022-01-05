@@ -74,9 +74,9 @@ export function useSync(Template, id, ...builderArgs) {
   return useSyncStore(store)
 }
 
-export function useFilter(Builer, filter = {}, opts = {}) {
+export function useFilter(Builder, filter = {}, opts = {}) {
   let client = useClient()
-  let instance = createFilter(client, Builer, filter, opts)
+  let instance = createFilter(client, Builder, filter, opts)
   return useSyncStore(instance)
 }
 
