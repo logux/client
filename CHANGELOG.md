@@ -1,6 +1,9 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.14.6
+* Fixed missing store updates in React and Preact (by Aleksandr Slepchenkov).
+
 ## 0.14.5
 * Fixed Vue `useFilter()` working with reactive filter (by Eduard Aksamitov).
 * Improved Vue `useFilter()` performance (by Eduard Aksamitov).
