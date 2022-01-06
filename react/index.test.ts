@@ -474,23 +474,17 @@ it('recreating filter on args changes', async () => {
     '3'
   ])
 
+  renders.splice(0, renders.length)
   await act(async () => {
     screen.getByTestId('change').click()
     await delay(10)
   })
   expect(renders).toEqual([
-    'list',
-    'list',
-    'list',
-    '1',
-    'list',
-    '1',
-    'list',
-    '1',
-    '3',
-    'list'
+    'list', // State is changed
+    'list' // Store isLoading changed to false
   ])
 
+  renders.splice(0, renders.length)
   await act(async () => {
     await Promise.all([
       createSyncMap(client, LocalPost, { id: '1', projectId: '1', title: 'Y' }),
@@ -502,16 +496,6 @@ it('recreating filter on args changes', async () => {
   await delay(10)
   expect(screen.getByTestId('test').textContent).toBe(' 0:Y')
   expect(renders).toEqual([
-    'list',
-    'list',
-    'list',
-    '1',
-    'list',
-    '1',
-    'list',
-    '1',
-    '3',
-    'list',
     'list',
     '2',
     'list',
