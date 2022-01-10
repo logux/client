@@ -27,8 +27,7 @@ jobs:
         env:
           FORCE_COLOR: 2
       - name: Deploy
-        uses: JamesIves/github-pages-deploy-action@3.7.1
+        uses: JamesIves/github-pages-deploy-action@4.2.1
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          FOLDER: test/demo/dist
-          BRANCH: gh-pages
+          folder: test/demo/dist
+          branch: gh-pages
