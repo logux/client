@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <title>Logux Client Demo</title>
+    <meta name="color-scheme" content="dark light">
     <style>
       body {
         font-family: sans-serif;
@@ -43,6 +44,12 @@
       footer {
         font-size: small;
         margin-top: 0.5em;
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: #1b1b1b;
+          color: white;
+        }
       }
     </style>
     <script defer src="./index.js" type="module"></script>
