@@ -12,7 +12,7 @@
   "scripts": {
     "clean": "rm -Rf coverage/ test/demo/build/ test/demo/.cache",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage && eslint . && check-dts && size-limit && pnpm build",
-    "build": "vite build test/demo/ -m production",
+    "build": "vite build test/demo/ -m production --base /client/",
     "start": "vite test/demo/ --open"
   },
   "author": "Andrey Sitnik <andrey@sitnik.ru>",
