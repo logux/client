@@ -1,6 +1,9 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.14.7
+* Moved to new default version of Vue 3 (by Eduard Aksamitov).
+
 ## 0.14.6
 * Fixed missing store updates in React and Preact (by Aleksandr Slepchenkov).
 
