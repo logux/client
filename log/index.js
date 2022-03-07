@@ -4,13 +4,19 @@ function bold(string) {
   return '%c' + string + '%c'
 }
 
-function showLog(text, details) {
+const RED = '#c00000'
+
+function showLog(text, details, color) {
   text = '%cLogux%c ' + text
   let args = Array.from(text.match(/%c/g)).map((_, i) => {
     if (i === 0) {
-      return 'color:#ffa200;font-weight:bold'
+      if (color === RED) {
+        return `color:${color};font-weight:bold`
+      } else {
+        return 'color:#ffa200;font-weight:bold'
+      }
     } else if (i % 2 === 0) {
-      return 'font-weight:bold'
+      return color ? `font-weight:bold;color:${color}` : 'font-weight:bold'
     } else {
       return 'font-weight:normal'
     }
@@ -136,7 +142,7 @@ export function log(client, messages = {}) {
           if (sent[action.id]) {
             delete sent[action.id]
           }
-          showLog(message, details)
+          showLog(message, details, RED)
         } else {
           let details = { Action: action, Meta: meta }
           message = 'added '
@@ -149,7 +155,7 @@ export function log(client, messages = {}) {
           if (nodeId !== node.localNodeId) {
             details.From = nodeId
           }
-          showLog(message, details)
+          showLog(message, details, '#008000')
         }
       })
     )

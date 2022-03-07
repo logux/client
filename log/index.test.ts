@@ -39,12 +39,28 @@ let group = false
 let out = ''
 
 function format(...args: (string | object)[]): string {
+  let color = (s: string): string => s
+  let logoColor = pico.yellow
   return (
     (group ? '  ' : '') +
     args
       .filter(i => {
         if (typeof i === 'string') {
-          return i !== '' && !i.includes('font-weight:')
+          if (i === '') {
+            return false
+          } else if (i.includes('color:')) {
+            if (i.includes('#c00000')) {
+              logoColor = pico.red
+              color = pico.red
+            } else if (i.includes('#008000')) {
+              color = pico.green
+            }
+            return false
+          } else if (i.includes('font-weight:')) {
+            return false
+          } else {
+            return true
+          }
         } else {
           return true
         }
@@ -52,8 +68,8 @@ function format(...args: (string | object)[]): string {
       .map(i => {
         if (typeof i === 'string') {
           return i
-            .replace(/%cLogux%c/, pico.yellow(pico.bold('Logux')))
-            .replace(/%c([^%]+)(%c)?/g, pico.bold('$1'))
+            .replace(/%cLogux%c/, logoColor(pico.bold('Logux')))
+            .replace(/%c([^%]+)(%c)?/g, color(pico.bold('$1')))
         } else {
           return JSON.stringify(i)
         }

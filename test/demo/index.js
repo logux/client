@@ -129,14 +129,18 @@ document.querySelector('#error').onclick = () => {
     client.log.add({
       type: 'logux/undo',
       reason: 'error',
-      action: { type: 'test' }
+      action: { type: 'TICK' }
     })
   }, 3000)
 }
 
 document.querySelector('#denied').onclick = () => {
   setTimeout(() => {
-    client.log.add({ type: 'logux/undo', reason: 'denied' })
+    client.log.add({
+      type: 'logux/undo',
+      reason: 'denied',
+      action: { type: 'TICK' }
+    })
   }, 3000)
 }
 
