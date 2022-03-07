@@ -1,3 +1,4 @@
+import { defineAction } from '@logux/actions'
 import { Action } from '@logux/core'
 
 import { Client } from '../index.js'
@@ -16,6 +17,12 @@ type UserRenameAction = Action & {
   name: string
 }
 
+let userRename = defineAction<UserRenameAction>('user/rename')
+
 client.type<UserRenameAction>('user/rename', action => {
+  document.title = action.name
+})
+
+client.type(userRename, action => {
   document.title = action.name
 })

@@ -1,3 +1,4 @@
+import { AbstractActionCreator } from '@logux/actions'
 import { Unsubscribe } from 'nanoevents'
 import {
   Connection,
@@ -252,6 +253,16 @@ export class Client<
   type<TypeAction extends Action = Action>(
     type: TypeAction['type'],
     listener: ClientActionListener<TypeAction>,
+    opts?: { id?: string; event?: 'preadd' | 'add' | 'clean' }
+  ): Unsubscribe
+
+  /**
+   * @param actionCreator Action creator function.
+   * @param callbacks Callbacks for action created by creator.
+   */
+  type<Creator extends AbstractActionCreator>(
+    actionCreator: Creator,
+    listener: ClientActionListener<ReturnType<Creator>>,
     opts?: { id?: string; event?: 'preadd' | 'add' | 'clean' }
   ): Unsubscribe
 

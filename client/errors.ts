@@ -1,3 +1,4 @@
+import { defineAction } from '@logux/actions'
 import { Action } from '@logux/core'
 
 import { Client } from '../index.js'
@@ -23,12 +24,19 @@ type RenameAction = Action & {
   name: string
 }
 
+let userRename = defineAction<RenameAction>('user/rename')
+
 // THROWS '"rename2"' is not assignable to parameter of type '"rename"'
 client.type<RenameAction>('rename2', action => {
   document.title = action.name
 })
 
 client.type<RenameAction>('rename', action => {
+  // THROWS 'fullName' does not exist on type 'RenameAction'
+  document.title = action.fullName
+})
+
+client.type(userRename, action => {
   // THROWS 'fullName' does not exist on type 'RenameAction'
   document.title = action.fullName
 })

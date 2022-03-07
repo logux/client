@@ -1,4 +1,5 @@
 import { MemoryStore, TestPair, TestTime, TestLog, Action } from '@logux/core'
+import { defineAction } from '@logux/actions'
 import { delay } from 'nanodelay'
 import { jest } from '@jest/globals'
 
@@ -703,6 +704,37 @@ it('has type listeners', async () => {
   })
   client.type(
     'A',
+    action => {
+      events.push(['preadd A', action.type])
+    },
+    { event: 'preadd' }
+  )
+
+  await client.log.add({ type: 'A' })
+  await client.log.add({ type: 'B' })
+  await client.log.add({ type: 'A' })
+  unbindAdd()
+  await client.log.add({ type: 'A' })
+
+  expect(events).toEqual([
+    ['preadd A', 'A'],
+    ['add A', 'A'],
+    ['preadd A', 'A'],
+    ['add A', 'A'],
+    ['preadd A', 'A']
+  ])
+})
+
+it('has type listeners for action creator', async () => {
+  let client = await createDialog()
+  let events: [string, string][] = []
+  let aAction = defineAction('A')
+
+  let unbindAdd = client.type(aAction, action => {
+    events.push(['add A', action.type])
+  })
+  client.type(
+    aAction,
     action => {
       events.push(['preadd A', action.type])
     },

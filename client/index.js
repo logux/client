@@ -303,6 +303,7 @@ export class Client {
   }
 
   type(type, listener, opts) {
+    if (typeof type === 'function') type = type.type
     return this.log.type(type, listener, opts)
   }
 
