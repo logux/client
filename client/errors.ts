@@ -9,7 +9,7 @@ let client = new Client({
   userId: '10'
 })
 
-// THROWS Type 'number' is not assignable to type 'string | undefined'.
+// THROWS Type 'number' is not assignable to type 'string'
 client.log.add({ type: 'A' }, { tab: 1 })
 
 new Client({
@@ -24,7 +24,7 @@ type RenameAction = Action & {
   name: string
 }
 
-let userRename = defineAction<RenameAction>('user/rename')
+let userRename = defineAction<RenameAction>('rename')
 
 // THROWS '"rename2"' is not assignable to parameter of type '"rename"'
 client.type<RenameAction>('rename2', action => {

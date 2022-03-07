@@ -9,6 +9,6 @@ let client = new CrossTabClient({
 client.on('preadd', (action, meta) => {
   // THROWS Type 'number' is not assignable to type 'string'.
   action.type = 1
-  // THROWS Type '1' is not assignable to type 'string | undefined'.
+  // THROWS Type 'number' is not assignable to type 'string'
   meta.tab = 1
 })
