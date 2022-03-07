@@ -76,12 +76,12 @@ function updateTitle() {
 }
 
 client.on('state', () => {
-  document.all.connection.checked = client.connected
+  document.querySelector('#connection').checked = client.connected
   updateTitle()
 })
 client.on('role', () => {
   updateTitle()
-  document.all.connection.disabled = client.role !== 'leader'
+  document.querySelector('#connection').disabled = client.role !== 'leader'
 })
 client.on('add', action => {
   if (action.type === 'TICK') count++
@@ -108,7 +108,7 @@ client.on('role', () => {
 
 client.start()
 
-document.all.connection.onchange = e => {
+document.querySelector('#connection').onchange = e => {
   if (e.target.checked) {
     client.node.connection.connect()
   } else {
@@ -116,33 +116,37 @@ document.all.connection.onchange = e => {
   }
 }
 
-document.all.add.onclick = () => {
+document.querySelector('#add').onclick = () => {
   client.log.add({ type: 'TICK' }, { reasons: ['tick'], sync: true })
 }
 
-document.all.clean.onclick = () => {
+document.querySelector('#clean').onclick = () => {
   client.log.removeReason('tick')
 }
 
-document.all.error.onclick = () => {
+document.querySelector('#error').onclick = () => {
   setTimeout(() => {
-    client.log.add({ type: 'logux/undo', reason: 'error' })
+    client.log.add({
+      type: 'logux/undo',
+      reason: 'error',
+      action: { type: 'test' }
+    })
   }, 3000)
 }
 
-document.all.denied.onclick = () => {
+document.querySelector('#denied').onclick = () => {
   setTimeout(() => {
     client.log.add({ type: 'logux/undo', reason: 'denied' })
   }, 3000)
 }
 
-document.all.serverError.onclick = () => {
+document.querySelector('#serverError').onclick = () => {
   setTimeout(() => {
     pair.right.send(['error', 'wrong-format'])
   }, 3000)
 }
 
-document.all.subprotocolError.onclick = () => {
+document.querySelector('#subprotocolError').onclick = () => {
   client.node.syncError('wrong-subprotocol', {
     supported: '2.x',
     used: '1.0.0'
@@ -150,9 +154,9 @@ document.all.subprotocolError.onclick = () => {
 }
 
 if (client.options.subprotocol === '1.0.1') {
-  document.all.subprotocolClient.disabled = true
+  document.querySelector('#subprotocolClient').disabled = true
 } else {
-  document.all.subprotocolClient.onclick = () => {
+  document.querySelector('#subprotocolClient').onclick = () => {
     window.open(location.toString() + '#1.0.1', '_blank')
   }
 }
