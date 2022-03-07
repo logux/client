@@ -1,6 +1,10 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.15
+* Added `Client#type(actionCreator, cb)` support.
+* Added color highlight for new action and  `logux/undo` events in `log()`.
+
 ## 0.14.7
 * Moved to new default version of Vue 3 (by Eduard Aksamitov).
 
