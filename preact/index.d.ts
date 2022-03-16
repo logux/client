@@ -51,17 +51,16 @@ export const ClientContext: PreactContext<Client>
  */
 export function useClient(): Client
 
-
-interface ErrorHandlers {
+interface PreactErrorHandlers {
   NotFound?: ComponentType<{ error: ChannelNotFoundError | LoguxNotFoundError }>
   AccessDenied?: ComponentType<{ error: ChannelDeniedError }>
   Error?: ComponentType<{ error: ChannelError }>
 }
 
 /**
- * Context to pass error handlers from {@link ChannelErrors}.
+ * Context to pass error handlers from `ChannelErrors`.
  */
-export const ErrorsContext: PreactContext<ErrorHandlers>
+export const ErrorsContext: PreactContext<PreactErrorHandlers>
 
 /**
  * Show error message to user on subscription errors in components
@@ -84,7 +83,7 @@ export const ErrorsContext: PreactContext<ErrorHandlers>
  * }
  * ```
  */
-export class ChannelErrors extends Component<ErrorHandlers> {}
+export class ChannelErrors extends Component<PreactErrorHandlers> {}
 
 /**
  * Create store by ID, subscribe and get store’s value.
