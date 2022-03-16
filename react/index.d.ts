@@ -51,6 +51,17 @@ export const ClientContext: ReactContext<Client>
  */
 export function useClient(): Client
 
+interface ErrorHandlers {
+  NotFound?: ComponentType<{ error: ChannelNotFoundError | LoguxNotFoundError }>
+  AccessDenied?: ComponentType<{ error: ChannelDeniedError }>
+  Error?: ComponentType<{ error: ChannelError }>
+}
+
+/**
+ * Context to pass error handlers from {@link ChannelErrors}.
+ */
+export const ErrorsContext: ReactContext<ErrorHandlers>
+
 /**
  * Show error message to user on subscription errors in components
  * deep in the tree.
@@ -72,11 +83,7 @@ export function useClient(): Client
  * }
  * ```
  */
-export class ChannelErrors extends Component<{
-  NotFound?: ComponentType<{ error: ChannelNotFoundError | LoguxNotFoundError }>
-  AccessDenied?: ComponentType<{ error: ChannelDeniedError }>
-  Error?: ComponentType<{ error: ChannelError }>
-}> {}
+export class ChannelErrors extends Component<ErrorHandlers> {}
 
 /**
  * Create store by ID, subscribe and get store’s value.

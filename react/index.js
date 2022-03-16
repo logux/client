@@ -6,7 +6,7 @@ import { createAuth } from '../create-auth/index.js'
 
 export let ClientContext = /*#__PURE__*/ React.createContext()
 
-let ErrorsContext = /*#__PURE__*/ React.createContext()
+export let ErrorsContext = /*#__PURE__*/ React.createContext()
 
 let useIsomorphicLayoutEffect = typeof document !== 'undefined' ? React.useLayoutEffect : React.useEffect
 

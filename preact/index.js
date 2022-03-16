@@ -7,7 +7,7 @@ import { createAuth } from '../create-auth/index.js'
 
 export let ClientContext = /*#__PURE__*/ createContext()
 
-let ErrorsContext = /*#__PURE__*/ createContext()
+export let ErrorsContext = /*#__PURE__*/ createContext()
 
 let useIsomorphicLayoutEffect = typeof document !== 'undefined' ? useLayoutEffect : useEffect
 
