@@ -109,14 +109,14 @@ export function syncMapTemplate<Value extends SyncMapValues>(
  *
  * @param client Logux Client instance.
  * @param Template Store template from {@link syncMapTemplate}.
- * @param values Initial value.
+ * @param value Initial value.
  * @return Promise until server validation for remote classes
  *         or saving action to the log of fully offline classes.
  */
 export function createSyncMap<Value extends SyncMapValues>(
   client: Client,
   Template: SyncMapTemplate<Value>,
-  values: Value & { id: string }
+  value: Value & { id: string }
 ): Promise<void>
 
 /**
@@ -133,13 +133,13 @@ export function createSyncMap<Value extends SyncMapValues>(
  *
  * @param client Logux Client instance.
  * @param Template Store template from {@link syncMapTemplate}.
- * @param values Initial value.
+ * @param value Initial value.
  * @return Promise with store instance.
  */
 export function buildNewSyncMap<Value extends SyncMapValues>(
   client: Client,
   Template: SyncMapTemplate<Value>,
-  values: Value & { id: string }
+  value: Value & { id: string }
 ): Promise<SyncMapStore<Value>>
 
 /**

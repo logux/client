@@ -306,9 +306,8 @@ function addSyncAction(client, Template, action) {
   }
 }
 
-export function createSyncMap(client, Template, fields) {
-  let id = fields.id
-  delete fields.id
+export function createSyncMap(client, Template, value) {
+  let { id, ...fields } = value
   return addSyncAction(client, Template, {
     type: `${Template.plural}/create`,
     id,
@@ -316,9 +315,8 @@ export function createSyncMap(client, Template, fields) {
   })
 }
 
-export async function buildNewSyncMap(client, Template, fields) {
-  let id = fields.id
-  delete fields.id
+export async function buildNewSyncMap(client, Template, value) {
+  let { id, ...fields } = value
   let actionId = client.log.generateId()
 
   let verb = Template.remote ? 'create' : 'created'
