@@ -1,6 +1,10 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.15.1
+* Fixed value object mutation in `createSyncMap` and `buildSyncMap`.
+* Fixed `ErrorsContext` export.
+
 ## 0.15
 * Added `Client#type(actionCreator, cb)` support.
 * Added color highlight for new action and  `logux/undo` events in `log()`.
