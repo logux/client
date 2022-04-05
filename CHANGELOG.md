@@ -1,6 +1,9 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.15.2
+* Cleaned peer dependencies (by Yuri Mikhin).
+
 ## 0.15.1
 * Fixed value object mutation in `createSyncMap` and `buildSyncMap`.
 * Fixed `ErrorsContext` export.
