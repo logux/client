@@ -1,4 +1,4 @@
-import { useStore, batch } from '@nanostores/react'
+import { useStore } from '@nanostores/react'
 import React from 'react'
 
 import { createFilter } from '../create-filter/index.js'
@@ -8,7 +8,8 @@ export let ClientContext = /*#__PURE__*/ React.createContext()
 
 export let ErrorsContext = /*#__PURE__*/ React.createContext()
 
-let useIsomorphicLayoutEffect = typeof document !== 'undefined' ? React.useLayoutEffect : React.useEffect
+let useIsomorphicLayoutEffect =
+  typeof document !== 'undefined' ? React.useLayoutEffect : React.useEffect
 
 export function useClient() {
   let client = React.useContext(ClientContext)
@@ -38,9 +39,7 @@ function useSyncStore(store) {
 
   useIsomorphicLayoutEffect(() => {
     let unbind = store.listen(() => {
-      batch(() => {
-        forceRender({})
-      })
+      forceRender({})
     })
 
     if (store.loading) {
