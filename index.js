@@ -9,6 +9,7 @@ export {
 } from './sync-map-template/index.js'
 export { prepareForTest, emptyInTest } from './prepare-for-test/index.js'
 export { badge, badgeRu, badgeEn } from './badge/index.js'
+export { createClientStore } from './create-client-store/index.js'
 export { LoguxUndoError } from './logux-undo-error/index.js'
 export { CrossTabClient } from './cross-tab-client/index.js'
 export { encryptActions } from './encrypt-actions/index.js'
