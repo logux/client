@@ -75,7 +75,7 @@
     "nanoid": "^3.3.2"
   },
   "devDependencies": {
-    "@babel/core": "^7.17.8",
+    "@babel/core": "^7.17.9",
     "@jest/globals": "^27.5.1",
     "@logux/core": "^0.7.3",
     "@logux/eslint-config": "^46.1.2",
