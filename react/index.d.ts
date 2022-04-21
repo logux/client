@@ -1,4 +1,9 @@
-import { Context as ReactContext, Component, ComponentType } from 'react'
+import {
+  Context as ReactContext,
+  Component,
+  ComponentType,
+  ReactNode
+} from 'react'
 import { SyncMapValues, LoguxNotFoundError } from '@logux/actions'
 import { StoreValue, MapTemplate } from 'nanostores'
 
@@ -83,7 +88,9 @@ export const ErrorsContext: ReactContext<ReactErrorHandlers>
  * }
  * ```
  */
-export class ChannelErrors extends Component<ReactErrorHandlers> {}
+export class ChannelErrors extends Component<
+  ReactErrorHandlers & { children?: ReactNode }
+> {}
 
 /**
  * Create store by ID, subscribe and get store’s value.
