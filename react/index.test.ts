@@ -104,7 +104,7 @@ function runWithClient(component: ReactElement): void {
   )
 }
 
-class ErrorCatcher extends Component {
+class ErrorCatcher extends Component<{ children?: ReactNode }> {
   state: { message?: string } = {}
 
   static getDerivedStateFromError(e: Error): object {
