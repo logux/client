@@ -1,6 +1,9 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.15.3
+* Fixed React types (by Wojciech Grzebieniowski).
+
 ## 0.15.2
 * Cleaned peer dependencies (by Yuri Mikhin).
 
