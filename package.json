@@ -167,12 +167,6 @@
         "rules": {
           "import/order": "off"
         }
-      },
-      {
-        "files": "encrypt-actions/*",
-        "rules": {
-          "node/no-unsupported-features/node-builtins": "off"
-        }
       }
     ]
   },
