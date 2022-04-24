@@ -96,7 +96,7 @@
     "@typescript-eslint/eslint-plugin": "^5.20.0",
     "@typescript-eslint/parser": "^5.20.0",
     "@vue/compiler-sfc": "^3.2.33",
-    "check-dts": "^0.6.6",
+    "check-dts": "^0.6.7",
     "clean-publish": "^4.0.0",
     "eslint": "^8.14.0",
     "eslint-config-standard": "^17.0.0",
