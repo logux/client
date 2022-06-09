@@ -31,7 +31,7 @@
     "./badge/styles": "./badge/styles/index.js"
   },
   "engines": {
-    "node": "^12.0.0 || ^14.0.0 || >=16.0.0"
+    "node": "^14.0.0 || ^16.0.0 || >=18.0.0"
   },
   "peerDependencies": {
     "@logux/core": "^0.7.0",
