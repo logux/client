@@ -54,7 +54,7 @@ exports[`prints log 1`] = `
   Action {\\"type\\":\\"logux/unsubscribe\\",\\"channel\\":\\"users\\",\\"bad\\":true}
 [33m[1mLogux[22m[39m added [32m[1mB[22m[39m action
   Action {\\"type\\":\\"B\\"}
-  Meta {\\"sync\\":true,\\"id\\":\\"8 10:1:1 0\\",\\"time\\":8,\\"reasons\\":[\\"syncing\\"],\\"subprotocol\\":\\"1.0.0\\",\\"added\\":8}
+  Meta {\\"sync\\":true,\\"id\\":\\"8 10:1:1 0\\",\\"time\\":8,\\"reasons\\":[\\"syncing\\"],\\"subprotocol\\":\\"1.0.0\\",\\"added\\":7}
 [33m[1mLogux[22m[39m state is [1msending[22m
 [33m[1mLogux[22m[39m state is [1msynchronized[22m
 [33m[1mLogux[22m[39m action [1mlogux/unsubscribe[22m was processed

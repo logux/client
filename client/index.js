@@ -27,6 +27,23 @@ function cleanTabActions(client, id) {
   })
 }
 
+function isEqual(obj1, obj2) {
+  if (!obj1 && !obj2) return true
+  return JSON.stringify(obj1) === JSON.stringify(obj2)
+}
+
+function unsubscribeChannel(client, unsubscribe) {
+  let json = JSON.stringify({ ...unsubscribe, type: 'logux/subscribe' })
+  let subscribers = client.subscriptions[json]
+  if (subscribers) {
+    if (subscribers === 1) {
+      delete client.subscriptions[json]
+    } else {
+      client.subscriptions[json] = subscribers - 1
+    }
+  }
+}
+
 export class Client {
   constructor(opts = {}) {
     this.options = opts
@@ -88,46 +105,64 @@ export class Client {
     }
     this.log = log
 
-    log.on('preadd', (action, meta) => {
-      if (parseId(meta.id).nodeId === this.nodeId && !meta.subprotocol) {
-        meta.subprotocol = this.options.subprotocol
-      }
-      if (meta.sync && !meta.resubscribe) meta.reasons.push('syncing')
-    })
-
     this.last = {}
     this.subscriptions = {}
     let subscribing = {}
     let unsubscribing = {}
 
+    log.on('preadd', (action, meta) => {
+      if (parseId(meta.id).nodeId === this.nodeId && !meta.subprotocol) {
+        meta.subprotocol = this.options.subprotocol
+      }
+
+      if (action.type === 'logux/unsubscribe') {
+        let wasSubscribed = true
+        let processedOffline = false
+
+        for (let id in subscribing) {
+          let subscribe = subscribing[id]
+          if (subscribe.channel === action.channel) {
+            if (isEqual(action.filer, subscribe.filter)) {
+              wasSubscribed = false
+              delete subscribing[id]
+              log.changeMeta(id, { reasons: [] })
+              break
+            }
+          }
+        }
+
+        if (wasSubscribed && this.state === 'disconnected') {
+          processedOffline = true
+          unsubscribeChannel(this, action)
+        }
+        if (wasSubscribed && !processedOffline) {
+          meta.sync = true
+        } else {
+          delete meta.sync
+        }
+      }
+
+      if (meta.sync && !meta.resubscribe) meta.reasons.push('syncing')
+    })
+
     this.emitter = createNanoEvents()
     this.on('add', (action, meta) => {
       let type = action.type
-      let json, last
+      let last
       if (type === 'logux/processed' || type === 'logux/undo') {
         this.log.removeReason('syncing', { id: action.id })
       }
       if (type === 'logux/subscribe' && !meta.resubscribe) {
         subscribing[meta.id] = action
       } else if (type === 'logux/unsubscribe') {
-        unsubscribing[meta.id] = action
+        if (meta.sync) unsubscribing[meta.id] = action
       } else if (type === 'logux/processed') {
         if (unsubscribing[action.id]) {
-          let unsubscription = unsubscribing[action.id]
-          json = JSON.stringify({ ...unsubscription, type: 'logux/subscribe' })
-          let subscribers = this.subscriptions[json]
-          if (subscribers) {
-            if (subscribers === 1) {
-              delete this.subscriptions[json]
-            } else {
-              this.subscriptions[json] = subscribers - 1
-            }
-          }
-        }
-        if (subscribing[action.id]) {
+          unsubscribeChannel(this, unsubscribing[action.id])
+        } else if (subscribing[action.id]) {
           let subscription = subscribing[action.id]
           delete subscribing[action.id]
-          json = JSON.stringify(subscription)
+          let json = JSON.stringify(subscription)
           if (this.subscriptions[json]) {
             this.subscriptions[json] += 1
           } else {
@@ -138,7 +173,7 @@ export class Client {
             this.last[subscription.channel] = { id: meta.id, time: meta.time }
           }
         }
-        if (type === 'logux/processed' && this.processing[action.id]) {
+        if (this.processing[action.id]) {
           this.processing[action.id][1](meta)
           delete this.processing[action.id]
         }
@@ -157,13 +192,6 @@ export class Client {
               this.last[channel] = { id: meta.id, time: meta.time }
             }
           })
-        }
-      }
-      if (process.env.NODE_ENV !== 'production') {
-        if (type === 'logux/subscribe' || type === 'logux/unsubscribe') {
-          if (!meta.sync) {
-            console.error(type + ' action without meta.sync')
-          }
         }
       }
     })

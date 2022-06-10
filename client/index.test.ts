@@ -499,23 +499,6 @@ it('compresses subprotocol', async () => {
   ])
 })
 
-it('warns about subscription actions without sync', async () => {
-  jest.spyOn(console, 'error').mockImplementation(() => {})
-  let client = createClient()
-  await Promise.all([
-    client.log.add({ type: 'logux/subscribe', name: 'test' }),
-    client.log.add({ type: 'logux/unsubscribe', name: 'test' })
-  ])
-  expect(console.error).toHaveBeenNthCalledWith(
-    1,
-    'logux/subscribe action without meta.sync'
-  )
-  expect(console.error).toHaveBeenNthCalledWith(
-    2,
-    'logux/unsubscribe action without meta.sync'
-  )
-})
-
 it('keeps synced actions before synchronization', async () => {
   let client = createClient()
   await Promise.all([
@@ -538,6 +521,7 @@ it('resubscribes to previous subscriptions', async () => {
       added.push(action)
     }
   })
+  setState(client, 'synchronized')
   await Promise.all([
     client.log.add({ type: 'logux/subscribe', channel: 'a' }, { sync: true }),
     client.log.add({ type: 'logux/subscribe', channel: 'a' }, { sync: true }),
@@ -563,9 +547,6 @@ it('resubscribes to previous subscriptions', async () => {
     )
   ])
   added = []
-  expect(client.log.actions()).toHaveLength(7)
-  setState(client, 'synchronized')
-  expect(added).toHaveLength(0)
 
   client.log.add({ type: 'logux/processed', id: '1 10:1:1 0' })
   client.log.add({ type: 'logux/processed', id: '2 10:1:1 0' })
@@ -824,4 +805,102 @@ it('copies state from node', async () => {
   await client.waitFor('disconnected')
   expect(client.connected).toBe(false)
   expect(events).toEqual(['synchronized', 'disconnected'])
+})
+
+it('works with unsubscribe in offline', async () => {
+  let client = await createDialog()
+  let pair = privateMethods(client.node.connection).pair
+  client.on('preadd', (action, meta) => {
+    meta.reasons = meta.reasons.filter(i => i !== 'test')
+  })
+
+  async function subscribe(channel: string, filter?: object): Promise<void> {
+    await client.log.add(
+      { type: 'logux/subscribe', channel, filter },
+      { sync: true }
+    )
+  }
+  async function unsubscribe(channel: string, filter?: object): Promise<void> {
+    await client.log.add(
+      { type: 'logux/unsubscribe', channel, filter },
+      { sync: true }
+    )
+  }
+
+  await subscribe('A')
+  await subscribe('B', { id: 1 })
+  await subscribe('B', { id: 2 })
+
+  await delay(1)
+  await client.log.add({ type: 'logux/processed', id: '1 10:1:1 0' })
+  await client.log.add({ type: 'logux/processed', id: '2 10:1:1 0' })
+  await client.log.add({ type: 'logux/processed', id: '3 10:1:1 0' })
+  client.node.connection.disconnect()
+
+  await subscribe('C')
+  await subscribe('D')
+  await subscribe('B', { id: 3 })
+  await delay(1)
+
+  await unsubscribe('C')
+  await unsubscribe('B', { id: 2 })
+  await unsubscribe('B', { id: 3 })
+
+  pair.clear()
+  await client.node.connection.connect()
+  await pair.wait('right')
+  pair.right.send([
+    'connected',
+    client.node.localProtocol,
+    'server',
+    [0, 0],
+    {}
+  ])
+  await pair.wait('left')
+  await delay(10)
+
+  expect(pair.leftSent).toEqual([
+    [
+      'connect',
+      client.node.localProtocol,
+      '10:1:1',
+      0,
+      { subprotocol: '1.0.0' }
+    ],
+    [
+      'sync',
+      6,
+      { type: 'logux/subscribe', channel: 'D', filter: undefined },
+      { id: 8, time: 8 },
+      { type: 'logux/subscribe', channel: 'B', filter: { id: 3 } },
+      { id: 9, time: 9 }
+    ],
+    [
+      'sync',
+      3,
+      {
+        type: 'logux/subscribe',
+        channel: 'A',
+        since: {
+          id: '4 10:1:1 0',
+          time: 4
+        }
+      },
+      { id: 13, time: 13 }
+    ],
+    [
+      'sync',
+      3,
+      {
+        type: 'logux/subscribe',
+        channel: 'B',
+        filter: { id: 1 },
+        since: {
+          id: '6 10:1:1 0',
+          time: 6
+        }
+      },
+      { id: 14, time: 14 }
+    ]
+  ])
 })
