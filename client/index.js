@@ -256,7 +256,7 @@ export class Client {
     let disconnected = true
     this.node.on('state', () => {
       let state = this.node.state
-      if (state === 'synchronized' || state === 'sending') {
+      if (state === 'synchronized') {
         if (disconnected) {
           disconnected = false
           for (let i in this.subscriptions) {
