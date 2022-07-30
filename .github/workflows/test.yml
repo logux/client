@@ -5,6 +5,7 @@ on:
       - main
   pull_request:
 jobs:
+
   full:
     name: Node.js Latest Full
     runs-on: ubuntu-latest
@@ -52,3 +53,33 @@ jobs:
         run: node --experimental-vm-modules node_modules/jest/bin/jest.js
         env:
           FORCE_COLOR: 2
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    needs:
+      - full
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: latest
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Build
+        run: pnpm build
+        env:
+          FORCE_COLOR: 2
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@4.2.1
+        with:
+          folder: test/demo/dist
+          branch: gh-pages
