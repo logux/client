@@ -1,6 +1,11 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.16
+* Removed Node.js 12 support.
+* Add `logux/unsubscribe` processing in offline.
+* Fixed race condition on resubscribe on `sending` state (by Tyler Han).
+
 ## 0.15.3
 * Fixed React types (by Wojciech Grzebieniowski).
 
