@@ -2,8 +2,7 @@ import { eachStoreCheck, Action, Meta, LogPage } from '@logux/core'
 import { jest } from '@jest/globals'
 
 import { IndexedStore } from '../index.js'
-import fakeIndexedDB from 'fake-indexeddb'
-import IDBKeyRange from 'fake-indexeddb/lib/FDBKeyRange'
+import 'fake-indexeddb/auto'
 
 type Entry = [Action, Meta]
 
@@ -17,12 +16,6 @@ declare global {
     }
   }
 }
-
-let originIndexedDB = global.indexedDB
-beforeEach(() => {
-  global.indexedDB = fakeIndexedDB
-  global.IDBKeyRange = IDBKeyRange
-})
 
 function privateMethods(obj: object): any {
   return obj
@@ -66,7 +59,6 @@ let store: IndexedStore | undefined
 afterEach(async () => {
   await store?.clean()
   store = undefined
-  global.indexedDB = originIndexedDB
   // @ts-expect-error
   delete document.reload
 })
@@ -111,28 +103,6 @@ it('reloads page on database update', async () => {
     }
   })
   expect(document.reload).toHaveBeenCalledTimes(1)
-})
-
-it('throws init error', async () => {
-  let error = new Error('test')
-  global.indexedDB = {
-    ...indexedDB,
-    open: () => {
-      let request: any = {}
-      setTimeout(() => {
-        request.onerror({ target: { error } })
-      }, 1)
-      return request
-    }
-  }
-  let broken = new IndexedStore()
-  let throwed
-  try {
-    await privateMethods(broken).init()
-  } catch (e) {
-    throwed = e
-  }
-  expect(throwed).toBe(error)
 })
 
 it('works with broken lastSynced', async () => {

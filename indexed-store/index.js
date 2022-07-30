@@ -4,6 +4,7 @@ const VERSION = 2
 
 function rejectify(request, reject) {
   request.onerror = e => {
+    /* istanbul ignore next */
     reject(e.target.error)
   }
 }
