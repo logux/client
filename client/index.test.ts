@@ -857,6 +857,7 @@ it('works with unsubscribe in offline', async () => {
     {}
   ])
   await pair.wait('left')
+  setState(client, 'synchronized')
   await delay(10)
 
   expect(pair.leftSent).toEqual([
@@ -866,14 +867,6 @@ it('works with unsubscribe in offline', async () => {
       '10:1:1',
       0,
       { subprotocol: '1.0.0' }
-    ],
-    [
-      'sync',
-      6,
-      { type: 'logux/subscribe', channel: 'D', filter: undefined },
-      { id: 8, time: 8 },
-      { type: 'logux/subscribe', channel: 'B', filter: { id: 3 } },
-      { id: 9, time: 9 }
     ],
     [
       'sync',
@@ -901,6 +894,14 @@ it('works with unsubscribe in offline', async () => {
         }
       },
       { id: 14, time: 14 }
+    ],
+    [
+      'sync',
+      6,
+      { type: 'logux/subscribe', channel: 'D', filter: undefined },
+      { id: 8, time: 8 },
+      { type: 'logux/subscribe', channel: 'B', filter: { id: 3 } },
+      { id: 9, time: 9 }
     ]
   ])
 })
