@@ -1,6 +1,9 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.17
+* Moved to Nano Stores 0.6.
+
 ## 0.16
 * Removed Node.js 12 support.
 * Add `logux/unsubscribe` processing in offline.
