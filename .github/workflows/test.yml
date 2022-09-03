@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - next
   pull_request:
 jobs:
 
@@ -25,8 +26,7 @@ jobs:
         run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Run tests
         run: pnpm test
-        env:
-          FORCE_COLOR: 2
+
   short:
     runs-on: ubuntu-latest
     strategy:
@@ -51,8 +51,7 @@ jobs:
         run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Run unit tests
         run: node --experimental-vm-modules node_modules/jest/bin/jest.js
-        env:
-          FORCE_COLOR: 2
+
   deploy:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
@@ -76,8 +75,6 @@ jobs:
         run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Build
         run: pnpm build
-        env:
-          FORCE_COLOR: 2
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@4.2.1
         with:
