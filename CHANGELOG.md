@@ -1,6 +1,9 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.18
+* Moved to Logux Core 0.8.
+
 ## 0.17
 * Moved to Nano Stores 0.6.
 
