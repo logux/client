@@ -260,6 +260,127 @@ it('loads store from the log for offline stores', async () => {
   expect(cachedIds(LocalPost)).toEqual(['4', '5'])
 })
 
+it('does not send since when subscribing to remote stores', async () => {
+  let client = new TestClient('10')
+  client.log.keepActions()
+  await client.connect()
+
+  // when creating a filter without any cached log
+  let filter1 = createFilter(client, Post, { })
+  await client.server.freezeProcessing(async () => {
+    filter1.listen(() => {})
+    delay(1)
+  })
+  await allTasks()
+
+  expect(client.log.actions()).toEqual([
+    { type: 'logux/subscribe', channel: 'posts', filter: {} },
+    { type: 'logux/processed', id: '1 10:2:2 0' }
+  ])
+
+  await createSyncMap(client, Post, {
+    id: 'ID',
+    projectId: '10',
+    title: 'Cached',
+    authorId: '10'
+  })
+
+
+  // when creating filter with a matching action in cache
+  let filter2 = createFilter(client, Post, { projectId: '10' })
+  await client.server.freezeProcessing(async () => {
+    filter2.listen(() => {})
+    delay(1)
+  })
+  await allTasks()
+
+  expect(client.log.actions()).toEqual([
+    // first subscribe
+    { type: 'logux/subscribe', channel: 'posts', filter: {} },
+    { type: 'logux/processed', id: '1 10:2:2 0' },
+
+    // create item
+    {
+      type: 'posts/create',
+      id: 'ID',
+      fields: { projectId: '10', title: 'Cached', authorId: '10' }
+    },
+    { type: 'logux/subscribe', channel: 'posts/ID', creating: true },
+    { type: 'logux/processed', id: '3 10:2:2 0' },
+    { type: 'logux/processed', id: '4 10:2:2 0' },
+
+    // second subscribe
+    {
+      type: 'logux/subscribe',
+      channel: 'posts',
+      filter: { projectId: '10' },
+      // since is not set
+    },
+    { type: 'logux/processed', id: '7 10:2:2 0' }
+  ])
+})
+
+
+it('sends since when subscribing to filter if actions are cached for remote offline maps', async () => {
+  let client = new TestClient('10')
+  client.log.keepActions()
+  await client.connect()
+
+  // when creating a filter without any cached log
+  let filter1 = createFilter(client, CachedPost, { })
+  await client.server.freezeProcessing(async () => {
+    filter1.listen(() => {})
+    delay(1)
+  })
+  await filter1.loading
+  await allTasks()
+  expect(client.log.actions()).toEqual([
+    // subscription
+    { type: 'logux/subscribe', channel: 'cached', filter: {} },
+    { type: 'logux/processed', id: '1 10:2:2 0' }
+  ])
+
+  await createSyncMap(client, CachedPost, {
+    id: 'ID',
+    projectId: '10',
+    title: 'Cached'
+  })
+
+  // when creating filter with a matching action in cache
+  let filter2 = createFilter(client, CachedPost, { projectId: '10' })
+  await client.server.freezeProcessing(async () => {
+    filter2.listen(() => {})
+    delay(1)
+  })
+  await filter2.loading
+  await allTasks()
+
+  expect(client.log.actions()).toEqual([
+    // first subscribe
+    { type: 'logux/subscribe', channel: 'cached', filter: {} },
+    { type: 'logux/processed', id: '1 10:2:2 0' },
+
+    // create item
+    {
+      type: 'cached/create',
+      id: 'ID',
+      fields: { projectId: '10', title: 'Cached' }
+    },
+    { type: 'logux/subscribe', channel: 'cached/ID', creating: true },
+    { type: 'logux/processed', id: '3 10:2:2 0' },
+    { type: 'logux/processed', id: '4 10:2:2 0' },
+
+    // second subscribe
+    {
+      type: 'logux/subscribe',
+      channel: 'cached',
+      filter: { projectId: '10' },
+      since: { id: '3 10:2:2 0', time: 3 } // since is set
+    },
+    { type: 'logux/processed', id: '7 10:2:2 0' }
+  ])
+})
+
 it('supports both offline and remote stores', async () => {
   let client = new TestClient('10')
   client.log.keepActions()
