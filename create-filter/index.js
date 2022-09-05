@@ -106,6 +106,25 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
 
       let endTask = startTask()
       filterStore.loading = new Promise((resolve, reject) => {
+        async function processSubscribe(subscribtion) {
+          await subscribtion
+            .then(() => {
+              if (isLoading) {
+                isLoading = false
+                if (filterStore.value) {
+                  filterStore.setKey('isLoading', false)
+                }
+                endTask()
+                resolve()
+              }
+            })
+            .catch(e => {
+              subscriptionError = true
+              reject(e)
+              endTask()
+            })
+        }
+
         async function loadAndCheck(child) {
           let clear = child.listen(() => {})
           if (child.value.isLoading) await child.loading
@@ -171,48 +190,16 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
                   endTask()
                   resolve()
                 } else if (Template.remote) {
-                  const subscribeSinceLatest = latestMeta !== undefined
+                  let subscribeSinceLatest = latestMeta !== undefined
                       ? { ...subscribe, since: { id: latestMeta.id, time: latestMeta.time } }
                       : subscribe
-                  await client
-                    .sync(subscribeSinceLatest)
-                    .then(() => {
-                      if (isLoading) {
-                        isLoading = false
-                        if (filterStore.value) {
-                          filterStore.setKey('isLoading', false)
-                        }
-                        endTask()
-                        resolve()
-                      }
-                    })
-                    .catch(e => {
-                      subscriptionError = true
-                      reject(e)
-                      endTask()
-                    })
-                  }
+                  await processSubscribe(client.sync(subscribeSinceLatest))
+                }
               })
           }
 
           if (Template.remote && !Template.offline) {
-            client
-              .sync(subscribe)
-              .then(() => {
-                if (isLoading) {
-                  isLoading = false
-                  if (filterStore.value) {
-                    filterStore.setKey('isLoading', false)
-                  }
-                  endTask()
-                  resolve()
-                }
-              })
-              .catch(e => {
-                subscriptionError = true
-                reject(e)
-                endTask()
-              })
+            processSubscribe(client.sync(subscribe))
           }
         }
 

@@ -285,7 +285,6 @@ it('does not send since when subscribing to remote stores', async () => {
     authorId: '10'
   })
 
-
   // when creating filter with a matching action in cache
   let filter2 = createFilter(client, Post, { projectId: '10' })
   await client.server.freezeProcessing(async () => {
