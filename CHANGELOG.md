@@ -1,6 +1,9 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.18.1
+* Fixed `subscribe.since` for offline `SyncMap` (by Nikita Galaiko).
+
 ## 0.18
 * Moved to Logux Core 0.8.
 
