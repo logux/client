@@ -40,6 +40,11 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
       let changeType = `${Template.plural}/change`
       let deletedType = `${Template.plural}/deleted`
       let deleteType = `${Template.plural}/delete`
+      let subscribe = {
+        type: 'logux/subscribe',
+        channel: Template.plural,
+        filter
+      }
 
       let unbinds = []
       let unbindIds = new Map()
@@ -101,6 +106,25 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
 
       let endTask = startTask()
       filterStore.loading = new Promise((resolve, reject) => {
+        async function processSubscribe(subscribtion) {
+          await subscribtion
+            .then(() => {
+              if (isLoading) {
+                isLoading = false
+                if (filterStore.value) {
+                  filterStore.setKey('isLoading', false)
+                }
+                endTask()
+                resolve()
+              }
+            })
+            .catch(e => {
+              subscriptionError = true
+              reject(e)
+              endTask()
+            })
+        }
+
         async function loadAndCheck(child) {
           let clear = child.listen(() => {})
           if (child.value.isLoading) await child.loading
@@ -128,8 +152,15 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
           let ignore = new Set()
           let checking = []
           if (Template.offline) {
+            let latestMeta
             client.log
-              .each({ index: Template.plural }, async action => {
+              .each({ index: Template.plural }, async (action, meta) => {
+                if (latestMeta === undefined) {
+                  latestMeta = meta
+                } else if (isFirstOlder(meta, latestMeta)) {
+                  latestMeta = meta
+                }
+
                 if (action.id && !ignore.has(action.id)) {
                   let type = action.type
                   if (
@@ -152,37 +183,23 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
               })
               .then(async () => {
                 await Promise.all(checking)
+
                 if (!Template.remote && isLoading) {
                   isLoading = false
                   filterStore.setKey('isLoading', false)
                   endTask()
                   resolve()
+                } else if (Template.remote) {
+                  let subscribeSinceLatest = latestMeta !== undefined
+                      ? { ...subscribe, since: { id: latestMeta.id, time: latestMeta.time } }
+                      : subscribe
+                  await processSubscribe(client.sync(subscribeSinceLatest))
                 }
               })
           }
 
-          if (Template.remote) {
-            client
-              .sync({
-                type: 'logux/subscribe',
-                channel: Template.plural,
-                filter
-              })
-              .then(() => {
-                if (isLoading) {
-                  isLoading = false
-                  if (filterStore.value) {
-                    filterStore.setKey('isLoading', false)
-                  }
-                  endTask()
-                  resolve()
-                }
-              })
-              .catch(e => {
-                subscriptionError = true
-                reject(e)
-                endTask()
-              })
+          if (Template.remote && !Template.offline) {
+            processSubscribe(client.sync(subscribe))
           }
         }
 
