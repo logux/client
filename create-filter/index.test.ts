@@ -394,12 +394,11 @@ it('supports both offline and remote stores', async () => {
   let posts = createFilter(client, CachedPost, { projectId: '10' })
   await client.server.freezeProcessing(async () => {
     posts.listen(() => {})
-    await delay(10)
-    expect(getSize(posts)).toBe(1)
     expect(posts.get().isLoading).toBe(true)
   })
   await allTasks()
   expect(posts.get().isLoading).toBe(false)
+  expect(getSize(posts)).toBe(1)
   expect(Array.from(posts.get().stores.keys())).toEqual(['ID'])
 })
 
