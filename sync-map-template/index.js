@@ -91,9 +91,9 @@ export function syncMapTemplate(plural, opts = {}) {
             endTask()
           }
         })
-        if (store.remote) {
-          client
-            .sync(subscribe)
+
+        async function processSubscribe(subscription) {
+          await subscription
             .then(() => {
               if (isLoading) {
                 isLoading = false
@@ -106,8 +106,13 @@ export function syncMapTemplate(plural, opts = {}) {
               loadingReject(e)
             })
         }
+
+        if (store.remote && !store.offline) {
+          processSubscribe(client.sync(subscribe))
+        }
         if (store.offline) {
           let found
+          let latestMeta
           client.log
             .each({ index: `${plural}/${id}` }, (action, meta) => {
               let type = action.type
@@ -118,6 +123,11 @@ export function syncMapTemplate(plural, opts = {}) {
                   type === createdType ||
                   type === createType
                 ) {
+                  if (latestMeta === undefined) {
+                    latestMeta = meta
+                  } else if (isFirstOlder(meta, latestMeta)) {
+                    latestMeta = meta
+                  }
                   changeIfLast(store, action.fields, meta)
                   found = true
                 } else if (type === deletedType || type === deleteType) {
@@ -126,8 +136,8 @@ export function syncMapTemplate(plural, opts = {}) {
               }
               return undefined
             })
-            .then(() => {
-              if (found && isLoading) {
+            .then(async () => {
+              if (found && isLoading && !store.remote) {
                 isLoading = false
                 store.setKey('isLoading', false)
                 loadingResolve()
@@ -139,7 +149,12 @@ export function syncMapTemplate(plural, opts = {}) {
                     id: client.log.generateId(),
                     action: subscribe
                   })
-                )
+               )
+              } else if (store.remote) {
+               let subscribeSinceLatest = latestMeta !== undefined
+                  ? { ...subscribe, since: { id: latestMeta.id, time: latestMeta.time } }
+                  : subscribe
+                await processSubscribe(client.sync(subscribeSinceLatest))
               }
             })
         }

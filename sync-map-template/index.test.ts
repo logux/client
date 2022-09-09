@@ -449,14 +449,34 @@ it('throws 404 on missing offline map in local log', async () => {
   )
 })
 
+it('should not send since when subscribing to a offline remote store for the first time', async () => {
+  let client = new TestClient('10')
+  await client.connect()
+  client.log.keepActions()
+
+  let post = CachedPost('ID', client)
+  post.listen(() => {})
+  await allTasks()
+
+  expect(client.log.actions()).toEqual([
+    // since is not sent
+    { type: 'logux/subscribe', channel: 'cachedPosts/ID' },
+    { type: 'logux/processed', id: '1 10:2:2 0' }
+  ])
+})
+
 it('could cache specific stores and use server', async () => {
   let client = new TestClient('10')
   await client.connect()
+  client.log.keepActions()
   let post = CachedPost('ID', client)
   let unbind = post.listen(() => {})
 
+  await allTasks()
+
   expect(client.log.actions()).toEqual([
-    { type: 'logux/subscribe', channel: 'cachedPosts/ID' }
+    { type: 'logux/subscribe', channel: 'cachedPosts/ID' },
+    { type: 'logux/processed', id: '1 10:2:2 0' }
   ])
 
   await changeSyncMap(post, 'title', 'The post')
@@ -464,7 +484,13 @@ it('could cache specific stores and use server', async () => {
   await allTasks()
 
   expect(client.log.actions()).toEqual([
-    { type: 'cachedPosts/changed', id: 'ID', fields: { title: 'The post' } }
+    { type: 'logux/subscribe', channel: 'cachedPosts/ID' },
+    { type: 'logux/processed', id: '1 10:2:2 0' },
+
+    { type: 'cachedPosts/change', id: 'ID', fields: { title: 'The post' } },
+    { type: 'cachedPosts/changed', id: 'ID', fields: { title: 'The post' } },
+
+    { type: 'logux/processed', id: '3 10:2:2 0' },
   ])
 
   let restored = CachedPost('ID', client)
