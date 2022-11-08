@@ -1,6 +1,9 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.18.3
+* Fixed Nano Stores peer dependency.
+
 ## 0.18.2
 * Fixed `subscribe.since` for single offline `SyncMap` (by Nikita Galaiko).
 * Moved to Nano Stores 0.7.
