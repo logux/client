@@ -15,13 +15,8 @@ interface StatusListener {
       | 'error'
       | 'denied'
       | 'wait',
-    details:
-      | undefined
-      | { error: Error }
-      | {
-      action: Action
-      meta: ClientMeta
-    }  ): void
+    details: undefined | { error: Error } | { action: Action; meta: ClientMeta }
+  ): void
 }
 
 interface StatusOptions {
