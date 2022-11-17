@@ -4,24 +4,17 @@ import { Client, ClientMeta } from '../client/index.js'
 
 interface StatusListener {
   (
-    current:
-      | 'synchronized'
-      | 'synchronizedAfterWait'
-      | 'disconnected'
-      | 'connecting'
-      | 'connectingAfterWait'
-      | 'protocolError'
-      | 'syncError'
-      | 'error'
-      | 'denied'
-      | 'wait',
-    details:
-      | undefined
-      | Error
-      | {
-          action: Action
-          meta: ClientMeta
-        }
+    ...args:
+      | ['synchronized', void]
+      | ['synchronizedAfterWait', void]
+      | ['disconnected', void]
+      | ['connecting', void]
+      | ['connectingAfterWait', void]
+      | ['protocolError', void]
+      | ['syncError', { error: Error }]
+      | ['error', { action: Action; meta: ClientMeta }]
+      | ['denied', { action: Action; meta: ClientMeta }]
+      | ['wait', void]
   ): void
 }
 
