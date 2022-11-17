@@ -1,6 +1,9 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.18.4
+* Fixed types (by Slava Mostovoy).
+
 ## 0.18.3
 * Fixed Nano Stores peer dependency.
 
