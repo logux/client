@@ -17,12 +17,11 @@ interface StatusListener {
       | 'wait',
     details:
       | undefined
-      | Error
+      | { error: Error }
       | {
-          action: Action
-          meta: ClientMeta
-        }
-  ): void
+      action: Action
+      meta: ClientMeta
+    }  ): void
 }
 
 interface StatusOptions {

@@ -198,7 +198,8 @@ it('removes listeners', () => {
   })
 
   let calls = 0
-  let unbind = status(client, state => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  let unbind = status(client, (state , details) => {
     if (state === 'denied') {
       calls += 1
     }
