@@ -80,7 +80,7 @@ jobs:
       - name: Build
         run: pnpm build
       - name: Deploy
-        uses: JamesIves/github-pages-deploy-action@4
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: test/demo/dist
           branch: gh-pages
