@@ -1,6 +1,7 @@
 import { TextEncoder, TextDecoder } from 'util'
 import { TestTime, TestPair } from '@logux/core'
 import { it, expect } from 'vitest'
+import { Crypto } from '@peculiar/webcrypto'
 import { delay } from 'nanodelay'
 
 import { Client, encryptActions } from '../index.js'
@@ -8,6 +9,12 @@ import { Client, encryptActions } from '../index.js'
 window.TextEncoder = TextEncoder
 // @ts-expect-error
 window.TextDecoder = TextDecoder
+
+// For old Node.js, which doesn’t have Web Crypto
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+if (!window.crypto) {
+  window.crypto = new Crypto()
+}
 
 function privateMethods(obj: object): any {
   return obj

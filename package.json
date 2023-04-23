@@ -81,6 +81,7 @@
     "@nanostores/preact": "^0.3.1",
     "@nanostores/react": "^0.4.1",
     "@nanostores/vue": "^0.6.1",
+    "@peculiar/webcrypto": "^1.4.3",
     "@size-limit/preset-small-lib": "^8.2.4",
     "@testing-library/preact": "^3.2.3",
     "@testing-library/react": "^14.0.0",
