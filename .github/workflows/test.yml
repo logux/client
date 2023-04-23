@@ -55,6 +55,7 @@ jobs:
         run: pnpm vitest run
 
   deploy:
+    name: Demo Deploy
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     needs:
