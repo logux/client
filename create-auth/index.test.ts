@@ -1,3 +1,4 @@
+import { it, expect } from 'vitest'
 import { delay } from 'nanodelay'
 
 import { TestClient } from '../index.js'

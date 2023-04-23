@@ -1,4 +1,5 @@
 import { LoguxError, TestTime, TestPair, TestLog } from '@logux/core'
+import { it, expect } from 'vitest'
 import { delay } from 'nanodelay'
 
 import { CrossTabClient, status } from '../index.js'

@@ -1,5 +1,6 @@
 import { defineChangeSyncMap, defineChangedSyncMap } from '@logux/actions'
 import { cleanStores, allTasks } from 'nanostores'
+import { it, expect, afterEach } from 'vitest'
 import { delay } from 'nanodelay'
 
 import {

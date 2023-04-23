@@ -1,4 +1,5 @@
 import { map, STORE_UNMOUNT_DELAY } from 'nanostores'
+import { it, expect } from 'vitest'
 import { delay } from 'nanodelay'
 
 import { Client, createClientStore } from '../index.js'

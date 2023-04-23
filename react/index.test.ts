@@ -1,10 +1,17 @@
-import '@testing-library/jest-dom/extend-expect'
 import { cleanStores, atom, mapTemplate, MapTemplate } from 'nanostores'
-import React, { ReactElement, FC, ReactNode } from 'react'
+import {
+  createElement as h,
+  ReactElement,
+  Component,
+  ReactNode,
+  useState,
+  FC
+} from 'react'
+import { render, screen, act, cleanup } from '@testing-library/react'
+import { it, expect, afterEach } from 'vitest'
 import { LoguxNotFoundError } from '@logux/actions'
-import ReactTesting from '@testing-library/react'
+import { restoreAll, spyOn } from 'nanospy'
 import { delay } from 'nanodelay'
-import { jest } from '@jest/globals'
 
 import {
   ChannelNotFoundError,
@@ -25,9 +32,6 @@ import {
   useSync,
   useAuth
 } from './index.js'
-
-let { render, screen, act } = ReactTesting
-let { createElement: h, Component, useState } = React
 
 function getCatcher(cb: () => void): [string[], FC] {
   let errors: string[] = []
@@ -123,7 +127,7 @@ class ErrorCatcher extends Component<{ children?: ReactNode }> {
 async function catchLoadingError(
   error: string | Error
 ): Promise<string | null> {
-  jest.spyOn(console, 'error').mockImplementation(() => {})
+  spyOn(console, 'error', () => {})
   let Bad: FC = () => h('div', null, 'bad')
   let NotFound: FC<{ error: ChannelNotFoundError | LoguxNotFoundError }> = p =>
     h('div', {}, `404 ${p.error.name}`)
@@ -153,7 +157,7 @@ async function catchLoadingError(
       )
     )
   )
-  expect(screen.getByTestId('test')).toHaveTextContent('loading')
+  expect(screen.getByTestId('test').textContent).toEqual('loading')
 
   await act(async () => {
     Broken('ID').reject(error)
@@ -170,6 +174,8 @@ let LocalPost = syncMapTemplate<{ projectId: string; title: string }>('local', {
 let RemotePost = syncMapTemplate<{ title?: string }>('posts')
 
 afterEach(() => {
+  cleanup()
+  restoreAll()
   cleanStores(Broken, LocalPost, RemotePost)
 })
 
@@ -234,7 +240,7 @@ it('ignores unknown error', async () => {
 })
 
 it('could process denied via common error component', async () => {
-  jest.spyOn(console, 'error').mockImplementation(() => {})
+  spyOn(console, 'error', () => {})
   let Error: FC<{ error: ChannelError }> = props => {
     return h('div', {}, `500 ${props.error.action.reason}`)
   }
@@ -249,11 +255,11 @@ it('could process denied via common error component', async () => {
     Broken('ID').reject('denied')
     await delay(1)
   })
-  expect(screen.getByTestId('test')).toHaveTextContent('500 denied')
+  expect(screen.getByTestId('test').textContent).toEqual('500 denied')
 })
 
 it('could process not found via common error component', async () => {
-  jest.spyOn(console, 'error').mockImplementation(() => {})
+  spyOn(console, 'error', () => {})
   let Error: FC<{ error: ChannelError }> = props => {
     return h('div', {}, `500 ${props.error.action.reason}`)
   }
@@ -268,11 +274,11 @@ it('could process not found via common error component', async () => {
     Broken('ID').reject('notFound')
     await delay(1)
   })
-  expect(screen.getByTestId('test')).toHaveTextContent('500 notFound')
+  expect(screen.getByTestId('test').textContent).toEqual('500 notFound')
 })
 
 it('throws an error on missed ChannelErrors', async () => {
-  jest.spyOn(console, 'error').mockImplementation(() => {})
+  spyOn(console, 'error', () => {})
   expect(
     getText(h(ErrorCatcher, {}, h(SyncTest, { Template: RemotePost })))
   ).toEqual(
@@ -282,7 +288,7 @@ it('throws an error on missed ChannelErrors', async () => {
 })
 
 it('throws an error on ChannelErrors with missed argument', async () => {
-  jest.spyOn(console, 'error').mockImplementation(() => {})
+  spyOn(console, 'error', () => {})
   expect(
     getText(
       h(
@@ -302,7 +308,7 @@ it('throws an error on ChannelErrors with missed argument', async () => {
 })
 
 it('does not throw on ChannelErrors with 404 and 403', async () => {
-  jest.spyOn(console, 'error').mockImplementation(() => {})
+  spyOn(console, 'error', () => {})
   expect(
     getText(
       h(

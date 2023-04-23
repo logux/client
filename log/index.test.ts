@@ -1,5 +1,6 @@
+import { it, expect, beforeAll, beforeEach } from 'vitest'
 import { TestPair, TestTime, TestLog } from '@logux/core'
-import { jest } from '@jest/globals'
+import { spyOn } from 'nanospy'
 import pico from 'picocolors'
 
 import { CrossTabClient, ClientMeta, log } from '../index.js'
@@ -79,14 +80,14 @@ function format(...args: (string | object)[]): string {
 }
 
 beforeAll(() => {
-  jest.spyOn(console, 'groupCollapsed').mockImplementation((...args: any[]) => {
+  spyOn(console, 'groupCollapsed', (...args: any[]) => {
     console.log(...args)
     group = true
   })
-  jest.spyOn(console, 'groupEnd').mockImplementation(() => {
+  spyOn(console, 'groupEnd', () => {
     group = false
   })
-  jest.spyOn(console, 'log').mockImplementation((...args: any[]) => {
+  spyOn(console, 'log', (...args: any[]) => {
     out += format(...args) + '\n'
   })
 })

@@ -1,23 +1,29 @@
 import { MemoryStore, TestPair, TestTime, TestLog, Action } from '@logux/core'
+import { it, afterEach, expect, beforeEach } from 'vitest'
+import { restoreAll, spyOn } from 'nanospy'
 import { defineAction } from '@logux/actions'
 import { delay } from 'nanodelay'
-import { jest } from '@jest/globals'
 
-import { setLocalStorage } from '../test/local-storage.js'
 import { Client, ClientOptions } from '../index.js'
+import { setLocalStorage } from '../test/local-storage.js'
 
 type Events = {
   [key: string]: (() => void)[]
 }
 
+class WebSocket {
+  close(): void {}
+}
+
 beforeEach(() => {
+  global.WebSocket = WebSocket as any
   setLocalStorage()
 })
 
 let originIndexedDB = global.indexedDB
 afterEach(() => {
   global.indexedDB = originIndexedDB
-  jest.clearAllMocks()
+  restoreAll()
 })
 
 function emit(obj: any, event: string, ...args: any[]): void {
@@ -170,35 +176,37 @@ it('throws on non-string in user ID', () => {
 })
 
 it('not warns on WSS', async () => {
-  jest.spyOn(console, 'error').mockImplementation(() => {})
+  let error = spyOn(console, 'error', () => {})
   let client = await createDialog()
   expect(client.node.connected).toBe(true)
-  expect(console.error).not.toHaveBeenCalledWith()
+  expect(error.called).toBe(false)
 })
 
 it('forces to use WSS in production domain', async () => {
-  jest.spyOn(console, 'error').mockImplementation(() => {})
+  let error = spyOn(console, 'error', () => {})
   let client = await createDialog({ server: 'ws://test.com' })
   await delay(10)
   expect(client.node.connected).toBe(false)
-  expect(console.error).toHaveBeenCalledWith(
-    'Without SSL, old proxies block WebSockets. ' +
-      'Use WSS for Logux or set allowDangerousProtocol option.'
-  )
+  expect(error.calls).toEqual([
+    [
+      'Without SSL, old proxies block WebSockets. ' +
+        'Use WSS for Logux or set allowDangerousProtocol option.'
+    ]
+  ])
 })
 
 it('ignores WS with allowDangerousProtocol', async () => {
-  jest.spyOn(console, 'error').mockImplementation(() => {})
+  let error = spyOn(console, 'error', () => {})
   let client = await createDialog({
     allowDangerousProtocol: true,
     server: 'ws://test.com'
   })
   expect(client.node.connected).toBe(true)
-  expect(console.error).not.toHaveBeenCalledWith()
+  expect(error.called).toBe(false)
 })
 
 it('ignores WS in development', async () => {
-  jest.spyOn(console, 'error').mockImplementation(() => {})
+  let error = spyOn(console, 'error', () => {})
   let client = await createDialog(
     {
       server: 'ws://test.com'
@@ -206,7 +214,7 @@ it('ignores WS in development', async () => {
     'development'
   )
   expect(client.node.connected).toBe(true)
-  expect(console.error).not.toHaveBeenCalledWith()
+  expect(error.called).toBe(false)
 })
 
 it('uses user ID in node ID', () => {
@@ -290,35 +298,34 @@ it('uses test time', () => {
 
 it('connects', () => {
   let client = createClient()
-  jest.spyOn(client.node.connection, 'connect')
+  let connect = spyOn(client.node.connection, 'connect')
   client.start()
-  expect(client.node.connection.connect).toHaveBeenCalledTimes(1)
+  expect(connect.callCount).toEqual(1)
 })
 
 it('display server debug error stacktrace with prefix', () => {
-  jest.spyOn(console, 'error').mockImplementation(() => {})
+  let error = spyOn(console, 'error', () => {})
   let client = createClient()
   emit(client.node, 'debug', 'error', 'Fake stacktrace\n')
-  expect(console.error).toHaveBeenCalledWith(
-    'Error on Logux server:\n',
-    'Fake stacktrace\n'
-  )
+  expect(error.calls).toEqual([
+    ['Error on Logux server:\n', 'Fake stacktrace\n']
+  ])
 })
 
 it('does not display server debug message if type is not error', () => {
-  jest.spyOn(console, 'error').mockImplementation(() => {})
+  let error = spyOn(console, 'error', () => {})
   let client = createClient()
   emit(client.node, 'debug', 'notError', 'Fake stacktrace\n')
-  expect(console.error).not.toHaveBeenCalled()
+  expect(error.called).toBe(false)
 })
 
 it('cleans everything', async () => {
   let client = createClient()
-  jest.spyOn(client.node, 'destroy')
-  jest.spyOn(client.log.store, 'clean')
+  let destroy = spyOn(client.node, 'destroy')
+  let clean = spyOn(client.log.store, 'clean')
   await client.clean()
-  expect(client.node.destroy).toHaveBeenCalledTimes(1)
-  expect(client.log.store.clean).toHaveBeenCalledTimes(1)
+  expect(destroy.callCount).toEqual(1)
+  expect(clean.callCount).toEqual(1)
 })
 
 it('pings after tab-specific action', async () => {

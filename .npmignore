@@ -4,6 +4,7 @@ coverage/
 **/errors.ts
 **/*.test.*
 tsconfig.json
+vite.config.ts
 
 global.d.ts
 __snapshots__

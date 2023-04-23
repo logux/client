@@ -1,3 +1,4 @@
+import { it, expect, afterEach, beforeAll } from 'vitest'
 import { LoguxError, TestPair } from '@logux/core'
 
 import { CrossTabClient, favicon } from '../index.js'
@@ -84,7 +85,7 @@ it('works without favicon tag', async () => {
   expect(getFavHref()).toBe('/offline.ico')
 
   setState(client.node, 'sending')
-  expect(getFavHref()).toBe('/')
+  expect(getFavHref()).toBe('')
 })
 
 it('uses current favicon as normal', async () => {
@@ -103,7 +104,7 @@ it('does not double favicon changes', async () => {
 
   setFavHref('')
   emit(client.node, 'error', new Error('test'))
-  expect(getFavHref()).toBe('/')
+  expect(getFavHref()).toBe('')
 })
 
 it('uses error icon on undo', async () => {
@@ -117,7 +118,7 @@ it('allows to miss timeout error', async () => {
   let client = await createClient()
   favicon(client, { error: '/error.ico' })
   emit(client.node, 'error', new LoguxError('timeout'))
-  expect(getFavHref()).toBe('/')
+  expect(getFavHref()).toBe('')
 })
 
 it('does not override error by offline', async () => {

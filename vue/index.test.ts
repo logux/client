@@ -1,10 +1,18 @@
-import '@testing-library/jest-dom/extend-expect'
+import {
+  onErrorCaptured,
+  defineComponent,
+  isReadonly,
+  Component,
+  nextTick,
+  ref,
+  h
+} from 'vue'
 import { cleanStores, atom, mapTemplate, MapTemplate } from 'nanostores'
-import Vue, { Component, isReadonly } from 'vue'
+import { render, screen, cleanup } from '@testing-library/vue'
+import { it, expect, afterEach } from 'vitest'
 import { LoguxNotFoundError } from '@logux/actions'
-import VueTesting from '@testing-library/vue'
+import { restoreAll, spyOn } from 'nanospy'
 import { delay } from 'nanodelay'
-import { jest } from '@jest/globals'
 
 import {
   changeSyncMapById,
@@ -23,9 +31,6 @@ import {
   useSync,
   useAuth
 } from './index.js'
-
-let { render, screen } = VueTesting
-let { onErrorCaptured, defineComponent, nextTick, ref, h } = Vue
 
 function getCatcher(cb: () => void): [string[], Component] {
   let errors: string[] = []
@@ -130,7 +135,7 @@ async function catchLoadingError(
     )
   )
   await nextTick()
-  expect(screen.getByTestId('test')).toHaveTextContent('loading')
+  expect(screen.getByTestId('test').textContent).toEqual('loading')
 
   BrokenStore('ID').reject(error)
   await delay(10)
@@ -176,11 +181,13 @@ let BrokenStore = mapTemplate<
 })
 
 afterEach(() => {
+  cleanup()
+  restoreAll()
   cleanStores(BrokenStore, LocalPostStore, RemotePostStore)
 })
 
 it('throws on missed logux client dependency', () => {
-  let spy = jest.spyOn(console, 'warn').mockImplementation(() => {})
+  spyOn(console, 'warn', () => {})
   let Test = syncMapTemplate<{ name: string }>('test')
   let [errors, Catcher] = getCatcher(() => {
     useSync(Test, 'ID')
@@ -193,11 +200,10 @@ it('throws on missed logux client dependency', () => {
   expect(errors).toEqual([
     `Install Logux Client using loguxPlugin: app.use(loguxPlugin, client).`
   ])
-  spy.mockRestore()
 })
 
 it('throws on missed logux client dependency for useClient', () => {
-  let spy = jest.spyOn(console, 'warn').mockImplementation(() => {})
+  spyOn(console, 'warn', () => {})
   let [errors, Catcher] = getCatcher(() => {
     useClient()
   })
@@ -209,11 +215,10 @@ it('throws on missed logux client dependency for useClient', () => {
   expect(errors).toEqual([
     `Install Logux Client using loguxPlugin: app.use(loguxPlugin, client).`
   ])
-  spy.mockRestore()
 })
 
 it('throws on missed ID for builder', () => {
-  let spy = jest.spyOn(console, 'warn').mockImplementation(() => {})
+  spyOn(console, 'warn', () => {})
   let store = atom<undefined>()
   let [errors, Catcher] = getCatcher(() => {
     // @ts-expect-error
@@ -221,11 +226,10 @@ it('throws on missed ID for builder', () => {
   })
   render(h(Catcher))
   expect(errors).toEqual(['Use useStore() from @nanostores/vue for stores'])
-  spy.mockRestore()
 })
 
 it('throws store init errors', () => {
-  let spy = jest.spyOn(console, 'warn').mockImplementation(() => {})
+  spyOn(console, 'warn', () => {})
   let Template = mapTemplate(() => {
     throw new Error('Test')
   })
@@ -238,7 +242,6 @@ it('throws store init errors', () => {
     })
   )
   expect(errors).toEqual(['Test'])
-  spy.mockRestore()
 })
 
 it('throws and catches not found error', async () => {
@@ -264,7 +267,7 @@ it('ignores unknown error', async () => {
 })
 
 it('throws an error on missed ChannelErrors', async () => {
-  let spy = jest.spyOn(console, 'warn').mockImplementation(() => {})
+  spyOn(console, 'warn', () => {})
   let SyncTest = defineSyncTest(RemotePostStore)
   expect(
     await getText(
@@ -276,7 +279,6 @@ it('throws an error on missed ChannelErrors', async () => {
       )
     )
   ).toBe('Wrap components in Logux <channel-errors v-slot="{ code, error }">')
-  spy.mockRestore()
 })
 
 it('has composable to get client', async () => {

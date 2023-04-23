@@ -1,4 +1,5 @@
 import { cleanStores, mapTemplate } from 'nanostores'
+import { it, expect, afterEach } from 'vitest'
 
 import {
   syncMapTemplate,

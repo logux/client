@@ -1,5 +1,6 @@
 import { eachStoreCheck, Action, Meta, LogPage } from '@logux/core'
-import { jest } from '@jest/globals'
+import { it, expect, afterEach } from 'vitest'
+import { spyOn } from 'nanospy'
 
 import { IndexedStore } from '../index.js'
 import 'fake-indexeddb/auto'
@@ -89,7 +90,7 @@ it('allows to change DB name', async () => {
 
 it('reloads page on database update', async () => {
   document.reload = () => true
-  jest.spyOn(document, 'reload')
+  let reload = spyOn(document, 'reload')
   store = new IndexedStore()
   await privateMethods(store).init()
   let opening = indexedDB.open(store.name, 1000)
@@ -102,7 +103,7 @@ it('reloads page on database update', async () => {
       reject(e.target.error)
     }
   })
-  expect(document.reload).toHaveBeenCalledTimes(1)
+  expect(reload.callCount).toEqual(1)
 })
 
 it('works with broken lastSynced', async () => {

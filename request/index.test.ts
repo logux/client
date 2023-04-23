@@ -1,4 +1,5 @@
 import { TestPair, TestTime, AnyAction } from '@logux/core'
+import { it, expect } from 'vitest'
 import { delay } from 'nanodelay'
 
 import { request, RequestOptions } from '../index.js'
@@ -54,6 +55,7 @@ async function connectTest(
 
 it('sends action to the server and wait for response', async () => {
   let test = await connectTest({ type: 'test' })
+  await delay(1)
   expect(test.answer).toBeUndefined()
   expect(test.pair.leftSent).toEqual([
     ['connect', 4, 'anonymous:1:1', 0, { subprotocol: '1.0.0' }],

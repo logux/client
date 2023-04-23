@@ -1,4 +1,5 @@
 import { TestPair, TestTime, TestLog } from '@logux/core'
+import { it, expect } from 'vitest'
 import { delay } from 'nanodelay'
 
 import { Client, track } from '../index.js'

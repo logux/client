@@ -1,5 +1,6 @@
+import { it, afterEach, expect } from 'vitest'
 import { LoguxError, TestPair } from '@logux/core'
-import { jest } from '@jest/globals'
+import { spyOn } from 'nanospy'
 
 import { CrossTabClient, attention } from '../index.js'
 
@@ -57,11 +58,11 @@ it('receives undo', async () => {
 })
 
 it('returns unbind function', async () => {
-  jest.spyOn(document, 'removeEventListener')
+  let removeEventListener = spyOn(document, 'removeEventListener')
   let client = await createClient()
   let unbind = attention(client)
   unbind()
-  expect(document.removeEventListener).toHaveBeenCalledTimes(1)
+  expect(removeEventListener.callCount).toEqual(1)
 })
 
 it('allows to miss timeout error', async () => {

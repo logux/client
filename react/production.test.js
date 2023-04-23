@@ -1,12 +1,10 @@
-import ReactTesting from '@testing-library/react'
-import React from 'react'
+import { createElement as h } from 'react'
+import { render, screen } from '@testing-library/react'
+import { it, expect } from 'vitest'
 
 import '../test/set-production.js'
 import { useSync, ClientContext, ChannelErrors } from './index.js'
 import { syncMapTemplate, TestClient } from '../index.js'
-
-let { render, screen } = ReactTesting
-let h = React.createElement
 
 let Store = syncMapTemplate('test')
 

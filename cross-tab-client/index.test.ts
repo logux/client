@@ -1,6 +1,7 @@
 import { TestLog, TestPair, TestTime, Action } from '@logux/core'
+import { it, expect, afterEach, beforeEach } from 'vitest'
+import { spyOn, restoreAll } from 'nanospy'
 import { delay } from 'nanodelay'
-import { jest } from '@jest/globals'
 
 import {
   breakLocalStorage,
@@ -9,18 +10,11 @@ import {
 } from '../test/local-storage.js'
 import { CrossTabClient, ClientOptions } from '../index.js'
 
-declare global {
-  namespace NodeJS {
-    interface Global {
-      WebSocket: any
-    }
-  }
+class WebSocket {
+  close(): void {}
 }
 
 beforeEach(() => {
-  class WebSocket {
-    close(): void {}
-  }
   global.WebSocket = WebSocket as any
   setLocalStorage()
 })
@@ -34,6 +28,7 @@ let originWebSocket = global.WebSocket
 afterEach(() => {
   client.destroy()
   global.WebSocket = originWebSocket
+  restoreAll()
 })
 
 function privateMethods(obj: object): any {
@@ -134,16 +129,17 @@ it('supports nanoevents API', async () => {
 it('cleans everything', async () => {
   client = createClient()
 
-  jest.spyOn(client.node, 'destroy')
-  jest.spyOn(localStorage, 'removeItem')
+  let destroy = spyOn(client.node, 'destroy')
+  let removeItem = spyOn(localStorage, 'removeItem')
 
   await client.clean()
-  expect(client.node.destroy).toHaveBeenCalledTimes(1)
-  expect(localStorage.removeItem).toHaveBeenCalledTimes(4)
-  expect(localStorage.removeItem).toHaveBeenNthCalledWith(1, 'logux:10:add')
-  expect(localStorage.removeItem).toHaveBeenNthCalledWith(2, 'logux:10:state')
-  expect(localStorage.removeItem).toHaveBeenNthCalledWith(3, 'logux:10:client')
-  expect(localStorage.removeItem).toHaveBeenNthCalledWith(4, 'logux:10:leader')
+  expect(destroy.callCount).toEqual(1)
+  expect(removeItem.calls).toEqual([
+    ['logux:10:add'],
+    ['logux:10:state'],
+    ['logux:10:client'],
+    ['logux:10:leader']
+  ])
 })
 
 it('does not use broken localStorage', async () => {
@@ -236,18 +232,19 @@ it('uses candidate role from beggining', () => {
 })
 
 it('becomes leader without localStorage', () => {
-  Object.defineProperty(global, '_localStorage', { value: undefined })
+  // @ts-expect-error
+  window.localStorage = undefined
   client = createClient()
 
   let roles: string[] = []
   client.on('role', () => {
     roles.push(client.role)
   })
-  jest.spyOn(client.node.connection, 'connect')
+  let connect = spyOn(client.node.connection, 'connect')
 
   client.start()
   expect(roles).toEqual(['leader'])
-  expect(client.node.connection.connect).toHaveBeenCalledTimes(1)
+  expect(connect.callCount).toEqual(1)
 })
 
 it('becomes follower on recent leader ping', () => {
@@ -258,11 +255,11 @@ it('becomes follower on recent leader ping', () => {
   client.on('role', () => {
     roles.push(client.role)
   })
-  jest.spyOn(client.node.connection, 'connect')
+  let connect = spyOn(client.node.connection, 'connect')
 
   client.start()
   expect(roles).toEqual(['follower'])
-  expect(client.node.connection.connect).not.toHaveBeenCalled()
+  expect(connect.called).toBe(false)
   expect(privateMethods(client).watching).toBeDefined()
 })
 
@@ -292,7 +289,6 @@ it('stops election in leader check', async () => {
 
 it('pings on leader role', async () => {
   client = createClient()
-  jest.spyOn(client.node.connection, 'disconnect')
 
   let last = Date.now() - LEADER_TIMEOUT - 10
   localStorage.setItem('logux:10:leader', `["",${last}]`)
@@ -337,7 +333,7 @@ it('replaces dead leader', async () => {
 
 it('disconnects on leader changes', async () => {
   client = createClient()
-  jest.spyOn(client.node.connection, 'disconnect')
+  let disconnect = spyOn(client.node.connection, 'disconnect')
 
   client.start()
   await delay(ELECTION_DELAY + 10)
@@ -347,7 +343,7 @@ it('disconnects on leader changes', async () => {
   localStorage.setItem('logux:10:leader', `["",${now}]`)
   emitStorage('logux:10:leader', `["",${now}]`)
 
-  expect(client.node.connection.disconnect).toHaveBeenCalledTimes(1)
+  expect(disconnect.callCount).toEqual(1)
 })
 
 it('updates state if tab is a leader', async () => {
@@ -622,17 +618,17 @@ it('disables cross-tab communication on localStorage error', async () => {
   await delay(ELECTION_DELAY + 10)
 
   let error = new Error('test')
-  jest.spyOn(console, 'error').mockImplementation(() => true)
-  jest.spyOn(client.node.connection, 'connect')
+  let errorLog = spyOn(console, 'error', () => {})
+  let connect = spyOn(client.node.connection, 'connect')
   breakLocalStorage(error)
   client.log.add({ type: 'A' })
 
   expect(client.role).toBe('leader')
-  expect(console.error).toHaveBeenCalledWith(error)
-  expect(client.node.connection.connect).toHaveBeenCalledTimes(1)
+  expect(errorLog.calls).toEqual([[error]])
+  expect(connect.callCount).toEqual(1)
 
   client.log.add({ type: 'B' })
-  expect(console.error).toHaveBeenCalledTimes(1)
+  expect(errorLog.callCount).toEqual(1)
 })
 
 it('notifies other tabs on user change', () => {

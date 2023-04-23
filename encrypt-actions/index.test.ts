@@ -1,14 +1,13 @@
 import { TextEncoder, TextDecoder } from 'util'
 import { TestTime, TestPair } from '@logux/core'
-import { Crypto } from '@peculiar/webcrypto'
+import { it, expect } from 'vitest'
 import { delay } from 'nanodelay'
 
 import { Client, encryptActions } from '../index.js'
 
-global.crypto = new Crypto() as any
-global.TextEncoder = TextEncoder
+window.TextEncoder = TextEncoder
 // @ts-expect-error
-global.TextDecoder = TextDecoder
+window.TextDecoder = TextDecoder
 
 function privateMethods(obj: object): any {
   return obj

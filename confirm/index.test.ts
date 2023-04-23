@@ -1,5 +1,6 @@
+import { it, expect, beforeEach } from 'vitest'
+import { spyOn, restoreAll } from 'nanospy'
 import { TestPair } from '@logux/core'
-import { jest } from '@jest/globals'
 
 import { CrossTabClient, confirm } from '../index.js'
 
@@ -37,20 +38,17 @@ function callBeforeloader(event?: any): string {
 }
 
 beforeEach(() => {
+  restoreAll()
   beforeunloader = false
 
-  jest
-    .spyOn(window, 'addEventListener')
-    .mockImplementation((event: string, callback: any) => {
-      if (event === 'beforeunload') beforeunloader = callback
-    })
-  jest
-    .spyOn(window, 'removeEventListener')
-    .mockImplementation((event: string, callback: any) => {
-      if (event === 'beforeunload' && beforeunloader === callback) {
-        beforeunloader = false
-      }
-    })
+  spyOn(window, 'addEventListener', (event: string, callback: any) => {
+    if (event === 'beforeunload') beforeunloader = callback
+  })
+  spyOn(window, 'removeEventListener', (event: string, callback: any) => {
+    if (event === 'beforeunload' && beforeunloader === callback) {
+      beforeunloader = false
+    }
+  })
 })
 
 it('confirms close', async () => {

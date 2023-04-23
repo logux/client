@@ -1,12 +1,10 @@
-import VueTesting from '@testing-library/vue'
-import Vue from 'vue'
+import { defineComponent, h, isReadonly, nextTick, ref } from 'vue'
+import { render, screen } from '@testing-library/vue'
+import { it, expect } from 'vitest'
 
 import '../test/set-production.js'
 import { loguxPlugin, useSync, ChannelErrors, useFilter } from './index.js'
 import { syncMapTemplate, TestClient } from '../index.js'
-
-let { defineComponent, h, isReadonly, nextTick, ref } = Vue
-let { render, screen } = VueTesting
 
 let Store = syncMapTemplate('test')
 

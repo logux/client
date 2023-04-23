@@ -1,4 +1,5 @@
 import { allTasks, cleanStores } from 'nanostores'
+import { it, expect, afterEach } from 'vitest'
 import { delay } from 'nanodelay'
 
 import {
