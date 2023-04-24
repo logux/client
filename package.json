@@ -136,13 +136,6 @@
     },
     "overrides": [
       {
-        "files": "*.test.*",
-        "globals": {
-          "it": "readonly",
-          "expect": "readonly"
-        }
-      },
-      {
         "files": "indexed-store/index.test.ts",
         "rules": {
           "import/order": "off"
