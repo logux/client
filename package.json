@@ -75,7 +75,6 @@
     "nanoid": "^4.0.2"
   },
   "devDependencies": {
-    "@babel/core": "^7.21.4",
     "@logux/core": "^0.8.1",
     "@logux/eslint-config": "^49.0.0",
     "@nanostores/preact": "^0.3.1",
