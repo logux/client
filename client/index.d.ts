@@ -63,7 +63,7 @@ export interface ClientOptions {
   prefix?: string
 
   /**
-   * Timeout in milliseconds to break connection. Default is `20000`.
+   * Timeout in milliseconds to break connection. Default is `70000`.
    */
   timeout?: number
 
