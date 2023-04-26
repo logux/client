@@ -14,14 +14,20 @@ class WebSocket {
   close(): void {}
 }
 
+let lockRequest: undefined | (() => Promise<void>)
+
 beforeEach(() => {
+  Object.defineProperty(navigator, 'locks', {
+    value: {
+      request(name: string, fn: () => Promise<void>) {
+        lockRequest = fn
+      }
+    },
+    configurable: true
+  })
   global.WebSocket = WebSocket as any
   setLocalStorage()
 })
-
-const ELECTION_DELAY = 1000 / 20
-const LEADER_TIMEOUT = 5000 / 20
-const LEADER_PING = 2000 / 20
 
 let client: CrossTabClient<{}, TestLog>
 let originWebSocket = global.WebSocket
@@ -30,6 +36,19 @@ afterEach(() => {
   global.WebSocket = originWebSocket
   restoreAll()
 })
+
+let lockReturned = false
+
+function giveLock(): void {
+  lockReturned = false
+  if (lockRequest) {
+    lockRequest().then(() => {
+      lockReturned = true
+    })
+  } else {
+    throw new Error('Lock was not requested')
+  }
+}
 
 function privateMethods(obj: object): any {
   return obj
@@ -49,9 +68,6 @@ function createClient(
     time: new TestTime(),
     ...overrides
   })
-  privateMethods(result).electionDelay = ELECTION_DELAY
-  privateMethods(result).leaderTimeout = LEADER_TIMEOUT
-  privateMethods(result).leaderPing = LEADER_PING
   return result
 }
 
@@ -137,8 +153,7 @@ it('cleans everything', async () => {
   expect(removeItem.calls).toEqual([
     ['logux:10:add'],
     ['logux:10:state'],
-    ['logux:10:client'],
-    ['logux:10:leader']
+    ['logux:10:client']
   ])
 })
 
@@ -205,6 +220,7 @@ it('synchronizes actions from follower tabs', async () => {
   let pair = new TestPair()
   client = createClient({ server: pair.left })
   client.start()
+  giveLock()
   await pair.wait('left')
   pair.right.send(['connected', client.node.localProtocol, 'server', [0, 0]])
   await client.node.waitFor('synchronized')
@@ -226,9 +242,9 @@ it('synchronizes actions from follower tabs', async () => {
   ])
 })
 
-it('uses candidate role from beggining', () => {
+it('uses follower role from beginning', () => {
   client = createClient()
-  expect(client.role).toBe('candidate')
+  expect(client.role).toBe('follower')
 })
 
 it('becomes leader without localStorage', () => {
@@ -247,8 +263,11 @@ it('becomes leader without localStorage', () => {
   expect(connect.callCount).toEqual(1)
 })
 
-it('becomes follower on recent leader ping', () => {
-  localStorage.setItem('logux:10:leader', `["",${Date.now()}]`)
+it('becomes leader without Web Locks', () => {
+  Object.defineProperty(navigator, 'locks', {
+    value: null,
+    configurable: true
+  })
   client = createClient()
 
   let roles: string[] = []
@@ -258,101 +277,31 @@ it('becomes follower on recent leader ping', () => {
   let connect = spyOn(client.node.connection, 'connect')
 
   client.start()
-  expect(roles).toEqual(['follower'])
+  expect(roles).toEqual(['leader'])
+  expect(connect.callCount).toEqual(1)
+})
+
+it('becomes follower on taken lock', () => {
+  client = createClient()
+
+  let roles: string[] = []
+  client.on('role', () => {
+    roles.push(client.role)
+  })
+  let connect = spyOn(client.node.connection, 'connect')
+
+  client.start()
+  expect(roles).toEqual([])
   expect(connect.called).toBe(false)
-  expect(privateMethods(client).watching).toBeDefined()
-})
-
-it('stops election on second candidate', async () => {
-  client = createClient()
-
-  client.start()
-  expect(client.role).toBe('candidate')
-
-  localStorage.setItem('logux:10:leader', `["",${Date.now() - 10}]`)
-  await delay(ELECTION_DELAY + 10)
-  expect(client.role).toBe('follower')
-  expect(privateMethods(client).watching).toBeDefined()
-})
-
-it('stops election in leader check', async () => {
-  client = createClient()
-
-  client.start()
-  expect(client.role).toBe('candidate')
-
-  localStorage.setItem('logux:10:leader', `["",${Date.now()}]`)
-  await delay(ELECTION_DELAY + 10)
-  expect(client.role).toBe('follower')
-  expect(privateMethods(client).watching).toBeDefined()
-})
-
-it('pings on leader role', async () => {
-  client = createClient()
-
-  let last = Date.now() - LEADER_TIMEOUT - 10
-  localStorage.setItem('logux:10:leader', `["",${last}]`)
-
-  client.start()
-  expect(client.role).toBe('candidate')
-  await delay(ELECTION_DELAY + 10)
-  expect(client.role).toBe('leader')
-  expect(privateMethods(client).watching).toBeUndefined()
-  await delay(LEADER_PING + 10)
-  let leader = localStorage.getItem('logux:10:leader')
-  if (leader === null) throw new Error('Leader key was not set')
-  let data = JSON.parse(leader)
-  expect(data[0]).toEqual(client.tabId)
-  expect(Date.now() - data[1]).toBeLessThan(100)
-
-  emitStorage('logux:10:leader', `["",${Date.now()}]`)
-  expect(client.role).toBe('follower')
-  expect(privateMethods(client).watching).toBeDefined()
-})
-
-it('has random timeout', () => {
-  let client1 = createClient()
-  let client2 = createClient()
-  expect(privateMethods(client1).roleTimeout).not.toEqual(
-    privateMethods(client2).roleTimeout
-  )
-})
-
-it('replaces dead leader', async () => {
-  client = createClient()
-  privateMethods(client).roleTimeout = LEADER_TIMEOUT / 2
-
-  localStorage.setItem('logux:10:leader', `["",${Date.now()}]`)
-  client.start()
-
-  await delay(LEADER_TIMEOUT / 2)
-  expect(client.role).toBe('follower')
-  await delay(1.5 * LEADER_TIMEOUT)
-  expect(client.role).not.toBe('follower')
-})
-
-it('disconnects on leader changes', async () => {
-  client = createClient()
-  let disconnect = spyOn(client.node.connection, 'disconnect')
-
-  client.start()
-  await delay(ELECTION_DELAY + 10)
-  client.node.state = 'synchronized'
-
-  let now = Date.now()
-  localStorage.setItem('logux:10:leader', `["",${now}]`)
-  emitStorage('logux:10:leader', `["",${now}]`)
-
-  expect(disconnect.callCount).toEqual(1)
 })
 
 it('updates state if tab is a leader', async () => {
   client = createClient()
 
   client.start()
-  expect(client.state).toBe('disconnected')
+  giveLock()
+  expect(client.state).toBe('connecting')
 
-  await delay(ELECTION_DELAY + 10)
   client.node.state = 'synchronized'
   emit(client.node, 'state')
   expect(client.state).toBe('synchronized')
@@ -360,7 +309,6 @@ it('updates state if tab is a leader', async () => {
 })
 
 it('listens for leader state', () => {
-  localStorage.setItem('logux:10:leader', `["",${Date.now()}]`)
   localStorage.setItem('logux:10:state', '"connecting"')
 
   client = createClient()
@@ -383,7 +331,6 @@ it('listens for leader state', () => {
 })
 
 it('waits for specific state', async () => {
-  localStorage.setItem('logux:10:leader', `["",${Date.now()}]`)
   localStorage.setItem('logux:10:state', '"connecting"')
 
   client = createClient()
@@ -404,92 +351,16 @@ it('has connected shortcut', () => {
   expect(client.connected).toBe(true)
 })
 
-it('works on IE storage event', async () => {
-  client = createClient()
-
-  let events = 0
-  client.on('add', () => {
-    events += 1
-  })
-
-  client.start()
-  emitStorage('logux:10:leader', localStorage.getItem('logux:10:leader'))
-
-  await delay(ELECTION_DELAY + 10)
-  expect(client.role).toBe('leader')
-
-  emitStorage(
-    'logux:10:add',
-    `["${client.tabId}",{},{"id":"0 A 0","reasons":[]}]`
-  )
-  expect(events).toBe(0)
-})
-
-it('sends unleader event on tab closing', async () => {
+it('returns lock on destroy', async () => {
   client = createClient()
   client.start()
-  await delay(ELECTION_DELAY + 10)
-  window.dispatchEvent(new Event('unload'))
-  expect(localStorage.getItem('logux:10:leader')).toBe('[]')
-})
+  giveLock()
+  expect(lockReturned).toBe(false)
 
-it('sends unleader event on destroy', async () => {
-  client = createClient()
-  client.start()
-  await delay(ELECTION_DELAY + 10)
   client.destroy()
-  expect(localStorage.getItem('logux:10:leader')).toBe('[]')
-})
-
-it('does not sends event on tab closing in following mode', async () => {
-  client = createClient()
-
-  let prevLeader = `["",${Date.now()}]`
-  localStorage.setItem('logux:10:leader', prevLeader)
-  client.start()
-
-  await delay(ELECTION_DELAY + 10)
-  expect(localStorage.getItem('logux:10:leader')).toEqual(prevLeader)
-})
-
-it('starts election on leader unload', async () => {
-  client = createClient()
-
-  localStorage.setItem('logux:10:leader', `["",${Date.now()}]`)
-  localStorage.setItem('logux:10:state', '"synchronized"')
-
-  client.start()
-  await delay(ELECTION_DELAY + 10)
-  emitStorage('logux:10:leader', '[]')
-  expect(client.role).toBe('candidate')
-  expect(client.state).toBe('disconnected')
-  expect(localStorage.getItem('logux:10:state')).toBe('"disconnected"')
-  expect(localStorage.getItem('logux:10:leader')).toContain(client.tabId)
-})
-
-it('changes state on dead leader', () => {
-  client = createClient()
-
-  let last = Date.now() - LEADER_TIMEOUT - 1
-  localStorage.setItem('logux:10:leader', `["",${last}]`)
-  localStorage.setItem('logux:10:state', '"connecting"')
-
-  client.start()
-  expect(client.state).toBe('disconnected')
-})
-
-it('changes state on leader death', async () => {
-  client = createClient()
-  privateMethods(client).roleTimeout = 20
-
-  let last = Date.now() - LEADER_TIMEOUT + 10
-  localStorage.setItem('logux:10:leader', `["",${last}]`)
-  localStorage.setItem('logux:10:state', '"sending"')
-
-  client.start()
-  await delay(30)
-  expect(client.state).toBe('disconnected')
-  expect(localStorage.getItem('logux:10:state')).toBe('"disconnected"')
+  expect(client.role).toEqual('follower')
+  await Promise.resolve()
+  expect(lockReturned).toBe(true)
 })
 
 it('cleans tab-specific action after timeout', async () => {
@@ -613,9 +484,6 @@ it('ignores subprotocols from server', () => {
 it('disables cross-tab communication on localStorage error', async () => {
   client = createClient()
   client.start()
-
-  localStorage.setItem('logux:10:leader', `["",${Date.now() - 10}]`)
-  await delay(ELECTION_DELAY + 10)
 
   let error = new Error('test')
   let errorLog = spyOn(console, 'error', () => {})

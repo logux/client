@@ -21,35 +21,6 @@ function sendToTabs(client, event, data) {
   }
 }
 
-function getLeader(client) {
-  let data = localStorage.getItem(storageKey(client, 'leader'))
-  let json = []
-  if (typeof data === 'string') json = JSON.parse(data)
-  return json
-}
-
-function leaderPing(client) {
-  sendToTabs(client, 'leader', [client.tabId, Date.now()])
-}
-
-function onDeadLeader(client) {
-  if (client.state !== 'disconnected') {
-    setState(client, 'disconnected')
-  }
-  startElection(client)
-}
-
-function watchForLeader(client) {
-  clearTimeout(client.watching)
-  client.watching = setTimeout(() => {
-    if (!isActiveLeader(client)) {
-      onDeadLeader(client)
-    } else {
-      watchForLeader(client)
-    }
-  }, client.roleTimeout)
-}
-
 function compareSubprotocols(left, right) {
   let leftParts = left.split('.')
   let rightParts = right.split('.')
@@ -65,60 +36,6 @@ function compareSubprotocols(left, right) {
   return 0
 }
 
-function setRole(client, role) {
-  if (client.role !== role) {
-    let node = client.node
-    client.role = role
-
-    clearTimeout(client.watching)
-    if (role === 'leader') {
-      localStorage.removeItem(storageKey(client, 'state'))
-      client.leadership = setInterval(() => {
-        if (!client.unloading) leaderPing(client)
-      }, client.leaderPing)
-      node.connection.connect()
-    } else {
-      clearTimeout(client.elections)
-      clearInterval(client.leadership)
-
-      if (node.state !== 'disconnected') {
-        client.node.connection.disconnect()
-      }
-    }
-
-    if (role === 'follower') {
-      let state = 'disconnected'
-      let json = localStorage.getItem(storageKey(client, 'state'))
-      if (json && json !== null) state = JSON.parse(json)
-      if (state !== client.state) {
-        client.state = state
-        client.emitter.emit('state')
-      }
-    }
-
-    client.emitter.emit('role')
-  }
-}
-
-function isActiveLeader(client) {
-  let leader = getLeader(client)
-  return leader[1] && leader[1] >= Date.now() - client.leaderTimeout
-}
-
-function startElection(client) {
-  leaderPing(client)
-  setRole(client, 'candidate')
-  client.elections = setTimeout(() => {
-    let data = getLeader(client, 'leader')
-    if (data[0] === client.tabId) {
-      setRole(client, 'leader')
-    } else {
-      setRole(client, 'follower')
-      watchForLeader(client)
-    }
-  }, client.electionDelay)
-}
-
 function setState(client, state) {
   client.state = state
   client.emitter.emit('state')
@@ -132,15 +49,8 @@ function isMemory(store) {
 export class CrossTabClient extends Client {
   constructor(opts = {}) {
     super(opts)
-
-    this.role = 'candidate'
-
-    this.roleTimeout = 3000 + Math.floor(Math.random() * 1000)
-    this.leaderTimeout = 5000
-    this.leaderPing = 2000
-    this.electionDelay = 1000
-
     this.leaderState = this.node.state
+    this.role = 'follower'
 
     this.node.on('state', () => {
       if (this.role === 'leader') {
@@ -182,27 +92,38 @@ export class CrossTabClient extends Client {
   start() {
     this.cleanPrevActions()
 
-    if (!this.isLocalStorage) {
+    if (
+      typeof navigator === 'undefined' ||
+      !navigator.locks ||
+      !this.isLocalStorage
+    ) {
       this.role = 'leader'
       this.emitter.emit('role')
       this.node.connection.connect()
       return
     }
 
-    if (isActiveLeader(this)) {
-      setRole(this, 'follower')
-      watchForLeader(this)
-    } else {
-      startElection(this)
+    let json = localStorage.getItem(storageKey(this, 'state'))
+    if (json && json !== null && json !== '"disconnected"') {
+      this.state = JSON.parse(json)
+      this.emitter.emit('state')
     }
+
+    navigator.locks.request('logux_leader', () => {
+      this.role = 'leader'
+      this.emitter.emit('role')
+      this.node.connection.connect()
+      return new Promise(resolve => {
+        this.unlead = resolve
+      })
+    })
   }
 
   destroy() {
     super.destroy()
-
-    clearTimeout(this.watching)
-    clearTimeout(this.elections)
-    clearInterval(this.leadership)
+    this.role = 'follower'
+    this.emitter.emit('role')
+    if (this.unlead) this.unlead()
     if (typeof window !== 'undefined' && window.removeEventListener) {
       window.removeEventListener('storage', this.onStorage)
     }
@@ -213,7 +134,6 @@ export class CrossTabClient extends Client {
       localStorage.removeItem(storageKey(this, 'add'))
       localStorage.removeItem(storageKey(this, 'state'))
       localStorage.removeItem(storageKey(this, 'client'))
-      localStorage.removeItem(storageKey(this, 'leader'))
     }
     return super.clean()
   }
@@ -260,14 +180,6 @@ export class CrossTabClient extends Client {
           }
         }
       }
-    } else if (e.key === storageKey(this, 'leader')) {
-      data = JSON.parse(e.newValue)
-      if (data.length === 0) {
-        onDeadLeader(this)
-      } else if (data[0] !== this.tabId && this.role !== 'candidate') {
-        setRole(this, 'follower')
-        watchForLeader(this)
-      }
     } else if (e.key === storageKey(this, 'state')) {
       let state = JSON.parse(localStorage.getItem(e.key))
       if (this.leaderState !== state) {
@@ -293,14 +205,6 @@ export class CrossTabClient extends Client {
         this.node.emitter.emit('error', err)
       }
     }
-  }
-
-  onUnload() {
-    if (this.role === 'leader') {
-      this.unloading = true
-      sendToTabs(this, 'leader', [])
-    }
-    super.onUnload()
   }
 
   getClientId() {

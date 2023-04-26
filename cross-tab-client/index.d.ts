@@ -38,10 +38,10 @@ export class CrossTabClient<
    * })
    * ```
    */
-  role: 'leader' | 'candidate' | 'follower'
+  role: 'leader' | 'follower'
 
   /**
-   * Cache for localStorage detection. Can be overriden to disable leader tab
+   * Cache for localStorage detection. Can be overridden to disable leader tab
    * election in tests.
    */
   isLocalStorage: boolean
