@@ -25,14 +25,14 @@ devDependencies:
     specifier: ^49.0.0
     version: 49.0.0(eslint-config-standard@17.0.0)(eslint-plugin-import@2.27.5)(eslint-plugin-n@15.7.0)(eslint-plugin-prefer-let@3.0.1)(eslint-plugin-promise@6.1.1)(eslint@8.39.0)
   '@nanostores/preact':
-    specifier: ^0.3.1
-    version: 0.3.1(nanostores@0.7.4)(preact@10.13.2)
-  '@nanostores/react':
     specifier: ^0.4.1
-    version: 0.4.1(nanostores@0.7.4)(react@18.2.0)
+    version: 0.4.1(nanostores@0.8.0)(preact@10.13.2)
+  '@nanostores/react':
+    specifier: ^0.5.0
+    version: 0.5.0(nanostores@0.8.0)(react@18.2.0)
   '@nanostores/vue':
-    specifier: ^0.6.1
-    version: 0.6.1(nanostores@0.7.4)(vue@3.2.47)
+    specifier: ^0.7.0
+    version: 0.7.0(nanostores@0.8.0)(vue@3.2.47)
   '@peculiar/webcrypto':
     specifier: ^1.4.3
     version: 1.4.3
@@ -106,8 +106,8 @@ devDependencies:
     specifier: ^0.5.0
     version: 0.5.0
   nanostores:
-    specifier: ^0.7.4
-    version: 0.7.4
+    specifier: ^0.8.0
+    version: 0.8.0
   picocolors:
     specifier: ^1.0.0
     version: 1.0.0
@@ -515,41 +515,41 @@ packages:
       eslint-plugin-promise: 6.1.1(eslint@8.39.0)
     dev: true
 
-  /@nanostores/preact@0.3.1(nanostores@0.7.4)(preact@10.13.2):
-    resolution: {integrity: sha512-D5lC1tNhwlVURCFJUTlnRkQ3LRNt6Sc2XHByBwgHPaKLBUPJxAaNAL7kz2dAEhge1fk9dNXAexCdepwiIFodOQ==}
-    engines: {node: ^14.0.0 || ^16.0.0 || >=18.0.0}
+  /@nanostores/preact@0.4.1(nanostores@0.8.0)(preact@10.13.2):
+    resolution: {integrity: sha512-a5nUVjoGuPqdMBUINOFbQKPfabD1mVLcuspefmtdKZqhvXeDkw9Vg8S6xINIjfWnu/eZgpA+Hb1Pkl/Sx1l/vw==}
+    engines: {node: ^16.0.0 || >=18.0.0}
     peerDependencies:
-      nanostores: ^0.7.0
+      nanostores: ^0.8.0
       preact: '>=10.0.0'
     dependencies:
-      nanostores: 0.7.4
+      nanostores: 0.8.0
       preact: 10.13.2
     dev: true
 
-  /@nanostores/react@0.4.1(nanostores@0.7.4)(react@18.2.0):
-    resolution: {integrity: sha512-lsv0CYrMxczbXtoV/mxFVEoL/uVjEjseoP89srO/5yNAOkJka+dSFS7LYyWEbuvCPO7EgbtkvRpO5V+OztKQOw==}
-    engines: {node: ^14.0.0 || ^16.0.0 || >=18.0.0}
+  /@nanostores/react@0.5.0(nanostores@0.8.0)(react@18.2.0):
+    resolution: {integrity: sha512-1i+VhIwK+R51RXmnLul/C7a2WYkBF17/KsHsPzIboMXVjKfUvPbViZrwaeiqLFyHFUPgylq2//VkPqx3wmiCeg==}
+    engines: {node: ^16.0.0 || >=18.0.0}
     peerDependencies:
-      nanostores: ^0.7.0
+      nanostores: ^0.8.0
       react: '>=18.0.0'
     dependencies:
-      nanostores: 0.7.4
+      nanostores: 0.8.0
       react: 18.2.0
       use-sync-external-store: 1.2.0(react@18.2.0)
     dev: true
 
-  /@nanostores/vue@0.6.1(nanostores@0.7.4)(vue@3.2.47):
-    resolution: {integrity: sha512-YYFcgpqrne+0xNlhAfxBX1pgtD8NsLQDsAD/SrKaZulR2qnaQ6YwWR7YKXNzWPiuvSyKD71Hv6p6FYnHyivFzA==}
+  /@nanostores/vue@0.7.0(nanostores@0.8.0)(vue@3.2.47):
+    resolution: {integrity: sha512-xQiiMlj0dFTAgjxXahPQQcGit7HpTo/lHKwAXg8yRyC6IkoB55tCsRBbAouMLSB4bdBoCgCmuKWcv7MRX1t9Zw==}
     engines: {node: ^14.0.0 || ^16.0.0 || >=18.0.0}
     peerDependencies:
       '@vue/devtools-api': '>=6.1.4'
-      nanostores: '>=0.7.0'
+      nanostores: '>=0.7.3'
       vue: '>=3.2.30'
     peerDependenciesMeta:
       '@vue/devtools-api':
         optional: true
     dependencies:
-      nanostores: 0.7.4
+      nanostores: 0.8.0
       vue: 3.2.47
     dev: true
 
@@ -2755,9 +2755,9 @@ packages:
     engines: {node: ^8.0.0 || ^10.0.0 || ^12.0.0 || ^14.0.0 || >=16.0.0}
     dev: true
 
-  /nanostores@0.7.4:
-    resolution: {integrity: sha512-MBeUVt7NBcXqh7AGT+KSr3O0X/995CZsvcP2QEMP+PXFwb07qv3Vjyq+EX0yS8f12Vv3Tn2g/BvK/OZoMhJlOQ==}
-    engines: {node: ^14.0.0 || ^16.0.0 || >=18.0.0}
+  /nanostores@0.8.0:
+    resolution: {integrity: sha512-Xgs3qwYhNYXyglDe41JEtACDvFZELFRofDBqBuJ02JG1mrwXWneQTsk89GHvW0bgLPcWXOz4GRm4enwgjnD8FQ==}
+    engines: {node: ^16.0.0 || >=18.0.0}
     dev: true
 
   /natural-compare-lite@1.4.0:

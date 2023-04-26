@@ -1,4 +1,4 @@
-import { cleanStores, atom, mapTemplate, MapTemplate } from 'nanostores'
+import { cleanStores, atom, map, onMount, MapStore } from 'nanostores'
 import {
   createElement as h,
   ReactElement,
@@ -15,6 +15,7 @@ import { delay } from 'nanodelay'
 
 import {
   ChannelNotFoundError,
+  SyncMapTemplateLike,
   ChannelDeniedError,
   changeSyncMapById,
   SyncMapTemplate,
@@ -46,36 +47,41 @@ function getCatcher(cb: () => void): [string[], FC] {
   return [errors, Catcher]
 }
 
-let Broken = mapTemplate<
-  { isLoading: boolean },
-  [],
-  { loading: Promise<void>; reject(e: Error | string): void }
->(store => {
-  store.setKey('isLoading', true)
-  store.loading = new Promise<void>((resolve, reject) => {
-    store.reject = e => {
-      if (typeof e === 'string') {
-        reject(
-          new LoguxUndoError({
-            type: 'logux/undo',
-            reason: e,
-            id: '',
-            action: {
-              type: 'logux/subscribe',
-              channel: 'A'
-            }
-          })
-        )
-      } else {
-        reject(e)
-      }
-    }
-  })
-})
+let brokenReject: ((e: Error) => void) | undefined
 
-let IdTest: FC<{ Template: SyncMapTemplate | MapTemplate }> = ({
-  Template
-}) => {
+function throwFromBroken(e: Error | string): void {
+  if (brokenReject) {
+    if (typeof e === 'string') {
+      brokenReject(
+        new LoguxUndoError({
+          type: 'logux/undo',
+          reason: e,
+          id: '',
+          action: {
+            type: 'logux/subscribe',
+            channel: 'A'
+          }
+        })
+      )
+    } else {
+      brokenReject(e)
+    }
+  }
+}
+
+type BrokenMap = MapStore<{ isLoading: boolean }> & { loading: Promise<void> }
+
+let Broken = (): BrokenMap => {
+  let store = map({ isLoading: true }) as BrokenMap
+  onMount(store, () => {
+    store.loading = new Promise((resolve, reject) => {
+      brokenReject = reject
+    })
+  })
+  return store
+}
+
+let IdTest: FC<{ Template: SyncMapTemplateLike }> = ({ Template }) => {
   let store = useSync(Template, 'ID')
   return h('div', {}, store.isLoading ? 'loading' : store.id)
 }
@@ -160,7 +166,7 @@ async function catchLoadingError(
   expect(screen.getByTestId('test').textContent).toEqual('loading')
 
   await act(async () => {
-    Broken('ID').reject(error)
+    throwFromBroken(error)
     await delay(1)
   })
   return screen.getByTestId('test').textContent
@@ -176,7 +182,7 @@ let RemotePost = syncMapTemplate<{ title?: string }>('posts')
 afterEach(() => {
   cleanup()
   restoreAll()
-  cleanStores(Broken, LocalPost, RemotePost)
+  cleanStores(LocalPost, RemotePost)
 })
 
 it('throws on missed context for sync map', () => {
@@ -197,9 +203,13 @@ it('throws on missed context for useClient', () => {
 })
 
 it('throws store init errors', () => {
-  let Template = mapTemplate(() => {
-    throw new Error('Test')
-  })
+  let Template = (): MapStore => {
+    let store = map()
+    onMount(store, () => {
+      throw new Error('Test')
+    })
+    return store
+  }
   let [errors, Catcher] = getCatcher(() => {
     useSync(Template, 'id')
   })
@@ -252,7 +262,7 @@ it('could process denied via common error component', async () => {
     )
   )
   await act(async () => {
-    Broken('ID').reject('denied')
+    throwFromBroken('denied')
     await delay(1)
   })
   expect(screen.getByTestId('test').textContent).toEqual('500 denied')
@@ -271,7 +281,7 @@ it('could process not found via common error component', async () => {
     )
   )
   await act(async () => {
-    Broken('ID').reject('notFound')
+    throwFromBroken('notFound')
     await delay(1)
   })
   expect(screen.getByTestId('test').textContent).toEqual('500 notFound')

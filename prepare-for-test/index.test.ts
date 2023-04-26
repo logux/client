@@ -1,5 +1,5 @@
-import { cleanStores, mapTemplate } from 'nanostores'
 import { it, expect, afterEach } from 'vitest'
+import { cleanStores } from 'nanostores'
 
 import {
   syncMapTemplate,
@@ -40,25 +40,6 @@ it('generates IDs', () => {
 
   expect(user1.get().id).toBe('users:1')
   expect(user2.get().id).toBe('users:2')
-})
-
-it('works with maps', () => {
-  let Store = mapTemplate<{ id: string; name: string; role?: string }>(
-    store => {
-      store.setKey('role', 'default')
-    }
-  )
-
-  let store1 = prepareForTest(client, Store, { name: 'Test 1' })
-  let store2 = prepareForTest(client, Store, { name: 'Test 2' })
-
-  expect(typeof store1.get().id).toBe('string')
-  expect(store1.get().id).not.toEqual(store2.get().id)
-  expect(store1.get()).toEqual({
-    id: store1.get().id,
-    name: 'Test 1',
-    role: 'default'
-  })
 })
 
 it('works with filters', () => {

@@ -1,14 +1,23 @@
-import { Context as PreactContext, Component, ComponentType } from 'preact'
+import {
+  Context as PreactContext,
+  ComponentChild,
+  ComponentType,
+  Component
+} from 'preact'
 import { SyncMapValues, LoguxNotFoundError } from '@logux/actions'
-import { StoreValue, MapTemplate } from 'nanostores'
+import { StoreValue } from 'nanostores'
 
 import {
   ChannelNotFoundError,
   ChannelDeniedError,
   ChannelError
 } from '../logux-undo-error/index.js'
+import {
+  SyncMapTemplateLike,
+  SyncMapTemplate,
+  SyncMapValue
+} from '../sync-map-template/index.js'
 import { FilterOptions, FilterStore, Filter } from '../create-filter/index.js'
-import { SyncMapTemplate, SyncMapValue } from '../sync-map-template/index.js'
 import { Client } from '../client/index.js'
 import { AuthStore } from '../create-auth/index.js'
 
@@ -83,7 +92,9 @@ export const ErrorsContext: PreactContext<PreactErrorHandlers>
  * }
  * ```
  */
-export class ChannelErrors extends Component<PreactErrorHandlers> {}
+export class ChannelErrors extends Component<PreactErrorHandlers> {
+  render(): ComponentChild
+}
 
 /**
  * Create store by ID, subscribe and get store’s value.
@@ -109,11 +120,11 @@ export class ChannelErrors extends Component<PreactErrorHandlers> {}
  * @returns Store value.
  */
 export function useSync<Value extends SyncMapValues>(
-  Template: SyncMapTemplate<Value>,
+  Template: SyncMapTemplateLike<Value>,
   id: string
 ): SyncMapValue<Value>
 export function useSync<Value extends object, Args extends any[]>(
-  Template: MapTemplate<Value, [Client, ...Args]>,
+  Template: SyncMapTemplateLike<Value, [Client, ...Args]>,
   id: string,
   ...args: Args
 ): Value

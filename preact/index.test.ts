@@ -5,7 +5,7 @@ import {
   VNode,
   h
 } from 'preact'
-import { cleanStores, atom, mapTemplate, MapTemplate } from 'nanostores'
+import { cleanStores, atom, mapTemplate } from 'nanostores'
 import { render, screen, act, cleanup } from '@testing-library/preact'
 import { it, expect, afterEach } from 'vitest'
 import { LoguxNotFoundError } from '@logux/actions'
@@ -15,6 +15,7 @@ import { delay } from 'nanodelay'
 
 import {
   ChannelNotFoundError,
+  SyncMapTemplateLike,
   ChannelDeniedError,
   changeSyncMapById,
   SyncMapTemplate,
@@ -73,9 +74,7 @@ let Broken = mapTemplate<
   })
 })
 
-let IdTest: FC<{ Template: SyncMapTemplate | MapTemplate }> = ({
-  Template
-}) => {
+let IdTest: FC<{ Template: SyncMapTemplateLike }> = ({ Template }) => {
   let store = useSync(Template, 'ID')
   return h('div', {}, store.isLoading ? 'loading' : store.id)
 }

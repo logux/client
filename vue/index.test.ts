@@ -7,7 +7,7 @@ import {
   ref,
   h
 } from 'vue'
-import { cleanStores, atom, mapTemplate, MapTemplate } from 'nanostores'
+import { cleanStores, atom, mapTemplate } from 'nanostores'
 import { render, screen, cleanup } from '@testing-library/vue'
 import { it, expect, afterEach } from 'vitest'
 import { LoguxNotFoundError } from '@logux/actions'
@@ -15,6 +15,7 @@ import { restoreAll, spyOn } from 'nanospy'
 import { delay } from 'nanodelay'
 
 import {
+  SyncMapTemplateLike,
   changeSyncMapById,
   SyncMapTemplate,
   syncMapTemplate,
@@ -70,7 +71,7 @@ async function getText(component: Component): Promise<string | null> {
   return screen.getByTestId('test').textContent
 }
 
-let defineIdTest = (Template: SyncMapTemplate | MapTemplate): Component => {
+let defineIdTest = (Template: SyncMapTemplateLike): Component => {
   return defineComponent(() => {
     let store = useSync(Template, 'ID')
     return () => {

@@ -1,19 +1,22 @@
 import {
   Context as ReactContext,
-  Component,
   ComponentType,
+  Component,
   ReactNode
 } from 'react'
 import { SyncMapValues, LoguxNotFoundError } from '@logux/actions'
-import { StoreValue, MapTemplate } from 'nanostores'
+import { StoreValue } from 'nanostores'
 
 import {
   ChannelNotFoundError,
   ChannelDeniedError,
   ChannelError
 } from '../logux-undo-error/index.js'
+import {
+  SyncMapTemplateLike,
+  SyncMapValue
+} from '../sync-map-template/index.js'
 import { FilterOptions, FilterStore, Filter } from '../create-filter/index.js'
-import { SyncMapTemplate, SyncMapValue } from '../sync-map-template/index.js'
 import { AuthStore } from '../create-auth/index.js'
 import { Client } from '../client/index.js'
 
@@ -116,11 +119,11 @@ export class ChannelErrors extends Component<
  * @returns Store value.
  */
 export function useSync<Value extends SyncMapValues>(
-  Template: SyncMapTemplate<Value>,
+  Template: SyncMapTemplateLike<Value>,
   id: string
 ): SyncMapValue<Value>
 export function useSync<Value extends object, Args extends any[]>(
-  Template: MapTemplate<Value, [Client, ...Args]>,
+  Template: SyncMapTemplateLike<Value, Args>,
   id: string,
   ...args: Args
 ): Value
@@ -148,7 +151,7 @@ export function useSync<Value extends object, Args extends any[]>(
  * @returns Filter store to use with map.
  */
 export function useFilter<Value extends SyncMapValues>(
-  Template: SyncMapTemplate<Value>,
+  Template: SyncMapTemplateLike<Value>,
   filter?: Filter<Value>,
   opts?: FilterOptions
 ): StoreValue<FilterStore<Value>>

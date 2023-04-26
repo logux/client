@@ -1,6 +1,6 @@
-import { MapTemplate, MapStore } from 'nanostores'
 import { SyncMapValues } from '@logux/actions'
 import { Action, Meta } from '@logux/core'
+import { MapStore } from 'nanostores'
 
 import { Client } from '../client/index.js'
 
@@ -50,15 +50,25 @@ export type SyncMapStore<Value extends SyncMapValues = any> = MapStore<
 > &
   SyncMapStoreExt
 
-export interface SyncMapTemplate<Value extends SyncMapValues = any>
-  extends MapTemplate<
-    SyncMapValue<Value>,
-    [Client] | [Client, Action, Meta, boolean | undefined],
-    SyncMapStoreExt
-  > {
+export interface SyncMapTemplate<Value extends SyncMapValues = any, StoreExt = {}> {
+  (
+    id: string,
+    client: Client,
+    ...args: [] | [Action, Meta, boolean | undefined]
+  ): SyncMapStore<Value> & StoreExt
+  cache: {
+    [id: string]: SyncMapStore<Value> & StoreExt
+  }
   readonly plural: string
   offline: boolean
   remote: boolean
+}
+
+export interface SyncMapTemplateLike<
+  Value extends object = any,
+  Args extends any[] = []
+> {
+  (id: string, client: Client, ...args: Args): MapStore<Value>
 }
 
 /**

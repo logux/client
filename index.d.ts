@@ -1,4 +1,5 @@
 export {
+  SyncMapTemplateLike,
   LoadedSyncMapValue,
   deleteSyncMapById,
   changeSyncMapById,

@@ -8,10 +8,14 @@ import {
   Ref
 } from 'vue'
 import { SyncMapValues, LoguxNotFoundError } from '@logux/actions'
-import { StoreValue, MapTemplate } from 'nanostores'
+import { StoreValue } from 'nanostores'
 
+import {
+  SyncMapTemplateLike,
+  SyncMapTemplate,
+  SyncMapValue
+} from '../sync-map-template/index.js'
 import { FilterOptions, FilterStore, Filter } from '../create-filter/index.js'
-import { SyncMapTemplate, SyncMapValue } from '../sync-map-template/index.js'
 import { ChannelError } from '../logux-undo-error/index.js'
 import { Client } from '../client/index.js'
 
@@ -85,11 +89,11 @@ export function useClient(): Client
  * @returns Store value.
  */
 export function useSync<Value extends SyncMapValues>(
-  Template: SyncMapTemplate<Value>,
+  Template: SyncMapTemplateLike<Value>,
   id: Refable<string>
 ): ReadonlyRef<SyncMapValue<Value>>
 export function useSync<Value extends object, Args extends any[]>(
-  Template: MapTemplate<Value, [Client, ...Args]>,
+  Template: SyncMapTemplateLike<Value, Args>,
   id: Refable<string>,
   ...args: Args
 ): ReadonlyRef<Value>

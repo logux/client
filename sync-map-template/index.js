@@ -1,4 +1,4 @@
-import { mapTemplate, clean, startTask, task } from 'nanostores'
+import { clean, startTask, task, onMount, map } from 'nanostores'
 import { isFirstOlder } from '@logux/core'
 
 import { LoguxUndoError } from '../logux-undo-error/index.js'
@@ -22,8 +22,24 @@ function getIndexes(plural, id) {
 }
 
 export function syncMapTemplate(plural, opts = {}) {
-  let Template = mapTemplate(
-    (store, id, client, createAction, createMeta, alreadySubscribed) => {
+  let Template = (id, ...args) => {
+    if (!Template.cache[id]) {
+      Template.cache[id] = Template.build(id, ...args)
+    }
+    return Template.cache[id]
+  }
+
+  Template.cache = {}
+
+  Template.build = (
+    id,
+    client,
+    createAction,
+    createMeta,
+    alreadySubscribed
+  ) => {
+    let store = map({ id, isLoading: true })
+    onMount(store, () => {
       if (!client) {
         throw new Error('Missed Logux client')
       }
@@ -149,11 +165,15 @@ export function syncMapTemplate(plural, opts = {}) {
                     id: client.log.generateId(),
                     action: subscribe
                   })
-               )
+                )
               } else if (store.remote) {
-               let subscribeSinceLatest = latestMeta !== undefined
-                  ? { ...subscribe, since: { id: latestMeta.id, time: latestMeta.time } }
-                  : subscribe
+                let subscribeSinceLatest =
+                  latestMeta !== undefined
+                    ? {
+                        ...subscribe,
+                        since: { id: latestMeta.id, time: latestMeta.time }
+                      }
+                    : subscribe
                 await processSubscribe(client.sync(subscribeSinceLatest))
               }
             })
@@ -279,6 +299,7 @@ export function syncMapTemplate(plural, opts = {}) {
       }
 
       return () => {
+        delete Template.cache[id]
         for (let i of unbinds) i()
         if (!store.offline) {
           for (let key in store.lastChanged) {
@@ -286,17 +307,20 @@ export function syncMapTemplate(plural, opts = {}) {
           }
         }
       }
-    }
-  )
+    })
+    return store
+  }
 
   Template.plural = plural
   Template.offline = !!opts.offline
   Template.remote = opts.remote !== false
 
   if (process.env.NODE_ENV !== 'production') {
-    let oldClean = Template[clean]
     Template[clean] = () => {
-      oldClean()
+      for (let id in Template.cache) {
+        Template.cache[id][clean]()
+      }
+      Template.cache = {}
       if (Template.filters) {
         for (let id in Template.filters) {
           Template.filters[id][clean]()
