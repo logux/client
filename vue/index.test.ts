@@ -7,7 +7,7 @@ import {
   ref,
   h
 } from 'vue'
-import { cleanStores, atom, mapTemplate } from 'nanostores'
+import { cleanStores, atom, map, MapStore, onMount } from 'nanostores'
 import { render, screen, cleanup } from '@testing-library/vue'
 import { it, expect, afterEach } from 'vitest'
 import { LoguxNotFoundError } from '@logux/actions'
@@ -138,7 +138,7 @@ async function catchLoadingError(
   await nextTick()
   expect(screen.getByTestId('test').textContent).toEqual('loading')
 
-  BrokenStore('ID').reject(error)
+  throwFromBroken(error)
   await delay(10)
   await nextTick()
   return screen.getByTestId('test').textContent
@@ -154,37 +154,44 @@ let LocalPostStore = syncMapTemplate<{ projectId: string; title: string }>(
 
 let RemotePostStore = syncMapTemplate<{ title?: string }>('posts')
 
-let BrokenStore = mapTemplate<
-  { isLoading: boolean },
-  [],
-  { loading: Promise<void>; reject(e: Error | string): void }
->(store => {
-  store.setKey('isLoading', true)
-  store.loading = new Promise<void>((resolve, reject) => {
-    store.reject = e => {
-      if (typeof e === 'string') {
-        reject(
-          new LoguxUndoError({
-            type: 'logux/undo',
-            reason: e,
-            id: '',
-            action: {
-              type: 'logux/subscribe',
-              channel: 'A'
-            }
-          })
-        )
-      } else {
-        reject(e)
-      }
+let brokenReject: ((e: Error) => void) | undefined
+
+function throwFromBroken(e: Error | string): void {
+  if (brokenReject) {
+    if (typeof e === 'string') {
+      brokenReject(
+        new LoguxUndoError({
+          type: 'logux/undo',
+          reason: e,
+          id: '',
+          action: {
+            type: 'logux/subscribe',
+            channel: 'A'
+          }
+        })
+      )
+    } else {
+      brokenReject(e)
     }
+  }
+}
+
+type BrokenMap = MapStore<{ isLoading: boolean }> & { loading: Promise<void> }
+
+let BrokenStore = (): BrokenMap => {
+  let store = map({ isLoading: true }) as BrokenMap
+  onMount(store, () => {
+    store.loading = new Promise((resolve, reject) => {
+      brokenReject = reject
+    })
   })
-})
+  return store
+}
 
 afterEach(() => {
   cleanup()
   restoreAll()
-  cleanStores(BrokenStore, LocalPostStore, RemotePostStore)
+  cleanStores(LocalPostStore, RemotePostStore)
 })
 
 it('throws on missed logux client dependency', () => {
@@ -231,9 +238,13 @@ it('throws on missed ID for builder', () => {
 
 it('throws store init errors', () => {
   spyOn(console, 'warn', () => {})
-  let Template = mapTemplate(() => {
-    throw new Error('Test')
-  })
+  let Template = (): MapStore => {
+    let store = map()
+    onMount(store, () => {
+      throw new Error('Test')
+    })
+    return store
+  }
   let [errors, Catcher] = getCatcher(() => {
     useSync(Template, 'id')
   })
