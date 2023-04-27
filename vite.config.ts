@@ -5,7 +5,6 @@ export default defineConfig({
     environment: 'happy-dom',
     coverage: {
       provider: 'c8',
-      reporter: 'lcov',
       lines: 100
     }
   }
