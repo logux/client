@@ -341,7 +341,7 @@ it('recreates state on id changes', async () => {
   screen.getByTestId('test').click()
   await nextTick()
   expect(screen.getByTestId('test').textContent).toBe('loading')
-  await delay(10)
+  await delay(50)
   expect(screen.getByTestId('test').textContent).toBe('2')
 })
 

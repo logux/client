@@ -4,7 +4,9 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     coverage: {
-      provider: 'c8'
+      provider: 'c8',
+      reporter: 'lcov',
+      lines: 100
     }
   }
 })

@@ -12,7 +12,7 @@ export function prepareForTest(client, Template, value) {
     if (Template.plural) {
       id = `${Template.plural}:${Object.keys(Template.cache).length + 1}`
     } else {
-      id = `${lastId++}`
+      id = `${++lastId}`
     }
   }
 
