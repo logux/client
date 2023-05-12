@@ -1,6 +1,8 @@
 import {
   getCurrentInstance,
   onErrorCaptured,
+  getCurrentScope,
+  onScopeDispose,
   shallowRef,
   reactive,
   readonly,
@@ -9,7 +11,7 @@ import {
   inject,
   watch,
   unref,
-  ref,
+  ref
 } from 'vue'
 import { useStore, registerStore } from '@nanostores/vue'
 
@@ -64,6 +66,10 @@ function useSyncStore(store) {
       error.value = e
     })
   }
+
+  getCurrentScope() && onScopeDispose(() => {
+    unsubscribe()
+  })
 
   if (process.env.NODE_ENV !== 'production') {
     registerStore(store)
