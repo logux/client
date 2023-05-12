@@ -139,8 +139,8 @@ async function catchLoadingError(
   expect(screen.getByTestId('test').textContent).toEqual('loading')
 
   throwFromBroken(error)
-  await delay(10)
   await nextTick()
+  await delay(10)
   return screen.getByTestId('test').textContent
 }
 
@@ -245,15 +245,14 @@ it('throws store init errors', () => {
     })
     return store
   }
-  let [errors, Catcher] = getCatcher(() => {
-    useSync(Template, 'id')
-  })
-  renderWithClient(
-    h(ChannelErrors, null, {
-      default: () => h(Catcher)
-    })
-  )
-  expect(errors).toEqual(['Test'])
+  expect(() => {
+    renderWithClient(
+      h(ChannelErrors, null, () => h(() => {
+        useSync(Template, 'id')
+        return () => null
+      }))
+    )
+  }).toThrowError('Test')
 })
 
 it('throws and catches not found error', async () => {
@@ -331,6 +330,7 @@ it('recreates state on id changes', async () => {
     ),
     client
   )
+  expect(RemotePostStore.cache['1'].lc).toBe(1)
   expect(screen.getByTestId('test').textContent).toBe('loading')
 
   await client.connect()
@@ -340,6 +340,7 @@ it('recreates state on id changes', async () => {
 
   screen.getByTestId('test').click()
   await nextTick()
+  expect(RemotePostStore.cache['1'].lc).toBe(0)
   expect(screen.getByTestId('test').textContent).toBe('loading')
   await delay(50)
   expect(screen.getByTestId('test').textContent).toBe('2')
@@ -498,8 +499,15 @@ it('recreates filter on args changes', async () => {
   expect(screen.getByTestId('test').textContent).toBe(' 0:Y 1:A')
   expect(renders).toEqual(['list', 'list', '1', '3'])
 
+  renders.splice(0, renders.length)
   screen.getByTestId('change').click()
-  await nextTick()
+  await delay(10)
+  expect(renders).toEqual([
+    'list', // State is changed
+    'list' // Store isLoading changed to false
+  ])
+
+  renders.splice(0, renders.length)
   await Promise.all([
     createSyncMap(client, LocalPostStore, {
       id: '1',
@@ -517,21 +525,9 @@ it('recreates filter on args changes', async () => {
       title: 'A'
     })
   ])
+  await delay(10)
   expect(screen.getByTestId('test').textContent).toBe(' 0:Y')
-  expect(renders).toEqual([
-    'list',
-    'list',
-    '1',
-    '3',
-    'list',
-    'list',
-    'list',
-    '2'
-  ])
-
-  screen.getByTestId('change').click()
-  await nextTick()
-  expect(screen.getByTestId('test').textContent).toBe(' 0:Y 1:A')
+  expect(renders).toEqual(['list', '2'])
 })
 
 it('renders authentication state', async () => {
