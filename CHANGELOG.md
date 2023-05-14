@@ -1,6 +1,11 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.19
+* Removed Node.js 14 support.
+* Moved to Nano Stores 0.8.
+* Faster leader election with Web Lock API.
+
 ## 0.18.4
 * Fixed types (by Slava Mostovoy).
 
