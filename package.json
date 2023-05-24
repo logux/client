@@ -42,7 +42,7 @@
     "preact": ">=10.0.0",
     "react": ">=18.0.0",
     "react-dom": ">=16.8.0",
-    "vue": ">=3.2.30"
+    "vue": ">=3.3.2"
   },
   "peerDependenciesMeta": {
     "@nanostores/preact": {

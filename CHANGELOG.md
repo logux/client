@@ -1,6 +1,11 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## Next
+* Refactored Vue composables to improve performance (by Eduard Aksamitov).
+* Fixed loss of unsubscribes on changing arguments in Vue (by Eduard Aksamitov).
+* Fixed errors handler in Vue (by Eduard Aksamitov).
+
 ## 0.19
 * Removed Node.js 14 support.
 * Moved to Nano Stores 0.8.
