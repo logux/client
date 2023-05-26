@@ -1,6 +1,6 @@
+import type { MapStore, MapCreator } from 'nanostores'
 import type { SyncMapValues } from '@logux/actions'
 import type { Action, Meta } from '@logux/core'
-import type { MapStore } from 'nanostores'
 import type { Client } from '../client/index.js'
 
 interface SyncMapStoreExt {
@@ -52,7 +52,7 @@ export type SyncMapStore<Value extends SyncMapValues = any> = MapStore<
 export interface SyncMapTemplate<
   Value extends SyncMapValues = any,
   StoreExt = {}
-> {
+> extends MapCreator {
   (
     id: string,
     client: Client,

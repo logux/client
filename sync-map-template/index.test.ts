@@ -101,7 +101,6 @@ it('saves options to store', () => {
 })
 
 it('throws on missed client', () => {
-  // @ts-expect-error
   let post = Post('ID')
   expect(() => {
     post.listen(() => {})
