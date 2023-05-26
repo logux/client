@@ -1,5 +1,7 @@
-import { eachStoreCheck, Action, Meta, LogPage } from '@logux/core'
+import type { Action, Meta, LogPage } from '@logux/core'
+
 import { it, expect, afterEach } from 'vitest'
+import { eachStoreCheck } from '@logux/core'
 import { spyOn } from 'nanospy'
 
 import { IndexedStore } from '../index.js'

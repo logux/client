@@ -1,4 +1,6 @@
-import { TestPair, TestTime, TestLog } from '@logux/core'
+import type { TestLog } from '@logux/core'
+
+import { TestPair, TestTime } from '@logux/core'
 import { it, expect } from 'vitest'
 import { delay } from 'nanodelay'
 

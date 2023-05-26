@@ -1,4 +1,4 @@
-import {
+import type {
   ComponentPublicInstance,
   DeepReadonly,
   InjectionKey,
@@ -7,17 +7,16 @@ import {
   App,
   Ref
 } from 'vue'
-import { SyncMapValues, LoguxNotFoundError } from '@logux/actions'
-import { StoreValue } from 'nanostores'
-
-import {
+import type { SyncMapValues, LoguxNotFoundError } from '@logux/actions'
+import type { StoreValue } from 'nanostores'
+import type {
   SyncMapTemplateLike,
   SyncMapTemplate,
   SyncMapValue
 } from '../sync-map-template/index.js'
-import { FilterOptions, FilterStore, Filter } from '../create-filter/index.js'
-import { ChannelError } from '../logux-undo-error/index.js'
-import { Client } from '../client/index.js'
+import type { FilterOptions, FilterStore, Filter } from '../create-filter/index.js'
+import type { ChannelError } from '../logux-undo-error/index.js'
+import type { Client } from '../client/index.js'
 
 export type Refable<Type> = Ref<Type> | Type
 type ReadonlyRef<Type> = DeepReadonly<Ref<Type>>

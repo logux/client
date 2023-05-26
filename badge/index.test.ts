@@ -1,9 +1,12 @@
-import { LoguxError, TestPair, TestTime, TestLog } from '@logux/core'
+import type { TestLog } from '@logux/core'
+import type { ClientMeta } from '../index.js'
+import type { BadgeOptions } from './index.js'
+
+import { LoguxError, TestPair, TestTime } from '@logux/core'
 import { it, afterEach, expect } from 'vitest'
 import { delay } from 'nanodelay'
 
-import { CrossTabClient, badge, badgeEn, ClientMeta } from '../index.js'
-import { BadgeOptions } from './index.js'
+import { CrossTabClient, badge, badgeEn } from '../index.js'
 import { badgeStyles } from './styles/index.js'
 
 function badgeNode(): HTMLElement | null {

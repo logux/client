@@ -1,12 +1,15 @@
-import { cleanStores, atom, map, onMount, MapStore } from 'nanostores'
-import {
-  createElement as h,
-  ReactElement,
-  Component,
-  ReactNode,
-  useState,
-  FC
-} from 'react'
+import type { MapStore } from 'nanostores'
+import type { ReactElement, ReactNode, FC } from 'react'
+import type {
+  ChannelNotFoundError,
+  SyncMapTemplateLike,
+  ChannelDeniedError,
+  SyncMapTemplate,
+  ChannelError
+} from '../index.js'
+
+import { cleanStores, atom, map, onMount } from 'nanostores'
+import { createElement as h, Component, useState } from 'react'
 import { render, screen, act, cleanup } from '@testing-library/react'
 import { it, expect, afterEach } from 'vitest'
 import { LoguxNotFoundError } from '@logux/actions'
@@ -14,15 +17,10 @@ import { restoreAll, spyOn } from 'nanospy'
 import { delay } from 'nanodelay'
 
 import {
-  ChannelNotFoundError,
-  SyncMapTemplateLike,
-  ChannelDeniedError,
   changeSyncMapById,
-  SyncMapTemplate,
   syncMapTemplate,
   LoguxUndoError,
   createSyncMap,
-  ChannelError,
   TestClient
 } from '../index.js'
 import {

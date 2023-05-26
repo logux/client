@@ -1,9 +1,12 @@
+import type { TestLog } from '@logux/core'
+import type { ClientMeta } from '../index.js'
+
 import { it, expect, beforeAll, beforeEach } from 'vitest'
-import { TestPair, TestTime, TestLog } from '@logux/core'
+import { TestPair, TestTime } from '@logux/core'
 import { spyOn } from 'nanospy'
 import pico from 'picocolors'
 
-import { CrossTabClient, ClientMeta, log } from '../index.js'
+import { CrossTabClient, log } from '../index.js'
 
 function setState(client: any, state: string): void {
   client.node.setState(state)

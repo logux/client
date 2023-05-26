@@ -1,4 +1,7 @@
-import { TestLog, TestPair, TestTime, Action } from '@logux/core'
+import type { TestLog, Action } from '@logux/core'
+import type { ClientOptions } from '../index.js'
+
+import { TestPair, TestTime } from '@logux/core'
 import { it, expect, afterEach, beforeEach } from 'vitest'
 import { spyOn, restoreAll } from 'nanospy'
 import { delay } from 'nanodelay'
@@ -8,7 +11,7 @@ import {
   setLocalStorage,
   emitStorage
 } from '../test/local-storage.js'
-import { CrossTabClient, ClientOptions } from '../index.js'
+import { CrossTabClient } from '../index.js'
 
 class WebSocket {
   close(): void {}

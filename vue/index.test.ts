@@ -1,13 +1,17 @@
+import type { Component } from 'vue'
+import type { MapStore } from 'nanostores'
+import type { SyncMapTemplate, SyncMapTemplateLike } from '../index.js'
+import type { ChannelErrorsSlotProps } from './index.js'
+
 import {
   onErrorCaptured,
   defineComponent,
   isReadonly,
-  Component,
   nextTick,
   ref,
   h
 } from 'vue'
-import { cleanStores, atom, map, MapStore, onMount } from 'nanostores'
+import { cleanStores, atom, map, onMount } from 'nanostores'
 import { render, screen, cleanup } from '@testing-library/vue'
 import { it, expect, afterEach } from 'vitest'
 import { LoguxNotFoundError } from '@logux/actions'
@@ -15,16 +19,13 @@ import { restoreAll, spyOn } from 'nanospy'
 import { delay } from 'nanodelay'
 
 import {
-  SyncMapTemplateLike,
   changeSyncMapById,
-  SyncMapTemplate,
   syncMapTemplate,
   LoguxUndoError,
   createSyncMap,
   TestClient
 } from '../index.js'
 import {
-  ChannelErrorsSlotProps,
   ChannelErrors,
   loguxPlugin,
   useClient,
@@ -247,10 +248,12 @@ it('throws store init errors', () => {
   }
   expect(() => {
     renderWithClient(
-      h(ChannelErrors, null, () => h(() => {
-        useSync(Template, 'id')
-        return () => null
-      }))
+      h(ChannelErrors, null, () =>
+        h(() => {
+          useSync(Template, 'id')
+          return () => null
+        })
+      )
     )
   }).toThrowError('Test')
 })

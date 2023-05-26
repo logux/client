@@ -1,25 +1,29 @@
-import {
+import type {
   Context as PreactContext,
   ComponentChild,
-  ComponentType,
-  Component
+  ComponentType
 } from 'preact'
-import { SyncMapValues, LoguxNotFoundError } from '@logux/actions'
-import { StoreValue } from 'nanostores'
-
-import {
+import type { SyncMapValues, LoguxNotFoundError } from '@logux/actions'
+import type { StoreValue } from 'nanostores'
+import type {
   ChannelNotFoundError,
   ChannelDeniedError,
   ChannelError
 } from '../logux-undo-error/index.js'
-import {
+import type {
   SyncMapTemplateLike,
   SyncMapTemplate,
   SyncMapValue
 } from '../sync-map-template/index.js'
-import { FilterOptions, FilterStore, Filter } from '../create-filter/index.js'
-import { Client } from '../client/index.js'
-import { AuthStore } from '../create-auth/index.js'
+import type {
+  FilterOptions,
+  FilterStore,
+  Filter
+} from '../create-filter/index.js'
+import type { Client } from '../client/index.js'
+import type { AuthStore } from '../create-auth/index.js'
+
+import { Component } from 'preact'
 
 /**
  * Context to send Logux Client or object space to components deep in the tree.

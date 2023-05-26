@@ -1,8 +1,10 @@
+import type { Client } from '../index.js'
+
 import { map, STORE_UNMOUNT_DELAY } from 'nanostores'
 import { it, expect } from 'vitest'
 import { delay } from 'nanodelay'
 
-import { Client, createClientStore } from '../index.js'
+import { createClientStore } from '../index.js'
 
 it('creates client from user ID', async () => {
   let user = map<{ userId?: string; enabled: boolean }>({

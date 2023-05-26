@@ -1,11 +1,15 @@
-import {
-  FunctionComponent as FC,
-  ComponentChild,
-  Component,
-  VNode,
-  h
-} from 'preact'
-import { cleanStores, atom, map, onMount, MapStore } from 'nanostores'
+import type { FunctionComponent as FC, ComponentChild, VNode } from 'preact'
+import type { MapStore } from 'nanostores'
+import type {
+  ChannelNotFoundError,
+  SyncMapTemplateLike,
+  ChannelDeniedError,
+  SyncMapTemplate,
+  ChannelError
+} from '../index.js'
+
+import { Component, h } from 'preact'
+import { cleanStores, atom, map, onMount } from 'nanostores'
 import { render, screen, act, cleanup } from '@testing-library/preact'
 import { it, expect, afterEach } from 'vitest'
 import { LoguxNotFoundError } from '@logux/actions'
@@ -14,15 +18,10 @@ import { useState } from 'preact/hooks'
 import { delay } from 'nanodelay'
 
 import {
-  ChannelNotFoundError,
-  SyncMapTemplateLike,
-  ChannelDeniedError,
   changeSyncMapById,
-  SyncMapTemplate,
   syncMapTemplate,
   createSyncMap,
   LoguxUndoError,
-  ChannelError,
   TestClient
 } from '../index.js'
 import {

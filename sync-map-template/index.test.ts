@@ -1,3 +1,5 @@
+import type { SyncMapValue } from '../index.js'
+
 import { defineChangeSyncMap, defineChangedSyncMap } from '@logux/actions'
 import { cleanStores, allTasks } from 'nanostores'
 import { it, expect, afterEach } from 'vitest'
@@ -11,7 +13,6 @@ import {
   changeSyncMap,
   createSyncMap,
   deleteSyncMap,
-  SyncMapValue,
   TestClient
 } from '../index.js'
 
@@ -491,7 +492,7 @@ it('could cache specific stores and use server', async () => {
     { type: 'cachedPosts/change', id: 'ID', fields: { title: 'The post' } },
     { type: 'cachedPosts/changed', id: 'ID', fields: { title: 'The post' } },
 
-    { type: 'logux/processed', id: '3 10:2:2 0' },
+    { type: 'logux/processed', id: '3 10:2:2 0' }
   ])
 
   let restored = CachedPost('ID', client)

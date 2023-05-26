@@ -1,6 +1,5 @@
-import { ReadableAtom } from 'nanostores'
-
-import { Client } from '../client/index.js'
+import type { ReadableAtom } from 'nanostores'
+import type { Client } from '../client/index.js'
 
 /**
  * Auth store. Use {@link createAuth} to create it.

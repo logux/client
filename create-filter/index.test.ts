@@ -1,3 +1,5 @@
+import type { FilterStore } from '../index.js'
+
 import { allTasks, cleanStores } from 'nanostores'
 import { it, expect, afterEach } from 'vitest'
 import { delay } from 'nanodelay'
@@ -10,7 +12,6 @@ import {
   createSyncMap,
   changeSyncMap,
   createFilter,
-  FilterStore,
   TestClient
 } from '../index.js'
 
@@ -267,7 +268,7 @@ it('does not send since when subscribing to remote stores', async () => {
   await client.connect()
 
   // when creating a filter without any cached log
-  let filter1 = createFilter(client, Post, { })
+  let filter1 = createFilter(client, Post, {})
   await client.server.freezeProcessing(async () => {
     filter1.listen(() => {})
     delay(1)
@@ -313,13 +314,12 @@ it('does not send since when subscribing to remote stores', async () => {
     {
       type: 'logux/subscribe',
       channel: 'posts',
-      filter: { projectId: '10' },
+      filter: { projectId: '10' }
       // since is not set
     },
     { type: 'logux/processed', id: '7 10:2:2 0' }
   ])
 })
-
 
 it('sends since when subscribing to filter if actions are cached for remote offline maps', async () => {
   let client = new TestClient('10')
@@ -327,7 +327,7 @@ it('sends since when subscribing to filter if actions are cached for remote offl
   await client.connect()
 
   // when creating a filter without any cached log
-  let filter1 = createFilter(client, CachedPost, { })
+  let filter1 = createFilter(client, CachedPost, {})
   await client.server.freezeProcessing(async () => {
     filter1.listen(() => {})
     delay(1)

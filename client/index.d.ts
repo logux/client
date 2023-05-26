@@ -1,6 +1,6 @@
-import { AbstractActionCreator } from '@logux/actions'
-import { Unsubscribe } from 'nanoevents'
-import {
+import type { AbstractActionCreator } from '@logux/actions'
+import type { Unsubscribe } from 'nanoevents'
+import type {
   Connection,
   LogStore,
   TestTime,

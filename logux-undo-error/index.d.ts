@@ -1,4 +1,4 @@
-import { LoguxSubscribeAction, LoguxUndoAction } from '@logux/actions'
+import type { LoguxSubscribeAction, LoguxUndoAction } from '@logux/actions'
 
 /**
  * Error on `logux/undo` action from the server.

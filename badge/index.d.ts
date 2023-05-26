@@ -1,4 +1,4 @@
-import { Client } from '../client/index.js'
+import type { Client } from '../client/index.js'
 
 export interface BadgeMessages {
   synchronized: string

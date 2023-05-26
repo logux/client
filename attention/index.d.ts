@@ -1,4 +1,4 @@
-import { Client } from '../client/index.js'
+import type { Client } from '../client/index.js'
 
 /**
  * Highlight tabs on synchronization errors.

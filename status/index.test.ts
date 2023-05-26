@@ -1,4 +1,6 @@
-import { LoguxError, TestTime, TestPair, TestLog } from '@logux/core'
+import type { TestLog } from '@logux/core'
+
+import { LoguxError, TestTime, TestPair } from '@logux/core'
 import { it, expect } from 'vitest'
 import { delay } from 'nanodelay'
 
@@ -200,7 +202,7 @@ it('removes listeners', () => {
 
   let calls = 0
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  let unbind = status(client, (state , details) => {
+  let unbind = status(client, (state, details) => {
     if (state === 'denied') {
       calls += 1
     }

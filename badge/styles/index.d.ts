@@ -1,3 +1,3 @@
-import { BadgeStyles } from '../index.js'
+import type { BadgeStyles } from '../index.js'
 
 export const badgeStyles: BadgeStyles

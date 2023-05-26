@@ -1,12 +1,11 @@
-import { SyncMapValues } from '@logux/actions'
-import { MapStore } from 'nanostores'
-
-import {
+import type { SyncMapValues } from '@logux/actions'
+import type { MapStore } from 'nanostores'
+import type {
   LoadedSyncMapValue,
   SyncMapTemplate,
   SyncMapStore
 } from '../sync-map-template/index.js'
-import { Client } from '../client/index.js'
+import type { Client } from '../client/index.js'
 
 export type Filter<Value extends object> = {
   [Key in keyof Value]?: Value[Key]
