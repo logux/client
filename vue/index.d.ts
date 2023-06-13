@@ -1,22 +1,23 @@
-import type {
-  ComponentPublicInstance,
-  DeepReadonly,
-  InjectionKey,
-  ComputedRef,
-  Component,
-  App,
-  Ref
-} from 'vue'
-import type { SyncMapValues, LoguxNotFoundError } from '@logux/actions'
+import type { LoguxNotFoundError, SyncMapValues } from '@logux/actions'
 import type { StoreValue } from 'nanostores'
 import type {
-  SyncMapTemplateLike,
+  App,
+  Component,
+  ComponentPublicInstance,
+  ComputedRef,
+  DeepReadonly,
+  InjectionKey,
+  Ref
+} from 'vue'
+
+import type { Client } from '../client/index.js'
+import type { Filter, FilterOptions, FilterStore } from '../create-filter/index.js'
+import type { ChannelError } from '../logux-undo-error/index.js'
+import type {
   SyncMapTemplate,
+  SyncMapTemplateLike,
   SyncMapValue
 } from '../sync-map-template/index.js'
-import type { FilterOptions, FilterStore, Filter } from '../create-filter/index.js'
-import type { ChannelError } from '../logux-undo-error/index.js'
-import type { Client } from '../client/index.js'
 
 export type Refable<Type> = Ref<Type> | Type
 type ReadonlyRef<Type> = DeepReadonly<Ref<Type>>
@@ -158,12 +159,12 @@ export function useFilter<Value extends SyncMapValues>(
 export const ChannelErrors: Component
 
 export interface ChannelErrorsSlotProps {
+  code: ReadonlyRef<number | undefined>
   error: ReadonlyRef<{
     data: ChannelError | LoguxNotFoundError
-    instance: ComponentPublicInstance
     info: string
+    instance: ComponentPublicInstance
   } | null>
-  code: ReadonlyRef<number | undefined>
 }
 
 /**
@@ -188,6 +189,6 @@ export interface ChannelErrorsSlotProps {
  * @param client Logux Client instance.
  */
 export function useAuth(client?: Client): {
-  userId: ComputedRef<string>
   isAuthenticated: ComputedRef<boolean>
+  userId: ComputedRef<string>
 }

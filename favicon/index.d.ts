@@ -2,6 +2,11 @@ import type { Client } from '../client/index.js'
 
 interface FaviconLinks {
   /**
+   * Error favicon link.
+   */
+  error?: string
+
+  /**
    * Default favicon link. By default, it will be taken from current favicon.
    */
   normal?: string
@@ -10,11 +15,6 @@ interface FaviconLinks {
    * Offline favicon link.
    */
   offline?: string
-
-  /**
-   * Error favicon link.
-   */
-  error?: string
 }
 
 /**

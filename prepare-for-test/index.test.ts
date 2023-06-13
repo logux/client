@@ -1,13 +1,11 @@
-import type { MapStore } from 'nanostores'
-
-import { it, expect, afterEach } from 'vitest'
-import { cleanStores, map } from 'nanostores'
+import { cleanStores, map, type MapStore } from 'nanostores'
+import { afterEach, expect, it } from 'vitest'
 
 import {
-  syncMapTemplate,
-  prepareForTest,
   createFilter,
   emptyInTest,
+  prepareForTest,
+  syncMapTemplate,
   TestClient
 } from '../index.js'
 
@@ -25,8 +23,8 @@ it('prepares instances', () => {
   expect(user1a).toBe(user1b)
   expect(user1b.get()).toEqual({
     id: '1',
-    name: 'Test user',
-    isLoading: false
+    isLoading: false,
+    name: 'Test user'
   })
 
   let user2 = User('2', client)

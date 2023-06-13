@@ -1,4 +1,4 @@
-import { TestTime, ServerNode, parseId } from '@logux/core'
+import { parseId, ServerNode, TestTime } from '@logux/core'
 import stringify from 'fast-json-stable-stringify'
 import { delay } from 'nanodelay'
 
@@ -45,6 +45,9 @@ export class TestServer {
   connect(nodeId, connection) {
     this.connected.add(nodeId)
     let node = new ServerNode('server:id', this.log, connection, {
+      async inMap(action, meta) {
+        return [action, { ...meta, subprotocol: node.remoteSubprotocol }]
+      },
       outFilter: async (action, meta) => {
         if (meta.channels) {
           return meta.channels.some(channel => {
@@ -58,9 +61,6 @@ export class TestServer {
         return (
           !action.type.startsWith('logux/') && !meta.channels && !meta.nodes
         )
-      },
-      async inMap(action, meta) {
-        return [action, { ...meta, subprotocol: node.remoteSubprotocol }]
       },
       async outMap(action, meta) {
         let cleaned = {}
@@ -80,18 +80,6 @@ export class TestServer {
     })
   }
 
-  undoNext(reason, extra) {
-    this.undo.push([reason || 'error', extra || {}])
-  }
-
-  undoAction(action, reason, extra) {
-    this.bad[stringify(action)] = [reason || 'error', extra || {}]
-  }
-
-  onChannel(channel, response) {
-    this.channels[channel] = response
-  }
-
   async freezeProcessing(test) {
     this.frozen = true
     await test()
@@ -103,23 +91,8 @@ export class TestServer {
     await delay(20)
   }
 
-  resend(type, resend) {
-    this.resenders[type] = resend
-  }
-
-  sendUndo(action, meta, record) {
-    if (!record) return false
-    let [reason, extra] = record
-    this.log.add(
-      { type: 'logux/undo', id: meta.id, reason, action, ...extra },
-      { nodes: [parseId(meta.id).nodeId] }
-    )
-    return true
-  }
-
-  async sendAll(action, meta = {}) {
-    await this.log.add(action, { ...meta, nodes: Array.from(this.connected) })
-    await delay(10)
+  onChannel(channel, response) {
+    this.channels[channel] = response
   }
 
   process(action, meta) {
@@ -178,7 +151,34 @@ export class TestServer {
         )
       }
     }
-    this.log.add({ type: 'logux/processed', id }, { nodes })
+    this.log.add({ id, type: 'logux/processed' }, { nodes })
+  }
+
+  resend(type, resend) {
+    this.resenders[type] = resend
+  }
+
+  async sendAll(action, meta = {}) {
+    await this.log.add(action, { ...meta, nodes: Array.from(this.connected) })
+    await delay(10)
+  }
+
+  sendUndo(action, meta, record) {
+    if (!record) return false
+    let [reason, extra] = record
+    this.log.add(
+      { action, id: meta.id, reason, type: 'logux/undo', ...extra },
+      { nodes: [parseId(meta.id).nodeId] }
+    )
+    return true
+  }
+
+  undoAction(action, reason, extra) {
+    this.bad[stringify(action)] = [reason || 'error', extra || {}]
+  }
+
+  undoNext(reason, extra) {
+    this.undo.push([reason || 'error', extra || {}])
   }
 }
 

@@ -2,14 +2,14 @@ import { atom, onMount } from 'nanostores'
 
 export function createAuth(client) {
   let auth = atom({
-    userId: client.options.userId,
-    isAuthenticated: client.node.state === 'synchronized'
+    isAuthenticated: client.node.state === 'synchronized',
+    userId: client.options.userId
   })
 
   onMount(auth, () => {
     auth.set({
-      userId: client.options.userId,
-      isAuthenticated: client.node.state === 'synchronized'
+      isAuthenticated: client.node.state === 'synchronized',
+      userId: client.options.userId
     })
 
     let load
@@ -30,8 +30,8 @@ export function createAuth(client) {
       unbindState = client.node.on('state', () => {
         if (client.node.state === 'synchronized') {
           auth.set({
-            userId: auth.value.userId,
-            isAuthenticated: true
+            isAuthenticated: true,
+            userId: auth.value.userId
           })
           if (!loaded) load()
           unbindState()
@@ -46,16 +46,16 @@ export function createAuth(client) {
       if (error.type === 'wrong-credentials') {
         if (!stateBinded) bindState()
         auth.set({
-          userId: auth.value.userId,
-          isAuthenticated: false
+          isAuthenticated: false,
+          userId: auth.value.userId
         })
         if (!loaded) load()
       }
     })
     let unbindUser = client.on('user', userId => {
       auth.set({
-        userId,
-        isAuthenticated: auth.value.isAuthenticated
+        isAuthenticated: auth.value.isAuthenticated,
+        userId
       })
     })
 

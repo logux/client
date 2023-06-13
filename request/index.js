@@ -1,5 +1,5 @@
-import { LoguxUndoError } from '../logux-undo-error/index.js'
 import { Client } from '../client/index.js'
+import { LoguxUndoError } from '../logux-undo-error/index.js'
 
 export function request(action, opts) {
   if (!opts.userId) opts.userId = 'anonymous'

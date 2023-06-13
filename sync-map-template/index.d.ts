@@ -1,6 +1,7 @@
-import type { MapStore, MapCreator } from 'nanostores'
 import type { SyncMapValues } from '@logux/actions'
 import type { Action, Meta } from '@logux/core'
+import type { MapCreator, MapStore } from 'nanostores'
+
 import type { Client } from '../client/index.js'
 
 interface SyncMapStoreExt {
@@ -10,14 +11,14 @@ interface SyncMapStoreExt {
   readonly client: Client
 
   /**
+   * Meta from create action if the store was created locally.
+   */
+  createdAt?: Meta
+
+  /**
    * While store is loading initial data from server or log.
    */
   readonly loading: Promise<void>
-
-  /**
-   * Name of map class.
-   */
-  readonly plural: string
 
   /**
    * Does store keep data in the log after store is destroyed.
@@ -25,23 +26,23 @@ interface SyncMapStoreExt {
   offline: boolean
 
   /**
+   * Name of map class.
+   */
+  readonly plural: string
+
+  /**
    * Does store use server to load and save data.
    */
   remote: boolean
-
-  /**
-   * Meta from create action if the store was created locally.
-   */
-  createdAt?: Meta
 }
 
 export type LoadedSyncMapValue<Value extends SyncMapValues> = Value & {
-  isLoading: false
   id: string
+  isLoading: false
 }
 
 export type SyncMapValue<Value extends SyncMapValues> =
-  | { isLoading: true; id: string }
+  | { id: string; isLoading: true }
   | LoadedSyncMapValue<Value>
 
 export type SyncMapStore<Value extends SyncMapValues = any> = MapStore<
@@ -61,8 +62,8 @@ export interface SyncMapTemplate<
   cache: {
     [id: string]: SyncMapStore<Value> & StoreExt
   }
-  readonly plural: string
   offline: boolean
+  readonly plural: string
   remote: boolean
 }
 
@@ -175,7 +176,7 @@ export function buildNewSyncMap<Value extends SyncMapValues>(
 export function changeSyncMapById<Value extends SyncMapValues>(
   client: Client,
   Template: SyncMapTemplate<Value>,
-  id: string | { id: string },
+  id: { id: string } | string,
   diff: Partial<Value>
 ): Promise<void>
 export function changeSyncMapById<
@@ -184,7 +185,7 @@ export function changeSyncMapById<
 >(
   client: Client,
   Template: SyncMapTemplate<Value>,
-  id: string | { id: string },
+  id: { id: string } | string,
   key: ValueKey,
   value: Value[ValueKey]
 ): Promise<void>
@@ -237,7 +238,7 @@ export function changeSyncMap<
 export function deleteSyncMapById(
   client: Client,
   Template: SyncMapTemplate,
-  id: string | { id: string }
+  id: { id: string } | string
 ): Promise<void>
 
 /**

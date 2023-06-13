@@ -1,37 +1,36 @@
-import type { Component } from 'vue'
-import type { MapStore } from 'nanostores'
-import type { SyncMapTemplate, SyncMapTemplateLike } from '../index.js'
-import type { ChannelErrorsSlotProps } from './index.js'
-
+import { LoguxNotFoundError } from '@logux/actions'
+import { cleanup, render, screen } from '@testing-library/vue'
+import { delay } from 'nanodelay'
+import { restoreAll, spyOn } from 'nanospy'
+import { atom, cleanStores, map, type MapStore, onMount } from 'nanostores'
+import { afterEach, expect, it } from 'vitest'
 import {
-  onErrorCaptured,
+  type Component,
   defineComponent,
+  h,
   isReadonly,
   nextTick,
-  ref,
-  h
+  onErrorCaptured,
+  ref
 } from 'vue'
-import { cleanStores, atom, map, onMount } from 'nanostores'
-import { render, screen, cleanup } from '@testing-library/vue'
-import { it, expect, afterEach } from 'vitest'
-import { LoguxNotFoundError } from '@logux/actions'
-import { restoreAll, spyOn } from 'nanospy'
-import { delay } from 'nanodelay'
 
 import {
   changeSyncMapById,
-  syncMapTemplate,
-  LoguxUndoError,
   createSyncMap,
+  LoguxUndoError,
+  syncMapTemplate,
+  type SyncMapTemplate,
+  type SyncMapTemplateLike,
   TestClient
 } from '../index.js'
 import {
   ChannelErrors,
+  type ChannelErrorsSlotProps,
   loguxPlugin,
+  useAuth,
   useClient,
   useFilter,
-  useSync,
-  useAuth
+  useSync
 } from './index.js'
 
 function getCatcher(cb: () => void): [string[], Component] {
@@ -56,7 +55,7 @@ function renderWithClient(component: Component, client?: TestClient): void {
   })
 }
 
-async function getText(component: Component): Promise<string | null> {
+async function getText(component: Component): Promise<null | string> {
   let client = new TestClient('10')
   render(
     defineComponent(
@@ -89,7 +88,7 @@ let defineSyncTest = (Template: SyncMapTemplate): Component => {
 }
 
 let ErrorCatcher = defineComponent((props, { slots }) => {
-  let message = ref<null | {}>(null)
+  let message = ref<{} | null>(null)
   onErrorCaptured(e => {
     // @ts-ignore
     message.value = e.message
@@ -99,8 +98,8 @@ let ErrorCatcher = defineComponent((props, { slots }) => {
 })
 
 async function catchLoadingError(
-  error: string | Error
-): Promise<string | null> {
+  error: Error | string
+): Promise<null | string> {
   let IdTest = defineIdTest(BrokenStore)
 
   renderWithClient(
@@ -117,8 +116,8 @@ async function catchLoadingError(
                     default: () =>
                       h(ChannelErrors, null, {
                         default: ({
-                          error: e,
-                          code
+                          code,
+                          error: e
                         }: ChannelErrorsSlotProps) => {
                           if (!e.value && !code.value) {
                             return h(IdTest)
@@ -162,13 +161,13 @@ function throwFromBroken(e: Error | string): void {
     if (typeof e === 'string') {
       brokenReject(
         new LoguxUndoError({
-          type: 'logux/undo',
-          reason: e,
-          id: '',
           action: {
-            type: 'logux/subscribe',
-            channel: 'A'
-          }
+            channel: 'A',
+            type: 'logux/subscribe'
+          },
+          id: '',
+          reason: e,
+          type: 'logux/undo'
         })
       )
     } else {

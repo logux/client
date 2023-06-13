@@ -1,11 +1,12 @@
 import type { SyncMapValues } from '@logux/actions'
 import type { MapStore } from 'nanostores'
+
+import type { Client } from '../client/index.js'
 import type {
   LoadedSyncMapValue,
-  SyncMapTemplate,
-  SyncMapStore
+  SyncMapStore,
+  SyncMapTemplate
 } from '../sync-map-template/index.js'
-import type { Client } from '../client/index.js'
 
 export type Filter<Value extends object> = {
   [Key in keyof Value]?: Value[Key]
@@ -18,10 +19,10 @@ export interface FilterOptions {
 export interface FilterStore<
   Value extends SyncMapValues = any
 > extends MapStore<{
-    list: LoadedSyncMapValue<Value>[]
-    stores: Map<string, SyncMapStore<Value>>
     isEmpty: boolean
     isLoading: boolean
+    list: LoadedSyncMapValue<Value>[]
+    stores: Map<string, SyncMapStore<Value>>
   }> {
   /**
    * While store is loading initial data from server or log.

@@ -1,39 +1,38 @@
-import type { FilterStore } from '../index.js'
-
-import { allTasks, cleanStores } from 'nanostores'
-import { it, expect, afterEach } from 'vitest'
 import { delay } from 'nanodelay'
+import { allTasks, cleanStores } from 'nanostores'
+import { afterEach, expect, it } from 'vitest'
 
 import {
-  changeSyncMapById,
-  deleteSyncMapById,
   buildNewSyncMap,
-  syncMapTemplate,
-  createSyncMap,
   changeSyncMap,
+  changeSyncMapById,
   createFilter,
+  createSyncMap,
+  deleteSyncMapById,
+  syncMapTemplate,
   TestClient
 } from '../index.js'
+import type { FilterStore } from '../index.js'
 
 let Post = syncMapTemplate<{
-  title: string
   authorId: string
   projectId: string
+  title: string
 }>('posts')
 
 let LocalPost = syncMapTemplate<{
-  title: string
   authorId?: string
-  projectId: string
   category?: string
+  projectId: string
+  title: string
 }>('local', {
   offline: true,
   remote: false
 })
 
 let CachedPost = syncMapTemplate<{
-  title: string
   projectId: string
+  title: string
 }>('cached', {
   offline: true
 })
@@ -94,14 +93,14 @@ it('looks for already loaded stores', async () => {
   post3.listen(() => {})
   post4.listen(() => {})
 
-  await changeSyncMap(post1, { projectId: '100', authorId: '10' })
-  await changeSyncMap(post2, { projectId: '100', authorId: '10' })
-  await changeSyncMap(post3, { projectId: '200', authorId: '10' })
-  await changeSyncMap(post4, { projectId: '100', authorId: '11' })
+  await changeSyncMap(post1, { authorId: '10', projectId: '100' })
+  await changeSyncMap(post2, { authorId: '10', projectId: '100' })
+  await changeSyncMap(post3, { authorId: '10', projectId: '200' })
+  await changeSyncMap(post4, { authorId: '11', projectId: '100' })
 
   let posts = createFilter(client, Post, {
-    projectId: '100',
-    authorId: '10'
+    authorId: '10',
+    projectId: '100'
   })
   posts.listen(() => {})
 
@@ -113,8 +112,8 @@ it('looks for already loaded stores', async () => {
     ])
   )
   expect(posts.get().list).toEqual([
-    { id: '1', isLoading: false, authorId: '10', projectId: '100' },
-    { id: '2', isLoading: false, authorId: '10', projectId: '100' }
+    { authorId: '10', id: '1', isLoading: false, projectId: '100' },
+    { authorId: '10', id: '2', isLoading: false, projectId: '100' }
   ])
 })
 
@@ -137,7 +136,7 @@ it('subscribes to channels for remote stores', async () => {
     })
     await delay(1)
     expect(client.log.actions()).toEqual([
-      { type: 'logux/subscribe', channel: 'posts', filter: { projectId: '1' } }
+      { channel: 'posts', filter: { projectId: '1' }, type: 'logux/subscribe' }
     ])
     expect(resolved).toBe(false)
     expect(posts.get().isLoading).toBe(true)
@@ -151,7 +150,7 @@ it('subscribes to channels for remote stores', async () => {
       await delay(1020)
     })
   ).toEqual([
-    { type: 'logux/unsubscribe', channel: 'posts', filter: { projectId: '1' } }
+    { channel: 'posts', filter: { projectId: '1' }, type: 'logux/unsubscribe' }
   ])
 
   expect(
@@ -162,8 +161,8 @@ it('subscribes to channels for remote stores', async () => {
       await delay(1020)
     })
   ).toEqual([
-    { type: 'logux/subscribe', channel: 'cached', filter: { projectId: '1' } },
-    { type: 'logux/unsubscribe', channel: 'cached', filter: { projectId: '1' } }
+    { channel: 'cached', filter: { projectId: '1' }, type: 'logux/subscribe' },
+    { channel: 'cached', filter: { projectId: '1' }, type: 'logux/unsubscribe' }
   ])
 
   expect(
@@ -184,11 +183,11 @@ it('does not subscribe if server did it for client', async () => {
   let unbind = posts.listen(() => {})
   await allTasks()
 
-  await client.server.sendAll({ type: 'logux/subscribed', channel: 'posts/1' })
+  await client.server.sendAll({ channel: 'posts/1', type: 'logux/subscribed' })
   await client.server.sendAll({
-    type: 'posts/created',
+    fields: { title: 'A' },
     id: '1',
-    fields: { title: 'A' }
+    type: 'posts/created'
   })
   await allTasks()
   expect(posts.get().list).toEqual([{ id: '1', isLoading: false, title: 'A' }])
@@ -196,14 +195,14 @@ it('does not subscribe if server did it for client', async () => {
   unbind()
   await delay(2020)
   expect(client.log.actions()).toEqual([
-    { type: 'logux/subscribe', channel: 'posts', filter: {} },
-    { type: 'logux/processed', id: '1 10:2:2 0' },
-    { type: 'logux/subscribed', channel: 'posts/1' },
-    { type: 'posts/created', id: '1', fields: { title: 'A' } },
-    { type: 'logux/unsubscribe', channel: 'posts', filter: {} },
-    { type: 'logux/processed', id: '5 10:2:2 0' },
-    { type: 'logux/unsubscribe', channel: 'posts/1' },
-    { type: 'logux/processed', id: '7 10:2:2 0' }
+    { channel: 'posts', filter: {}, type: 'logux/subscribe' },
+    { id: '1 10:2:2 0', type: 'logux/processed' },
+    { channel: 'posts/1', type: 'logux/subscribed' },
+    { fields: { title: 'A' }, id: '1', type: 'posts/created' },
+    { channel: 'posts', filter: {}, type: 'logux/unsubscribe' },
+    { id: '5 10:2:2 0', type: 'logux/processed' },
+    { channel: 'posts/1', type: 'logux/unsubscribe' },
+    { id: '7 10:2:2 0', type: 'logux/processed' }
   ])
 })
 
@@ -212,43 +211,43 @@ it('loads store from the log for offline stores', async () => {
   client.log.keepActions()
   await createSyncMap(client, LocalPost, {
     id: '1',
-    title: 'Post 1a',
-    projectId: '10'
+    projectId: '10',
+    title: 'Post 1a'
   })
   await deleteSyncMapById(client, LocalPost, '1')
 
   await createSyncMap(client, LocalPost, {
     id: '1',
-    title: 'Post 1b',
-    projectId: '20'
+    projectId: '20',
+    title: 'Post 1b'
   })
 
   await createSyncMap(client, LocalPost, {
     id: '2',
-    title: 'Post 2',
-    projectId: '20'
+    projectId: '20',
+    title: 'Post 2'
   })
   await changeSyncMapById(client, LocalPost, '2', 'projectId', '10')
   await changeSyncMapById(client, LocalPost, '2', 'projectId', '30')
 
   await createSyncMap(client, LocalPost, {
     id: '3',
-    title: 'Post 3',
-    projectId: '10'
+    projectId: '10',
+    title: 'Post 3'
   })
   await deleteSyncMapById(client, LocalPost, '3')
 
   await createSyncMap(client, LocalPost, {
     id: '4',
-    title: 'Post 4',
-    projectId: '20'
+    projectId: '20',
+    title: 'Post 4'
   })
   await changeSyncMapById(client, LocalPost, '4', 'projectId', '10')
 
   await createSyncMap(client, LocalPost, {
     id: '5',
-    title: 'Post 5',
-    projectId: '10'
+    projectId: '10',
+    title: 'Post 5'
   })
 
   cleanStores(LocalPost)
@@ -276,15 +275,15 @@ it('does not send since when subscribing to remote stores', async () => {
   await allTasks()
 
   expect(client.log.actions()).toEqual([
-    { type: 'logux/subscribe', channel: 'posts', filter: {} },
-    { type: 'logux/processed', id: '1 10:2:2 0' }
+    { channel: 'posts', filter: {}, type: 'logux/subscribe' },
+    { id: '1 10:2:2 0', type: 'logux/processed' }
   ])
 
   await createSyncMap(client, Post, {
+    authorId: '10',
     id: 'ID',
     projectId: '10',
-    title: 'Cached',
-    authorId: '10'
+    title: 'Cached'
   })
 
   // when creating filter with a matching action in cache
@@ -297,27 +296,27 @@ it('does not send since when subscribing to remote stores', async () => {
 
   expect(client.log.actions()).toEqual([
     // first subscribe
-    { type: 'logux/subscribe', channel: 'posts', filter: {} },
-    { type: 'logux/processed', id: '1 10:2:2 0' },
+    { channel: 'posts', filter: {}, type: 'logux/subscribe' },
+    { id: '1 10:2:2 0', type: 'logux/processed' },
 
     // create item
     {
-      type: 'posts/create',
+      fields: { authorId: '10', projectId: '10', title: 'Cached' },
       id: 'ID',
-      fields: { projectId: '10', title: 'Cached', authorId: '10' }
+      type: 'posts/create'
     },
-    { type: 'logux/subscribe', channel: 'posts/ID', creating: true },
-    { type: 'logux/processed', id: '3 10:2:2 0' },
-    { type: 'logux/processed', id: '4 10:2:2 0' },
+    { channel: 'posts/ID', creating: true, type: 'logux/subscribe' },
+    { id: '3 10:2:2 0', type: 'logux/processed' },
+    { id: '4 10:2:2 0', type: 'logux/processed' },
 
     // second subscribe
     {
-      type: 'logux/subscribe',
       channel: 'posts',
-      filter: { projectId: '10' }
+      filter: { projectId: '10' },
+      type: 'logux/subscribe'
       // since is not set
     },
-    { type: 'logux/processed', id: '7 10:2:2 0' }
+    { id: '7 10:2:2 0', type: 'logux/processed' }
   ])
 })
 
@@ -336,8 +335,8 @@ it('sends since when subscribing to filter if actions are cached for remote offl
   await allTasks()
   expect(client.log.actions()).toEqual([
     // subscription
-    { type: 'logux/subscribe', channel: 'cached', filter: {} },
-    { type: 'logux/processed', id: '1 10:2:2 0' }
+    { channel: 'cached', filter: {}, type: 'logux/subscribe' },
+    { id: '1 10:2:2 0', type: 'logux/processed' }
   ])
 
   await createSyncMap(client, CachedPost, {
@@ -357,27 +356,27 @@ it('sends since when subscribing to filter if actions are cached for remote offl
 
   expect(client.log.actions()).toEqual([
     // first subscribe
-    { type: 'logux/subscribe', channel: 'cached', filter: {} },
-    { type: 'logux/processed', id: '1 10:2:2 0' },
+    { channel: 'cached', filter: {}, type: 'logux/subscribe' },
+    { id: '1 10:2:2 0', type: 'logux/processed' },
 
     // create item
     {
-      type: 'cached/create',
+      fields: { projectId: '10', title: 'Cached' },
       id: 'ID',
-      fields: { projectId: '10', title: 'Cached' }
+      type: 'cached/create'
     },
-    { type: 'logux/subscribe', channel: 'cached/ID', creating: true },
-    { type: 'logux/processed', id: '3 10:2:2 0' },
-    { type: 'logux/processed', id: '4 10:2:2 0' },
+    { channel: 'cached/ID', creating: true, type: 'logux/subscribe' },
+    { id: '3 10:2:2 0', type: 'logux/processed' },
+    { id: '4 10:2:2 0', type: 'logux/processed' },
 
     // second subscribe
     {
-      type: 'logux/subscribe',
       channel: 'cached',
       filter: { projectId: '10' },
-      since: { id: '3 10:2:2 0', time: 3 } // since is set
+      since: { id: '3 10:2:2 0', time: 3 }, // since is set
+      type: 'logux/subscribe'
     },
-    { type: 'logux/processed', id: '7 10:2:2 0' }
+    { id: '7 10:2:2 0', type: 'logux/processed' }
   ])
 })
 
@@ -441,19 +440,19 @@ it('updates list on store create/deleted/change', async () => {
   expect(changes).toEqual(['isLoading'])
 
   await createSyncMap(client, Post, {
+    authorId: '1',
     id: '1',
-    title: '1',
     projectId: '1',
-    authorId: '1'
+    title: '1'
   })
   expect(getSize(posts)).toBe(1)
   expect(changes).toEqual(['isLoading', 'list', 'isEmpty'])
 
   let post2 = await buildNewSyncMap(client, Post, {
+    authorId: '2',
     id: '2',
-    title: '2',
     projectId: '2',
-    authorId: '2'
+    title: '2'
   })
   post2.listen(() => {})
   expect(getSize(posts)).toBe(1)
@@ -507,18 +506,18 @@ it('updates list on store created/deleted/changed', async () => {
   expect(getSize(posts)).toBe(0)
 
   await createSyncMap(client, LocalPost, {
+    category: 'test',
     id: '1',
-    title: '1',
     projectId: '1',
-    category: 'test'
+    title: '1'
   })
   expect(getSize(posts)).toBe(1)
 
   let post2 = await buildNewSyncMap(client, LocalPost, {
+    category: 'wrong',
     id: '2',
-    title: '2',
     projectId: '2',
-    category: 'wrong'
+    title: '2'
   })
   post2.listen(() => {})
   expect(getSize(posts)).toBe(1)
@@ -568,17 +567,17 @@ it('uses time for delete actions', async () => {
   let posts = createFilter(client, Post)
   posts.listen(() => {})
   await createSyncMap(client, Post, {
-    id: 'ID',
-    title: '1',
     authorId: '1',
-    projectId: '1'
+    id: 'ID',
+    projectId: '1',
+    title: '1'
   })
   expect(getSize(posts)).toBe(1)
 
-  await client.sync({ type: 'posts/delete', id: 'ID' }, { id: oldId, time: 0 })
+  await client.sync({ id: 'ID', type: 'posts/delete' }, { id: oldId, time: 0 })
   expect(getSize(posts)).toBe(1)
 
-  await client.sync({ type: 'posts/delete', id: 'ID' })
+  await client.sync({ id: 'ID', type: 'posts/delete' })
   expect(getSize(posts)).toBe(0)
 })
 
@@ -649,10 +648,10 @@ it('is ready create/delete/change undo', async () => {
   client.server.undoNext()
   await client.server.freezeProcessing(async () => {
     createSyncMap(client, Post, {
-      id: '1',
-      title: '1',
       authorId: '1',
-      projectId: '1'
+      id: '1',
+      projectId: '1',
+      title: '1'
     }).catch(() => {})
     await delay(1)
     expect(getSize(posts)).toBe(1)
@@ -660,10 +659,10 @@ it('is ready create/delete/change undo', async () => {
   expect(getSize(posts)).toBe(0)
 
   await createSyncMap(client, Post, {
-    id: '2',
-    title: '2',
     authorId: '1',
-    projectId: '1'
+    id: '2',
+    projectId: '1',
+    title: '2'
   })
   expect(getSize(posts)).toBe(1)
 
@@ -683,10 +682,10 @@ it('is ready create/delete/change undo', async () => {
   })
   expect(getSize(posts)).toBe(1)
   expect(Post('2', client).get()).toEqual({
+    authorId: '1',
     id: '2',
     isLoading: false,
     projectId: '1',
-    authorId: '1',
     title: '2'
   })
 
@@ -706,9 +705,9 @@ it('is ready create/delete/change undo', async () => {
   await client.server.freezeProcessing(async () => {
     changeSyncMap(post3, 'projectId', '1').catch(() => {})
     client.log.add({
-      type: 'posts/changed',
+      fields: { projectId: '1' },
       id: '3',
-      fields: { projectId: '1' }
+      type: 'posts/changed'
     })
     await delay(1)
     expect(getSize(posts)).toBe(2)
@@ -730,20 +729,20 @@ it('loads store on change action without cache', async () => {
   expect(
     await client.sent(async () => {
       await client.log.add({
-        type: 'posts/change',
+        fields: { title: '1' },
         id: '1',
-        fields: { title: '1' }
+        type: 'posts/change'
       })
       await client.log.add({
-        type: 'posts/changed',
+        fields: { title: '2' },
         id: '2',
-        fields: { title: '2' }
+        type: 'posts/changed'
       })
     })
   ).toEqual([
-    { type: 'logux/subscribe', channel: 'posts', filter: {} },
-    { type: 'logux/subscribe', channel: 'posts/1' },
-    { type: 'logux/subscribe', channel: 'posts/2' }
+    { channel: 'posts', filter: {}, type: 'logux/subscribe' },
+    { channel: 'posts/1', type: 'logux/subscribe' },
+    { channel: 'posts/2', type: 'logux/subscribe' }
   ])
   await allTasks()
   expect(getSize(posts)).toBe(2)
@@ -786,10 +785,10 @@ it('has shortcut to check size', async () => {
   expect(posts.get().isEmpty).toBe(true)
 
   await createSyncMap(client, Post, {
-    id: '1',
-    title: '1',
     authorId: '10',
-    projectId: '20'
+    id: '1',
+    projectId: '20',
+    title: '1'
   })
   expect(posts.get().isEmpty).toBe(false)
 })

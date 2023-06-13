@@ -1,5 +1,5 @@
-import { clean, startTask, task, onMount, map } from 'nanostores'
 import { isFirstOlder } from '@logux/core'
+import { clean, map, onMount, startTask, task } from 'nanostores'
 
 import { LoguxUndoError } from '../logux-undo-error/index.js'
 import { track } from '../track/index.js'
@@ -69,7 +69,7 @@ export function syncMapTemplate(plural, opts = {}) {
       let createType = `${plural}/create`
       let changeType = `${plural}/change`
       let changedType = `${plural}/changed`
-      let subscribe = { type: 'logux/subscribe', channel: `${plural}/${id}` }
+      let subscribe = { channel: `${plural}/${id}`, type: 'logux/subscribe' }
 
       let loadingError
       let isLoading = true
@@ -160,10 +160,10 @@ export function syncMapTemplate(plural, opts = {}) {
               } else if (!found && !store.remote) {
                 loadingReject(
                   new LoguxUndoError({
-                    type: 'logux/undo',
-                    reason: 'notFound',
+                    action: subscribe,
                     id: client.log.generateId(),
-                    action: subscribe
+                    reason: 'notFound',
+                    type: 'logux/undo'
                   })
                 )
               } else if (store.remote) {
@@ -291,7 +291,7 @@ export function syncMapTemplate(plural, opts = {}) {
         unbinds.push(() => {
           if (!loadingError) {
             client.log.add(
-              { type: 'logux/unsubscribe', channel: subscribe.channel },
+              { channel: subscribe.channel, type: 'logux/unsubscribe' },
               { sync: true }
             )
           }
@@ -348,9 +348,9 @@ function addSyncAction(client, Template, action) {
 export function createSyncMap(client, Template, value) {
   let { id, ...fields } = value
   return addSyncAction(client, Template, {
-    type: `${Template.plural}/create`,
+    fields,
     id,
-    fields
+    type: `${Template.plural}/create`
   })
 }
 
@@ -360,11 +360,11 @@ export async function buildNewSyncMap(client, Template, value) {
 
   let verb = Template.remote ? 'create' : 'created'
   let type = `${Template.plural}/${verb}`
-  let action = { type, id, fields }
+  let action = { fields, id, type }
   let meta = {
     id: actionId,
-    time: parseInt(actionId),
-    indexes: getIndexes(Template.plural, id)
+    indexes: getIndexes(Template.plural, id),
+    time: parseInt(actionId)
   }
   if (Template.remote) meta.sync = true
   await task(() => client.log.add(action, meta))
@@ -376,9 +376,9 @@ export async function buildNewSyncMap(client, Template, value) {
 export function changeSyncMapById(client, Template, id, fields, value) {
   if (value) fields = { [fields]: value }
   return addSyncAction(client, Template, {
-    type: `${Template.plural}/change`,
+    fields,
     id,
-    fields
+    type: `${Template.plural}/change`
   })
 }
 
@@ -390,8 +390,8 @@ export function changeSyncMap(store, fields, value) {
 
 export function deleteSyncMapById(client, Template, id) {
   return addSyncAction(client, Template, {
-    type: `${Template.plural}/delete`,
-    id
+    id,
+    type: `${Template.plural}/delete`
   })
 }
 

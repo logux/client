@@ -1,22 +1,22 @@
+import { registerStore, useStore } from '@nanostores/vue'
 import {
+  computed,
   getCurrentInstance,
-  onErrorCaptured,
   getCurrentScope,
+  inject,
+  onErrorCaptured,
   onScopeDispose,
-  shallowRef,
+  provide,
   reactive,
   readonly,
-  computed,
-  provide,
-  inject,
-  watch,
+  ref,
+  shallowRef,
   unref,
-  ref
+  watch
 } from 'vue'
-import { useStore, registerStore } from '@nanostores/vue'
 
-import { createFilter } from '../create-filter/index.js'
 import { createAuth } from '../create-auth/index.js'
+import { createFilter } from '../create-filter/index.js'
 
 const createSymbol = name => {
   return process.env.NODE_ENV !== 'production' ? Symbol(name) : Symbol()
@@ -177,7 +177,7 @@ export let ChannelErrors = {
 
     onErrorCaptured((e, instance, info) => {
       if (e.name === 'LoguxUndoError' || e.name === 'LoguxNotFoundError') {
-        error.value = { data: e, instance, info }
+        error.value = { data: e, info, instance }
         return false
       }
       return undefined
@@ -190,7 +190,7 @@ export let ChannelErrors = {
 export function useAuth(client) {
   let auth = useStore(createAuth(client || useClient()))
   return {
-    userId: computed(() => auth.value.userId),
-    isAuthenticated: computed(() => auth.value.isAuthenticated)
+    isAuthenticated: computed(() => auth.value.isAuthenticated),
+    userId: computed(() => auth.value.userId)
   }
 }

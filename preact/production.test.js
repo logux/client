@@ -1,10 +1,11 @@
-import { createElement as h } from 'preact'
-import { screen, render } from '@testing-library/preact'
-import { it, expect } from 'vitest'
-
 import '../test/set-production.js'
-import { useSync, ClientContext, ChannelErrors } from './index.js'
+
+import { render, screen } from '@testing-library/preact'
+import { createElement as h } from 'preact'
+import { expect, it } from 'vitest'
+
 import { syncMapTemplate, TestClient } from '../index.js'
+import { ChannelErrors, ClientContext, useSync } from './index.js'
 
 let Store = syncMapTemplate('test')
 

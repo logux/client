@@ -1,12 +1,9 @@
-import type { TestLog } from '@logux/core'
-import type { ClientMeta } from '../index.js'
-import type { BadgeOptions } from './index.js'
-
-import { LoguxError, TestPair, TestTime } from '@logux/core'
-import { it, afterEach, expect } from 'vitest'
+import { LoguxError, type TestLog, TestPair, TestTime } from '@logux/core'
 import { delay } from 'nanodelay'
+import { afterEach, expect, it } from 'vitest'
 
-import { CrossTabClient, badge, badgeEn } from '../index.js'
+import { badge, badgeEn, type ClientMeta, CrossTabClient } from '../index.js'
+import type { BadgeOptions } from './index.js'
 import { badgeStyles } from './styles/index.js'
 
 function badgeNode(): HTMLElement | null {
@@ -44,10 +41,10 @@ function emit(obj: any, event: string, ...args: any[]): void {
 async function createTest(override?: Partial<BadgeOptions>): Promise<TestPair> {
   let pair = new TestPair()
   let client = new CrossTabClient<{}, TestLog<ClientMeta>>({
-    subprotocol: '1.0.0',
     server: pair.left,
-    userId: '1',
-    time: new TestTime()
+    subprotocol: '1.0.0',
+    time: new TestTime(),
+    userId: '1'
   })
 
   client.role = 'leader'
@@ -83,7 +80,7 @@ it('shows synchronized state', async () => {
 
   test.leftNode.connected = false
   setState(test.leftNode, 'disconnected')
-  await test.leftNode.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
+  await test.leftNode.log.add({ type: 'A' }, { reasons: ['t'], sync: true })
 
   setState(test.leftNode, 'connecting')
   test.leftNode.connected = true
@@ -91,7 +88,7 @@ it('shows synchronized state', async () => {
   setState(test.leftNode, 'synchronized')
   expect(badgeStyle().display).toBe('block')
   expect(badgeStyle().backgroundImage).toBe('url("/badge/styles/refresh.svg")')
-  test.leftNode.log.add({ type: 'logux/processed', id: '1 1:1:1 0' })
+  test.leftNode.log.add({ id: '1 1:1:1 0', type: 'logux/processed' })
   await delay(1)
 
   expect(getBadgeMessage()).toEqual(badgeEn.synchronized)
@@ -116,7 +113,7 @@ it('shows wait state', async () => {
   test.leftNode.connected = false
   setState(test.leftNode, 'disconnected')
   setState(test.leftNode, 'wait')
-  await test.leftNode.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
+  await test.leftNode.log.add({ type: 'A' }, { reasons: ['t'], sync: true })
   expect(badgeStyle().display).toBe('block')
   expect(badgeStyle().backgroundImage).toBe('url("/badge/styles/offline.svg")')
   expect(getBadgeMessage()).toEqual(badgeEn.wait)
@@ -132,7 +129,7 @@ it('shows sending state', async () => {
 
   test.leftNode.connected = false
   setState(test.leftNode, 'wait')
-  await test.leftNode.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
+  await test.leftNode.log.add({ type: 'A' }, { reasons: ['t'], sync: true })
 
   setState(test.leftNode, 'connecting')
   expect(badgeStyle().display).toBe('block')
@@ -186,7 +183,7 @@ it('shows client error', async () => {
 
 it('shows error undo actions', async () => {
   let test = await createTest()
-  test.leftNode.log.add({ type: 'logux/undo', reason: 'error' })
+  test.leftNode.log.add({ reason: 'error', type: 'logux/undo' })
   expect(badgeStyle().display).toBe('block')
   expect(badgeStyle().backgroundImage).toBe('url("/badge/styles/error.svg")')
   expect(getBadgeMessage()).toEqual(badgeEn.error)
@@ -194,7 +191,7 @@ it('shows error undo actions', async () => {
 
 it('shows denied undo actions', async () => {
   let test = await createTest()
-  test.leftNode.log.add({ type: 'logux/undo', reason: 'denied' })
+  test.leftNode.log.add({ reason: 'denied', type: 'logux/undo' })
   expect(badgeStyle().display).toBe('block')
   expect(badgeStyle().backgroundImage).toBe('url("/badge/styles/error.svg")')
   expect(getBadgeMessage()).toEqual(badgeEn.denied)
@@ -230,10 +227,10 @@ it('supports middle-center position setting', async () => {
 it('removes badge from DOM', () => {
   let pair = new TestPair()
   let client = new CrossTabClient({
-    subprotocol: '1.0.0',
     server: pair.left,
-    userId: '10',
-    time: new TestTime()
+    subprotocol: '1.0.0',
+    time: new TestTime(),
+    userId: '10'
   })
 
   let opts = { messages: badgeEn, styles: badgeStyles }

@@ -1,8 +1,8 @@
-import { TextEncoder, TextDecoder } from 'util'
-import { TestTime, TestPair } from '@logux/core'
-import { it, expect } from 'vitest'
+import { TestPair, TestTime } from '@logux/core'
 import { Crypto } from '@peculiar/webcrypto'
 import { delay } from 'nanodelay'
+import { TextDecoder, TextEncoder } from 'util'
+import { expect, it } from 'vitest'
 
 import { Client, encryptActions } from '../index.js'
 
@@ -29,10 +29,10 @@ const BASE64 = expect.stringMatching(/^[\w+/]+=?=?$/)
 function createClient(): Client {
   let pair = new TestPair()
   let client = new Client({
-    subprotocol: '1.0.0',
-    userId: '10',
     server: pair.left,
-    time: new TestTime()
+    subprotocol: '1.0.0',
+    time: new TestTime(),
+    userId: '10'
   })
   client.on('preadd', (action, meta) => {
     meta.reasons.push('test')
@@ -71,7 +71,7 @@ it('encrypts and decrypts actions', async () => {
     [
       'sync',
       1,
-      { type: '0', d: BASE64, iv: BASE64 },
+      { d: BASE64, iv: BASE64, type: '0' },
       { id: 1, time: expect.any(Number) }
     ]
   ])
@@ -101,7 +101,7 @@ it('ignores specific actions', async () => {
     [
       'sync',
       1,
-      { type: '0', d: BASE64, iv: BASE64 },
+      { d: BASE64, iv: BASE64, type: '0' },
       { id: 1, time: expect.any(Number) }
     ],
     ['sync', 2, { type: 'server' }, { id: 2, time: expect.any(Number) }]
@@ -133,7 +133,7 @@ it('cleans actions on server', async () => {
     [
       'sync',
       2,
-      { type: '0/clean', id: meta.id },
+      { id: meta.id, type: '0/clean' },
       { id: 2, time: expect.any(Number) }
     ]
   ])

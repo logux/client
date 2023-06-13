@@ -1,4 +1,5 @@
 import type { Action, AnyAction } from '@logux/core'
+
 import type { ClientOptions } from '../client/index.js'
 
 export interface RequestOptions extends Omit<ClientOptions, 'userId'> {

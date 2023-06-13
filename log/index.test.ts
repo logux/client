@@ -1,12 +1,9 @@
-import type { TestLog } from '@logux/core'
-import type { ClientMeta } from '../index.js'
-
-import { it, expect, beforeAll, beforeEach } from 'vitest'
-import { TestPair, TestTime } from '@logux/core'
+import { type TestLog, TestPair, TestTime } from '@logux/core'
 import { spyOn } from 'nanospy'
 import pico from 'picocolors'
+import { beforeAll, beforeEach, expect, it } from 'vitest'
 
-import { CrossTabClient, log } from '../index.js'
+import { type ClientMeta, CrossTabClient, log } from '../index.js'
 
 function setState(client: any, state: string): void {
   client.node.setState(state)
@@ -26,10 +23,10 @@ async function createClient(): Promise<
   let pair = new TestPair()
   privateMethods(pair.left).url = 'ws://example.com'
   let client = new CrossTabClient<{}, TestLog<ClientMeta>>({
-    subprotocol: '1.0.0',
     server: pair.left,
-    userId: '10',
-    time: new TestTime()
+    subprotocol: '1.0.0',
+    time: new TestTime(),
+    userId: '10'
   })
 
   client.role = 'leader'
@@ -42,7 +39,7 @@ async function createClient(): Promise<
 let group = false
 let out = ''
 
-function format(...args: (string | object)[]): string {
+function format(...args: (object | string)[]): string {
   let color = (s: string): string => s
   let logoColor = pico.yellow
   return (
@@ -117,32 +114,32 @@ it('prints log', async () => {
   setState(client, 'synchronized')
   await client.node.log.add(
     {
-      type: 'logux/undo',
       action: { type: 'A' },
       id: '1 10:1:1 0',
-      reason: 'error'
+      reason: 'error',
+      type: 'logux/undo'
     },
     { id: '1 server:uuid 0' }
   )
 
   await client.node.log.add(
-    { type: 'logux/subscribe', channel: 'users' },
+    { channel: 'users', type: 'logux/subscribe' },
     { sync: true }
   )
   setState(client, 'sending')
   setState(client, 'synchronized')
   await client.node.log.add(
-    { type: 'logux/subscribed', channel: 'users/1' },
+    { channel: 'users/1', type: 'logux/subscribed' },
     { sync: true }
   )
   await client.node.log.add(
     { type: 'A' },
-    { sync: true, id: '2 server:uuid 1' }
+    { id: '2 server:uuid 1', sync: true }
   )
   await client.node.log.add(
     {
-      type: 'logux/processed',
-      id: '2 10:1:1 0'
+      id: '2 10:1:1 0',
+      type: 'logux/processed'
     },
     { id: '2 server:uuid 0' }
   )
@@ -155,30 +152,30 @@ it('prints log', async () => {
   setState(client, 'synchronized')
 
   await client.node.log.add(
-    { type: 'logux/subscribe', channel: 'users', since: 1 },
+    { channel: 'users', since: 1, type: 'logux/subscribe' },
     { sync: true }
   )
   setState(client, 'sending')
   setState(client, 'synchronized')
   await client.node.log.add(
     {
-      type: 'logux/undo',
-      action: { type: 'logux/subscribe', channel: 'users', since: 1 },
+      action: { channel: 'users', since: 1, type: 'logux/subscribe' },
       id: '3 10:1:1 0',
       reason: 'error',
+      type: 'logux/undo',
       wrongProp: 'sync'
     },
     { id: '3 server:uuid 0' }
   )
   await client.node.log.add(
-    { type: 'logux/unsubscribe', channel: 'users' },
+    { channel: 'users', type: 'logux/unsubscribe' },
     { sync: true }
   )
   await client.node.log.add(
     {
-      type: 'logux/unsubscribe',
+      bad: true,
       channel: 'users',
-      bad: true
+      type: 'logux/unsubscribe'
     },
     { sync: true }
   )
@@ -188,26 +185,26 @@ it('prints log', async () => {
   setState(client, 'synchronized')
   await client.node.log.add(
     {
-      type: 'logux/processed',
-      id: '7 10:1:1 0'
+      id: '7 10:1:1 0',
+      type: 'logux/processed'
     },
     { id: ' server:uuid 0' }
   )
 
   await client.node.log.add(
     {
-      type: 'logux/processed',
-      id: '200 10:1:1 0'
+      id: '200 10:1:1 0',
+      type: 'logux/processed'
     },
     { id: '4 server:uuid 0' }
   )
 
   await client.node.log.add(
     {
-      type: 'logux/undo',
       action: { type: 'B' },
       id: '201 10:1:1 0',
-      reason: 'error'
+      reason: 'error',
+      type: 'logux/undo'
     },
     { id: '5 server:uuid 0' }
   )
@@ -244,7 +241,7 @@ it('ignores different tab actions', async () => {
   let client = await createClient()
   log(client)
 
-  await client.node.log.add({ type: 'A' }, { tab: 'X', reasons: ['test'] })
+  await client.node.log.add({ type: 'A' }, { reasons: ['test'], tab: 'X' })
   await client.node.log.removeReason('test')
 
   expect(out).toBe('')

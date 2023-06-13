@@ -1,8 +1,8 @@
 import type { Action, Log } from '@logux/core'
 import type { Unsubscribe } from 'nanoevents'
-import type { ClientActionListener, ClientMeta } from '../client/index.js'
 
 import { Client } from '../client/index.js'
+import type { ClientActionListener, ClientMeta } from '../client/index.js'
 
 /**
  * Low-level browser API for Logux.
@@ -30,6 +30,12 @@ export class CrossTabClient<
   ClientLog extends Log = Log<ClientMeta>
 > extends Client<Headers, ClientLog> {
   /**
+   * Cache for localStorage detection. Can be overridden to disable leader tab
+   * election in tests.
+   */
+  isLocalStorage: boolean
+
+  /**
    * Current tab role. Only `leader` tab connects to server. `followers` just
    * listen to events from `leader`.
    *
@@ -39,14 +45,12 @@ export class CrossTabClient<
    * })
    * ```
    */
-  role: 'leader' | 'follower'
+  role: 'follower' | 'leader'
 
-  /**
-   * Cache for localStorage detection. Can be overridden to disable leader tab
-   * election in tests.
-   */
-  isLocalStorage: boolean
-
+  on(
+    event: 'add' | 'clean' | 'preadd',
+    listener: ClientActionListener<Action>
+  ): Unsubscribe
   /**
    * Subscribe for synchronization events. It implements nanoevents API.
    * Supported events:
@@ -70,8 +74,4 @@ export class CrossTabClient<
    */
   on(event: 'role' | 'state', listener: () => void): Unsubscribe
   on(event: 'user', listener: (userId: string) => void): Unsubscribe
-  on(
-    event: 'preadd' | 'add' | 'clean',
-    listener: ClientActionListener<Action>
-  ): Unsubscribe
 }

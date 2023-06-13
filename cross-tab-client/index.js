@@ -1,4 +1,4 @@
-import { LoguxError, actionEvents } from '@logux/core'
+import { actionEvents, LoguxError } from '@logux/core'
 
 import { Client } from '../client/index.js'
 
@@ -81,42 +81,18 @@ export class CrossTabClient extends Client {
     }
   }
 
-  get state() {
-    return this.leaderState
+  changeUser(userId, token) {
+    sendToTabs(this, 'user', [this.tabId, userId])
+    super.changeUser(userId, token)
   }
 
-  set state(value) {
-    this.leaderState = value
-  }
-
-  start() {
-    this.cleanPrevActions()
-
-    if (
-      typeof navigator === 'undefined' ||
-      !navigator.locks ||
-      !this.isLocalStorage
-    ) {
-      this.role = 'leader'
-      this.emitter.emit('role')
-      this.node.connection.connect()
-      return
+  clean() {
+    if (this.isLocalStorage) {
+      localStorage.removeItem(storageKey(this, 'add'))
+      localStorage.removeItem(storageKey(this, 'state'))
+      localStorage.removeItem(storageKey(this, 'client'))
     }
-
-    let json = localStorage.getItem(storageKey(this, 'state'))
-    if (json && json !== null && json !== '"disconnected"') {
-      this.state = JSON.parse(json)
-      this.emitter.emit('state')
-    }
-
-    navigator.locks.request('logux_leader', () => {
-      this.role = 'leader'
-      this.emitter.emit('role')
-      this.node.connection.connect()
-      return new Promise(resolve => {
-        this.unlead = resolve
-      })
-    })
+    return super.clean()
   }
 
   destroy() {
@@ -129,27 +105,16 @@ export class CrossTabClient extends Client {
     }
   }
 
-  clean() {
-    if (this.isLocalStorage) {
-      localStorage.removeItem(storageKey(this, 'add'))
-      localStorage.removeItem(storageKey(this, 'state'))
-      localStorage.removeItem(storageKey(this, 'client'))
-    }
-    return super.clean()
-  }
-
-  changeUser(userId, token) {
-    sendToTabs(this, 'user', [this.tabId, userId])
-    super.changeUser(userId, token)
-  }
-
-  type(type, listener, opts = {}) {
-    if (opts.event === 'preadd') {
-      return this.log.type(type, listener, opts)
+  getClientId() {
+    let key = storageKey(this, 'client')
+    if (!this.isLocalStorage) {
+      return super.getClientId()
+    } else if (localStorage.getItem(key)) {
+      return localStorage.getItem(key)
     } else {
-      let event = opts.event || 'add'
-      let id = opts.id || ''
-      return this.emitter.on(`${event}-${type}-${id}`, listener)
+      let clientId = super.getClientId()
+      localStorage.setItem(key, clientId)
+      return clientId
     }
   }
 
@@ -207,16 +172,51 @@ export class CrossTabClient extends Client {
     }
   }
 
-  getClientId() {
-    let key = storageKey(this, 'client')
-    if (!this.isLocalStorage) {
-      return super.getClientId()
-    } else if (localStorage.getItem(key)) {
-      return localStorage.getItem(key)
+  start() {
+    this.cleanPrevActions()
+
+    if (
+      typeof navigator === 'undefined' ||
+      !navigator.locks ||
+      !this.isLocalStorage
+    ) {
+      this.role = 'leader'
+      this.emitter.emit('role')
+      this.node.connection.connect()
+      return
+    }
+
+    let json = localStorage.getItem(storageKey(this, 'state'))
+    if (json && json !== null && json !== '"disconnected"') {
+      this.state = JSON.parse(json)
+      this.emitter.emit('state')
+    }
+
+    navigator.locks.request('logux_leader', () => {
+      this.role = 'leader'
+      this.emitter.emit('role')
+      this.node.connection.connect()
+      return new Promise(resolve => {
+        this.unlead = resolve
+      })
+    })
+  }
+
+  set state(value) {
+    this.leaderState = value
+  }
+
+  get state() {
+    return this.leaderState
+  }
+
+  type(type, listener, opts = {}) {
+    if (opts.event === 'preadd') {
+      return this.log.type(type, listener, opts)
     } else {
-      let clientId = super.getClientId()
-      localStorage.setItem(key, clientId)
-      return clientId
+      let event = opts.event || 'add'
+      let id = opts.id || ''
+      return this.emitter.on(`${event}-${type}-${id}`, listener)
     }
   }
 }

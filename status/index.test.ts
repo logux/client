@@ -1,8 +1,6 @@
-import type { TestLog } from '@logux/core'
-
-import { LoguxError, TestTime, TestPair } from '@logux/core'
-import { it, expect } from 'vitest'
+import { LoguxError, type TestLog, TestPair, TestTime } from '@logux/core'
 import { delay } from 'nanodelay'
+import { expect, it } from 'vitest'
 
 import { CrossTabClient, status } from '../index.js'
 
@@ -15,16 +13,16 @@ function emit(obj: any, event: string, ...args: any[]): void {
 }
 
 async function createTest(options?: { duration?: number }): Promise<{
-  client: CrossTabClient<{}, TestLog>
-  calls: string[]
   args: any[]
+  calls: string[]
+  client: CrossTabClient<{}, TestLog>
 }> {
   let pair = new TestPair()
   let client = new CrossTabClient<{}, TestLog>({
-    subprotocol: '1.0.0',
     server: pair.left,
-    userId: '10',
-    time: new TestTime()
+    subprotocol: '1.0.0',
+    time: new TestTime(),
+    userId: '10'
   })
 
   client.role = 'leader'
@@ -42,7 +40,7 @@ async function createTest(options?: { duration?: number }): Promise<{
     options
   )
 
-  return { client, calls, args }
+  return { args, calls, client }
 }
 
 it('notifies about states', async () => {
@@ -65,15 +63,15 @@ it('notifies only about wait for sync actions', async () => {
   let test = await createTest({ duration: 10 })
   test.client.node.log.add(
     { type: 'logux/subscribe' },
-    { sync: true, reasons: ['t'] }
+    { reasons: ['t'], sync: true }
   )
   test.client.node.log.add(
     { type: 'logux/unsubscribe' },
-    { sync: true, reasons: ['t'] }
+    { reasons: ['t'], sync: true }
   )
   expect(test.calls).toEqual(['disconnected'])
-  test.client.node.log.add({ type: 'A' }, { sync: true, reasons: ['t'] })
-  test.client.node.log.add({ type: 'B' }, { sync: true, reasons: ['t'] })
+  test.client.node.log.add({ type: 'A' }, { reasons: ['t'], sync: true })
+  test.client.node.log.add({ type: 'B' }, { reasons: ['t'], sync: true })
   setState(test.client.node, 'connecting')
   await delay(105)
   setState(test.client.node, 'disconnected')
@@ -89,7 +87,7 @@ it('notifies only about wait for sync actions', async () => {
     'connectingAfterWait',
     'sendingAfterWait'
   ])
-  test.client.node.log.add({ type: 'logux/undo', id: '3 10:1:1 0' })
+  test.client.node.log.add({ id: '3 10:1:1 0', type: 'logux/undo' })
   await delay(1)
   expect(test.calls).toEqual([
     'disconnected',
@@ -99,7 +97,7 @@ it('notifies only about wait for sync actions', async () => {
     'connectingAfterWait',
     'sendingAfterWait'
   ])
-  test.client.node.log.add({ type: 'logux/processed', id: '4 10:1:1 0' })
+  test.client.node.log.add({ id: '4 10:1:1 0', type: 'logux/processed' })
   await delay(1)
   expect(test.calls).toEqual([
     'disconnected',
@@ -176,7 +174,7 @@ it('notifies about old client', async () => {
 it('notifies about server error', async () => {
   let test = await createTest()
   await test.client.node.connection.connect()
-  test.client.node.log.add({ type: 'logux/undo', reason: 'error' })
+  test.client.node.log.add({ reason: 'error', type: 'logux/undo' })
   expect(test.calls).toEqual(['disconnected', 'error'])
   expect(test.args[1].action.type).toBe('logux/undo')
   expect(test.args[1].meta.time).toBe(1)
@@ -185,7 +183,7 @@ it('notifies about server error', async () => {
 it('notifies about problem with access', async () => {
   let test = await createTest()
   await test.client.node.connection.connect()
-  test.client.node.log.add({ type: 'logux/undo', reason: 'denied' })
+  test.client.node.log.add({ reason: 'denied', type: 'logux/undo' })
   expect(test.calls).toEqual(['disconnected', 'denied'])
   expect(test.args[1].action.type).toBe('logux/undo')
   expect(test.args[1].meta.time).toBe(1)
@@ -194,10 +192,10 @@ it('notifies about problem with access', async () => {
 it('removes listeners', () => {
   let pair = new TestPair()
   let client = new CrossTabClient({
-    subprotocol: '1.0.0',
     server: pair.left,
-    userId: '10',
-    time: new TestTime()
+    subprotocol: '1.0.0',
+    time: new TestTime(),
+    userId: '10'
   })
 
   let calls = 0
@@ -208,9 +206,9 @@ it('removes listeners', () => {
     }
   })
 
-  client.log.add({ type: 'logux/undo', reason: 'denied' })
+  client.log.add({ reason: 'denied', type: 'logux/undo' })
   unbind()
-  client.log.add({ type: 'logux/undo', reason: 'denied' })
+  client.log.add({ reason: 'denied', type: 'logux/undo' })
 
   expect(calls).toBe(1)
 })

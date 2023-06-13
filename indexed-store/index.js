@@ -28,47 +28,62 @@ export class IndexedStore {
     this.adding = {}
   }
 
-  init() {
-    if (this.initing) return this.initing
-
-    let store = this
-    let opening = indexedDB.open(this.name, VERSION)
-
-    opening.onupgradeneeded = function (e) {
-      let db = e.target.result
-
-      let log
-      if (e.oldVersion < 1) {
-        log = db.createObjectStore('log', {
-          keyPath: 'added',
-          autoIncrement: true
-        })
-        log.createIndex('id', 'id', { unique: true })
-        log.createIndex('created', 'created', { unique: true })
-        log.createIndex('reasons', 'reasons', { multiEntry: true })
-        db.createObjectStore('extra', { keyPath: 'key' })
-      }
-      if (e.oldVersion < 2) {
-        if (!log) {
-          /* c8 ignore next 2 */
-          log = opening.transaction.objectStore('log')
-        }
-        log.createIndex('indexes', 'indexes', { multiEntry: true })
-      }
+  async add(action, meta) {
+    let id = meta.id.split(' ')
+    let entry = {
+      action,
+      created: [meta.time, id[1], id[2], id[0]].join(' '),
+      id: meta.id,
+      indexes: meta.indexes || [],
+      meta,
+      reasons: meta.reasons,
+      time: meta.time
     }
 
-    this.initing = promisify(opening).then(db => {
-      store.db = db
-      db.onversionchange = function () {
-        store.db.close()
-        if (typeof document !== 'undefined' && document.reload) {
-          document.reload()
-        }
-      }
-      return store
-    })
+    if (this.adding[entry.created]) {
+      return false
+    }
+    this.adding[entry.created] = true
 
-    return this.initing
+    let store = await this.init()
+    let exist = await promisify(store.os('log').index('id').get(meta.id))
+    if (exist) {
+      return false
+    } else {
+      let added = await promisify(store.os('log', 'write').add(entry))
+      delete store.adding[entry.created]
+      meta.added = added
+      return meta
+    }
+  }
+
+  async byId(id) {
+    let store = await this.init()
+    let result = await promisify(store.os('log').index('id').get(id))
+    if (result) {
+      return [result.action, result.meta]
+    } else {
+      return [null, null]
+    }
+  }
+
+  async changeMeta(id, diff) {
+    let store = await this.init()
+    let entry = await promisify(store.os('log').index('id').get(id))
+    if (!entry) {
+      return false
+    } else {
+      for (let key in diff) entry.meta[key] = diff[key]
+      if (diff.reasons) entry.reasons = diff.reasons
+      await promisify(store.os('log', 'write').put(entry))
+      return true
+    }
+  }
+
+  async clean() {
+    let store = await this.init()
+    store.db.close()
+    await promisify(indexedDB.deleteDatabase(store.name))
   }
 
   async get({ index, order }) {
@@ -106,14 +121,68 @@ export class IndexedStore {
     })
   }
 
-  async byId(id) {
+  async getLastAdded() {
     let store = await this.init()
-    let result = await promisify(store.os('log').index('id').get(id))
-    if (result) {
-      return [result.action, result.meta]
+    let cursor = await promisify(store.os('log').openCursor(null, 'prev'))
+    return cursor ? cursor.value.added : 0
+  }
+
+  async getLastSynced() {
+    let store = await this.init()
+    let data = await promisify(store.os('extra').get('lastSynced'))
+    if (data) {
+      return { received: data.received, sent: data.sent }
     } else {
-      return [null, null]
+      return { received: 0, sent: 0 }
     }
+  }
+
+  init() {
+    if (this.initing) return this.initing
+
+    let store = this
+    let opening = indexedDB.open(this.name, VERSION)
+
+    opening.onupgradeneeded = function (e) {
+      let db = e.target.result
+
+      let log
+      if (e.oldVersion < 1) {
+        log = db.createObjectStore('log', {
+          autoIncrement: true,
+          keyPath: 'added'
+        })
+        log.createIndex('id', 'id', { unique: true })
+        log.createIndex('created', 'created', { unique: true })
+        log.createIndex('reasons', 'reasons', { multiEntry: true })
+        db.createObjectStore('extra', { keyPath: 'key' })
+      }
+      if (e.oldVersion < 2) {
+        if (!log) {
+          /* c8 ignore next 2 */
+          log = opening.transaction.objectStore('log')
+        }
+        log.createIndex('indexes', 'indexes', { multiEntry: true })
+      }
+    }
+
+    this.initing = promisify(opening).then(db => {
+      store.db = db
+      db.onversionchange = function () {
+        store.db.close()
+        if (typeof document !== 'undefined' && document.reload) {
+          document.reload()
+        }
+      }
+      return store
+    })
+
+    return this.initing
+  }
+
+  os(name, write) {
+    let mode = write ? 'readwrite' : 'readonly'
+    return this.db.transaction(name, mode).objectStore(name)
   }
 
   async remove(id) {
@@ -125,48 +194,6 @@ export class IndexedStore {
       await promisify(store.os('log', 'write').delete(entry.added))
       entry.meta.added = entry.added
       return [entry.action, entry.meta]
-    }
-  }
-
-  async add(action, meta) {
-    let id = meta.id.split(' ')
-    let entry = {
-      id: meta.id,
-      meta,
-      time: meta.time,
-      action,
-      reasons: meta.reasons,
-      indexes: meta.indexes || [],
-      created: [meta.time, id[1], id[2], id[0]].join(' ')
-    }
-
-    if (this.adding[entry.created]) {
-      return false
-    }
-    this.adding[entry.created] = true
-
-    let store = await this.init()
-    let exist = await promisify(store.os('log').index('id').get(meta.id))
-    if (exist) {
-      return false
-    } else {
-      let added = await promisify(store.os('log', 'write').add(entry))
-      delete store.adding[entry.created]
-      meta.added = added
-      return meta
-    }
-  }
-
-  async changeMeta(id, diff) {
-    let store = await this.init()
-    let entry = await promisify(store.os('log').index('id').get(id))
-    if (!entry) {
-      return false
-    } else {
-      for (let key in diff) entry.meta[key] = diff[key]
-      if (diff.reasons) entry.reasons = diff.reasons
-      await promisify(store.os('log', 'write').put(entry))
-      return true
     }
   }
 
@@ -240,26 +267,10 @@ export class IndexedStore {
     }
   }
 
-  async getLastAdded() {
-    let store = await this.init()
-    let cursor = await promisify(store.os('log').openCursor(null, 'prev'))
-    return cursor ? cursor.value.added : 0
-  }
-
-  async getLastSynced() {
-    let store = await this.init()
-    let data = await promisify(store.os('extra').get('lastSynced'))
-    if (data) {
-      return { sent: data.sent, received: data.received }
-    } else {
-      return { sent: 0, received: 0 }
-    }
-  }
-
   async setLastSynced(values) {
     let store = await this.init()
     let data = await promisify(store.os('extra').get('lastSynced'))
-    if (!data) data = { key: 'lastSynced', sent: 0, received: 0 }
+    if (!data) data = { key: 'lastSynced', received: 0, sent: 0 }
     if (typeof values.sent !== 'undefined') {
       data.sent = values.sent
     }
@@ -267,16 +278,5 @@ export class IndexedStore {
       data.received = values.received
     }
     await promisify(store.os('extra', 'write').put(data))
-  }
-
-  os(name, write) {
-    let mode = write ? 'readwrite' : 'readonly'
-    return this.db.transaction(name, mode).objectStore(name)
-  }
-
-  async clean() {
-    let store = await this.init()
-    store.db.close()
-    await promisify(indexedDB.deleteDatabase(store.name))
   }
 }

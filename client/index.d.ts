@@ -1,16 +1,16 @@
 import type { AbstractActionCreator } from '@logux/actions'
-import type { Unsubscribe } from 'nanoevents'
 import type {
-  Connection,
-  LogStore,
-  TestTime,
-  Log,
-  ClientNode,
   Action,
+  AnyAction,
+  ClientNode,
+  Connection,
+  Log,
+  LogStore,
   Meta,
-  TokenGenerator,
-  AnyAction
+  TestTime,
+  TokenGenerator
 } from '@logux/core'
+import type { Unsubscribe } from 'nanoevents'
 
 type TabID = string
 
@@ -20,9 +20,9 @@ export interface ClientActionListener<ListenAction extends Action> {
 
 export interface ClientMeta extends Meta {
   /**
-   * Action should be visible only for browser tab with the same `client.tabId`.
+   * Disable setting `timeTravel` reason.
    */
-  tab?: TabID
+  noAutoReason?: boolean
 
   /**
    * This action should be synchronized with other browser tabs and server.
@@ -30,42 +30,31 @@ export interface ClientMeta extends Meta {
   sync?: boolean
 
   /**
-   * Disable setting `timeTravel` reason.
+   * Action should be visible only for browser tab with the same `client.tabId`.
    */
-  noAutoReason?: boolean
+  tab?: TabID
 }
 
 export interface ClientOptions {
   /**
-   * Server URL.
+   * Do not show warning when using `ws://` in production.
    */
-  server: string | Connection
+  allowDangerousProtocol?: boolean
 
   /**
-   * Client subprotocol version in SemVer format.
+   * Maximum reconnection attempts. Default is `Infinity`.
    */
-  subprotocol: string
+  attempts?: number
 
   /**
-   * User ID.
+   * Maximum delay between reconnections. Default is `5000`.
    */
-  userId: string
+  maxDelay?: number
 
   /**
-   * Client credentials for authentication.
+   * Minimum delay between reconnections. Default is `1000`.
    */
-  token?: string | TokenGenerator
-
-  /**
-   * Prefix for `IndexedDB` database to run multiple Logux instances
-   * in the same browser. Default is `logux`.
-   */
-  prefix?: string
-
-  /**
-   * Timeout in milliseconds to break connection. Default is `70000`.
-   */
-  timeout?: number
+  minDelay?: number
 
   /**
    * Milliseconds since last message to test connection by sending ping.
@@ -74,9 +63,25 @@ export interface ClientOptions {
   ping?: number
 
   /**
+   * Prefix for `IndexedDB` database to run multiple Logux instances
+   * in the same browser. Default is `logux`.
+   */
+  prefix?: string
+
+  /**
+   * Server URL.
+   */
+  server: Connection | string
+
+  /**
    * Store to save log data. Default is `MemoryStore`.
    */
   store?: LogStore
+
+  /**
+   * Client subprotocol version in SemVer format.
+   */
+  subprotocol: string
 
   /**
    * Test time to test client.
@@ -84,24 +89,19 @@ export interface ClientOptions {
   time?: TestTime
 
   /**
-   * Minimum delay between reconnections. Default is `1000`.
+   * Timeout in milliseconds to break connection. Default is `70000`.
    */
-  minDelay?: number
+  timeout?: number
 
   /**
-   * Maximum delay between reconnections. Default is `5000`.
+   * Client credentials for authentication.
    */
-  maxDelay?: number
+  token?: string | TokenGenerator
 
   /**
-   * Maximum reconnection attempts. Default is `Infinity`.
+   * User ID.
    */
-  attempts?: number
-
-  /**
-   * Do not show warning when using `ws://` in production.
-   */
-  allowDangerousProtocol?: boolean
+  userId: string
 }
 
 /**
@@ -131,41 +131,14 @@ export class Client<
   ClientLog extends Log = Log<ClientMeta>
 > {
   /**
-   * @param opts Client options.
-   */
-  constructor(opts: ClientOptions)
-
-  /**
-   * Client options.
-   *
-   * ```js
-   * console.log('Connecting to ' + client.options.server)
-   * ````
-   */
-  options: ClientOptions
-
-  /**
    * Unique permanent client ID. Can be used to track this machine.
    */
   clientId: string
 
   /**
-   * Unique tab ID. Can be used to add an action to the specific tab.
-   *
-   * ```js
-   * client.log.add(action, { tab: client.tabId })
-   * ```
+   * Is leader tab connected to server.
    */
-  tabId: TabID
-
-  /**
-   * Unique Logux node ID.
-   *
-   * ```js
-   * console.log('Client ID: ', client.nodeId)
-   * ```
-   */
-  nodeId: string
+  connected: boolean
 
   /**
    * Client events log.
@@ -186,6 +159,24 @@ export class Client<
   node: ClientNode<Headers, ClientLog>
 
   /**
+   * Unique Logux node ID.
+   *
+   * ```js
+   * console.log('Client ID: ', client.nodeId)
+   * ```
+   */
+  nodeId: string
+
+  /**
+   * Client options.
+   *
+   * ```js
+   * console.log('Connecting to ' + client.options.server)
+   * ````
+   */
+  options: ClientOptions
+
+  /**
    * Leader tab synchronization state. It can differs
    * from `client.node.state` (because only the leader tab keeps connection).
    *
@@ -200,10 +191,91 @@ export class Client<
   state: ClientNode['state']
 
   /**
-   * Is leader tab connected to server.
+   * Unique tab ID. Can be used to add an action to the specific tab.
+   *
+   * ```js
+   * client.log.add(action, { tab: client.tabId })
+   * ```
    */
-  connected: boolean
+  tabId: TabID
 
+  /**
+   * @param opts Client options.
+   */
+  constructor(opts: ClientOptions)
+
+  /**
+   * Disconnect from the server, update user, and connect again
+   * with new credentials.
+   *
+   * ```js
+   * onAuth(async (userId, token) => {
+   *   showLoader()
+   *   client.changeUser(userId, token)
+   *   await client.node.waitFor('synchronized')
+   *   hideLoader()
+   * })
+   * ```
+   *
+   * You need manually chang user ID in all browser tabs.
+   *
+   * @param userId The new user ID.
+   * @param token Credentials for new user.
+   */
+  changeUser(userId: string, token?: string): void
+
+  /**
+   * Clear stored data. Removes action log from `IndexedDB` if you used it.
+   *
+   * ```js
+   * signout.addEventListener('click', () => {
+   *   client.clean()
+   * })
+   * ```
+   *
+   * @returns Promise when all data will be removed.
+   */
+  clean(): Promise<void>
+
+  /**
+   * Disconnect and stop synchronization.
+   *
+   * ```js
+   * shutdown.addEventListener('click', () => {
+   *   client.destroy()
+   * })
+   * ```
+   */
+  destroy(): void
+
+  on(event: 'user', listener: (userId: string) => void): Unsubscribe
+
+  /**
+   * Subscribe for synchronization events. It implements Nano Events API.
+   * Supported events:
+   *
+   * * `preadd`: action is going to be added (in current tab).
+   * * `add`: action has been added to log (by any tab).
+   * * `clean`: action has been removed from log (by any tab).
+   * * `user`: user ID was changed.
+   *
+   * Note, that `Log#type()` will work faster than `on` event with `if`.
+   *
+   * ```js
+   * client.on('add', (action, meta) => {
+   *   dispatch(action)
+   * })
+   * ```
+   *
+   * @param event The event name.
+   * @param listener The listener function.
+   * @returns Unbind listener from event.
+   */
+  on(event: 'state', listener: () => void): Unsubscribe
+  on(
+    event: 'add' | 'clean' | 'preadd',
+    listener: ClientActionListener<Action>
+  ): Unsubscribe
   /**
    * Connect to server and reconnect on any connection problem.
    *
@@ -253,7 +325,7 @@ export class Client<
   type<TypeAction extends Action = Action>(
     type: TypeAction['type'],
     listener: ClientActionListener<TypeAction>,
-    opts?: { id?: string; event?: 'preadd' | 'add' | 'clean' }
+    opts?: { event?: 'add' | 'clean' | 'preadd'; id?: string }
   ): Unsubscribe
 
   /**
@@ -263,56 +335,8 @@ export class Client<
   type<Creator extends AbstractActionCreator>(
     actionCreator: Creator,
     listener: ClientActionListener<ReturnType<Creator>>,
-    opts?: { id?: string; event?: 'preadd' | 'add' | 'clean' }
+    opts?: { event?: 'add' | 'clean' | 'preadd'; id?: string }
   ): Unsubscribe
-
-  /**
-   * Subscribe for synchronization events. It implements Nano Events API.
-   * Supported events:
-   *
-   * * `preadd`: action is going to be added (in current tab).
-   * * `add`: action has been added to log (by any tab).
-   * * `clean`: action has been removed from log (by any tab).
-   * * `user`: user ID was changed.
-   *
-   * Note, that `Log#type()` will work faster than `on` event with `if`.
-   *
-   * ```js
-   * client.on('add', (action, meta) => {
-   *   dispatch(action)
-   * })
-   * ```
-   *
-   * @param event The event name.
-   * @param listener The listener function.
-   * @returns Unbind listener from event.
-   */
-  on(event: 'state', listener: () => void): Unsubscribe
-  on(
-    event: 'preadd' | 'add' | 'clean',
-    listener: ClientActionListener<Action>
-  ): Unsubscribe
-  on(event: 'user', listener: (userId: string) => void): Unsubscribe
-
-  /**
-   * Disconnect from the server, update user, and connect again
-   * with new credentials.
-   *
-   * ```js
-   * onAuth(async (userId, token) => {
-   *   showLoader()
-   *   client.changeUser(userId, token)
-   *   await client.node.waitFor('synchronized')
-   *   hideLoader()
-   * })
-   * ```
-   *
-   * You need manually chang user ID in all browser tabs.
-   *
-   * @param userId The new user ID.
-   * @param token Credentials for new user.
-   */
-  changeUser(userId: string, token?: string): void
 
   /**
    * Wait for specific state of the leader tab.
@@ -325,28 +349,4 @@ export class Client<
    * @param state State name
    */
   waitFor(state: ClientNode['state']): Promise<void>
-
-  /**
-   * Disconnect and stop synchronization.
-   *
-   * ```js
-   * shutdown.addEventListener('click', () => {
-   *   client.destroy()
-   * })
-   * ```
-   */
-  destroy(): void
-
-  /**
-   * Clear stored data. Removes action log from `IndexedDB` if you used it.
-   *
-   * ```js
-   * signout.addEventListener('click', () => {
-   *   client.clean()
-   * })
-   * ```
-   *
-   * @returns Promise when all data will be removed.
-   */
-  clean(): Promise<void>
 }

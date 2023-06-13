@@ -1,19 +1,19 @@
 import { TestPair } from '@logux/core'
 import { delay } from 'nanodelay'
 
-import { TestServer } from '../test-server/index.js'
 import { Client } from '../client/index.js'
+import { TestServer } from '../test-server/index.js'
 
 export class TestClient extends Client {
   constructor(userId, opts = {}) {
     let server = opts.server || new TestServer()
     let pair = new TestPair()
     super({
-      subprotocol: opts.subprotocol || '0.0.0',
       attempts: 0,
       server: pair.left,
-      userId,
-      time: server.time
+      subprotocol: opts.subprotocol || '0.0.0',
+      time: server.time,
+      userId
     })
     this.pair = pair
     this.server = server

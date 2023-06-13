@@ -11,7 +11,7 @@ function objToBytes(object) {
 }
 
 function aes(iv) {
-  return { name: 'AES-GCM', iv }
+  return { iv, name: 'AES-GCM' }
 }
 
 function bytesToBase64(bytes) {
@@ -33,9 +33,9 @@ async function encrypt(action, key) {
   let iv = crypto.getRandomValues(new Uint8Array(12))
   let crypted = await crypto.subtle.encrypt(aes(iv), key, objToBytes(action))
   return {
-    type: '0',
     d: bytesToBase64(new Uint8Array(crypted)),
-    iv: bytesToBase64(iv)
+    iv: bytesToBase64(iv),
+    type: '0'
   }
 }
 
@@ -92,7 +92,7 @@ export function encryptActions(client, secret, opts = {}) {
 
   client.log.on('clean', (action, meta) => {
     if (meta.sync) {
-      client.log.add({ type: '0/clean', id: meta.id }, { sync: true })
+      client.log.add({ id: meta.id, type: '0/clean' }, { sync: true })
     }
   })
 }

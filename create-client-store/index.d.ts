@@ -1,4 +1,5 @@
-import type { MapStore, Atom } from 'nanostores'
+import type { Atom, MapStore } from 'nanostores'
+
 import type { Client } from '../client/index.js'
 
 interface CreateClientStore {

@@ -1,40 +1,40 @@
-import { MemoryStore, ClientNode, LocalPair, BaseNode, Log } from '@logux/core'
+import { BaseNode, ClientNode, LocalPair, Log, MemoryStore } from '@logux/core'
 
+import { badgeStyles } from '../../badge/styles/index.js'
 import {
-  CrossTabClient,
   attention,
+  badge,
   badgeEn,
   confirm,
+  CrossTabClient,
   favicon,
-  status,
-  badge,
-  log
+  log,
+  status
 } from '../../index.js'
-import { badgeStyles } from '../../badge/styles/index.js'
-import faviconOffline from './offline.png'
-import faviconNormal from './normal.png'
 import faviconError from './error.png'
+import faviconNormal from './normal.png'
+import faviconOffline from './offline.png'
 
 let pair = new LocalPair(500)
 
 let serverLog = new Log({
-  store: new MemoryStore(),
-  nodeId: 'server:uuid'
+  nodeId: 'server:uuid',
+  store: new MemoryStore()
 })
 new BaseNode('server:uuid', serverLog, pair.right)
 
 serverLog.on('add', (action, meta) => {
   if (action.type !== 'logux/processed') {
     setTimeout(() => {
-      serverLog.add({ type: 'logux/processed', id: meta.id })
+      serverLog.add({ id: meta.id, type: 'logux/processed' })
     }, 500)
   }
 })
 
 let client = new CrossTabClient({
+  server: 'wss://example.com/',
   subprotocol: location.hash.slice(1) || '1.0.0',
-  userId: '10',
-  server: 'wss://example.com/'
+  userId: '10'
 })
 
 let node = new ClientNode(client.node.localNodeId, client.log, pair.left)
@@ -45,9 +45,9 @@ client.node = node
 attention(client)
 confirm(client)
 favicon(client, {
+  error: faviconError,
   normal: faviconNormal,
-  offline: faviconOffline,
-  error: faviconError
+  offline: faviconOffline
 })
 badge(client, {
   messages: badgeEn,
@@ -127,9 +127,9 @@ document.querySelector('#clean').onclick = () => {
 document.querySelector('#error').onclick = () => {
   setTimeout(() => {
     client.log.add({
-      type: 'logux/undo',
+      action: { type: 'TICK' },
       reason: 'error',
-      action: { type: 'TICK' }
+      type: 'logux/undo'
     })
   }, 3000)
 }
@@ -137,9 +137,9 @@ document.querySelector('#error').onclick = () => {
 document.querySelector('#denied').onclick = () => {
   setTimeout(() => {
     client.log.add({
-      type: 'logux/undo',
+      action: { type: 'TICK' },
       reason: 'denied',
-      action: { type: 'TICK' }
+      type: 'logux/undo'
     })
   }, 3000)
 }

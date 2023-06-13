@@ -1,4 +1,5 @@
 import type { ReadableAtom } from 'nanostores'
+
 import type { Client } from '../client/index.js'
 
 /**
@@ -6,8 +7,8 @@ import type { Client } from '../client/index.js'
  */
 export interface AuthStore
   extends ReadableAtom<{
-    userId: string
     isAuthenticated: boolean
+    userId: string
   }> {
   /**
    * While store is loading initial state.

@@ -1,10 +1,12 @@
-import { createElement as h } from 'react'
 import { render, screen } from '@testing-library/react'
-import { it, expect } from 'vitest'
+import { createElement as h } from 'react'
+import { expect, it } from 'vitest'
 
+// eslint-disable-next-line perfectionist/sort-imports
 import '../test/set-production.js'
-import { useSync, ClientContext, ChannelErrors } from './index.js'
+
 import { syncMapTemplate, TestClient } from '../index.js'
+import { ChannelErrors, ClientContext, useSync } from './index.js'
 
 let Store = syncMapTemplate('test')
 

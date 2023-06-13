@@ -17,15 +17,6 @@ export class LoguxUndoError<
   RevertedAction extends LoguxUndoAction = LoguxUndoAction
 > extends Error {
   /**
-   * The better way to check error, than `instanceof`.
-   *
-   * ```js
-   * if (error.name === 'LoguxUndoError') {
-   * ```
-   */
-  name: 'LoguxUndoError'
-
-  /**
    * Server `logux/undo` action. It has origin actions (which was undid)
    * in `action.action`.
    *
@@ -34,6 +25,15 @@ export class LoguxUndoError<
    * ```
    */
   action: RevertedAction
+
+  /**
+   * The better way to check error, than `instanceof`.
+   *
+   * ```js
+   * if (error.name === 'LoguxUndoError') {
+   * ```
+   */
+  name: 'LoguxUndoError'
 
   constructor(action: RevertedAction)
 }
@@ -51,6 +51,6 @@ export type ChannelServerError = LoguxUndoError<
 >
 
 export type ChannelError =
-  | ChannelNotFoundError
   | ChannelDeniedError
+  | ChannelNotFoundError
   | ChannelServerError

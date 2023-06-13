@@ -1,5 +1,5 @@
-import { it, expect } from 'vitest'
 import { delay } from 'nanodelay'
+import { expect, it } from 'vitest'
 
 import { TestClient } from '../index.js'
 import { createAuth } from './index.js'

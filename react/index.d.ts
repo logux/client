@@ -1,24 +1,24 @@
-import type { Context as ReactContext, ComponentType, ReactNode } from 'react'
-import type { SyncMapValues, LoguxNotFoundError } from '@logux/actions'
+import type { LoguxNotFoundError, SyncMapValues } from '@logux/actions'
 import type { StoreValue } from 'nanostores'
+import { Component } from 'react'
+import type { ComponentType, Context as ReactContext, ReactNode } from 'react'
+
+import type { Client } from '../client/index.js'
+import type { AuthStore } from '../create-auth/index.js'
 import type {
-  ChannelNotFoundError,
+  Filter,
+  FilterOptions,
+  FilterStore
+} from '../create-filter/index.js'
+import type {
   ChannelDeniedError,
-  ChannelError
+  ChannelError,
+  ChannelNotFoundError
 } from '../logux-undo-error/index.js'
 import type {
   SyncMapTemplateLike,
   SyncMapValue
 } from '../sync-map-template/index.js'
-import type {
-  FilterOptions,
-  FilterStore,
-  Filter
-} from '../create-filter/index.js'
-import type { AuthStore } from '../create-auth/index.js'
-import type { Client } from '../client/index.js'
-
-import { Component } from 'react'
 
 /**
  * Context to send Logux Client or object space to components deep in the tree.
@@ -60,9 +60,9 @@ export const ClientContext: ReactContext<Client>
 export function useClient(): Client
 
 interface ReactErrorHandlers {
-  NotFound?: ComponentType<{ error: ChannelNotFoundError | LoguxNotFoundError }>
   AccessDenied?: ComponentType<{ error: ChannelDeniedError }>
   Error?: ComponentType<{ error: ChannelError }>
+  NotFound?: ComponentType<{ error: ChannelNotFoundError | LoguxNotFoundError }>
 }
 
 /**
