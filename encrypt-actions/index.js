@@ -1,3 +1,32 @@
+let pool = new Uint8Array(128)
+let poolOffset = pool.length
+
+function getRandomBytes(size) {
+  if (poolOffset + size > pool.length) {
+    crypto.getRandomValues(pool)
+    poolOffset = 0
+  }
+  let result = pool.slice(poolOffset, poolOffset + size)
+  poolOffset += size
+  return result
+}
+
+const SPACES = ' \t\n\r'
+
+export function getRandomSpaces() {
+  let size = getRandomBytes(1)[0] % 64
+  let bytes = getRandomBytes(Math.ceil(size / 4))
+  let result = ''
+  for (let byte of bytes) {
+    // Binary operations to use one random byte to get 4 random spaces
+    result += SPACES[byte & 3]
+    result += SPACES[(byte & 12) >> 2]
+    result += SPACES[(byte & 48) >> 4]
+    result += SPACES[(byte & 192) >> 6]
+  }
+  return result.slice(0, size)
+}
+
 function sha256(string) {
   return crypto.subtle.digest('SHA-256', new TextEncoder().encode(string))
 }
@@ -7,7 +36,7 @@ function bytesToObj(bytes) {
 }
 
 function objToBytes(object) {
-  return new TextEncoder().encode(JSON.stringify(object))
+  return new TextEncoder().encode(JSON.stringify(object) + getRandomSpaces())
 }
 
 function aes(iv) {
@@ -30,7 +59,7 @@ function base64ToBytes(string) {
 }
 
 async function encrypt(action, key) {
-  let iv = crypto.getRandomValues(new Uint8Array(12))
+  let iv = getRandomBytes(12)
   let crypted = await crypto.subtle.encrypt(aes(iv), key, objToBytes(action))
   return {
     d: bytesToBase64(new Uint8Array(crypted)),

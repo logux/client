@@ -5,6 +5,7 @@ import { TextDecoder, TextEncoder } from 'util'
 import { expect, it } from 'vitest'
 
 import { Client, encryptActions } from '../index.js'
+import { getRandomSpaces } from './index.js'
 
 window.TextEncoder = TextEncoder
 // @ts-expect-error
@@ -22,6 +23,11 @@ function privateMethods(obj: object): any {
 
 function getPair(client: Client): TestPair {
   return privateMethods(client.node.connection).pair
+}
+
+function deviation(array: Record<any, number>, runs: number): number {
+  let values = Object.values(array)
+  return (values.length * (Math.max(...values) - Math.min(...values))) / runs
 }
 
 const BASE64 = expect.stringMatching(/^[\w+/]+=?=?$/)
@@ -81,6 +87,12 @@ it('encrypts and decrypts actions', async () => {
   expect(privateMethods(client2.log).actions()).toEqual([
     { type: 'sync', value: 'secret' }
   ])
+
+  client1.log.add({ type: 'sync', value: 'secret' }, { sync: true })
+  await delay(50)
+  expect(getPair(client1).leftSent[0][2].d.length).not.toEqual(
+    getPair(client1).leftSent[1][2].d.length
+  )
 })
 
 it('ignores specific actions', async () => {
@@ -137,4 +149,27 @@ it('cleans actions on server', async () => {
       { id: 2, time: expect.any(Number) }
     ]
   ])
+})
+
+it('has normal distribution of random spaces', () => {
+  let sizes: Record<number, number> = {}
+  let symbols: Record<string, number> = {}
+
+  for (let i = 0; i < 100000; i++) {
+    let spaces = getRandomSpaces()
+
+    if (!sizes[spaces.length]) sizes[spaces.length] = 0
+    sizes[spaces.length] += 1
+
+    for (let symbol of spaces) {
+      if (!symbols[symbol]) symbols[symbol] = 0
+      symbols[symbol] += 1
+    }
+  }
+
+  expect(Object.keys(sizes).length).toBe(64)
+  expect(Object.keys(symbols).length).toBe(4)
+
+  expect(deviation(sizes, 100000)).toBeLessThan(0.2)
+  expect(deviation(symbols, 100000)).toBeLessThan(0.2)
 })

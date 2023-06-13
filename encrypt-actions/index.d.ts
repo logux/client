@@ -24,3 +24,5 @@ export function encryptActions(
     ignore: string[]
   }
 ): () => void
+
+export function getRandomSpaces(): string
