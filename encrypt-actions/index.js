@@ -14,7 +14,7 @@ function getRandomBytes(size) {
 const SPACES = ' \t\n\r'
 
 export function getRandomSpaces() {
-  let size = getRandomBytes(1)[0] % 64
+  let size = getRandomBytes(1)[0] % 32
   let bytes = getRandomBytes(Math.ceil(size / 4))
   let result = ''
   for (let byte of bytes) {

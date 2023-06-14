@@ -167,7 +167,7 @@ it('has normal distribution of random spaces', () => {
     }
   }
 
-  expect(Object.keys(sizes).length).toBe(64)
+  expect(Object.keys(sizes).length).toBe(32)
   expect(Object.keys(symbols).length).toBe(4)
 
   expect(deviation(sizes, 100000)).toBeLessThan(0.2)
