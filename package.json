@@ -11,7 +11,10 @@
   ],
   "scripts": {
     "clean": "rm -Rf coverage/ test/demo/dist/",
-    "test": "vitest run --coverage && eslint . && pnpm clean && check-dts && size-limit && pnpm build",
+    "test:lint": "eslint .",
+    "test:size": "size-limit",
+    "test:types": "check-dts",
+    "test": "vitest run --coverage && pnpm run /^test:/ && pnpm build && pnpm clean",
     "build": "vite build test/demo/ -m production --base /client/",
     "start": "vite test/demo/ --open"
   },
