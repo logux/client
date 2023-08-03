@@ -14,7 +14,6 @@ import {
 } from '../index.js'
 import type { FilterStore } from '../index.js'
 
-
 let Post = syncMapTemplate<{
   authorId: string
   projectId: string
