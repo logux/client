@@ -1,10 +1,16 @@
-import { MemoryStore, TestPair, TestTime, TestLog, Action } from '@logux/core'
-import { it, afterEach, expect, beforeEach } from 'vitest'
-import { restoreAll, spyOn } from 'nanospy'
 import { defineAction } from '@logux/actions'
+import {
+  type Action,
+  MemoryStore,
+  type TestLog,
+  TestPair,
+  TestTime
+} from '@logux/core'
 import { delay } from 'nanodelay'
+import { restoreAll, spyOn } from 'nanospy'
+import { afterEach, beforeEach, expect, it } from 'vitest'
 
-import { Client, ClientOptions } from '../index.js'
+import { Client, type ClientOptions } from '../index.js'
 import { setLocalStorage } from '../test/local-storage.js'
 
 type Events = {
@@ -42,7 +48,7 @@ function privateMethods(obj: object): any {
   return obj
 }
 
-function toNumber(str: string | null): number {
+function toNumber(str: null | string): number {
   if (str === null) {
     throw new Error('Key value is null')
   } else {
@@ -61,10 +67,10 @@ async function createDialog(
   let pair = new TestPair()
 
   let client = new Client<{}, TestLog>({
-    subprotocol: '1.0.0',
-    userId: '10',
     server: pair.left,
+    subprotocol: '1.0.0',
     time: new TestTime(),
+    userId: '10',
     ...opts
   })
 
@@ -103,10 +109,10 @@ async function createDialog(
 
 function createClient(): Client<{}, TestLog> {
   let client = new Client<{}, TestLog>({
-    subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
-    userId: '10',
-    time: new TestTime()
+    subprotocol: '1.0.0',
+    time: new TestTime(),
+    userId: '10'
   })
   client.node.connection.connect = () => Promise.resolve()
   privateMethods(client).tabPing = 50
@@ -115,8 +121,8 @@ function createClient(): Client<{}, TestLog> {
 
 it('saves options', () => {
   let client = new Client({
-    subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
+    subprotocol: '1.0.0',
     userId: '10'
   })
   expect(client.options.subprotocol).toBe('1.0.0')
@@ -125,29 +131,29 @@ it('saves options', () => {
 it('throws on missed server', () => {
   expect(() => {
     // @ts-expect-error
-    new Client({ userId: '10', subprotocol: '1.0.0' })
+    new Client({ subprotocol: '1.0.0', userId: '10' })
   }).toThrow(/server/)
 })
 
 it('throws on missed subprotocol', () => {
   expect(() => {
     // @ts-expect-error
-    new Client({ userId: '10', server: 'wss://localhost:1337' })
+    new Client({ server: 'wss://localhost:1337', userId: '10' })
   }).toThrow(/subprotocol/)
 })
 
 it('throws on missed user ID', () => {
   expect(() => {
     // @ts-expect-error
-    new Client({ subprotocol: '1.0.0', server: 'wss://localhost:1337' })
+    new Client({ server: 'wss://localhost:1337', subprotocol: '1.0.0' })
   }).toThrow(/userId/)
 })
 
 it('throws on colon in user ID', () => {
   expect(() => {
     new Client({
-      subprotocol: '1.0.0',
       server: 'wss://localhost:1337',
+      subprotocol: '1.0.0',
       userId: 'admin:1'
     })
   }).toThrow(/colon/)
@@ -156,8 +162,8 @@ it('throws on colon in user ID', () => {
 it('throws on false in user ID', () => {
   expect(() => {
     new Client({
-      subprotocol: '1.0.0',
       server: 'wss://localhost:1337',
+      subprotocol: '1.0.0',
       // @ts-expect-error
       userId: false
     })
@@ -167,8 +173,8 @@ it('throws on false in user ID', () => {
 it('throws on non-string in user ID', () => {
   expect(() => {
     new Client({
-      subprotocol: '1.0.0',
       server: 'wss://localhost:1337',
+      subprotocol: '1.0.0',
       // @ts-expect-error
       userId: 10
     })
@@ -219,8 +225,8 @@ it('ignores WS in development', async () => {
 
 it('uses user ID in node ID', () => {
   let client1 = new Client({
-    subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
+    subprotocol: '1.0.0',
     userId: '10'
   })
   expect(client1.clientId).toMatch(/^10:[\w-]{8}$/)
@@ -228,8 +234,8 @@ it('uses user ID in node ID', () => {
   expect(client1.nodeId).toEqual(client1.clientId + ':' + client1.tabId)
 
   let client2 = new Client({
-    subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
+    subprotocol: '1.0.0',
     userId: '10'
   })
   expect(client2.nodeId).toEqual(client2.clientId + ':' + client2.tabId)
@@ -237,10 +243,10 @@ it('uses user ID in node ID', () => {
 
 it('uses node ID in ID generator', () => {
   let client = new Client({
-    subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
-    userId: '10',
-    time: new TestTime()
+    subprotocol: '1.0.0',
+    time: new TestTime(),
+    userId: '10'
   })
   let id = client.log.generateId()
   expect(id).toContain('1 10:1:1 0')
@@ -249,27 +255,27 @@ it('uses node ID in ID generator', () => {
 it('uses custom store', () => {
   let store = new MemoryStore()
   let client = new Client({
-    subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
-    userId: '10',
-    store
+    store,
+    subprotocol: '1.0.0',
+    userId: '10'
   })
   expect(client.log.store).toBe(store)
 })
 
 it('sends options to connection', () => {
   let client = new Client({
-    subprotocol: '1.0.0',
-    minDelay: 100,
-    maxDelay: 500,
     attempts: 5,
+    maxDelay: 500,
+    minDelay: 100,
     server: 'wss://localhost:1337',
+    subprotocol: '1.0.0',
     userId: '10'
   })
   expect(privateMethods(client.node.connection).options).toEqual({
-    minDelay: 100,
+    attempts: 5,
     maxDelay: 500,
-    attempts: 5
+    minDelay: 100
   })
   expect(privateMethods(client.node.connection).connection.url).toBe(
     'wss://localhost:1337'
@@ -278,12 +284,12 @@ it('sends options to connection', () => {
 
 it('sends options to node', () => {
   let client = new Client({
+    ping: 1000,
+    server: 'wss://localhost:1337',
     subprotocol: '1.0.0',
     timeout: 2000,
-    server: 'wss://localhost:1337',
-    userId: '10',
     token: 'token',
-    ping: 1000
+    userId: '10'
   })
   expect(client.node.options.subprotocol).toBe('1.0.0')
   expect(client.node.options.token).toBe('token')
@@ -351,7 +357,7 @@ it('cleans own actions on destroy', async () => {
   client.start()
   await client.log.add(
     { type: 'A' },
-    { tab: client.tabId, reasons: ['tab' + client.tabId] }
+    { reasons: ['tab' + client.tabId], tab: client.tabId }
   )
   client.destroy()
   await delay(1)
@@ -364,7 +370,7 @@ it('cleans own actions on unload', async () => {
   client.start()
   await client.log.add(
     { type: 'A' },
-    { tab: client.tabId, reasons: ['tab' + client.tabId] }
+    { reasons: ['tab' + client.tabId], tab: client.tabId }
   )
   window.dispatchEvent(new Event('unload'))
   await delay(10)
@@ -375,8 +381,8 @@ it('cleans own actions on unload', async () => {
 it('cleans other tab action after timeout', async () => {
   let client = createClient()
   await Promise.all([
-    client.log.add({ type: 'A' }, { tab: '1', reasons: ['tab1'] }),
-    client.log.add({ type: 'B' }, { tab: '2', reasons: ['tab2'] })
+    client.log.add({ type: 'A' }, { reasons: ['tab1'], tab: '1' }),
+    client.log.add({ type: 'B' }, { reasons: ['tab2'], tab: '2' })
   ])
   let tabTimeout: number = privateMethods(client).tabTimeout
   localStorage.setItem('logux:tab:1', `${Date.now() - tabTimeout - 1}`)
@@ -397,7 +403,7 @@ it('adds current subprotocol only to own actions', async () => {
   let client = createClient()
   await client.log.add(
     { type: 'A' },
-    { reasons: ['test'], id: '1 0:client:other 0' }
+    { id: '1 0:client:other 0', reasons: ['test'] }
   )
   expect(client.log.entries()[0][1].subprotocol).toBeUndefined()
 })
@@ -406,7 +412,7 @@ it('allows to override subprotocol in meta', async () => {
   let client = createClient()
   await client.log.add(
     { type: 'A' },
-    { subprotocol: '0.1.0', reasons: ['test'] }
+    { reasons: ['test'], subprotocol: '0.1.0' }
   )
   expect(client.log.entries()[0][1].subprotocol).toBe('0.1.0')
 })
@@ -435,23 +441,23 @@ it('filters data before sending', async () => {
     client.log.add(
       { type: 'a' },
       {
-        id: '1 a:client:uuid 0',
-        time: 1,
-        sync: true,
-        users: ['0'],
-        nodes: ['0:client:uuid'],
-        custom: 1,
-        reasons: ['test'],
+        channels: ['user:0'],
         clients: ['0:client'],
-        channels: ['user:0']
+        custom: 1,
+        id: '1 a:client:uuid 0',
+        nodes: ['0:client:uuid'],
+        reasons: ['test'],
+        sync: true,
+        time: 1,
+        users: ['0']
       }
     ),
     client.log.add(
       { type: 'c' },
       {
         id: '1 0:client:uuid 0',
-        sync: true,
-        reasons: ['test']
+        reasons: ['test'],
+        sync: true
       }
     )
   ])
@@ -472,18 +478,18 @@ it('compresses subprotocol', async () => {
       { type: 'a' },
       {
         id: '1 10:client:id 0',
-        sync: true,
         reasons: ['test'],
-        subprotocol: '1.0.0'
+        subprotocol: '1.0.0',
+        sync: true
       }
     ),
     client.log.add(
       { type: 'a' },
       {
         id: '2 10:client:id 0',
-        sync: true,
         reasons: ['test'],
-        subprotocol: '2.0.0'
+        subprotocol: '2.0.0',
+        sync: true
       }
     )
   ])
@@ -499,8 +505,8 @@ it('compresses subprotocol', async () => {
       { type: 'a' },
       {
         id: [2, '10:client:id', 0],
-        time: 2,
-        subprotocol: '2.0.0'
+        subprotocol: '2.0.0',
+        time: 2
       }
     ]
   ])
@@ -514,8 +520,8 @@ it('keeps synced actions before synchronization', async () => {
   ])
   expect(client.log.actions()).toEqual([{ type: 'A' }, { type: 'B' }])
   await Promise.all([
-    client.log.add({ type: 'logux/processed', id: '1 10:1:1 0' }),
-    client.log.add({ type: 'logux/undo', id: '2 10:1:1 0' })
+    client.log.add({ id: '1 10:1:1 0', type: 'logux/processed' }),
+    client.log.add({ id: '2 10:1:1 0', type: 'logux/undo' })
   ])
   expect(client.log.actions()).toHaveLength(0)
 })
@@ -530,38 +536,38 @@ it('resubscribes to previous subscriptions', async () => {
   })
   setState(client, 'synchronized')
   await Promise.all([
-    client.log.add({ type: 'logux/subscribe', channel: 'a' }, { sync: true }),
-    client.log.add({ type: 'logux/subscribe', channel: 'a' }, { sync: true }),
+    client.log.add({ channel: 'a', type: 'logux/subscribe' }, { sync: true }),
+    client.log.add({ channel: 'a', type: 'logux/subscribe' }, { sync: true }),
     client.log.add(
-      { type: 'logux/subscribe', channel: 'b', b: 1 },
+      { b: 1, channel: 'b', type: 'logux/subscribe' },
       { sync: true }
     ),
     client.log.add(
-      { type: 'logux/subscribe', channel: 'b', b: 2 },
+      { b: 2, channel: 'b', type: 'logux/subscribe' },
       { sync: true }
     ),
     client.log.add(
-      { type: 'logux/subscribe', channel: 'b', b: 2 },
+      { b: 2, channel: 'b', type: 'logux/subscribe' },
       { sync: true }
     ),
     client.log.add(
-      { type: 'logux/unsubscribe', channel: 'b', b: 1 },
+      { b: 1, channel: 'b', type: 'logux/unsubscribe' },
       { sync: true }
     ),
     client.log.add(
-      { type: 'logux/unsubscribe', channel: 'b', b: 2 },
+      { b: 2, channel: 'b', type: 'logux/unsubscribe' },
       { sync: true }
     )
   ])
   added = []
 
-  client.log.add({ type: 'logux/processed', id: '1 10:1:1 0' })
-  client.log.add({ type: 'logux/processed', id: '2 10:1:1 0' })
-  client.log.add({ type: 'logux/processed', id: '3 10:1:1 0' })
-  client.log.add({ type: 'logux/processed', id: '4 10:1:1 0' })
-  client.log.add({ type: 'logux/processed', id: '5 10:1:1 0' })
-  client.log.add({ type: 'logux/processed', id: '6 10:1:1 0' })
-  client.log.add({ type: 'logux/processed', id: '7 10:1:1 0' })
+  client.log.add({ id: '1 10:1:1 0', type: 'logux/processed' })
+  client.log.add({ id: '2 10:1:1 0', type: 'logux/processed' })
+  client.log.add({ id: '3 10:1:1 0', type: 'logux/processed' })
+  client.log.add({ id: '4 10:1:1 0', type: 'logux/processed' })
+  client.log.add({ id: '5 10:1:1 0', type: 'logux/processed' })
+  client.log.add({ id: '6 10:1:1 0', type: 'logux/processed' })
+  client.log.add({ id: '7 10:1:1 0', type: 'logux/processed' })
   await delay(1)
   expect(client.log.actions()).toHaveLength(0)
 
@@ -574,15 +580,15 @@ it('resubscribes to previous subscriptions', async () => {
   setState(client, 'synchronized')
   expect(added).toEqual([
     {
-      type: 'logux/subscribe',
       channel: 'a',
-      since: { id: '9 10:1:1 0', time: 9 }
+      since: { id: '9 10:1:1 0', time: 9 },
+      type: 'logux/subscribe'
     },
     {
-      type: 'logux/subscribe',
-      channel: 'b',
       b: 2,
-      since: { id: '12 10:1:1 0', time: 12 }
+      channel: 'b',
+      since: { id: '12 10:1:1 0', time: 12 },
+      type: 'logux/subscribe'
     }
   ])
 
@@ -600,7 +606,7 @@ it('does not subscribing twice during connection', async () => {
   setState(client, 'connecting')
   setState(client, 'sending')
   await client.log.add(
-    { type: 'logux/subscribe', channel: 'a' },
+    { channel: 'a', type: 'logux/subscribe' },
     { sync: true }
   )
   added = []
@@ -618,13 +624,13 @@ it('tells last action time during resubscription', async () => {
   })
   setState(client, 'synchronized')
   await Promise.all([
-    client.log.add({ type: 'logux/subscribe', channel: 'a' }, { sync: true }),
-    client.log.add({ type: 'logux/subscribe', channel: 'b' }, { sync: true })
+    client.log.add({ channel: 'a', type: 'logux/subscribe' }, { sync: true }),
+    client.log.add({ channel: 'b', type: 'logux/subscribe' }, { sync: true })
   ])
   added = []
   await Promise.all([
-    client.log.add({ type: 'logux/processed', id: '1 10:1:1 0' }),
-    client.log.add({ type: 'logux/processed', id: '2 10:1:1 0' }),
+    client.log.add({ id: '1 10:1:1 0', type: 'logux/processed' }),
+    client.log.add({ id: '2 10:1:1 0', type: 'logux/processed' }),
     client.log.add({ type: 'A' }, { channels: ['a'], id: '8 10:2:1 0' }),
     client.log.add({ type: 'B' }, { channels: ['b'], id: '0 10:2:1 0' }),
     client.log.add({ type: 'A' }, { channels: ['a'], id: '9 10:1:1 0' })
@@ -634,14 +640,14 @@ it('tells last action time during resubscription', async () => {
   setState(client, 'synchronized')
   expect(added).toEqual([
     {
-      type: 'logux/subscribe',
       channel: 'a',
-      since: { time: 8, id: '8 10:2:1 0' }
+      since: { id: '8 10:2:1 0', time: 8 },
+      type: 'logux/subscribe'
     },
     {
-      type: 'logux/subscribe',
       channel: 'b',
-      since: { time: 4, id: '4 10:1:1 0' }
+      since: { id: '4 10:1:1 0', time: 4 },
+      type: 'logux/subscribe'
     }
   ])
 })
@@ -761,7 +767,7 @@ it('tracks server processing of action', async () => {
   expect(result).toBe('none')
   expect(client.log.entries()[0][1].sync).toBe(true)
   let id = client.log.entries()[0][1].id
-  client.log.add({ type: 'logux/processed', id })
+  client.log.add({ id, type: 'logux/processed' })
   await delay(10)
 
   expect(result).toBe('processed')
@@ -784,7 +790,7 @@ it('tracks server error of action', async () => {
     })
 
   expect(result).toBe('none')
-  client.log.add({ type: 'logux/undo', id: '2 10:1:1 0', reason: 'test' })
+  client.log.add({ id: '2 10:1:1 0', reason: 'test', type: 'logux/undo' })
   await delay(10)
 
   expect(result).toBe('error')
@@ -823,13 +829,13 @@ it('works with unsubscribe in offline', async () => {
 
   async function subscribe(channel: string, filter?: object): Promise<void> {
     await client.log.add(
-      { type: 'logux/subscribe', channel, filter },
+      { channel, filter, type: 'logux/subscribe' },
       { sync: true }
     )
   }
   async function unsubscribe(channel: string, filter?: object): Promise<void> {
     await client.log.add(
-      { type: 'logux/unsubscribe', channel, filter },
+      { channel, filter, type: 'logux/unsubscribe' },
       { sync: true }
     )
   }
@@ -839,9 +845,9 @@ it('works with unsubscribe in offline', async () => {
   await subscribe('B', { id: 2 })
 
   await delay(1)
-  await client.log.add({ type: 'logux/processed', id: '1 10:1:1 0' })
-  await client.log.add({ type: 'logux/processed', id: '2 10:1:1 0' })
-  await client.log.add({ type: 'logux/processed', id: '3 10:1:1 0' })
+  await client.log.add({ id: '1 10:1:1 0', type: 'logux/processed' })
+  await client.log.add({ id: '2 10:1:1 0', type: 'logux/processed' })
+  await client.log.add({ id: '3 10:1:1 0', type: 'logux/processed' })
   client.node.connection.disconnect()
 
   await subscribe('C')
@@ -879,12 +885,12 @@ it('works with unsubscribe in offline', async () => {
       'sync',
       3,
       {
-        type: 'logux/subscribe',
         channel: 'A',
         since: {
           id: '4 10:1:1 0',
           time: 4
-        }
+        },
+        type: 'logux/subscribe'
       },
       { id: 13, time: 13 }
     ],
@@ -892,22 +898,22 @@ it('works with unsubscribe in offline', async () => {
       'sync',
       3,
       {
-        type: 'logux/subscribe',
         channel: 'B',
         filter: { id: 1 },
         since: {
           id: '6 10:1:1 0',
           time: 6
-        }
+        },
+        type: 'logux/subscribe'
       },
       { id: 14, time: 14 }
     ],
     [
       'sync',
       6,
-      { type: 'logux/subscribe', channel: 'D', filter: undefined },
+      { channel: 'D', filter: undefined, type: 'logux/subscribe' },
       { id: 8, time: 8 },
-      { type: 'logux/subscribe', channel: 'B', filter: { id: 3 } },
+      { channel: 'B', filter: { id: 3 }, type: 'logux/subscribe' },
       { id: 9, time: 9 }
     ]
   ])

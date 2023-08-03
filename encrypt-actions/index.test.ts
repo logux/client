@@ -1,10 +1,11 @@
-import { TextEncoder, TextDecoder } from 'util'
-import { TestTime, TestPair } from '@logux/core'
-import { it, expect } from 'vitest'
+import { TestPair, TestTime } from '@logux/core'
 import { Crypto } from '@peculiar/webcrypto'
 import { delay } from 'nanodelay'
+import { TextDecoder, TextEncoder } from 'util'
+import { expect, it } from 'vitest'
 
 import { Client, encryptActions } from '../index.js'
+import { getRandomSpaces } from './index.js'
 
 window.TextEncoder = TextEncoder
 // @ts-expect-error
@@ -24,15 +25,20 @@ function getPair(client: Client): TestPair {
   return privateMethods(client.node.connection).pair
 }
 
+function deviation(array: Record<any, number>, runs: number): number {
+  let values = Object.values(array)
+  return (values.length * (Math.max(...values) - Math.min(...values))) / runs
+}
+
 const BASE64 = expect.stringMatching(/^[\w+/]+=?=?$/)
 
 function createClient(): Client {
   let pair = new TestPair()
   let client = new Client({
-    subprotocol: '1.0.0',
-    userId: '10',
     server: pair.left,
-    time: new TestTime()
+    subprotocol: '1.0.0',
+    time: new TestTime(),
+    userId: '10'
   })
   client.on('preadd', (action, meta) => {
     meta.reasons.push('test')
@@ -71,7 +77,7 @@ it('encrypts and decrypts actions', async () => {
     [
       'sync',
       1,
-      { type: '0', d: BASE64, iv: BASE64 },
+      { d: BASE64, iv: BASE64, type: '0' },
       { id: 1, time: expect.any(Number) }
     ]
   ])
@@ -81,6 +87,12 @@ it('encrypts and decrypts actions', async () => {
   expect(privateMethods(client2.log).actions()).toEqual([
     { type: 'sync', value: 'secret' }
   ])
+
+  client1.log.add({ type: 'sync', value: 'secret' }, { sync: true })
+  await delay(50)
+  expect(getPair(client1).leftSent[0][2].d.length).not.toEqual(
+    getPair(client1).leftSent[1][2].d.length
+  )
 })
 
 it('ignores specific actions', async () => {
@@ -101,7 +113,7 @@ it('ignores specific actions', async () => {
     [
       'sync',
       1,
-      { type: '0', d: BASE64, iv: BASE64 },
+      { d: BASE64, iv: BASE64, type: '0' },
       { id: 1, time: expect.any(Number) }
     ],
     ['sync', 2, { type: 'server' }, { id: 2, time: expect.any(Number) }]
@@ -133,8 +145,31 @@ it('cleans actions on server', async () => {
     [
       'sync',
       2,
-      { type: '0/clean', id: meta.id },
+      { id: meta.id, type: '0/clean' },
       { id: 2, time: expect.any(Number) }
     ]
   ])
+})
+
+it('has normal distribution of random spaces', () => {
+  let sizes: Record<number, number> = {}
+  let symbols: Record<string, number> = {}
+
+  for (let i = 0; i < 100000; i++) {
+    let spaces = getRandomSpaces()
+
+    if (!sizes[spaces.length]) sizes[spaces.length] = 0
+    sizes[spaces.length] += 1
+
+    for (let symbol of spaces) {
+      if (!symbols[symbol]) symbols[symbol] = 0
+      symbols[symbol] += 1
+    }
+  }
+
+  expect(Object.keys(sizes).length).toBe(32)
+  expect(Object.keys(symbols).length).toBe(4)
+
+  expect(deviation(sizes, 100000)).toBeLessThan(0.2)
+  expect(deviation(symbols, 100000)).toBeLessThan(0.2)
 })

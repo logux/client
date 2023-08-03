@@ -29,15 +29,15 @@ function setPosition(element, position) {
 
 const RESET = {
   boxSizing: 'content-box',
-  visibility: 'visible',
-  textIndent: '0',
-  textTransform: 'none',
-  wordSpacing: 'normal',
-  letterSpacing: 'normal',
   fontStyle: 'normal',
   fontVariant: 'normal',
   fontWeight: 'normal',
-  lineHeight: 'auto'
+  letterSpacing: 'normal',
+  lineHeight: 'auto',
+  textIndent: '0',
+  textTransform: 'none',
+  visibility: 'visible',
+  wordSpacing: 'normal'
 }
 
 export function badge(client, opts) {
@@ -101,23 +101,23 @@ export function badge(client, opts) {
 }
 
 export let badgeRu = {
-  synchronized: 'Ваши данные сохранены',
+  denied: 'Нет прав<br>Ваши действия отменены',
   disconnected: 'Нет интернета',
-  wait: 'Нет интернета<br>Ваши данные не сохранены',
+  error: 'Ошибка на сервере<br>Ваши действия отменены',
+  protocolError: 'Сохранение не работает<br>Обновите страницу',
   sending: 'Сохраняю ваши данные',
   syncError: 'Ошибка на сервере<br>Ваши данные не сохранены',
-  error: 'Ошибка на сервере<br>Ваши действия отменены',
-  denied: 'Нет прав<br>Ваши действия отменены',
-  protocolError: 'Сохранение не работает<br>Обновите страницу'
+  synchronized: 'Ваши данные сохранены',
+  wait: 'Нет интернета<br>Ваши данные не сохранены'
 }
 
 export let badgeEn = {
-  synchronized: 'Your data has been saved',
+  denied: 'You have no access<br>You changes was reverted',
   disconnected: 'No Internet connection',
-  wait: 'No Internet connection<br>Your data has not been saved',
+  error: 'Server error<br>You changes was reverted',
+  protocolError: 'Saving is not working<br>Refresh the page',
   sending: 'Data saving',
   syncError: 'Server error<br>Your data has not been saved',
-  error: 'Server error<br>You changes was reverted',
-  denied: 'You have no access<br>You changes was reverted',
-  protocolError: 'Saving is not working<br>Refresh the page'
+  synchronized: 'Your data has been saved',
+  wait: 'No Internet connection<br>Your data has not been saved'
 }

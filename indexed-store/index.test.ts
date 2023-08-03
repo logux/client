@@ -1,9 +1,15 @@
-import { eachStoreCheck, Action, Meta, LogPage } from '@logux/core'
-import { it, expect, afterEach } from 'vitest'
+import 'fake-indexeddb/auto'
+
+import {
+  type Action,
+  eachStoreCheck,
+  type LogPage,
+  type Meta
+} from '@logux/core'
 import { spyOn } from 'nanospy'
+import { afterEach, expect, it } from 'vitest'
 
 import { IndexedStore } from '../index.js'
-import 'fake-indexeddb/auto'
 
 type Entry = [Action, Meta]
 
@@ -113,16 +119,16 @@ it('works with broken lastSynced', async () => {
     privateMethods(store).os('extra', 'write').delete('lastSynced')
   )
   let synced = await store.getLastSynced()
-  expect(synced).toEqual({ sent: 0, received: 0 })
-  await store.setLastSynced({ sent: 1, received: 1 })
+  expect(synced).toEqual({ received: 0, sent: 0 })
+  await store.setLastSynced({ received: 1, sent: 1 })
 })
 
 it('updates reasons cache', async () => {
   store = new IndexedStore()
-  await store.add({ type: 'A' }, { added: 1, id: '1', time: 1, reasons: ['a'] })
+  await store.add({ type: 'A' }, { added: 1, id: '1', reasons: ['a'], time: 1 })
   await store.changeMeta('1', { reasons: ['a', 'b', 'c'] })
   await store.removeReason('b', {}, () => {})
   await check(store, [
-    [{ type: 'A' }, { added: 1, id: '1', time: 1, reasons: ['a', 'c'] }]
+    [{ type: 'A' }, { added: 1, id: '1', reasons: ['a', 'c'], time: 1 }]
   ])
 })

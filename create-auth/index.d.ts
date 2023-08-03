@@ -1,14 +1,14 @@
-import { ReadableAtom } from 'nanostores'
+import type { ReadableAtom } from 'nanostores'
 
-import { Client } from '../client/index.js'
+import type { Client } from '../client/index.js'
 
 /**
  * Auth store. Use {@link createAuth} to create it.
  */
 export interface AuthStore
   extends ReadableAtom<{
-    userId: string
     isAuthenticated: boolean
+    userId: string
   }> {
   /**
    * While store is loading initial state.

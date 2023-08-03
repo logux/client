@@ -1,25 +1,25 @@
-import { map, STORE_UNMOUNT_DELAY } from 'nanostores'
-import { it, expect } from 'vitest'
 import { delay } from 'nanodelay'
+import { map, STORE_UNMOUNT_DELAY } from 'nanostores'
+import { expect, it } from 'vitest'
 
-import { Client, createClientStore } from '../index.js'
+import { type Client, createClientStore } from '../index.js'
 
 it('creates client from user ID', async () => {
-  let user = map<{ userId?: string; enabled: boolean }>({
-    userId: '1',
-    enabled: true
+  let user = map<{ enabled: boolean; userId?: string }>({
+    enabled: true,
+    userId: '1'
   })
 
   let events: string[] = []
-  let clientStore = createClientStore(user, ({ userId, enabled }) => {
+  let clientStore = createClientStore(user, ({ enabled, userId }) => {
     if (!enabled) return undefined
     return {
+      destroy() {
+        events.push(`${userId} destroy`)
+      },
       nodeId: userId,
       start() {
         events.push(`${userId} start`)
-      },
-      destroy() {
-        events.push(`${userId} destroy`)
       }
     } as Client
   })

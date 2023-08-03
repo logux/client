@@ -1,25 +1,29 @@
-import {
-  Context as PreactContext,
+import type { LoguxNotFoundError, SyncMapValues } from '@logux/actions'
+import type { StoreValue } from 'nanostores'
+import { Component } from 'preact'
+import type {
   ComponentChild,
   ComponentType,
-  Component
+  Context as PreactContext
 } from 'preact'
-import { SyncMapValues, LoguxNotFoundError } from '@logux/actions'
-import { StoreValue } from 'nanostores'
 
-import {
-  ChannelNotFoundError,
+import type { Client } from '../client/index.js'
+import type { AuthStore } from '../create-auth/index.js'
+import type {
+  Filter,
+  FilterOptions,
+  FilterStore
+} from '../create-filter/index.js'
+import type {
   ChannelDeniedError,
-  ChannelError
+  ChannelError,
+  ChannelNotFoundError
 } from '../logux-undo-error/index.js'
-import {
-  SyncMapTemplateLike,
+import type {
   SyncMapTemplate,
+  SyncMapTemplateLike,
   SyncMapValue
 } from '../sync-map-template/index.js'
-import { FilterOptions, FilterStore, Filter } from '../create-filter/index.js'
-import { Client } from '../client/index.js'
-import { AuthStore } from '../create-auth/index.js'
 
 /**
  * Context to send Logux Client or object space to components deep in the tree.
@@ -61,9 +65,9 @@ export const ClientContext: PreactContext<Client>
 export function useClient(): Client
 
 interface PreactErrorHandlers {
-  NotFound?: ComponentType<{ error: ChannelNotFoundError | LoguxNotFoundError }>
   AccessDenied?: ComponentType<{ error: ChannelDeniedError }>
   Error?: ComponentType<{ error: ChannelError }>
+  NotFound?: ComponentType<{ error: ChannelNotFoundError | LoguxNotFoundError }>
 }
 
 /**

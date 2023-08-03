@@ -1,29 +1,29 @@
-import { TestLog, TestPair, TestTime, Action } from '@logux/core'
-import { it, expect, afterEach, beforeEach } from 'vitest'
-import { spyOn, restoreAll } from 'nanospy'
+import { type Action, type TestLog, TestPair, TestTime } from '@logux/core'
 import { delay } from 'nanodelay'
+import { restoreAll, spyOn } from 'nanospy'
+import { afterEach, beforeEach, expect, it } from 'vitest'
 
+import { type ClientOptions, CrossTabClient } from '../index.js'
 import {
   breakLocalStorage,
-  setLocalStorage,
-  emitStorage
+  emitStorage,
+  setLocalStorage
 } from '../test/local-storage.js'
-import { CrossTabClient, ClientOptions } from '../index.js'
 
 class WebSocket {
   close(): void {}
 }
 
-let lockRequest: undefined | (() => Promise<void>)
+let lockRequest: (() => Promise<void>) | undefined
 
 beforeEach(() => {
   Object.defineProperty(navigator, 'locks', {
+    configurable: true,
     value: {
       request(name: string, fn: () => Promise<void>) {
         lockRequest = fn
       }
-    },
-    configurable: true
+    }
   })
   global.WebSocket = WebSocket as any
   setLocalStorage()
@@ -62,10 +62,10 @@ function createClient(
   overrides: Partial<ClientOptions> = {}
 ): CrossTabClient<{}, TestLog> {
   let result = new CrossTabClient<{}, TestLog>({
-    subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
-    userId: '10',
+    subprotocol: '1.0.0',
     time: new TestTime(),
+    userId: '10',
     ...overrides
   })
   return result
@@ -73,8 +73,8 @@ function createClient(
 
 it('saves options', () => {
   client = new CrossTabClient({
-    subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
+    subprotocol: '1.0.0',
     userId: '10'
   })
   expect(client.options.subprotocol).toBe('1.0.0')
@@ -82,13 +82,13 @@ it('saves options', () => {
 
 it('saves client ID', () => {
   client = new CrossTabClient({
-    subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
+    subprotocol: '1.0.0',
     userId: '10'
   })
   let another = new CrossTabClient({
-    subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
+    subprotocol: '1.0.0',
     userId: '10'
   })
   expect(client.clientId).toEqual(another.clientId)
@@ -133,8 +133,8 @@ it('supports nanoevents API', async () => {
   await client.log.add({ type: 'C' })
   unbindType()
   await client.log.add({ type: 'C' })
-  await client.log.add({ type: 'D', id: 'ID' })
-  await client.log.add({ type: 'D', id: 'Other' })
+  await client.log.add({ id: 'ID', type: 'D' })
+  await client.log.add({ id: 'Other', type: 'D' })
   expect(preadd).toEqual(['A', 'B', 'C', 'C', 'C', 'D', 'D'])
   expect(twice).toEqual(['A', 'B'])
   expect(c).toEqual(['C', 'C'])
@@ -160,8 +160,8 @@ it('cleans everything', async () => {
 it('does not use broken localStorage', async () => {
   breakLocalStorage(new Error('The quota has been exceeded'))
   client = new CrossTabClient({
-    subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
+    subprotocol: '1.0.0',
     userId: '10'
   })
   await client.log.add({ type: 'A' }, { reasons: ['tab' + client.tabId] })
@@ -172,24 +172,24 @@ it('synchronizes actions between tabs', async () => {
     emitStorage(name, value)
   }
   client = new CrossTabClient({
-    subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
+    subprotocol: '1.0.0',
     userId: '10'
   })
   let client2 = new CrossTabClient({
-    subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
+    subprotocol: '1.0.0',
     userId: '10'
   })
   let client3 = new CrossTabClient({
-    subprotocol: '1.0.0',
-    server: 'wss://localhost:1337',
     prefix: 'other',
+    server: 'wss://localhost:1337',
+    subprotocol: '1.0.0',
     userId: '10'
   })
   let client4 = new CrossTabClient({
-    subprotocol: '1.0.0',
     server: 'wss://localhost:1337',
+    subprotocol: '1.0.0',
     userId: '20'
   })
 
@@ -229,11 +229,11 @@ it('synchronizes actions from follower tabs', async () => {
   client.node.timeFix = 0
   let action = JSON.stringify({ type: 'A' })
   let meta = JSON.stringify({
-    reasons: [],
     added: 1,
-    time: 1,
+    id: '1 10:other 0',
+    reasons: [],
     sync: true,
-    id: '1 10:other 0'
+    time: 1
   })
   emitStorage('logux:10:add', `["other",${action},${meta}]`)
   await delay(50)
@@ -265,8 +265,8 @@ it('becomes leader without localStorage', () => {
 
 it('becomes leader without Web Locks', () => {
   Object.defineProperty(navigator, 'locks', {
-    value: null,
-    configurable: true
+    configurable: true,
+    value: null
   })
   client = createClient()
 

@@ -1,4 +1,4 @@
-import { Client } from '../client/index.js'
+import type { Client } from '../client/index.js'
 
 /**
  * Show confirm popup, when user close tab with non-synchronized actions.

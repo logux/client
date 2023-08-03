@@ -1,36 +1,36 @@
-import {
-  onErrorCaptured,
-  defineComponent,
-  isReadonly,
-  Component,
-  nextTick,
-  ref,
-  h
-} from 'vue'
-import { cleanStores, atom, map, MapStore, onMount } from 'nanostores'
-import { render, screen, cleanup } from '@testing-library/vue'
-import { it, expect, afterEach } from 'vitest'
 import { LoguxNotFoundError } from '@logux/actions'
-import { restoreAll, spyOn } from 'nanospy'
+import { cleanup, render, screen } from '@testing-library/vue'
 import { delay } from 'nanodelay'
+import { restoreAll, spyOn } from 'nanospy'
+import { atom, cleanStores, map, type MapStore, onMount } from 'nanostores'
+import { afterEach, expect, it } from 'vitest'
+import {
+  type Component,
+  defineComponent,
+  h,
+  isReadonly,
+  nextTick,
+  onErrorCaptured,
+  ref
+} from 'vue'
 
 import {
-  SyncMapTemplateLike,
   changeSyncMapById,
-  SyncMapTemplate,
-  syncMapTemplate,
-  LoguxUndoError,
   createSyncMap,
+  LoguxUndoError,
+  syncMapTemplate,
+  type SyncMapTemplate,
+  type SyncMapTemplateLike,
   TestClient
 } from '../index.js'
 import {
-  ChannelErrorsSlotProps,
   ChannelErrors,
+  type ChannelErrorsSlotProps,
   loguxPlugin,
+  useAuth,
   useClient,
   useFilter,
-  useSync,
-  useAuth
+  useSync
 } from './index.js'
 
 function getCatcher(cb: () => void): [string[], Component] {
@@ -55,7 +55,7 @@ function renderWithClient(component: Component, client?: TestClient): void {
   })
 }
 
-async function getText(component: Component): Promise<string | null> {
+async function getText(component: Component): Promise<null | string> {
   let client = new TestClient('10')
   render(
     defineComponent(
@@ -88,7 +88,7 @@ let defineSyncTest = (Template: SyncMapTemplate): Component => {
 }
 
 let ErrorCatcher = defineComponent((props, { slots }) => {
-  let message = ref<null | {}>(null)
+  let message = ref<{} | null>(null)
   onErrorCaptured(e => {
     // @ts-ignore
     message.value = e.message
@@ -98,8 +98,8 @@ let ErrorCatcher = defineComponent((props, { slots }) => {
 })
 
 async function catchLoadingError(
-  error: string | Error
-): Promise<string | null> {
+  error: Error | string
+): Promise<null | string> {
   let IdTest = defineIdTest(BrokenStore)
 
   renderWithClient(
@@ -116,8 +116,8 @@ async function catchLoadingError(
                     default: () =>
                       h(ChannelErrors, null, {
                         default: ({
-                          error: e,
-                          code
+                          code,
+                          error: e
                         }: ChannelErrorsSlotProps) => {
                           if (!e.value && !code.value) {
                             return h(IdTest)
@@ -139,8 +139,8 @@ async function catchLoadingError(
   expect(screen.getByTestId('test').textContent).toEqual('loading')
 
   throwFromBroken(error)
-  await delay(10)
   await nextTick()
+  await delay(10)
   return screen.getByTestId('test').textContent
 }
 
@@ -161,13 +161,13 @@ function throwFromBroken(e: Error | string): void {
     if (typeof e === 'string') {
       brokenReject(
         new LoguxUndoError({
-          type: 'logux/undo',
-          reason: e,
-          id: '',
           action: {
-            type: 'logux/subscribe',
-            channel: 'A'
-          }
+            channel: 'A',
+            type: 'logux/subscribe'
+          },
+          id: '',
+          reason: e,
+          type: 'logux/undo'
         })
       )
     } else {
@@ -245,15 +245,16 @@ it('throws store init errors', () => {
     })
     return store
   }
-  let [errors, Catcher] = getCatcher(() => {
-    useSync(Template, 'id')
-  })
-  renderWithClient(
-    h(ChannelErrors, null, {
-      default: () => h(Catcher)
-    })
-  )
-  expect(errors).toEqual(['Test'])
+  expect(() => {
+    renderWithClient(
+      h(ChannelErrors, null, () =>
+        h(() => {
+          useSync(Template, 'id')
+          return () => null
+        })
+      )
+    )
+  }).toThrowError('Test')
 })
 
 it('throws and catches not found error', async () => {
@@ -331,6 +332,7 @@ it('recreates state on id changes', async () => {
     ),
     client
   )
+  expect(RemotePostStore.cache['1'].lc).toBe(1)
   expect(screen.getByTestId('test').textContent).toBe('loading')
 
   await client.connect()
@@ -340,6 +342,7 @@ it('recreates state on id changes', async () => {
 
   screen.getByTestId('test').click()
   await nextTick()
+  expect(RemotePostStore.cache['1'].lc).toBe(0)
   expect(screen.getByTestId('test').textContent).toBe('loading')
   await delay(50)
   expect(screen.getByTestId('test').textContent).toBe('2')
@@ -498,8 +501,15 @@ it('recreates filter on args changes', async () => {
   expect(screen.getByTestId('test').textContent).toBe(' 0:Y 1:A')
   expect(renders).toEqual(['list', 'list', '1', '3'])
 
+  renders.splice(0, renders.length)
   screen.getByTestId('change').click()
-  await nextTick()
+  await delay(10)
+  expect(renders).toEqual([
+    'list', // State is changed
+    'list' // Store isLoading changed to false
+  ])
+
+  renders.splice(0, renders.length)
   await Promise.all([
     createSyncMap(client, LocalPostStore, {
       id: '1',
@@ -517,21 +527,9 @@ it('recreates filter on args changes', async () => {
       title: 'A'
     })
   ])
+  await delay(10)
   expect(screen.getByTestId('test').textContent).toBe(' 0:Y')
-  expect(renders).toEqual([
-    'list',
-    'list',
-    '1',
-    '3',
-    'list',
-    'list',
-    'list',
-    '2'
-  ])
-
-  screen.getByTestId('change').click()
-  await nextTick()
-  expect(screen.getByTestId('test').textContent).toBe(' 0:Y 1:A')
+  expect(renders).toEqual(['list', '2'])
 })
 
 it('renders authentication state', async () => {

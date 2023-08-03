@@ -1,5 +1,5 @@
-import { it, expect, afterEach, beforeAll } from 'vitest'
 import { LoguxError, TestPair } from '@logux/core'
+import { afterEach, beforeAll, expect, it } from 'vitest'
 
 import { CrossTabClient, favicon } from '../index.js'
 
@@ -31,8 +31,8 @@ function emit(obj: any, event: string, ...args: any[]): void {
 async function createClient(): Promise<CrossTabClient> {
   let pair = new TestPair()
   let client = new CrossTabClient({
-    subprotocol: '1.0.0',
     server: pair.left,
+    subprotocol: '1.0.0',
     userId: '10'
   })
 
@@ -57,8 +57,8 @@ afterEach(() => {
 it('set favicon with current state', async () => {
   let client = await createClient()
   favicon(client, {
-    offline: '/offline.ico',
-    normal: '/default.ico'
+    normal: '/default.ico',
+    offline: '/offline.ico'
   })
   expect(getFavHref()).toBe('/offline.ico')
 })
@@ -67,8 +67,8 @@ it('changes favicon on state event', async () => {
   getFavNode().href = '/custom.ico'
   let client = await createClient()
   favicon(client, {
-    offline: '/offline.ico',
-    normal: '/default.ico'
+    normal: '/default.ico',
+    offline: '/offline.ico'
   })
 
   setState(client.node, 'sending')
@@ -110,7 +110,7 @@ it('does not double favicon changes', async () => {
 it('uses error icon on undo', async () => {
   let client = await createClient()
   favicon(client, { error: '/error.ico' })
-  await client.log.add({ type: 'logux/undo', reason: 'error' })
+  await client.log.add({ reason: 'error', type: 'logux/undo' })
   expect(getFavHref()).toBe('/error.ico')
 })
 
@@ -124,8 +124,8 @@ it('allows to miss timeout error', async () => {
 it('does not override error by offline', async () => {
   let client = await createClient()
   favicon(client, {
-    offline: '/offline.ico',
-    error: '/error.ico'
+    error: '/error.ico',
+    offline: '/offline.ico'
   })
   emit(client.node, 'error', new Error('test'))
   expect(getFavHref()).toBe('/error.ico')
@@ -137,8 +137,8 @@ it('does not override error by offline', async () => {
 it('supports cross-tab synchronization', async () => {
   let client = await createClient()
   favicon(client, {
-    offline: '/offline.ico',
-    normal: '/default.ico'
+    normal: '/default.ico',
+    offline: '/offline.ico'
   })
 
   client.state = 'sending'

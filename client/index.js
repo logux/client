@@ -1,13 +1,13 @@
-import { createNanoEvents } from 'nanoevents'
 import {
-  isFirstOlder,
-  WsConnection,
-  MemoryStore,
   ClientNode,
-  Reconnect,
+  isFirstOlder,
+  Log,
+  MemoryStore,
   parseId,
-  Log
+  Reconnect,
+  WsConnection
 } from '@logux/core'
+import { createNanoEvents } from 'nanoevents'
 import { nanoid } from 'nanoid'
 
 import { LoguxUndoError } from '../logux-undo-error/index.js'
@@ -99,9 +99,9 @@ export class Client {
 
     let log
     if (this.options.time) {
-      log = this.options.time.nextLog({ store, nodeId: this.nodeId })
+      log = this.options.time.nextLog({ nodeId: this.nodeId, store })
     } else {
-      log = new Log({ store, nodeId: this.nodeId })
+      log = new Log({ nodeId: this.nodeId, store })
     }
     this.log = log
 
@@ -215,9 +215,9 @@ export class Client {
     if (typeof this.options.server === 'string') {
       let ws = new WsConnection(this.options.server)
       connection = new Reconnect(ws, {
-        minDelay: this.options.minDelay,
+        attempts: this.options.attempts,
         maxDelay: this.options.maxDelay,
-        attempts: this.options.attempts
+        minDelay: this.options.minDelay
       })
     } else {
       connection = this.options.server
@@ -242,13 +242,13 @@ export class Client {
     }
 
     this.node = new ClientNode(this.nodeId, this.log, connection, {
-      subprotocol: this.options.subprotocol,
-      outFilter,
-      timeout: this.options.timeout,
       fixTime: !this.options.time,
+      outFilter,
       outMap,
-      token: this.options.token,
-      ping: this.options.ping
+      ping: this.options.ping,
+      subprotocol: this.options.subprotocol,
+      timeout: this.options.timeout,
+      token: this.options.token
     })
 
     if (/^ws:\/\//.test(this.options.server) && !opts.allowDangerousProtocol) {
@@ -282,7 +282,7 @@ export class Client {
             let action = JSON.parse(i)
             let since = this.last[action.channel]
             if (since) action.since = since
-            this.log.add(action, { sync: true, resubscribe: true })
+            this.log.add(action, { resubscribe: true, sync: true })
           }
         }
       } else if (this.node.state === 'disconnected') {
@@ -296,44 +296,6 @@ export class Client {
     }
 
     this.processing = {}
-  }
-
-  get state() {
-    return this.node.state
-  }
-
-  get connected() {
-    return this.state !== 'disconnected' && this.state !== 'connecting'
-  }
-
-  start() {
-    this.cleanPrevActions()
-    this.node.connection.connect()
-  }
-
-  sync(action, meta = {}) {
-    meta.sync = true
-    if (typeof meta.id === 'undefined') {
-      meta.id = this.log.generateId()
-    }
-
-    this.log.add(action, meta)
-    return track(this, meta.id)
-  }
-
-  type(type, listener, opts) {
-    if (typeof type === 'function') type = type.type
-    return this.log.type(type, listener, opts)
-  }
-
-  on(event, listener) {
-    if (event === 'state') {
-      return this.node.emitter.on(event, listener)
-    } else if (event === 'user') {
-      return this.emitter.on(event, listener)
-    } else {
-      return this.log.emitter.on(event, listener)
-    }
   }
 
   changeUser(userId, token) {
@@ -362,29 +324,6 @@ export class Client {
     if (wasConnected) this.node.connection.connect()
   }
 
-  waitFor(state) {
-    if (this.state === state) {
-      return Promise.resolve()
-    }
-    return new Promise(resolve => {
-      let unbind = this.on('state', () => {
-        if (this.state === state) {
-          unbind()
-          resolve()
-        }
-      })
-    })
-  }
-
-  destroy() {
-    this.onUnload()
-    this.node.destroy()
-    clearInterval(this.pinging)
-    if (typeof window !== 'undefined' && window.removeEventListener) {
-      window.removeEventListener('unload', this.onUnload)
-    }
-  }
-
   clean() {
     this.destroy()
     return this.log.store.clean ? this.log.store.clean() : Promise.resolve()
@@ -404,11 +343,72 @@ export class Client {
     }
   }
 
-  onUnload() {
-    if (this.pinging) cleanTabActions(this, this.tabId)
+  get connected() {
+    return this.state !== 'disconnected' && this.state !== 'connecting'
+  }
+
+  destroy() {
+    this.onUnload()
+    this.node.destroy()
+    clearInterval(this.pinging)
+    if (typeof window !== 'undefined' && window.removeEventListener) {
+      window.removeEventListener('unload', this.onUnload)
+    }
   }
 
   getClientId() {
     return nanoid(8)
+  }
+
+  on(event, listener) {
+    if (event === 'state') {
+      return this.node.emitter.on(event, listener)
+    } else if (event === 'user') {
+      return this.emitter.on(event, listener)
+    } else {
+      return this.log.emitter.on(event, listener)
+    }
+  }
+
+  onUnload() {
+    if (this.pinging) cleanTabActions(this, this.tabId)
+  }
+
+  start() {
+    this.cleanPrevActions()
+    this.node.connection.connect()
+  }
+
+  get state() {
+    return this.node.state
+  }
+
+  sync(action, meta = {}) {
+    meta.sync = true
+    if (typeof meta.id === 'undefined') {
+      meta.id = this.log.generateId()
+    }
+
+    this.log.add(action, meta)
+    return track(this, meta.id)
+  }
+
+  type(type, listener, opts) {
+    if (typeof type === 'function') type = type.type
+    return this.log.type(type, listener, opts)
+  }
+
+  waitFor(state) {
+    if (this.state === state) {
+      return Promise.resolve()
+    }
+    return new Promise(resolve => {
+      let unbind = this.on('state', () => {
+        if (this.state === state) {
+          unbind()
+          resolve()
+        }
+      })
+    })
   }
 }

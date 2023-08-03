@@ -1,26 +1,6 @@
-import { Client } from '../client/index.js'
+import type { Client } from '../client/index.js'
 
 interface LogMessages {
-  /**
-   * Disable action messages with specific types.
-   */
-  ignoreActions?: string[]
-
-  /**
-   * Disable connection state messages.
-   */
-  state?: boolean
-
-  /**
-   * Disable tab role messages.
-   */
-  role?: boolean
-
-  /**
-   * Disable error messages.
-   */
-  error?: boolean
-
   /**
    * Disable action added messages.
    */
@@ -30,6 +10,26 @@ interface LogMessages {
    * Disable action cleaned messages.
    */
   clean?: boolean
+
+  /**
+   * Disable error messages.
+   */
+  error?: boolean
+
+  /**
+   * Disable action messages with specific types.
+   */
+  ignoreActions?: string[]
+
+  /**
+   * Disable tab role messages.
+   */
+  role?: boolean
+
+  /**
+   * Disable connection state messages.
+   */
+  state?: boolean
 
   /**
    * Disable user ID changing.

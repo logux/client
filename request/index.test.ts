@@ -1,12 +1,12 @@
-import { TestPair, TestTime, AnyAction } from '@logux/core'
-import { it, expect } from 'vitest'
+import { type AnyAction, TestPair, TestTime } from '@logux/core'
 import { delay } from 'nanodelay'
+import { expect, it } from 'vitest'
 
-import { request, RequestOptions } from '../index.js'
+import { request, type RequestOptions } from '../index.js'
 
 type Test = {
-  pair: TestPair
   answer: AnyAction | Error | undefined
+  pair: TestPair
   response(answer: AnyAction): Promise<void>
 }
 
@@ -15,8 +15,8 @@ async function createTest(
   opts: Partial<RequestOptions> = {}
 ): Promise<Test> {
   let test: Test = {
-    pair: new TestPair(),
     answer: undefined,
+    pair: new TestPair(),
     async response(answer) {
       test.pair.right.send(['synced', 1])
       test.pair.right.send(['sync', 2, answer, { id: 2, time: 2 }])
@@ -75,7 +75,7 @@ it('waits for logux/undo', async () => {
     ['sync', 1, { type: 'test' }, { id: 1, time: 1 }]
   ])
 
-  await test.response({ type: 'logux/undo', id: '1 10:1:1 0', reason: 'test' })
+  await test.response({ id: '1 10:1:1 0', reason: 'test', type: 'logux/undo' })
   expect(test.answer?.message).toBe('Server undid action because of test')
 })
 

@@ -1,12 +1,13 @@
-import { TestLog, TestPair, Action } from '@logux/core'
+import type { Action, TestLog, TestPair } from '@logux/core'
 
-import { Client, ClientMeta } from '../client/index.js'
-import { TestServer } from '../test-server/index.js'
+import { Client } from '../client/index.js'
+import type { ClientMeta } from '../client/index.js'
+import type { TestServer } from '../test-server/index.js'
 
 export interface TestClientOptions<Headers extends object> {
-  subprotocol?: string
   headers?: Headers
   server?: TestServer
+  subprotocol?: string
 }
 
 /**
@@ -34,6 +35,11 @@ export class TestClient<Headers extends object = {}> extends Client<
   TestLog<ClientMeta>
 > {
   /**
+   * Connection between client and server.
+   */
+  readonly pair: TestPair
+
+  /**
    * Virtual server to test client.
    *
    * ```js
@@ -43,11 +49,6 @@ export class TestClient<Headers extends object = {}> extends Client<
    * ```
    */
   readonly server: TestServer
-
-  /**
-   * Connection between client and server.
-   */
-  readonly pair: TestPair
 
   /**
    * @param userId User ID.
@@ -76,20 +77,6 @@ export class TestClient<Headers extends object = {}> extends Client<
   disconnect(): void
 
   /**
-   * Does client subscribed to specific channel.
-   *
-   * ```js
-   * let user = new UserStore(client, '10')
-   * await delay(10)
-   * expect(client.subscribed('users/10')).toBe(true)
-   * ```
-   *
-   * @param channel Channel name.
-   * @returns Does client has an active subscription.
-   */
-  subscribed(channel: string): boolean
-
-  /**
    * Collect actions sent by client during the `test` call.
    *
    * ```js
@@ -103,4 +90,18 @@ export class TestClient<Headers extends object = {}> extends Client<
    * @returns Promise with all received actions
    */
   sent(test: () => Promise<void> | void): Promise<Action[]>
+
+  /**
+   * Does client subscribed to specific channel.
+   *
+   * ```js
+   * let user = new UserStore(client, '10')
+   * await delay(10)
+   * expect(client.subscribed('users/10')).toBe(true)
+   * ```
+   *
+   * @param channel Channel name.
+   * @returns Does client has an active subscription.
+   */
+  subscribed(channel: string): boolean
 }

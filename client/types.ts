@@ -1,20 +1,20 @@
 import { defineAction } from '@logux/actions'
-import { Action } from '@logux/core'
+import type { Action } from '@logux/core'
 
 import { Client } from '../index.js'
 
 let client = new Client({
-  subprotocol: '1.0.0',
   server: 'ws://localhost',
+  subprotocol: '1.0.0',
   userId: '10'
 })
 
 client.log.add({ type: 'A' }, { extra: 1 })
 
 type UserRenameAction = Action & {
+  name: string
   type: 'user/rename'
   userId: string
-  name: string
 }
 
 let userRename = defineAction<UserRenameAction>('user/rename')

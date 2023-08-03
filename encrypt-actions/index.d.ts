@@ -1,4 +1,4 @@
-import { Client } from '../client/index.js'
+import type { Client } from '../client/index.js'
 
 /**
  * Encrypt actions before sending them to server.
@@ -24,3 +24,5 @@ export function encryptActions(
     ignore: string[]
   }
 ): () => void
+
+export function getRandomSpaces(): string

@@ -1,65 +1,65 @@
-import { Client } from '../client/index.js'
+import type { Client } from '../client/index.js'
 
 export interface BadgeMessages {
-  synchronized: string
+  denied: string
   disconnected: string
-  wait: string
+  error: string
+  protocolError: string
   sending: string
   syncError: string
-  error: string
-  denied: string
-  protocolError: string
+  synchronized: string
+  wait: string
 }
 
 export interface BadgeStyles {
   base: object
-  text: object
-  synchronized: object
-  disconnected: object
-  wait: object
   connecting: object
-  sending: object
+  disconnected: object
   error: object
-  protocolError: object
   icon: {
-    synchronized: string
     disconnected: string
-    wait: string
-    sending: string
     error: string
     protocolError: string
+    sending: string
+    synchronized: string
+    wait: string
   }
+  protocolError: object
+  sending: object
+  synchronized: object
+  text: object
+  wait: object
 }
 
 interface BadgeOptions {
+  /**
+   * Synchronized state duration. Default is `3000`.
+   */
+  duration?: number
+
   /**
    * Widget text for different states.
    */
   messages: BadgeMessages
 
   /**
-   * Inline styles for different states.
-   */
-  styles: BadgeStyles
-
-  /**
    * Widget position. Default is `bottom-right`.
    */
   position?:
-    | 'top-left'
-    | 'top-center'
-    | 'top-right'
-    | 'middle-left'
-    | 'middle-center'
-    | 'middle-right'
-    | 'bottom-left'
     | 'bottom-center'
+    | 'bottom-left'
     | 'bottom-right'
+    | 'middle-center'
+    | 'middle-left'
+    | 'middle-right'
+    | 'top-center'
+    | 'top-left'
+    | 'top-right'
 
   /**
-   * Synchronized state duration. Default is `3000`.
+   * Inline styles for different states.
    */
-  duration?: number
+  styles: BadgeStyles
 }
 
 /**

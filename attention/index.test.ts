@@ -1,8 +1,8 @@
-import { it, afterEach, expect } from 'vitest'
 import { LoguxError, TestPair } from '@logux/core'
 import { spyOn } from 'nanospy'
+import { afterEach, expect, it } from 'vitest'
 
-import { CrossTabClient, attention } from '../index.js'
+import { attention, CrossTabClient } from '../index.js'
 
 let nextHidden: boolean | undefined
 Object.defineProperty(document, 'hidden', {
@@ -26,8 +26,8 @@ async function createClient(): Promise<CrossTabClient> {
 
   let pair = new TestPair()
   let client = new CrossTabClient({
-    subprotocol: '1.0.0',
     server: pair.left,
+    subprotocol: '1.0.0',
     userId: '10'
   })
 
@@ -53,7 +53,7 @@ it('receives errors', async () => {
 it('receives undo', async () => {
   let client = await createClient()
   attention(client)
-  client.log.add({ type: 'logux/undo', reason: 'error' })
+  client.log.add({ reason: 'error', type: 'logux/undo' })
   expect(document.title).toBe('* title')
 })
 
@@ -73,7 +73,7 @@ it('allows to miss timeout error', async () => {
 })
 
 it('sets old title when user open a tab', async () => {
-  let listener: undefined | (() => void)
+  let listener: (() => void) | undefined
   document.addEventListener = (name: string, callback: any) => {
     expect(name).toBe('visibilitychange')
     listener = callback

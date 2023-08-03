@@ -1,8 +1,8 @@
 import { useStore } from '@nanostores/react'
 import React from 'react'
 
-import { createFilter } from '../create-filter/index.js'
 import { createAuth } from '../create-auth/index.js'
+import { createFilter } from '../create-filter/index.js'
 
 export let ClientContext = /*#__PURE__*/ React.createContext()
 

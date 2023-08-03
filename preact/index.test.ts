@@ -1,37 +1,37 @@
-import {
-  FunctionComponent as FC,
-  ComponentChild,
-  Component,
-  VNode,
-  h
-} from 'preact'
-import { cleanStores, atom, map, onMount, MapStore } from 'nanostores'
-import { render, screen, act, cleanup } from '@testing-library/preact'
-import { it, expect, afterEach } from 'vitest'
 import { LoguxNotFoundError } from '@logux/actions'
-import { spyOn, restoreAll } from 'nanospy'
-import { useState } from 'preact/hooks'
+import { act, cleanup, render, screen } from '@testing-library/preact'
 import { delay } from 'nanodelay'
+import { restoreAll, spyOn } from 'nanospy'
+import { atom, cleanStores, map, type MapStore, onMount } from 'nanostores'
+import {
+  Component,
+  type ComponentChild,
+  type FunctionComponent as FC,
+  h,
+  type VNode
+} from 'preact'
+import { useState } from 'preact/hooks'
+import { afterEach, expect, it } from 'vitest'
 
 import {
-  ChannelNotFoundError,
-  SyncMapTemplateLike,
-  ChannelDeniedError,
   changeSyncMapById,
-  SyncMapTemplate,
-  syncMapTemplate,
+  type ChannelDeniedError,
+  type ChannelError,
+  type ChannelNotFoundError,
   createSyncMap,
   LoguxUndoError,
-  ChannelError,
+  syncMapTemplate,
+  type SyncMapTemplate,
+  type SyncMapTemplateLike,
   TestClient
 } from '../index.js'
 import {
-  ClientContext,
   ChannelErrors,
+  ClientContext,
+  useAuth,
   useClient,
   useFilter,
-  useSync,
-  useAuth
+  useSync
 } from './index.js'
 
 function getCatcher(cb: () => void): [string[], FC] {
@@ -54,13 +54,13 @@ function throwFromBroken(e: Error | string): void {
     if (typeof e === 'string') {
       brokenReject(
         new LoguxUndoError({
-          type: 'logux/undo',
-          reason: e,
-          id: '',
           action: {
-            type: 'logux/subscribe',
-            channel: 'A'
-          }
+            channel: 'A',
+            type: 'logux/subscribe'
+          },
+          id: '',
+          reason: e,
+          type: 'logux/undo'
         })
       )
     } else {
@@ -91,13 +91,13 @@ let SyncTest: FC<{ Template: SyncMapTemplate }> = ({ Template }) => {
   return h('div', {}, store.isLoading ? 'loading' : store.id)
 }
 
-function getText(component: VNode): string | null {
+function getText(component: VNode): null | string {
   let client = new TestClient('10')
   render(
     h(ClientContext.Provider, {
-      value: client,
       // @ts-expect-error
-      children: h('div', { 'data-testid': 'test' }, component)
+      children: h('div', { 'data-testid': 'test' }, component),
+      value: client
     })
   )
   return screen.getByTestId('test').textContent
@@ -107,8 +107,8 @@ function runWithClient(component: VNode): void {
   let client = new TestClient('10')
   render(
     h(ClientContext.Provider, {
-      value: client,
-      children: h(ChannelErrors, { Error: () => null }, component)
+      children: h(ChannelErrors, { Error: () => null }, component),
+      value: client
     })
   )
 }
@@ -130,8 +130,8 @@ class ErrorCatcher extends Component {
 }
 
 async function catchLoadingError(
-  error: string | Error
-): Promise<string | null> {
+  error: Error | string
+): Promise<null | string> {
   spyOn(console, 'error', () => {})
   let Bad: FC = () => h('div', null, 'bad')
   let NotFound: FC<{ error: ChannelNotFoundError | LoguxNotFoundError }> = p =>
@@ -153,7 +153,7 @@ async function catchLoadingError(
         {},
         h(
           ChannelErrors,
-          { AccessDenied, NotFound: Bad, Error },
+          { AccessDenied, Error, NotFound: Bad },
           h(
             ChannelErrors,
             { NotFound },
@@ -325,7 +325,7 @@ it('does not throw on ChannelErrors with 404 and 403', async () => {
     getText(
       h(
         ChannelErrors,
-        { NotFound: () => null, AccessDenied: () => null },
+        { AccessDenied: () => null, NotFound: () => null },
         h(SyncTest, { Template: RemotePost })
       )
     )
@@ -340,7 +340,7 @@ it('has hook to get client', () => {
   let client = new TestClient('10')
   expect(
     getText(
-      h(ClientContext.Provider, { value: client, children: h(Test, null) })
+      h(ClientContext.Provider, { children: h(Test, null), value: client })
     )
   ).toBe('10')
 })
@@ -365,8 +365,8 @@ it('renders filter', async () => {
 
   render(
     h(ClientContext.Provider, {
-      value: client,
-      children: h(ChannelErrors, { Error: () => null }, h(TestList, null))
+      children: h(ChannelErrors, { Error: () => null }, h(TestList, null)),
+      value: client
     })
   )
   expect(screen.getByTestId('test').textContent).toBe('')
@@ -439,8 +439,8 @@ it('recreating filter on args changes', async () => {
 
   render(
     h(ClientContext.Provider, {
-      value: client,
-      children: h(ChannelErrors, { Error: () => null }, h(TestList, null))
+      children: h(ChannelErrors, { Error: () => null }, h(TestList, null)),
+      value: client
     })
   )
   expect(screen.getByTestId('test').textContent).toBe('')
@@ -489,8 +489,8 @@ it('renders authentication state', async () => {
   }
   render(
     h(ClientContext.Provider, {
-      value: client,
-      children: h(ChannelErrors, { Error: () => null }, h(TestProfile, null))
+      children: h(ChannelErrors, { Error: () => null }, h(TestProfile, null)),
+      value: client
     })
   )
   expect(screen.getByTestId('test').textContent).toBe('loading')

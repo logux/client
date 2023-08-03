@@ -1,21 +1,22 @@
+import { registerStore, useStore } from '@nanostores/vue'
 import {
+  computed,
   getCurrentInstance,
+  getCurrentScope,
+  inject,
   onErrorCaptured,
-  shallowRef,
+  onScopeDispose,
+  provide,
   reactive,
   readonly,
-  computed,
-  provide,
-  inject,
-  watch,
-  isRef,
-  toRef,
-  unref
+  ref,
+  shallowRef,
+  unref,
+  watch
 } from 'vue'
-import { useStore } from '@nanostores/vue'
 
-import { createFilter } from '../create-filter/index.js'
 import { createAuth } from '../create-auth/index.js'
+import { createFilter } from '../create-filter/index.js'
 
 const createSymbol = name => {
   return process.env.NODE_ENV !== 'production' ? Symbol(name) : Symbol()
@@ -50,8 +51,12 @@ function checkErrorProcessor() {
 }
 
 function useSyncStore(store) {
-  let error = shallowRef(null)
-  let state = useStore(store)
+  let error = shallowRef()
+  let state = shallowRef()
+
+  let unsubscribe = store.subscribe(value => {
+    state.value = value
+  })
 
   if (store.loading) {
     watch(error, () => {
@@ -62,7 +67,21 @@ function useSyncStore(store) {
     })
   }
 
-  return state
+  getCurrentScope() && onScopeDispose(() => {
+    unsubscribe()
+  })
+
+  if (process.env.NODE_ENV !== 'production') {
+    registerStore(store)
+  }
+
+  return [state, unsubscribe]
+}
+
+function syncRefs (source, target) {
+  return watch(source, value => {
+    target.value = value
+  }, { deep: true, flush: 'sync', immediate: true })
 }
 
 export function useSync(Template, id, ...builderArgs) {
@@ -77,28 +96,29 @@ export function useSync(Template, id, ...builderArgs) {
   }
 
   let client = useClient()
+  let state = ref()
+  let store
+  let unwatch
+  let unsubscribe
 
-  if (!isRef(id)) {
-    if (process.env.NODE_ENV !== 'production') {
-      return readonly(useSyncStore(Template(id, client, ...builderArgs)))
-    }
-    return useSyncStore(Template(id, client, ...builderArgs))
-  } else {
-    let state = reactive({})
+  watch(
+    () => unref(id),
+    newId => {
+      if (unwatch) { unwatch() }
+      if (unsubscribe) { unsubscribe() }
 
-    watch(
-      id,
-      () => {
-        state.value = useSyncStore(Template(id.value, client, ...builderArgs))
-      },
-      { immediate: true }
-    )
+      [store, unsubscribe] = useSyncStore(
+        Template(newId, client, ...builderArgs)
+      )
+      unwatch = syncRefs(store, state)
+    },
+    { immediate: true }
+  )
 
-    if (process.env.NODE_ENV !== 'production') {
-      return readonly(toRef(state, 'value'))
-    }
-    return toRef(state, 'value')
+  if (process.env.NODE_ENV !== 'production') {
+    return readonly(state)
   }
+  return state
 }
 
 export function useFilter(Template, filter = {}, opts = {}) {
@@ -107,38 +127,35 @@ export function useFilter(Template, filter = {}, opts = {}) {
   }
 
   let client = useClient()
+  let state = ref()
+  let store
+  let unwatch
+  let unsubscribe
 
-  if (!isRef(filter) && !isRef(opts)) {
-    if (process.env.NODE_ENV !== 'production') {
-      return readonly(
-        useSyncStore(createFilter(client, Template, filter, opts))
+  watch(
+    () => [unref(filter), unref(opts)],
+    ([newFilter, newOpts]) => {
+      if (unwatch) { unwatch() }
+      if (unsubscribe) { unsubscribe() }
+
+      [store, unsubscribe] = useSyncStore(
+        createFilter(client, Template, newFilter, newOpts)
       )
-    }
-    return useSyncStore(createFilter(client, Template, filter, opts))
-  } else {
-    let state = reactive({})
+      unwatch = syncRefs(store, state)
+    },
+    { deep: true, immediate: true }
+  )
 
-    watch(
-      () => ([unref(filter), unref(opts)]),
-      () => {
-        state.value = useSyncStore(
-          createFilter(client, Template, { ...filter.value }, { ...opts.value })
-        )
-      },
-      { deep: true, immediate: true }
-    )
-
-    if (process.env.NODE_ENV !== 'production') {
-      return readonly(toRef(state, 'value'))
-    }
-    return toRef(state, 'value')
+  if (process.env.NODE_ENV !== 'production') {
+    return readonly(state)
   }
+  return state
 }
 
 export let ChannelErrors = {
   name: 'LoguxChannelErrors',
   setup(props, { slots }) {
-    let error = shallowRef(null)
+    let error = shallowRef()
     let code = computed(() => {
       if (!error.value) {
         return undefined
@@ -160,7 +177,7 @@ export let ChannelErrors = {
 
     onErrorCaptured((e, instance, info) => {
       if (e.name === 'LoguxUndoError' || e.name === 'LoguxNotFoundError') {
-        error.value = { data: e, instance, info }
+        error.value = { data: e, info, instance }
         return false
       }
       return undefined
@@ -173,7 +190,7 @@ export let ChannelErrors = {
 export function useAuth(client) {
   let auth = useStore(createAuth(client || useClient()))
   return {
-    userId: computed(() => auth.value.userId),
-    isAuthenticated: computed(() => auth.value.isAuthenticated)
+    isAuthenticated: computed(() => auth.value.isAuthenticated),
+    userId: computed(() => auth.value.userId)
   }
 }

@@ -1,9 +1,9 @@
-import { useState, useContext, useEffect, useRef, useLayoutEffect } from 'preact/hooks'
-import { createContext, h, Component } from 'preact'
 import { useStore } from '@nanostores/preact'
+import { Component, createContext, h } from 'preact'
+import { useContext, useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks'
 
-import { createFilter } from '../create-filter/index.js'
 import { createAuth } from '../create-auth/index.js'
+import { createFilter } from '../create-filter/index.js'
 
 export let ClientContext = /*#__PURE__*/ createContext()
 

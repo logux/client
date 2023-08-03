@@ -1,5 +1,5 @@
-import { map, onMount, startTask } from 'nanostores'
 import { isFirstOlder } from '@logux/core'
+import { map, onMount, startTask } from 'nanostores'
 
 import { track } from '../track/index.js'
 
@@ -41,9 +41,9 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
       let deletedType = `${Template.plural}/deleted`
       let deleteType = `${Template.plural}/delete`
       let subscribe = {
-        type: 'logux/subscribe',
         channel: Template.plural,
-        filter
+        filter,
+        type: 'logux/subscribe'
       }
 
       let unbinds = []
@@ -326,9 +326,9 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
           if (!subscriptionError) {
             client.log.add(
               {
-                type: 'logux/unsubscribe',
                 channel: Template.plural,
-                filter
+                filter,
+                type: 'logux/unsubscribe'
               },
               { sync: true }
             )

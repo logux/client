@@ -1,24 +1,24 @@
-import { SyncMapValues } from '@logux/actions'
-import { MapStore } from 'nanostores'
+import type { SyncMapValues } from '@logux/actions'
+import type { MapStore } from 'nanostores'
 
-import {
-  SyncMapTemplateLike,
+import type { Client } from '../client/index.js'
+import type {
+  SyncMapStore,
   SyncMapTemplate,
-  SyncMapStore
+  SyncMapTemplateLike
 } from '../sync-map-template/index.js'
-import { Client } from '../client/index.js'
 
 interface PrepareForTest {
-  <Value extends SyncMapValues>(
-    client: Client,
-    Template: SyncMapTemplate<Value>,
-    value: Omit<Value, 'id'> & { id?: string }
-  ): SyncMapStore<Value>
   <Value extends object>(
     client: Client,
     Template: SyncMapTemplateLike<Value>,
     value: Omit<Value, 'id'> & { id?: string }
   ): MapStore<Value>
+  <Value extends SyncMapValues>(
+    client: Client,
+    Template: SyncMapTemplate<Value>,
+    value: Omit<Value, 'id'> & { id?: string }
+  ): SyncMapStore<Value>
 }
 
 /**

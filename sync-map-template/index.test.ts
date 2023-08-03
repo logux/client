@@ -1,17 +1,17 @@
-import { defineChangeSyncMap, defineChangedSyncMap } from '@logux/actions'
-import { cleanStores, allTasks } from 'nanostores'
-import { it, expect, afterEach } from 'vitest'
+import { defineChangedSyncMap, defineChangeSyncMap } from '@logux/actions'
 import { delay } from 'nanodelay'
+import { allTasks, cleanStores } from 'nanostores'
+import { afterEach, expect, it } from 'vitest'
 
 import {
-  changeSyncMapById,
-  deleteSyncMapById,
   buildNewSyncMap,
-  syncMapTemplate,
   changeSyncMap,
+  changeSyncMapById,
   createSyncMap,
   deleteSyncMap,
-  SyncMapValue,
+  deleteSyncMapById,
+  syncMapTemplate,
+  type SyncMapValue,
   TestClient
 } from '../index.js'
 
@@ -27,9 +27,9 @@ async function catchError(cb: () => Promise<any> | void): Promise<Error> {
 }
 
 type PostValue = {
-  title: string
-  category?: string
   author?: string
+  category?: string
+  title: string
 }
 
 let Post = syncMapTemplate<PostValue>('posts')
@@ -41,8 +41,8 @@ let CachedPost = syncMapTemplate<{
 })
 
 let LocalPost = syncMapTemplate<{
-  title: string
   category?: string
+  title: string
 }>('localPosts', {
   offline: true,
   remote: false
@@ -55,21 +55,21 @@ function changeAction(
   fields: Partial<PostValue>,
   id: string = 'ID'
 ): ReturnType<typeof createChangeAction> {
-  return createChangeAction({ id, fields })
+  return createChangeAction({ fields, id })
 }
 
 function changedAction(
   fields: Partial<PostValue>,
   id: string = 'ID'
 ): ReturnType<typeof createChangedAction> {
-  return createChangedAction({ id, fields })
+  return createChangedAction({ fields, id })
 }
 
 function createAutoprocessingClient(): TestClient {
   let client = new TestClient('10')
   client.on('add', (action, meta) => {
     if (action.type === 'logux/subscribe') {
-      client.log.add({ type: 'logux/processed', id: meta.id })
+      client.log.add({ id: meta.id, type: 'logux/processed' })
     }
   })
   return client
@@ -100,7 +100,6 @@ it('saves options to store', () => {
 })
 
 it('throws on missed client', () => {
-  // @ts-expect-error
   let post = Post('ID')
   expect(() => {
     post.listen(() => {})
@@ -165,10 +164,10 @@ it('changes key', async () => {
 
   await allTasks()
   expect(post.get()).toEqual({
+    category: 'demo',
     id: 'ID',
     isLoading: false,
-    title: '1',
-    category: 'demo'
+    title: '1'
   })
 
   let actions = await client.sent(async () => {
@@ -178,19 +177,19 @@ it('changes key', async () => {
 
   await client.log.add(changeAction({ title: '3' }), { sync: true })
   expect(post.get()).toEqual({
+    category: 'demo',
     id: 'ID',
     isLoading: false,
-    title: '3',
-    category: 'demo'
+    title: '3'
   })
 
   client.server.log.add(changedAction({ title: '4' }))
   await allTasks()
   expect(post.get()).toEqual({
+    category: 'demo',
     id: 'ID',
     isLoading: false,
-    title: '4',
-    category: 'demo'
+    title: '4'
   })
 
   expect(client.log.actions()).toEqual([
@@ -336,30 +335,30 @@ it('supports bulk changes', async () => {
 
   await post.loading
 
-  await changeSyncMap(post, { title: '1', category: 'demo' })
+  await changeSyncMap(post, { category: 'demo', title: '1' })
   await changeSyncMap(post, { title: '1' })
   await changeSyncMap(post, { title: '3' })
-  await client.sync(changeAction({ title: '2', author: 'Yaropolk' }), {
+  await client.sync(changeAction({ author: 'Yaropolk', title: '2' }), {
     time: 4
   })
   expect(post.get()).toEqual({
+    author: 'Yaropolk',
+    category: 'demo',
     id: 'ID',
     isLoading: false,
-    title: '3',
-    category: 'demo',
-    author: 'Yaropolk'
+    title: '3'
   })
 
   client.server.undoNext()
-  changeSyncMap(post, { category: 'bad', author: 'Badly' }).catch(() => {})
+  changeSyncMap(post, { author: 'Badly', category: 'bad' }).catch(() => {})
   await allTasks()
 
   expect(post.get()).toEqual({
+    author: 'Yaropolk',
+    category: 'demo',
     id: 'ID',
     isLoading: false,
-    title: '3',
-    category: 'demo',
-    author: 'Yaropolk'
+    title: '3'
   })
 })
 
@@ -371,9 +370,9 @@ it('could cache specific stores without server', async () => {
     }
   })
   await createSyncMap(client, LocalPost, {
+    category: 'demo',
     id: 'ID',
-    title: 'Previous',
-    category: 'demo'
+    title: 'Previous'
   })
   let post = LocalPost('ID', client)
 
@@ -390,24 +389,24 @@ it('could cache specific stores without server', async () => {
 
   expect(client.log.actions()).toEqual([
     {
-      type: 'localPosts/created',
-      id: 'ID',
       fields: {
-        title: 'Previous',
-        category: 'demo'
-      }
+        category: 'demo',
+        title: 'Previous'
+      },
+      id: 'ID',
+      type: 'localPosts/created'
     },
-    { type: 'localPosts/changed', id: 'ID', fields: { title: 'The post' } }
+    { fields: { title: 'The post' }, id: 'ID', type: 'localPosts/changed' }
   ])
 
   let restored = LocalPost('ID', client)
   restored.listen(() => {})
   await restored.loading
   expect(restored.get()).toEqual({
+    category: 'demo',
     id: 'ID',
     isLoading: false,
-    title: 'The post',
-    category: 'demo'
+    title: 'The post'
   })
 })
 
@@ -461,8 +460,8 @@ it('should not send since when subscribing to a offline remote store for the fir
 
   expect(client.log.actions()).toEqual([
     // since is not sent
-    { type: 'logux/subscribe', channel: 'cachedPosts/ID' },
-    { type: 'logux/processed', id: '1 10:2:2 0' }
+    { channel: 'cachedPosts/ID', type: 'logux/subscribe' },
+    { id: '1 10:2:2 0', type: 'logux/processed' }
   ])
 })
 
@@ -476,8 +475,8 @@ it('could cache specific stores and use server', async () => {
   await allTasks()
 
   expect(client.log.actions()).toEqual([
-    { type: 'logux/subscribe', channel: 'cachedPosts/ID' },
-    { type: 'logux/processed', id: '1 10:2:2 0' }
+    { channel: 'cachedPosts/ID', type: 'logux/subscribe' },
+    { id: '1 10:2:2 0', type: 'logux/processed' }
   ])
 
   await changeSyncMap(post, 'title', 'The post')
@@ -485,13 +484,13 @@ it('could cache specific stores and use server', async () => {
   await allTasks()
 
   expect(client.log.actions()).toEqual([
-    { type: 'logux/subscribe', channel: 'cachedPosts/ID' },
-    { type: 'logux/processed', id: '1 10:2:2 0' },
+    { channel: 'cachedPosts/ID', type: 'logux/subscribe' },
+    { id: '1 10:2:2 0', type: 'logux/processed' },
 
-    { type: 'cachedPosts/change', id: 'ID', fields: { title: 'The post' } },
-    { type: 'cachedPosts/changed', id: 'ID', fields: { title: 'The post' } },
+    { fields: { title: 'The post' }, id: 'ID', type: 'cachedPosts/change' },
+    { fields: { title: 'The post' }, id: 'ID', type: 'cachedPosts/changed' },
 
-    { type: 'logux/processed', id: '3 10:2:2 0' },
+    { id: '3 10:2:2 0', type: 'logux/processed' }
   ])
 
   let restored = CachedPost('ID', client)
@@ -508,23 +507,23 @@ it('creates maps', async () => {
   let client = new TestClient('10')
   let created = false
   createSyncMap(client, Post, {
-    id: 'random',
-    title: 'Test',
+    author: 'Ivan',
     category: 'none',
-    author: 'Ivan'
+    id: 'random',
+    title: 'Test'
   }).then(() => {
     created = true
   })
 
   expect(client.log.actions()).toEqual([
     {
-      type: 'posts/create',
-      id: 'random',
       fields: {
-        title: 'Test',
+        author: 'Ivan',
         category: 'none',
-        author: 'Ivan'
-      }
+        title: 'Test'
+      },
+      id: 'random',
+      type: 'posts/create'
     }
   ])
 
@@ -532,8 +531,8 @@ it('creates maps', async () => {
   expect(created).toBe(false)
 
   await client.log.add({
-    type: 'logux/processed',
-    id: client.log.entries()[0][1].id
+    id: client.log.entries()[0][1].id,
+    type: 'logux/processed'
   })
   await delay(1)
   expect(created).toBe(true)
@@ -553,8 +552,8 @@ it('deletes maps', async () => {
       deleted = true
     })
     expect(client.log.actions()).toEqual([
-      { type: 'posts/change', id: 'DEL', fields: { title: 'Deleted' } },
-      { type: 'posts/delete', id: 'DEL' }
+      { fields: { title: 'Deleted' }, id: 'DEL', type: 'posts/change' },
+      { id: 'DEL', type: 'posts/delete' }
     ])
     await delay(1)
     expect(deleted).toBe(false)
@@ -570,7 +569,7 @@ it('creates and deletes local maps', async () => {
   await createSyncMap(client, LocalPost, { id: 'DEL', title: 'New' })
   let post1 = LocalPost('DEL', client)
   let unbind = post1.listen(() => {})
-  await changeSyncMap(post1, { title: 'Deleted', category: 'deleted' })
+  await changeSyncMap(post1, { category: 'deleted', title: 'Deleted' })
   await deleteSyncMap(post1)
 
   unbind()
@@ -603,7 +602,7 @@ it('uses created and delete during undo', async () => {
   post2.listen(() => {})
 
   client.server.undoNext()
-  await changeSyncMap(post2, { title: 'Bad', author: 'Bad' }).catch(() => {})
+  await changeSyncMap(post2, { author: 'Bad', title: 'Bad' }).catch(() => {})
   await allTasks()
   expect(post2.get()).toEqual({
     id: 'ID',
@@ -619,7 +618,7 @@ it('supports deleted action', async () => {
   post.listen(() => {})
 
   await changeSyncMap(post, 'title', 'Deleted')
-  await client.log.add({ type: 'posts/deleted', id: 'DEL' })
+  await client.log.add({ id: 'DEL', type: 'posts/deleted' })
 
   expect(client.log.actions()).toEqual([])
 })
@@ -631,7 +630,7 @@ it('deletes without store loading', async () => {
     await client.sent(async () => {
       await deleteSyncMapById(client, Post, 'DEL')
     })
-  ).toEqual([{ type: 'posts/delete', id: 'DEL' }])
+  ).toEqual([{ id: 'DEL', type: 'posts/delete' }])
 })
 
 it('undos delete', async () => {
@@ -654,7 +653,7 @@ it('undos delete', async () => {
   await allTasks()
   expect(deleted).toBe(false)
   expect(client.log.actions()).toEqual([
-    { type: 'posts/change', id: 'DEL', fields: { title: 'Deleted' } }
+    { fields: { title: 'Deleted' }, id: 'DEL', type: 'posts/change' }
   ])
 })
 
@@ -664,33 +663,33 @@ it('allows to send create action and return instance', async () => {
   expect(
     await client.sent(async () => {
       let post = await buildNewSyncMap(client, Post, {
-        id: 'ID',
-        title: 'Test',
         author: 'Ivan',
-        category: 'none'
+        category: 'none',
+        id: 'ID',
+        title: 'Test'
       })
       post.listen(() => {})
       expect(post.get()).toEqual({
+        author: 'Ivan',
+        category: 'none',
         id: 'ID',
         isLoading: false,
-        title: 'Test',
-        author: 'Ivan',
-        category: 'none'
+        title: 'Test'
       })
       expect(post.createdAt?.id).toBe('1 10:2:2 0')
       expect(post.createdAt?.time).toBe(1)
     })
   ).toEqual([
     {
-      type: 'posts/create',
-      id: 'ID',
       fields: {
-        title: 'Test',
         author: 'Ivan',
-        category: 'none'
-      }
+        category: 'none',
+        title: 'Test'
+      },
+      id: 'ID',
+      type: 'posts/create'
     },
-    { type: 'logux/subscribe', channel: 'posts/ID', creating: true }
+    { channel: 'posts/ID', creating: true, type: 'logux/subscribe' }
   ])
 })
 
@@ -701,24 +700,24 @@ it('does not send subscription on local store creation', async () => {
   expect(
     await client.sent(async () => {
       let post = await buildNewSyncMap(client, LocalPost, {
+        category: 'none',
         id: 'ID',
-        title: 'Test',
-        category: 'none'
+        title: 'Test'
       })
       post.listen(() => {})
       expect(post.get()).toEqual({
+        category: 'none',
         id: 'ID',
         isLoading: false,
-        title: 'Test',
-        category: 'none'
+        title: 'Test'
       })
     })
   ).toEqual([])
   expect(client.log.actions()).toEqual([
     {
-      type: 'localPosts/created',
+      fields: { category: 'none', title: 'Test' },
       id: 'ID',
-      fields: { category: 'none', title: 'Test' }
+      type: 'localPosts/created'
     }
   ])
 })
@@ -732,14 +731,14 @@ it('loads data by created action', async () => {
   post.listen(() => {})
 
   await client.log.add({
-    type: 'posts/created',
+    fields: { category: 'demo', title: 'A' },
     id: '1',
-    fields: { title: 'A', category: 'demo' }
+    type: 'posts/created'
   })
   expect(post.get()).toEqual({
+    category: 'demo',
     id: '1',
     isLoading: true,
-    title: 'A',
-    category: 'demo'
+    title: 'A'
   })
 })

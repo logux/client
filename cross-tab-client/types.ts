@@ -1,8 +1,8 @@
 import { CrossTabClient } from '../index.js'
 
 let client = new CrossTabClient({
-  subprotocol: '1.0.0',
   server: 'ws://localhost',
+  subprotocol: '1.0.0',
   userId: '10'
 })
 

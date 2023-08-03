@@ -3,12 +3,6 @@ let errorOnSet
 export function setLocalStorage() {
   errorOnSet = undefined
   window.localStorage = {
-    storage: {},
-    setItem(key, value) {
-      if (errorOnSet) throw errorOnSet
-      this[key] = value
-      this.storage[key] = String(value)
-    },
     getItem(key) {
       if (key in this.storage) {
         return this.storage[key]
@@ -19,7 +13,13 @@ export function setLocalStorage() {
     removeItem(key) {
       delete this[key]
       delete this.storage[key]
-    }
+    },
+    setItem(key, value) {
+      if (errorOnSet) throw errorOnSet
+      this[key] = value
+      this.storage[key] = String(value)
+    },
+    storage: {}
   }
 }
 

@@ -1,6 +1,6 @@
-import { Log, ID } from '@logux/core'
+import type { ID, Log } from '@logux/core'
 
-import { Client } from '../client/index.js'
+import type { Client } from '../client/index.js'
 
 /**
  * Track for `logux/processed` or `logux/undo` answer from server
@@ -20,4 +20,4 @@ import { Client } from '../client/index.js'
  * @param id Action ID.
  * @returns Promise when action was proccessed.
  */
-export function track(client: Log | Client, id: ID): Promise<void>
+export function track(client: Client | Log, id: ID): Promise<void>
