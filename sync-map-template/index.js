@@ -84,7 +84,10 @@ export function syncMapTemplate(plural, opts = {}) {
         store.loading = Promise.resolve()
         store.setKey('isLoading', false)
         store.createdAt = createMeta
-        if (createAction.type === createType) {
+        if (
+          createAction.type === createType ||
+          createAction.type === changedType
+        ) {
           track(client, createMeta.id)
             .then(() => {
               saveProcessAndClean(createAction.fields, createMeta)
@@ -92,7 +95,10 @@ export function syncMapTemplate(plural, opts = {}) {
             .catch(() => {})
         }
         if (store.remote && !alreadySubscribed) {
-          client.log.add({ ...subscribe, creating: true }, { sync: true })
+          let action = createAction.type === createType
+            ? { ...subscribe, creating: true }
+            : subscribe
+          client.log.add(action, { sync: true })
         }
       } else {
         let endTask = startTask()
