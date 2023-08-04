@@ -21,7 +21,7 @@
   },
   "author": "Andrey Sitnik <andrey@sitnik.ru>",
   "license": "MIT",
-  "homepage": "https://logux.io/",
+  "homepage": "https://logux.org/",
   "repository": "logux/client",
   "sideEffects": false,
   "type": "module",
