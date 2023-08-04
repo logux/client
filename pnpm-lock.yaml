@@ -30,7 +30,7 @@ devDependencies:
     version: 51.0.0(eslint-config-standard@17.1.0)(eslint-plugin-import@2.28.0)(eslint-plugin-n@16.0.1)(eslint-plugin-perfectionist@1.5.1)(eslint-plugin-prefer-let@3.0.1)(eslint-plugin-promise@6.1.1)(eslint@8.46.0)
   '@nanostores/preact':
     specifier: ^0.5.0
-    version: 0.5.0(nanostores@0.9.3)(preact@10.16.0)
+    version: 0.5.0(nanostores@0.9.3)(preact@10.15.1)
   '@nanostores/react':
     specifier: ^0.7.1
     version: 0.7.1(nanostores@0.9.3)(react@18.2.0)
@@ -45,7 +45,7 @@ devDependencies:
     version: 8.2.6(size-limit@8.2.6)
   '@testing-library/preact':
     specifier: ^3.2.3
-    version: 3.2.3(preact@10.16.0)
+    version: 3.2.3(preact@10.15.1)
   '@testing-library/react':
     specifier: ^14.0.0
     version: 14.0.0(react-dom@18.2.0)(react@18.2.0)
@@ -122,8 +122,8 @@ devDependencies:
     specifier: ^8.4.27
     version: 8.4.27
   preact:
-    specifier: 10.16.0
-    version: 10.16.0
+    specifier: 10.15.1
+    version: 10.15.1
   print-snapshots:
     specifier: ^0.4.2
     version: 0.4.2
@@ -558,7 +558,7 @@ packages:
       eslint-plugin-promise: 6.1.1(eslint@8.46.0)
     dev: true
 
-  /@nanostores/preact@0.5.0(nanostores@0.9.3)(preact@10.16.0):
+  /@nanostores/preact@0.5.0(nanostores@0.9.3)(preact@10.15.1):
     resolution: {integrity: sha512-Zq5DEAY+kIfwJ1NPd43D1mpsbISuiD6N/SuTHrt/8jUoifLwXaReaZMAnvkvbIGOgcB1Hy++A9jZix2taNNYxQ==}
     engines: {node: ^16.0.0 || ^18.0.0 || >=20.0.0}
     peerDependencies:
@@ -566,7 +566,7 @@ packages:
       preact: '>=10.0.0'
     dependencies:
       nanostores: 0.9.3
-      preact: 10.16.0
+      preact: 10.15.1
     dev: true
 
   /@nanostores/react@0.7.1(nanostores@0.9.3)(react@18.2.0):
@@ -712,14 +712,14 @@ packages:
       pretty-format: 27.5.1
     dev: true
 
-  /@testing-library/preact@3.2.3(preact@10.16.0):
+  /@testing-library/preact@3.2.3(preact@10.15.1):
     resolution: {integrity: sha512-y6Kklp1XK3f1X2fWCbujmJyzkf+1BgLYXNgAx21j9+D4CoqMTz5qC4SQufb1L6q/jxLGACzrQ90ewVOTBvHOfg==}
     engines: {node: '>= 12'}
     peerDependencies:
       preact: '>=10 || ^10.0.0-alpha.0 || ^10.0.0-beta.0'
     dependencies:
       '@testing-library/dom': 8.20.1
-      preact: 10.16.0
+      preact: 10.15.1
     dev: true
 
   /@testing-library/react@14.0.0(react-dom@18.2.0)(react@18.2.0):
@@ -3019,8 +3019,8 @@ packages:
       source-map-js: 1.0.2
     dev: true
 
-  /preact@10.16.0:
-    resolution: {integrity: sha512-XTSj3dJ4roKIC93pald6rWuB2qQJO9gO2iLLyTe87MrjQN+HklueLsmskbywEWqCHlclgz3/M4YLL2iBr9UmMA==}
+  /preact@10.15.1:
+    resolution: {integrity: sha512-qs2ansoQEwzNiV5eAcRT1p1EC/dmEzaATVDJNiB3g2sRDWdA7b7MurXdJjB2+/WQktGWZwxvDrnuRFbWuIr64g==}
     dev: true
 
   /prelude-ls@1.2.1:

@@ -104,10 +104,9 @@ export function useSync(Template, id, ...builderArgs) {
   watch(
     () => unref(id),
     newId => {
-      if (unwatch) { unwatch() }
-      if (unsubscribe) { unsubscribe() }
-
-      [store, unsubscribe] = useSyncStore(
+      if (unwatch) unwatch()
+      if (unsubscribe) unsubscribe()
+      ;[store, unsubscribe] = useSyncStore(
         Template(newId, client, ...builderArgs)
       )
       unwatch = syncRefs(store, state)
@@ -118,6 +117,7 @@ export function useSync(Template, id, ...builderArgs) {
   if (process.env.NODE_ENV !== 'production') {
     return readonly(state)
   }
+  /* c8 ignore next 2 */
   return state
 }
 
@@ -135,10 +135,9 @@ export function useFilter(Template, filter = {}, opts = {}) {
   watch(
     () => [unref(filter), unref(opts)],
     ([newFilter, newOpts]) => {
-      if (unwatch) { unwatch() }
-      if (unsubscribe) { unsubscribe() }
-
-      [store, unsubscribe] = useSyncStore(
+      if (unwatch) unwatch()
+      if (unsubscribe) unsubscribe()
+      ;[store, unsubscribe] = useSyncStore(
         createFilter(client, Template, newFilter, newOpts)
       )
       unwatch = syncRefs(store, state)
@@ -149,6 +148,7 @@ export function useFilter(Template, filter = {}, opts = {}) {
   if (process.env.NODE_ENV !== 'production') {
     return readonly(state)
   }
+  /* c8 ignore next 2 */
   return state
 }
 

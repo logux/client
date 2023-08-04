@@ -100,6 +100,7 @@ export class ChannelErrors extends Component {
     let error = this.state.error
     if (!error) {
       if (process.env.NODE_ENV === 'production') {
+        /* c8 ignore next */
         return this.props.children
       } else {
         return h(ErrorsCheckerProvider, this.props)

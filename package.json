@@ -112,7 +112,7 @@
     "nanostores": "^0.9.3",
     "picocolors": "^1.0.0",
     "postcss": "^8.4.27",
-    "preact": "10.16.0",
+    "preact": "10.15.1",
     "print-snapshots": "^0.4.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
