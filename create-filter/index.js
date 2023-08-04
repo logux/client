@@ -258,14 +258,22 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
               } catch {}
             }
           }),
-          client.type(changedType, async action => {
+          client.type(changedType, async (action, meta) => {
             await Promise.resolve()
             if (stores.has(action.id)) {
               if (!checkAllFields(stores.get(action.id).value)) {
                 remove(action.id)
               }
             } else if (checkSomeFields(action.fields)) {
-              loadAndCheck(Template(action.id, client))
+              loadAndCheck(
+                Template(
+                  action.id,
+                  client,
+                  action,
+                  meta,
+                  subscribed.has(channelPrefix + action.id)
+                )
+              )
             }
           }),
           client.type(changeType, async (action, meta) => {

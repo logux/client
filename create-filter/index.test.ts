@@ -184,13 +184,22 @@ it('does not subscribe if server did it for client', async () => {
   await allTasks()
 
   await client.server.sendAll({ channel: 'posts/1', type: 'logux/subscribed' })
+  await client.server.sendAll({ channel: 'posts/2', type: 'logux/subscribed' })
   await client.server.sendAll({
     fields: { title: 'A' },
     id: '1',
     type: 'posts/created'
   })
+  await client.server.sendAll({
+    fields: { title: 'B' },
+    id: '2',
+    type: 'posts/changed'
+  })
   await allTasks()
-  expect(posts.get().list).toEqual([{ id: '1', isLoading: false, title: 'A' }])
+  expect(posts.get().list).toEqual([
+    { id: '1', isLoading: false, title: 'A' },
+    { id: '2', isLoading: false, title: 'B' }
+  ])
 
   unbind()
   await delay(2020)
@@ -198,11 +207,15 @@ it('does not subscribe if server did it for client', async () => {
     { channel: 'posts', filter: {}, type: 'logux/subscribe' },
     { id: '1 10:2:2 0', type: 'logux/processed' },
     { channel: 'posts/1', type: 'logux/subscribed' },
+    { channel: 'posts/2', type: 'logux/subscribed' },
     { fields: { title: 'A' }, id: '1', type: 'posts/created' },
+    { fields: { title: 'B' }, id: '2', type: 'posts/changed' },
     { channel: 'posts', filter: {}, type: 'logux/unsubscribe' },
-    { id: '5 10:2:2 0', type: 'logux/processed' },
+    { id: '7 10:2:2 0', type: 'logux/processed' },
     { channel: 'posts/1', type: 'logux/unsubscribe' },
-    { id: '7 10:2:2 0', type: 'logux/processed' }
+    { channel: 'posts/2', type: 'logux/unsubscribe' },
+    { id: '9 10:2:2 0', type: 'logux/processed' },
+    { id: '10 10:2:2 0', type: 'logux/processed' }
   ])
 })
 
