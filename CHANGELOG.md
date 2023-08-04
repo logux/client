@@ -1,6 +1,9 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.20.1
+* Fixed double subscription on `createFilter` (by Eduard Aksamitov).
+
 ## 0.20
 * Moved to Nano Stores 0.9.
 * Refactored Vue composables to improve performance (by Eduard Aksamitov).
