@@ -17,7 +17,7 @@ function sendToTabs(client, event, data) {
     client.isLocalStorage = false
     client.role = 'leader'
     client.emitter.emit('role')
-    client.node.connection.connect()
+    if (client.autoconnect) client.node.connection.connect()
   }
 }
 
@@ -172,7 +172,8 @@ export class CrossTabClient extends Client {
     }
   }
 
-  start() {
+  start(connect = true) {
+    this.autoconnect = connect
     this.cleanPrevActions()
 
     if (
@@ -182,7 +183,7 @@ export class CrossTabClient extends Client {
     ) {
       this.role = 'leader'
       this.emitter.emit('role')
-      this.node.connection.connect()
+      if (connect) this.node.connection.connect()
       return
     }
 
@@ -195,7 +196,7 @@ export class CrossTabClient extends Client {
     navigator.locks.request('logux_leader', () => {
       this.role = 'leader'
       this.emitter.emit('role')
-      this.node.connection.connect()
+      if (connect) this.node.connection.connect()
       return new Promise(resolve => {
         this.unlead = resolve
       })

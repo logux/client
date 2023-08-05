@@ -282,8 +282,10 @@ export class Client<
    * ```js
    * client.start()
    * ```
+   *
+   * @param connect Start connection immediately.
    */
-  start(): void
+  start(connect?: boolean): void
 
   /**
    * Send action to the server (by setting `meta.sync` and adding to the log)
