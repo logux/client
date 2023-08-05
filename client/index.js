@@ -374,9 +374,9 @@ export class Client {
     if (this.pinging) cleanTabActions(this, this.tabId)
   }
 
-  start() {
+  start(connect = true) {
     this.cleanPrevActions()
-    this.node.connection.connect()
+    if (connect) this.node.connection.connect()
   }
 
   get state() {

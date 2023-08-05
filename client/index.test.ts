@@ -302,11 +302,18 @@ it('uses test time', () => {
   expect(client.log.generateId()).toBe('1 10:1:1 0')
 })
 
-it('connects', () => {
+it('connects by default', () => {
   let client = createClient()
   let connect = spyOn(client.node.connection, 'connect')
   client.start()
   expect(connect.callCount).toEqual(1)
+})
+
+it('avoids connection on request', () => {
+  let client = createClient()
+  let connect = spyOn(client.node.connection, 'connect')
+  client.start(false)
+  expect(connect.called).toBe(false)
 })
 
 it('display server debug error stacktrace with prefix', () => {
