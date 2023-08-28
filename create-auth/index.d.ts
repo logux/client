@@ -20,7 +20,7 @@ export interface AuthStore
  * Create store with user’s authentication state.
  *
  * ```js
- * import { createAuth } from '@logux/client'\
+ * import { createAuth } from '@logux/client'
  *
  * let auth = createAuth(client)
  * await auth.loading
