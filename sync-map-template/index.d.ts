@@ -256,3 +256,16 @@ export function deleteSyncMapById(
  *         or saving action to the log of fully offline classes.
  */
 export function deleteSyncMap(store: SyncMapStore): Promise<void>
+
+/**
+ * Change store’s value type to value with `isLoaded: false`.
+ *
+ * If store is still loading, this function will trow an error.
+ *
+ * Use it for tests written on TypeScript.
+ *
+ * @param value Store’s value.
+ */
+export function ensureLoaded<Value extends SyncMapValues>(
+  value: SyncMapValue<Value>
+): LoadedSyncMapValue<Value>

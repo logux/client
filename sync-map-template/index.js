@@ -404,3 +404,8 @@ export function deleteSyncMapById(client, Template, id) {
 export function deleteSyncMap(store) {
   return deleteSyncMapById(store.client, store, store.get().id)
 }
+
+export function ensureLoaded(value) {
+  if (value.isLoading) throw new Error('Store was not loaded yet')
+  return value
+}

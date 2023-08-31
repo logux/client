@@ -39,6 +39,7 @@ export {
   createSyncMap,
   deleteSyncMap,
   deleteSyncMapById,
+  ensureLoaded,
   LoadedSyncMapValue,
   SyncMapStore,
   syncMapTemplate,
