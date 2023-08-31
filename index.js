@@ -21,6 +21,7 @@ export {
   createSyncMap,
   deleteSyncMap,
   deleteSyncMapById,
+  ensureLoaded,
   syncMapTemplate
 } from './sync-map-template/index.js'
 export { TestClient } from './test-client/index.js'

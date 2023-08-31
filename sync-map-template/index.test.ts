@@ -10,6 +10,7 @@ import {
   createSyncMap,
   deleteSyncMap,
   deleteSyncMapById,
+  ensureLoaded,
   syncMapTemplate,
   type SyncMapValue,
   TestClient
@@ -740,5 +741,26 @@ it('loads data by created action', async () => {
     id: '1',
     isLoading: true,
     title: 'A'
+  })
+})
+
+it('has helper to insure that store is loaded', async () => {
+  let client = createAutoprocessingClient()
+  await client.connect()
+
+  let post = Post('ID', client)
+  let changes: SyncMapValue<PostValue>[] = []
+  post.subscribe(value => {
+    changes.push(clone(value))
+  })
+
+  expect(() => {
+    ensureLoaded(post.get())
+  }).toThrow('Store was not loaded yet')
+
+  await post.loading
+  expect(ensureLoaded(post.get())).toEqual({
+    id: 'ID',
+    isLoading: false
   })
 })
