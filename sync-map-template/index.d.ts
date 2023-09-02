@@ -3,6 +3,11 @@ import type { Action, Meta } from '@logux/core'
 import type { MapCreator, MapStore } from 'nanostores'
 
 import type { Client } from '../client/index.js'
+import type {
+  FilterStore,
+  FilterValue,
+  LoadedFilterValue
+} from '../create-filter/index.js'
 
 interface SyncMapStoreExt {
   /**
@@ -275,7 +280,9 @@ export function deleteSyncMap(store: SyncMapStore): Promise<void>
 export function ensureLoaded<Value extends SyncMapValues>(
   value: SyncMapValue<Value>
 ): LoadedSyncMapValue<Value>
-
+export function ensureLoaded<Value extends SyncMapValues>(
+  value: FilterValue<Value>
+): LoadedFilterValue<Value>
 
 /**
  * Return store’s value if store is loaded or wait until store will be loaded
@@ -289,6 +296,9 @@ export function ensureLoaded<Value extends SyncMapValues>(
  *
  * @param store Store to load.
  */
-export async function loadSyncValue<Value extends SyncMapValues>(
+export async function loadValue<Value extends SyncMapValues>(
   store: SyncMapStore<Value>
 ): Promise<LoadedSyncMapValue<Value>>
+export async function loadValue<Value extends SyncMapValues>(
+  store: FilterStore<Value>
+): Promise<LoadedFilterValue<Value>>

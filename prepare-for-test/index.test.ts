@@ -4,6 +4,7 @@ import { afterEach, expect, it } from 'vitest'
 import {
   createFilter,
   emptyInTest,
+  ensureLoaded,
   prepareForTest,
   syncMapTemplate,
   TestClient
@@ -61,7 +62,7 @@ it('works with filters', () => {
   users1.listen(() => {})
 
   expect(users1.get().isLoading).toBe(false)
-  expect(users1.get().list).toEqual([
+  expect(ensureLoaded(users1.get()).list).toEqual([
     { id: 'users:1', isLoading: false, name: 'Test 1' },
     { id: 'users:2', isLoading: false, name: 'Test 2' }
   ])
@@ -78,5 +79,5 @@ it('marks empty', () => {
   users1.listen(() => {})
 
   expect(users1.get().isLoading).toBe(false)
-  expect(users1.get().list).toEqual([])
+  expect(ensureLoaded(users1.get()).list).toEqual([])
 })
