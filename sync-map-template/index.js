@@ -95,9 +95,10 @@ export function syncMapTemplate(plural, opts = {}) {
             .catch(() => {})
         }
         if (store.remote && !alreadySubscribed) {
-          let action = createAction.type === createType
-            ? { ...subscribe, creating: true }
-            : subscribe
+          let action =
+            createAction.type === createType
+              ? { ...subscribe, creating: true }
+              : subscribe
           client.log.add(action, { sync: true })
         }
       } else {
@@ -407,5 +408,13 @@ export function deleteSyncMap(store) {
 
 export function ensureLoaded(value) {
   if (value.isLoading) throw new Error('Store was not loaded yet')
+  return value
+}
+
+export async function loadSyncValue(store) {
+  let unbind = store.listen(() => {})
+  if (store.get().isLoading) await store.loading
+  let value = store.get()
+  unbind()
   return value
 }

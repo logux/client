@@ -11,6 +11,7 @@ import {
   deleteSyncMap,
   deleteSyncMapById,
   ensureLoaded,
+  loadSyncValue,
   syncMapTemplate,
   type SyncMapValue,
   TestClient
@@ -762,5 +763,33 @@ it('has helper to insure that store is loaded', async () => {
   expect(ensureLoaded(post.get())).toEqual({
     id: 'ID',
     isLoading: false
+  })
+})
+
+it('has helper to load value', async () => {
+  let client = new TestClient('10')
+  client.log.keepActions()
+  await createSyncMap(client, LocalPost, {
+    id: '1',
+    title: 'A'
+  })
+
+  let post1 = LocalPost('1', client)
+  expect(await loadSyncValue(post1)).toEqual({
+    id: '1',
+    isLoading: false,
+    title: 'A'
+  })
+
+  await createSyncMap(client, LocalPost, {
+    id: '2',
+    title: 'B'
+  })
+  let post2 = LocalPost('2', client)
+  await post2.loading
+  expect(await loadSyncValue(post2)).toEqual({
+    id: '2',
+    isLoading: false,
+    title: 'B'
   })
 })
