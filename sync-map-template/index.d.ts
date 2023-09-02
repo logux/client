@@ -264,8 +264,31 @@ export function deleteSyncMap(store: SyncMapStore): Promise<void>
  *
  * Use it for tests written on TypeScript.
  *
+ * ```js
+ * import { ensureLoaded } from '@logux/client'
+ *
+ * expect(ensureLoaded($currentUser)).toEqual({ id: 1, name: 'User' })
+ * ```
+ *
  * @param value Store’s value.
  */
 export function ensureLoaded<Value extends SyncMapValues>(
   value: SyncMapValue<Value>
 ): LoadedSyncMapValue<Value>
+
+
+/**
+ * Return store’s value if store is loaded or wait until store will be loaded
+ * and return its value.
+ *
+ * ```js
+ * import { loadSyncValue } from '@logux/client'
+ *
+ * let user = loadSyncValue($currentUser)
+ * ```
+ *
+ * @param store Store to load.
+ */
+export async function loadSyncValue<Value extends SyncMapValues>(
+  store: SyncMapStore<Value>
+): Promise<LoadedSyncMapValue<Value>[]>
