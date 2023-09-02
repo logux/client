@@ -296,9 +296,9 @@ export function ensureLoaded<Value extends SyncMapValues>(
  *
  * @param store Store to load.
  */
-export async function loadValue<Value extends SyncMapValues>(
+export function loadValue<Value extends SyncMapValues>(
   store: SyncMapStore<Value>
 ): Promise<LoadedSyncMapValue<Value>>
-export async function loadValue<Value extends SyncMapValues>(
+export function loadValue<Value extends SyncMapValues>(
   store: FilterStore<Value>
 ): Promise<LoadedFilterValue<Value>>
