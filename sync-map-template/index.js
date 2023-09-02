@@ -411,7 +411,7 @@ export function ensureLoaded(value) {
   return value
 }
 
-export async function loadSyncValue(store) {
+export async function loadValue(store) {
   let unbind = store.listen(() => {})
   if (store.get().isLoading) await store.loading
   let value = store.get()

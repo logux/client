@@ -11,7 +11,7 @@ import {
   deleteSyncMap,
   deleteSyncMapById,
   ensureLoaded,
-  loadSyncValue,
+  loadValue,
   syncMapTemplate,
   type SyncMapValue,
   TestClient
@@ -775,7 +775,7 @@ it('has helper to load value', async () => {
   })
 
   let post1 = LocalPost('1', client)
-  expect(await loadSyncValue(post1)).toEqual({
+  expect(await loadValue(post1)).toEqual({
     id: '1',
     isLoading: false,
     title: 'A'
@@ -787,7 +787,7 @@ it('has helper to load value', async () => {
   })
   let post2 = LocalPost('2', client)
   await post2.loading
-  expect(await loadSyncValue(post2)).toEqual({
+  expect(await loadValue(post2)).toEqual({
     id: '2',
     isLoading: false,
     title: 'B'

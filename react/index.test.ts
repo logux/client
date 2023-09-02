@@ -1,4 +1,4 @@
-import { LoguxNotFoundError } from '@logux/actions'
+import { LoguxNotFoundError, type SyncMapValues } from '@logux/actions'
 import { act, cleanup, render, screen } from '@testing-library/react'
 import { delay } from 'nanodelay'
 import { restoreAll, spyOn } from 'nanospy'
@@ -19,6 +19,8 @@ import {
   type ChannelError,
   type ChannelNotFoundError,
   createSyncMap,
+  type FilterValue,
+  type LoadedFilterValue,
   LoguxUndoError,
   syncMapTemplate,
   type SyncMapTemplate,
@@ -33,6 +35,12 @@ import {
   useFilter,
   useSync
 } from './index.js'
+
+export function asLoaded<Value extends SyncMapValues>(
+  value: FilterValue<Value>
+): LoadedFilterValue<Value> {
+  return value as LoadedFilterValue<Value>
+}
 
 function getCatcher(cb: () => void): [string[], FC] {
   let errors: string[] = []
@@ -350,7 +358,7 @@ it('renders filter', async () => {
     return h(
       'ul',
       { 'data-testid': 'test' },
-      posts.list.map((post, index) => {
+      asLoaded(posts).list.map((post, index) => {
         renders.push(post.id)
         return h('li', { key: post.id }, ` ${index}:${post.title}`)
       })
@@ -423,7 +431,7 @@ it('recreating filter on args changes', async () => {
       h(
         'ul',
         { 'data-testid': 'test' },
-        posts.list.map((post, index) => {
+        asLoaded(posts).list.map((post, index) => {
           renders.push(post.id)
           return h('li', { key: index }, ` ${index}:${post.title}`)
         })

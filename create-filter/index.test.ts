@@ -9,6 +9,8 @@ import {
   createFilter,
   createSyncMap,
   deleteSyncMapById,
+  ensureLoaded,
+  loadValue,
   syncMapTemplate,
   TestClient
 } from '../index.js'
@@ -48,7 +50,7 @@ function cachedIds(Template: any): string[] {
 }
 
 function getSize(filterStore: FilterStore): number {
-  return filterStore.get().stores.size
+  return ensureLoaded(filterStore.get()).stores.size
 }
 
 it('caches filters', () => {
@@ -102,16 +104,15 @@ it('looks for already loaded stores', async () => {
     authorId: '10',
     projectId: '100'
   })
-  posts.listen(() => {})
 
   expect(posts.get().isLoading).toBe(true)
-  expect(posts.get().stores).toEqual(
+  expect((posts.get() as any).stores).toEqual(
     new Map([
       ['1', post1],
       ['2', post2]
     ])
   )
-  expect(posts.get().list).toEqual([
+  expect((posts.get() as any).list).toEqual([
     { authorId: '10', id: '1', isLoading: false, projectId: '100' },
     { authorId: '10', id: '2', isLoading: false, projectId: '100' }
   ])
@@ -196,7 +197,7 @@ it('does not subscribe if server did it for client', async () => {
     type: 'posts/changed'
   })
   await allTasks()
-  expect(posts.get().list).toEqual([
+  expect(ensureLoaded(posts.get()).list).toEqual([
     { id: '1', isLoading: false, title: 'A' },
     { id: '2', isLoading: false, title: 'B' }
   ])
@@ -269,7 +270,10 @@ it('loads store from the log for offline stores', async () => {
   posts.listen(() => {})
   await posts.loading
   expect(posts.get().isLoading).toBe(false)
-  expect(Array.from(posts.get().stores.keys()).sort()).toEqual(['4', '5'])
+  expect(Array.from(ensureLoaded(posts.get()).stores.keys()).sort()).toEqual([
+    '4',
+    '5'
+  ])
   await delay(1020)
   expect(cachedIds(LocalPost)).toEqual(['4', '5'])
 })
@@ -412,7 +416,7 @@ it('supports both offline and remote stores', async () => {
   await allTasks()
   expect(posts.get().isLoading).toBe(false)
   expect(getSize(posts)).toBe(1)
-  expect(Array.from(posts.get().stores.keys())).toEqual(['ID'])
+  expect(Array.from(ensureLoaded(posts.get()).stores.keys())).toEqual(['ID'])
 })
 
 it('keeps stores in memory and unsubscribes on destroy', async () => {
@@ -795,7 +799,7 @@ it('has shortcut to check size', async () => {
 
   let posts = createFilter(client, Post, { authorId: '10' })
   posts.listen(() => {})
-  expect(posts.get().isEmpty).toBe(true)
+  expect((await loadValue(posts)).isEmpty).toBe(true)
 
   await createSyncMap(client, Post, {
     authorId: '10',
@@ -803,7 +807,7 @@ it('has shortcut to check size', async () => {
     projectId: '20',
     title: '1'
   })
-  expect(posts.get().isEmpty).toBe(false)
+  expect(ensureLoaded(posts.get()).isEmpty).toBe(false)
 })
 
 it('clean filters', () => {
