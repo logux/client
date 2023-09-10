@@ -203,14 +203,6 @@ export class CrossTabClient extends Client {
     })
   }
 
-  set state(value) {
-    this.leaderState = value
-  }
-
-  get state() {
-    return this.leaderState
-  }
-
   type(type, listener, opts = {}) {
     if (opts.event === 'preadd') {
       return this.log.type(type, listener, opts)
@@ -219,5 +211,13 @@ export class CrossTabClient extends Client {
       let id = opts.id || ''
       return this.emitter.on(`${event}-${type}-${id}`, listener)
     }
+  }
+
+  set state(value) {
+    this.leaderState = value
+  }
+
+  get state() {
+    return this.leaderState
   }
 }
