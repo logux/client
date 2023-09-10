@@ -1,7 +1,7 @@
 import { TestPair, TestTime } from '@logux/core'
 import { Crypto } from '@peculiar/webcrypto'
 import { delay } from 'nanodelay'
-import { TextDecoder, TextEncoder } from 'util'
+import { TextDecoder, TextEncoder } from 'node:util'
 import { expect, it } from 'vitest'
 
 import { Client, encryptActions } from '../index.js'
