@@ -289,9 +289,9 @@ export function ensureLoaded<Value extends SyncMapValues>(
  * and return its value.
  *
  * ```js
- * import { loadSyncValue } from '@logux/client'
+ * import { loadValue } from '@logux/client'
  *
- * let user = loadSyncValue($currentUser)
+ * let user = loadValue($currentUser)
  * ```
  *
  * @param store Store to load.
