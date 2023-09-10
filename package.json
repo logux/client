@@ -138,15 +138,7 @@
       "symbol-description": "off",
       "no-console": "off",
       "camelcase": "off"
-    },
-    "overrides": [
-      {
-        "files": "indexed-store/index.test.ts",
-        "rules": {
-          "import/order": "off"
-        }
-      }
-    ]
+    }
   },
   "eslintIgnore": [
     "test/demo/dist",
