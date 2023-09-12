@@ -18,8 +18,8 @@ dependencies:
     specifier: ^8.0.0
     version: 8.0.0
   nanoid:
-    specifier: ^5.0.0
-    version: 5.0.0
+    specifier: ^5.0.1
+    version: 5.0.1
 
 devDependencies:
   '@logux/core':
@@ -2999,8 +2999,8 @@ packages:
     hasBin: true
     dev: true
 
-  /nanoid@5.0.0:
-    resolution: {integrity: sha512-wVZsnt5OB0dYCCfehtku3pGSS7vDjUjGQcB96wS+67JA0fILOVx0o7CnMSHZdlzGpaUtegC41ltxUVEqn5a+BA==}
+  /nanoid@5.0.1:
+    resolution: {integrity: sha512-vWeVtV5Cw68aML/QaZvqN/3QQXc6fBfIieAlu05m7FZW2Dgb+3f0xc0TTxuJW+7u30t7iSDTV/j3kVI0oJqIfQ==}
     engines: {node: ^18 || >=20}
     hasBin: true
     dev: false
