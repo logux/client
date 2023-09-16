@@ -79,7 +79,7 @@
     "nanoid": "^5.0.1"
   },
   "devDependencies": {
-    "@logux/core": "^0.8.5",
+    "@logux/core": "github:logux/core#next",
     "@logux/eslint-config": "^52.0.1",
     "@nanostores/preact": "^0.5.0",
     "@nanostores/react": "^0.7.1",

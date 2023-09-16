@@ -114,6 +114,8 @@ it('ignores specific actions', async () => {
   await delay(10)
   client1.log.add({ type: 'server' }, { sync: true })
   await delay(10)
+  client1.log.add({ type: 'nonsync' })
+  await delay(10)
   expect(getPair(client1).leftSent).toMatchObject([
     [
       'sync',
