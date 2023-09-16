@@ -53,7 +53,7 @@ devDependencies:
     specifier: ^7.0.0
     version: 7.0.0(@vue/compiler-sfc@3.3.4)(vue@3.3.4)
   '@types/node':
-    specifier: ^20.6.0
+    specifier: ^20.6.2
     version: 20.8.2
   '@types/react':
     specifier: ^18.2.21
@@ -107,8 +107,8 @@ devDependencies:
     specifier: ^4.0.2
     version: 4.0.2
   happy-dom:
-    specifier: ^11.0.5
-    version: 11.2.0
+    specifier: ^12.0.1
+    version: 12.9.0
   nanospy:
     specifier: ^1.0.0
     version: 1.0.0
@@ -147,7 +147,7 @@ devDependencies:
     version: 4.4.10(@types/node@20.8.2)
   vitest:
     specifier: ^0.34.4
-    version: 0.34.6(happy-dom@11.2.0)
+    version: 0.34.6(happy-dom@12.9.0)
   vue:
     specifier: ^3.3.4
     version: 3.3.4
@@ -1161,7 +1161,7 @@ packages:
       std-env: 3.4.3
       test-exclude: 6.0.0
       v8-to-istanbul: 9.1.0
-      vitest: 0.34.6(happy-dom@11.2.0)
+      vitest: 0.34.6(happy-dom@12.9.0)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -2480,8 +2480,8 @@ packages:
     resolution: {integrity: sha512-EtKwoO6kxCL9WO5xipiHTZlSzBm7WLT627TqC/uVRd0HKmq8NXyebnNYxDoBi7wt8eTWrUrKXCOVaFq9x1kgag==}
     dev: true
 
-  /happy-dom@11.2.0:
-    resolution: {integrity: sha512-z4PshcYIIH6SkymSNRcDFwYUJOENe+FOQDx5BbHgg/wQUgxF5p9I9/BN45Jff34bbhXV8yJgkC5N99eyOzXK3w==}
+  /happy-dom@12.9.0:
+    resolution: {integrity: sha512-Ap/bcno2k5316FYDqBJ2i0O1zS78W1jsNR4F/p2t3zdNoa+2H0k851RGef4STfIKdTwcQ/nk5Tx9d5BzQXfTrw==}
     dependencies:
       css.escape: 1.5.1
       entities: 4.5.0
@@ -3819,7 +3819,7 @@ packages:
       fsevents: 2.3.3
     dev: true
 
-  /vitest@0.34.6(happy-dom@11.2.0):
+  /vitest@0.34.6(happy-dom@12.9.0):
     resolution: {integrity: sha512-+5CALsOvbNKnS+ZHMXtuUC7nL8/7F1F2DnHGjSsszX8zCjWSSviphCb/NuS9Nzf4Q03KyyDRBAXhF/8lffME4Q==}
     engines: {node: '>=v14.18.0'}
     hasBin: true
@@ -3863,7 +3863,7 @@ packages:
       cac: 6.7.14
       chai: 4.3.10
       debug: 4.3.4
-      happy-dom: 11.2.0
+      happy-dom: 12.9.0
       local-pkg: 0.4.3
       magic-string: 0.30.4
       pathe: 1.1.1
