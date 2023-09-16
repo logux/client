@@ -23,8 +23,8 @@ dependencies:
 
 devDependencies:
   '@logux/core':
-    specifier: ^0.8.5
-    version: 0.8.5
+    specifier: github:logux/core#next
+    version: github.com/logux/core/249e2c1910b577cc9c921c3f7cc189d11a0fea23
   '@logux/eslint-config':
     specifier: ^52.0.1
     version: 52.0.1(eslint-config-standard@17.1.0)(eslint-plugin-import@2.28.1)(eslint-plugin-n@16.1.0)(eslint-plugin-node-import@1.0.4)(eslint-plugin-perfectionist@2.1.0)(eslint-plugin-prefer-let@3.0.1)(eslint-plugin-promise@6.1.1)(eslint@8.50.0)
@@ -723,14 +723,8 @@ packages:
     peerDependencies:
       '@logux/core': ^0.8.0
     dependencies:
-      '@logux/core': 0.8.5
+      '@logux/core': github.com/logux/core/249e2c1910b577cc9c921c3f7cc189d11a0fea23
     dev: false
-
-  /@logux/core@0.8.5:
-    resolution: {integrity: sha512-KHNcr1hyaPiU4k407CXegyGz945Imwrelz6XnZpbpFdUvC8PaA43fZiIoZ4y2x8Cwfh8gzWUjFP9JiKXlO2yrA==}
-    engines: {node: ^14.0.0 || ^16.0.0 || >=18.0.0}
-    dependencies:
-      nanoevents: 7.0.1
 
   /@logux/eslint-config@52.0.1(eslint-config-standard@17.1.0)(eslint-plugin-import@2.28.1)(eslint-plugin-n@16.1.0)(eslint-plugin-node-import@1.0.4)(eslint-plugin-perfectionist@2.1.0)(eslint-plugin-prefer-let@3.0.1)(eslint-plugin-promise@6.1.1)(eslint@8.50.0):
     resolution: {integrity: sha512-VnphQAsUoP2gdlZScn0jESbeGXA3lyCTlPEPNpDGJU0/75Cmi6YVTQ6/ownBVN6ASAEcql2UcYroseQzv2t2dA==}
@@ -2984,14 +2978,9 @@ packages:
     engines: {node: ^12.0.0 || ^14.0.0 || >=16.0.0}
     dev: false
 
-  /nanoevents@7.0.1:
-    resolution: {integrity: sha512-o6lpKiCxLeijK4hgsqfR6CNToPyRU3keKyyI6uwuHRvpRTbZ0wXw51WRgyldVugZqoJfkGFrjrIenYH3bfEO3Q==}
-    engines: {node: ^14.0.0 || ^16.0.0 || >=18.0.0}
-
   /nanoevents@8.0.0:
     resolution: {integrity: sha512-bYYwNCdNc5ea6/Lwh1uioU1/7aaKa3EPmNQ2weTm8PWSpbWrsaWHePe0Zq4SF+D3F3JX3cn+QdktOPCf1meOqw==}
     engines: {node: ^16.0.0 || ^18.0.0 || >=20.0.0}
-    dev: false
 
   /nanoid@3.3.6:
     resolution: {integrity: sha512-BGcqMMJuToF7i1rt+2PWSNVnWIkGCU78jBG3RxO/bZlnZPK2Cmi2QaffxGO/2RvWi9sL+FAiRiXMgsyxQ1DIDA==}
@@ -4019,3 +4008,11 @@ packages:
     resolution: {integrity: sha512-9bnSc/HEW2uRy67wc+T8UwauLuPJVn28jb+GtJY16iiKWyvmYJRXVT4UamsAEGQfPohgr2q4Tq0sQbQlxTfi1g==}
     engines: {node: '>=12.20'}
     dev: true
+
+  github.com/logux/core/249e2c1910b577cc9c921c3f7cc189d11a0fea23:
+    resolution: {tarball: https://codeload.github.com/logux/core/tar.gz/249e2c1910b577cc9c921c3f7cc189d11a0fea23}
+    name: '@logux/core'
+    version: 0.8.5
+    engines: {node: ^18.0.0 || >=20.0.0}
+    dependencies:
+      nanoevents: 8.0.0

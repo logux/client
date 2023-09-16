@@ -44,30 +44,33 @@ export class TestServer {
 
   connect(nodeId, connection) {
     this.connected.add(nodeId)
+    let server = this
     let node = new ServerNode('server:id', this.log, connection, {
-      async inMap(action, meta) {
+      onReceive(action, meta) {
         return [action, { ...meta, subprotocol: node.remoteSubprotocol }]
       },
-      outFilter: async (action, meta) => {
+      onSend(action, meta) {
+        let access
         if (meta.channels) {
-          return meta.channels.some(channel => {
-            let nodes = this.subscriptions[channel] || {}
+          access = meta.channels.some(channel => {
+            let nodes = server.subscriptions[channel] || {}
             return !!nodes[nodeId]
           })
+        } else if (meta.nodes) {
+          access = meta.nodes.includes(nodeId)
+        } else {
+          access =
+            !action.type.startsWith('logux/') && !meta.channels && !meta.nodes
         }
-        if (meta.nodes) {
-          return meta.nodes.includes(nodeId)
+        if (access) {
+          let cleaned = {}
+          for (let i in meta) {
+            if (i !== 'nodes' && i !== 'channels') cleaned[i] = meta[i]
+          }
+          return [action, cleaned]
+        } else {
+          return false
         }
-        return (
-          !action.type.startsWith('logux/') && !meta.channels && !meta.nodes
-        )
-      },
-      async outMap(action, meta) {
-        let cleaned = {}
-        for (let i in meta) {
-          if (i !== 'nodes' && i !== 'channels') cleaned[i] = meta[i]
-        }
-        return [action, cleaned]
       }
     })
     node.on('state', () => {

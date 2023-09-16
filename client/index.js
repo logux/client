@@ -223,28 +223,27 @@ export class Client {
       connection = this.options.server
     }
 
-    let outFilter = async (action, meta) => {
-      return !!meta.sync && parseId(meta.id).userId === this.options.userId
-    }
-
-    let outMap = async (action, meta) => {
-      let filtered = {}
-      for (let i in meta) {
-        if (i === 'subprotocol') {
-          if (meta.subprotocol !== this.options.subprotocol) {
-            filtered.subprotocol = meta.subprotocol
+    let onSend = async (action, meta) => {
+      if (!!meta.sync && parseId(meta.id).userId === this.options.userId) {
+        let filtered = {}
+        for (let i in meta) {
+          if (i === 'subprotocol') {
+            if (meta.subprotocol !== this.options.subprotocol) {
+              filtered.subprotocol = meta.subprotocol
+            }
+          } else if (ALLOWED_META.includes(i)) {
+            filtered[i] = meta[i]
           }
-        } else if (ALLOWED_META.includes(i)) {
-          filtered[i] = meta[i]
         }
+        return [action, filtered]
+      } else {
+        return false
       }
-      return [action, filtered]
     }
 
     this.node = new ClientNode(this.nodeId, this.log, connection, {
       fixTime: !this.options.time,
-      outFilter,
-      outMap,
+      onSend,
       ping: this.options.ping,
       subprotocol: this.options.subprotocol,
       timeout: this.options.timeout,
