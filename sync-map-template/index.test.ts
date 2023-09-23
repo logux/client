@@ -564,7 +564,7 @@ it('deletes maps', async () => {
   expect(client.log.actions()).toEqual([])
 })
 
-it('creates and deletes local maps', async () => {
+it('creates and deletes local maps on uncleaned log', async () => {
   let client = new TestClient('10')
   client.log.keepActions()
 
@@ -697,7 +697,6 @@ it('allows to send create action and return instance', async () => {
 
 it('does not send subscription on local store creation', async () => {
   let client = new TestClient('10')
-  client.log.keepActions()
   await client.connect()
   expect(
     await client.sent(async () => {
@@ -768,7 +767,6 @@ it('has helper to insure that store is loaded', async () => {
 
 it('has helper to load value', async () => {
   let client = new TestClient('10')
-  client.log.keepActions()
   await createSyncMap(client, LocalPost, {
     id: '1',
     title: 'A'
@@ -792,4 +790,103 @@ it('has helper to load value', async () => {
     isLoading: false,
     title: 'B'
   })
+})
+
+it('keeps action in a log for local values', async () => {
+  let client = new TestClient('10')
+  await createSyncMap(client, LocalPost, {
+    category: 'first',
+    id: '1',
+    title: 'A'
+  })
+  await buildNewSyncMap(client, LocalPost, {
+    id: '2',
+    title: 'B'
+  })
+  expect(client.log.actions()).toEqual([
+    {
+      fields: { category: 'first', title: 'A' },
+      id: '1',
+      type: 'localPosts/created'
+    },
+    {
+      fields: { title: 'B' },
+      id: '2',
+      type: 'localPosts/created'
+    }
+  ])
+
+  await changeSyncMapById(client, LocalPost, '1', { title: 'A1' })
+  expect(client.log.actions()).toEqual([
+    {
+      fields: { category: 'first', title: 'A' },
+      id: '1',
+      type: 'localPosts/created'
+    },
+    {
+      fields: { title: 'B' },
+      id: '2',
+      type: 'localPosts/created'
+    },
+    {
+      fields: { title: 'A1' },
+      id: '1',
+      type: 'localPosts/changed'
+    }
+  ])
+
+  await changeSyncMapById(client, LocalPost, '1', { title: 'A2' })
+  expect(client.log.actions()).toEqual([
+    {
+      fields: { category: 'first', title: 'A' },
+      id: '1',
+      type: 'localPosts/created'
+    },
+    {
+      fields: { title: 'B' },
+      id: '2',
+      type: 'localPosts/created'
+    },
+    {
+      fields: { title: 'A2' },
+      id: '1',
+      type: 'localPosts/changed'
+    }
+  ])
+
+  await changeSyncMapById(client, LocalPost, '1', { category: 'second' })
+  expect(client.log.actions()).toEqual([
+    {
+      fields: { title: 'B' },
+      id: '2',
+      type: 'localPosts/created'
+    },
+    {
+      fields: { title: 'A2' },
+      id: '1',
+      type: 'localPosts/changed'
+    },
+    {
+      fields: { category: 'second' },
+      id: '1',
+      type: 'localPosts/changed'
+    }
+  ])
+
+  await deleteSyncMapById(client, LocalPost, '2')
+  expect(client.log.actions()).toEqual([
+    {
+      fields: { title: 'A2' },
+      id: '1',
+      type: 'localPosts/changed'
+    },
+    {
+      fields: { category: 'second' },
+      id: '1',
+      type: 'localPosts/changed'
+    }
+  ])
+
+  await deleteSyncMapById(client, LocalPost, '1')
+  expect(client.log.actions()).toEqual([])
 })
