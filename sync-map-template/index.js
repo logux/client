@@ -340,11 +340,8 @@ export function syncMapTemplate(plural, opts = {}) {
   return Template
 }
 
-function addSyncAction(client, Template, action) {
-  let meta = { indexes: getIndexes(Template.plural, action.id) }
-  if (!Template.remote) {
-    action.type += 'd'
-  }
+function addSyncAction(client, Template, action, meta = {}) {
+  meta.indexes = getIndexes(Template.plural, action.id)
   if (Template.remote) {
     return task(() => client.sync(action, meta))
   } else {
@@ -354,11 +351,26 @@ function addSyncAction(client, Template, action) {
 
 export function createSyncMap(client, Template, value) {
   let { id, ...fields } = value
-  return addSyncAction(client, Template, {
-    fields,
-    id,
-    type: `${Template.plural}/create`
-  })
+  if (Template.remote) {
+    return addSyncAction(client, Template, {
+      fields,
+      id,
+      type: `${Template.plural}/create`
+    })
+  } else {
+    return addSyncAction(
+      client,
+      Template,
+      {
+        fields,
+        id,
+        type: `${Template.plural}/created`
+      },
+      {
+        reasons: Object.keys(fields).map(i => `${Template.plural}/${id}/${i}`)
+      }
+    )
+  }
 }
 
 export async function buildNewSyncMap(client, Template, value) {
@@ -373,20 +385,44 @@ export async function buildNewSyncMap(client, Template, value) {
     indexes: getIndexes(Template.plural, id),
     time: parseInt(actionId)
   }
-  if (Template.remote) meta.sync = true
+  if (Template.remote) {
+    meta.sync = true
+  } else {
+    meta.reasons = Object.keys(fields).map(i => `${Template.plural}/${id}/${i}`)
+  }
   await task(() => client.log.add(action, meta))
 
   let store = Template(id, client, action, meta)
   return store
 }
 
-export function changeSyncMapById(client, Template, id, fields, value) {
+export async function changeSyncMapById(client, Template, id, fields, value) {
   if (value) fields = { [fields]: value }
-  return addSyncAction(client, Template, {
-    fields,
-    id,
-    type: `${Template.plural}/change`
-  })
+
+  if (Template.remote) {
+    return addSyncAction(client, Template, {
+      fields,
+      id,
+      type: `${Template.plural}/change`
+    })
+  } else {
+    let reasons = Object.keys(fields).map(i => `${Template.plural}/${id}/${i}`)
+    let meta = await addSyncAction(
+      client,
+      Template,
+      {
+        fields,
+        id,
+        type: `${Template.plural}/changed`
+      },
+      { reasons: [...reasons] }
+    )
+    return Promise.all(
+      reasons.map(reason => {
+        return client.log.removeReason(reason, { olderThan: meta })
+      })
+    )
+  }
 }
 
 export function changeSyncMap(store, fields, value) {
@@ -395,11 +431,25 @@ export function changeSyncMap(store, fields, value) {
   return changeSyncMapById(store.client, store, store.get().id, fields)
 }
 
-export function deleteSyncMapById(client, Template, id) {
-  return addSyncAction(client, Template, {
-    id,
-    type: `${Template.plural}/delete`
-  })
+export async function deleteSyncMapById(client, Template, id) {
+  if (Template.remote) {
+    return addSyncAction(client, Template, {
+      id,
+      type: `${Template.plural}/delete`
+    })
+  } else {
+    let store = Template.client ? Template : Template(id, client)
+    if (store.get().isLoading) await store.loading
+    await Promise.all(
+      Object.keys(store.get())
+        .filter(i => i !== 'id' && i !== 'isLoading')
+        .map(key => client.log.removeReason(`${Template.plural}/${id}/${key}`))
+    )
+    return addSyncAction(client, Template, {
+      id,
+      type: `${Template.plural}/deleted`
+    })
+  }
 }
 
 export function deleteSyncMap(store) {

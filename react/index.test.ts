@@ -451,13 +451,13 @@ it('recreating filter on args changes', async () => {
 
   await act(async () => {
     await Promise.all([
-      createSyncMap(client, LocalPost, { id: '1', projectId: '1', title: 'Y' }),
-      createSyncMap(client, LocalPost, { id: '2', projectId: '2', title: 'Y' }),
-      createSyncMap(client, LocalPost, { id: '3', projectId: '1', title: 'A' })
+      createSyncMap(client, LocalPost, { id: '1', projectId: '1', title: '1' }),
+      createSyncMap(client, LocalPost, { id: '2', projectId: '5', title: '2' }),
+      createSyncMap(client, LocalPost, { id: '3', projectId: '1', title: '3' })
     ])
     await delay(10)
   })
-  expect(screen.getByTestId('test').textContent).toBe(' 0:Y 1:A')
+  expect(screen.getByTestId('test').textContent).toBe(' 0:1 1:3')
   expect(renders).toEqual(['list', 'list', '1', '3'])
 
   renders.splice(0, renders.length)
@@ -473,15 +473,15 @@ it('recreating filter on args changes', async () => {
   renders.splice(0, renders.length)
   await act(async () => {
     await Promise.all([
-      createSyncMap(client, LocalPost, { id: '1', projectId: '1', title: 'Y' }),
-      createSyncMap(client, LocalPost, { id: '2', projectId: '2', title: 'Y' }),
-      createSyncMap(client, LocalPost, { id: '3', projectId: '1', title: 'A' })
+      createSyncMap(client, LocalPost, { id: '4', projectId: '1', title: '4' }),
+      createSyncMap(client, LocalPost, { id: '5', projectId: '2', title: '5' }),
+      createSyncMap(client, LocalPost, { id: '6', projectId: '1', title: '6' })
     ])
     await delay(10)
   })
   await delay(10)
-  expect(screen.getByTestId('test').textContent).toBe(' 0:Y')
-  expect(renders).toEqual(['list', '2'])
+  expect(screen.getByTestId('test').textContent).toBe(' 0:5')
+  expect(renders).toEqual(['list', '5'])
 })
 
 it('renders authentication state', async () => {

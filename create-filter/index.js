@@ -190,8 +190,12 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
                   endTask()
                   resolve()
                 } else if (Template.remote) {
-                  let subscribeSinceLatest = latestMeta !== undefined
-                      ? { ...subscribe, since: { id: latestMeta.id, time: latestMeta.time } }
+                  let subscribeSinceLatest =
+                    latestMeta !== undefined
+                      ? {
+                          ...subscribe,
+                          since: { id: latestMeta.id, time: latestMeta.time }
+                        }
                       : subscribe
                   await processSubscribe(client.sync(subscribeSinceLatest))
                 }
