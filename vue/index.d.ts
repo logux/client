@@ -11,7 +11,11 @@ import type {
 } from 'vue'
 
 import type { Client } from '../client/index.js'
-import type { Filter, FilterOptions, FilterStore } from '../create-filter/index.js'
+import type {
+  Filter,
+  FilterOptions,
+  FilterStore
+} from '../create-filter/index.js'
 import type { ChannelError } from '../logux-undo-error/index.js'
 import type {
   SyncMapTemplate,
@@ -89,11 +93,11 @@ export function useClient(): Client
  * @returns Store value.
  */
 export function useSync<Value extends SyncMapValues>(
-  Template: SyncMapTemplateLike<Value>,
+  Template: SyncMapTemplate<Value> | SyncMapTemplateLike<Value>,
   id: Refable<string>
 ): ReadonlyRef<SyncMapValue<Value>>
 export function useSync<Value extends object, Args extends any[]>(
-  Template: SyncMapTemplateLike<Value, Args>,
+  Template: SyncMapTemplate<Value> | SyncMapTemplateLike<Value, Args>,
   id: Refable<string>,
   ...args: Args
 ): ReadonlyRef<Value>
@@ -128,7 +132,7 @@ export function useSync<Value extends object, Args extends any[]>(
  * @returns Filter store to use with map.
  */
 export function useFilter<Value extends SyncMapValues>(
-  Template: SyncMapTemplate<Value>,
+  Template: SyncMapTemplate<Value> | SyncMapTemplateLike<Value>,
   filter?: Refable<Filter<Value>>,
   opts?: Refable<FilterOptions>
 ): ReadonlyRef<StoreValue<FilterStore<Value>>>
