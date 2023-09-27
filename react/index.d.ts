@@ -16,6 +16,7 @@ import type {
   ChannelNotFoundError
 } from '../logux-undo-error/index.js'
 import type {
+  SyncMapTemplate,
   SyncMapTemplateLike,
   SyncMapValue
 } from '../sync-map-template/index.js'
@@ -119,11 +120,11 @@ export class ChannelErrors extends Component<
  * @returns Store value.
  */
 export function useSync<Value extends SyncMapValues>(
-  Template: SyncMapTemplateLike<Value>,
+  Template: SyncMapTemplate<Value> | SyncMapTemplateLike<Value>,
   id: string
 ): SyncMapValue<Value>
 export function useSync<Value extends object, Args extends any[]>(
-  Template: SyncMapTemplateLike<Value, Args>,
+  Template: SyncMapTemplate<Value> | SyncMapTemplateLike<Value, Args>,
   id: string,
   ...args: Args
 ): Value
@@ -151,7 +152,7 @@ export function useSync<Value extends object, Args extends any[]>(
  * @returns Filter store to use with map.
  */
 export function useFilter<Value extends SyncMapValues>(
-  Template: SyncMapTemplateLike<Value>,
+  Template: SyncMapTemplate<Value> | SyncMapTemplateLike<Value>,
   filter?: Filter<Value>,
   opts?: FilterOptions
 ): StoreValue<FilterStore<Value>>
