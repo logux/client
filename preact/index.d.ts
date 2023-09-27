@@ -128,9 +128,7 @@ export function useSync<Value extends SyncMapValues>(
   id: string
 ): SyncMapValue<Value>
 export function useSync<Value extends object, Args extends any[]>(
-  Template:
-    | SyncMapTemplate<Value>
-    | SyncMapTemplateLike<Value, [Client, ...Args]>,
+  Template: SyncMapTemplate<Value> | SyncMapTemplateLike<Value, Args>,
   id: string,
   ...args: Args
 ): Value
