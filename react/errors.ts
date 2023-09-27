@@ -1,5 +1,4 @@
-import type { MapStore} from 'nanostores'
-import { map } from 'nanostores'
+import { map, type MapStore } from 'nanostores'
 
 import { syncMapTemplate } from '../sync-map-template/index.js'
 import { useFilter, useSync } from './index.js'
@@ -22,10 +21,12 @@ if (post.isLoading) {
   post.title = 'New title'
 }
 
-let postListItem = postList.stores.get('10')!.value!
-if (postListItem.isLoading) {
-  // THROWS Property 'title' does not exist
-  postListItem.title = 'New title'
+if (!postList.isLoading) {
+  let postListItem = postList.stores.get('10')!.value!
+  if (postListItem.isLoading) {
+    // THROWS Property 'title' does not exist
+    postListItem.title = 'New title'
+  }
 }
 
 if (custom.isLoading) {
