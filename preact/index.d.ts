@@ -124,11 +124,13 @@ export class ChannelErrors extends Component<PreactErrorHandlers> {
  * @returns Store value.
  */
 export function useSync<Value extends SyncMapValues>(
-  Template: SyncMapTemplateLike<Value>,
+  Template: SyncMapTemplate<Value> | SyncMapTemplateLike<Value>,
   id: string
 ): SyncMapValue<Value>
 export function useSync<Value extends object, Args extends any[]>(
-  Template: SyncMapTemplateLike<Value, [Client, ...Args]>,
+  Template:
+    | SyncMapTemplate<Value>
+    | SyncMapTemplateLike<Value, [Client, ...Args]>,
   id: string,
   ...args: Args
 ): Value
@@ -156,7 +158,7 @@ export function useSync<Value extends object, Args extends any[]>(
  * @returns Filter store to use with map.
  */
 export function useFilter<Value extends SyncMapValues>(
-  Template: SyncMapTemplate<Value>,
+  Template: SyncMapTemplate<Value> | SyncMapTemplateLike<Value>,
   filter?: Filter<Value>,
   opts?: FilterOptions
 ): StoreValue<FilterStore<Value>>
