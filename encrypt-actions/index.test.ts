@@ -89,7 +89,7 @@ it('encrypts and decrypts actions', async () => {
   ])
 
   client1.log.add({ type: 'sync', value: 'secret' }, { sync: true })
-  await delay(50)
+  await delay(100)
   expect(getPair(client1).leftSent[0][2].d.length).not.toEqual(
     getPair(client1).leftSent[1][2].d.length
   )
