@@ -53,25 +53,25 @@ devDependencies:
     specifier: ^7.0.0
     version: 7.0.0(@vue/compiler-sfc@3.3.4)(vue@3.3.4)
   '@types/node':
-    specifier: ^20.6.3
+    specifier: ^20.8.0
     version: 20.8.2
   '@types/react':
-    specifier: ^18.2.22
+    specifier: ^18.2.24
     version: 18.2.24
   '@types/react-dom':
-    specifier: ^18.2.7
+    specifier: ^18.2.8
     version: 18.2.8
   '@types/ws':
-    specifier: ^8.5.5
+    specifier: ^8.5.6
     version: 8.5.6
   '@typescript-eslint/eslint-plugin':
-    specifier: ^6.7.2
+    specifier: ^6.7.3
     version: 6.7.4(@typescript-eslint/parser@6.7.4)(eslint@8.50.0)(typescript@5.2.2)
   '@typescript-eslint/parser':
-    specifier: ^6.7.2
+    specifier: ^6.7.3
     version: 6.7.4(eslint@8.50.0)(typescript@5.2.2)
   '@vitest/coverage-v8':
-    specifier: ^0.34.5
+    specifier: ^0.34.6
     version: 0.34.6(vitest@0.34.6)
   '@vue/compiler-sfc':
     specifier: ^3.3.4
@@ -107,7 +107,7 @@ devDependencies:
     specifier: ^4.0.2
     version: 4.0.2
   happy-dom:
-    specifier: ^12.1.6
+    specifier: ^12.4.0
     version: 12.9.0
   nanospy:
     specifier: ^1.0.0
@@ -119,7 +119,7 @@ devDependencies:
     specifier: ^1.0.0
     version: 1.0.0
   postcss:
-    specifier: ^8.4.30
+    specifier: ^8.4.31
     version: 8.4.31
   preact:
     specifier: 10.15.1
@@ -151,7 +151,7 @@ devDependencies:
     version: 4.4.10(@types/node@20.8.2)
 >>>>>>> 5067219 (Update dependencies)
   vitest:
-    specifier: ^0.34.5
+    specifier: ^0.34.6
     version: 0.34.6(happy-dom@12.9.0)
   vue:
     specifier: ^3.3.4
