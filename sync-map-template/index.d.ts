@@ -280,6 +280,10 @@ export function ensureLoaded<Value extends SyncMapValues>(
   value: FilterValue<Value>
 ): LoadedFilterValue<Value>
 
+export type LoadedValue<Type extends { isLoading: boolean }> = Type & {
+  isLoading: false
+}
+
 type LoadableStore = ReadableStore<{ isLoading: boolean }> & {
   readonly loading: Promise<void>
 }
@@ -296,12 +300,6 @@ type LoadableStore = ReadableStore<{ isLoading: boolean }> & {
  *
  * @param store Store to load.
  */
-export function loadValue<Value extends SyncMapValues>(
-  store: SyncMapStore<Value>
-): Promise<LoadedSyncMapValue<Value>>
-export function loadValue<Value extends SyncMapValues>(
-  store: FilterStore<Value>
-): Promise<LoadedFilterValue<Value>>
 export function loadValue<Store extends LoadableStore>(
   store: Store
-): Promise<StoreValue<Store>>
+): Promise<LoadedValue<StoreValue<Store>>>
