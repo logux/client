@@ -890,3 +890,29 @@ it('keeps action in a log for local values', async () => {
   await deleteSyncMapById(client, LocalPost, '1')
   expect(client.log.actions()).toEqual([])
 })
+
+it('marks stores as deleted', async () => {
+  let client = new TestClient('10')
+  await client.connect()
+
+  let post1 = await buildNewSyncMap(client, Post, {
+    id: '1',
+    title: 'A'
+  })
+  post1.listen(() => {})
+  let post2 = await buildNewSyncMap(client, Post, {
+    id: '2',
+    title: 'B'
+  })
+  post2.listen(() => {})
+
+  expect(post1.deleted).toBe(undefined)
+  expect(post2.deleted).toBe(undefined)
+
+  await deleteSyncMapById(client, Post, post1.get().id)
+  expect(post1.deleted).toBe(true)
+  expect(post2.deleted).toBe(undefined)
+
+  await client.log.add({ id: '2', type: 'posts/deleted' })
+  expect(post2.deleted).toBe(true)
+})

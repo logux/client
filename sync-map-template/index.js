@@ -218,13 +218,21 @@ export function syncMapTemplate(plural, opts = {}) {
         client.type(createdType, reasonsForFields, { event: 'preadd', id }),
         client.type(changedType, reasonsForFields, { event: 'preadd', id }),
         client.type(changeType, reasonsForFields, { event: 'preadd', id }),
-        client.type(deletedType, removeReasons, { id }),
+        client.type(
+          deletedType,
+          () => {
+            store.deleted = true
+            removeReasons()
+          },
+          { id }
+        ),
         client.type(
           deleteType,
           async (action, meta) => {
             await task(async () => {
               try {
                 await track(client, meta.id)
+                store.deleted = true
                 removeReasons()
               } catch {
                 await client.log.changeMeta(meta.id, { reasons: [] })
