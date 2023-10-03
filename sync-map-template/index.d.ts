@@ -17,6 +17,11 @@ interface SyncMapStoreExt {
   createdAt?: Meta
 
   /**
+   * Mark that store was deleted.
+   */
+  deleted?: true
+
+  /**
    * While store is loading initial data from server or log.
    */
   readonly loading: Promise<void>
