@@ -107,7 +107,7 @@ devDependencies:
     specifier: ^4.0.2
     version: 4.0.2
   happy-dom:
-    specifier: ^12.6.0
+    specifier: ^12.7.0
     version: 12.9.0
   nanospy:
     specifier: ^1.0.0
@@ -144,10 +144,14 @@ devDependencies:
     version: 5.2.2
   vite:
 <<<<<<< HEAD
+<<<<<<< HEAD
     specifier: ^4.4.8
     version: 4.5.2(@types/node@20.4.7)
 =======
     specifier: ^4.4.9
+=======
+    specifier: ^4.4.10
+>>>>>>> 6fb34f0 (Update dependencies)
     version: 4.4.10(@types/node@20.8.2)
 >>>>>>> 5067219 (Update dependencies)
   vitest:
