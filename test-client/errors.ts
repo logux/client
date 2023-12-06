@@ -7,7 +7,7 @@ interface PostRenameAction {
   postId: string
 }
 
-// THROWS { lang: string; }' is not assignable to parameter of type '{ locale
+// THROWS 'lang' does not exist in type '{ locale: string; }
 client.node.setLocalHeaders({ lang: 'ru' })
 
 client.server.resend<PostRenameAction>(
