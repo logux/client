@@ -8,7 +8,7 @@ import {
 } from '@logux/core'
 import { delay } from 'nanodelay'
 import { restoreAll, spyOn } from 'nanospy'
-import { afterEach, beforeEach, expect, it } from 'vitest'
+import { afterEach, beforeAll, beforeEach, expect, it } from 'vitest'
 
 import { Client, type ClientOptions } from '../index.js'
 import { setLocalStorage } from '../test/local-storage.js'
@@ -21,9 +21,13 @@ class WebSocket {
   close(): void {}
 }
 
-beforeEach(() => {
-  global.WebSocket = WebSocket as any
+beforeAll(() => {
   setLocalStorage()
+})
+
+beforeEach(() => {
+  localStorage.clear()
+  global.WebSocket = WebSocket as any
 })
 
 let originIndexedDB = global.indexedDB

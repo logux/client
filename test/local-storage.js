@@ -3,6 +3,9 @@ let errorOnSet
 export function setLocalStorage() {
   errorOnSet = undefined
   window.localStorage = {
+    clear() {
+      this.storage = {}
+    },
     getItem(key) {
       if (key in this.storage) {
         return this.storage[key]
