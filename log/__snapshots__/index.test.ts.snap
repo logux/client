@@ -2,8 +2,8 @@
 
 exports[`ignores actions by request 1`] = `
 "[33m[1mLogux[22m[39m added and cleaned [32m[1mC[22m[39m action
-  Action {\\"type\\":\\"C\\"}
-  Meta {\\"id\\":\\"3 10:1:1 0\\",\\"time\\":3,\\"reasons\\":[],\\"subprotocol\\":\\"1.0.0\\"}
+  Action {"type":"C"}
+  Meta {"id":"3 10:1:1 0","time":3,"reasons":[],"subprotocol":"1.0.0"}
 "
 `;
 
@@ -15,53 +15,53 @@ exports[`prints log 1`] = `
 [33m[1mLogux[22m[39m state is [1msynchronized[22m
   Server ID: [1mserver:uuid[22m
 [33m[1mLogux[22m[39m added [32m[1mA[22m[39m action
-  Action {\\"type\\":\\"A\\"}
-  Meta {\\"sync\\":true,\\"id\\":\\"1 10:1:1 0\\",\\"time\\":1,\\"reasons\\":[\\"syncing\\"],\\"subprotocol\\":\\"1.0.0\\",\\"added\\":1}
+  Action {"type":"A"}
+  Meta {"sync":true,"id":"1 10:1:1 0","time":1,"reasons":["syncing"],"subprotocol":"1.0.0","added":1}
 [33m[1mLogux[22m[39m state is [1msending[22m
 [33m[1mLogux[22m[39m state is [1msynchronized[22m
 [33m[1mLogux[22m[39m cleaned [1mA[22m action
-  Action {\\"type\\":\\"A\\"}
-  Meta {\\"sync\\":true,\\"id\\":\\"1 10:1:1 0\\",\\"time\\":1,\\"reasons\\":[],\\"subprotocol\\":\\"1.0.0\\",\\"added\\":1}
+  Action {"type":"A"}
+  Meta {"sync":true,"id":"1 10:1:1 0","time":1,"reasons":[],"subprotocol":"1.0.0","added":1}
 [31m[1mLogux[22m[39m action [31m[1mA[22m[39m was undone because of [31m[1merror[22m[39m
-  Reverted Action {\\"type\\":\\"A\\"}
+  Reverted Action {"type":"A"}
 [33m[1mLogux[22m[39m subscribing to [1musers[22m channel
 [33m[1mLogux[22m[39m state is [1msending[22m
 [33m[1mLogux[22m[39m state is [1msynchronized[22m
 [33m[1mLogux[22m[39m subscribed to [1musers/1[22m channel by server
 [33m[1mLogux[22m[39m added [32m[1mA[22m[39m action
-  Action {\\"type\\":\\"A\\"}
-  Meta {\\"id\\":\\"2 server:uuid 1\\",\\"sync\\":true,\\"time\\":2,\\"reasons\\":[\\"syncing\\"],\\"added\\":4}
+  Action {"type":"A"}
+  Meta {"id":"2 server:uuid 1","sync":true,"time":2,"reasons":["syncing"],"added":4}
   From: [1mserver:uuid[22m
 [33m[1mLogux[22m[39m subscribed to [1musers[22m channel
-  Processed Action {\\"channel\\":\\"users\\",\\"type\\":\\"logux/subscribe\\"}
+  Processed Action {"channel":"users","type":"logux/subscribe"}
 [33m[1mLogux[22m[39m state is [1mdisconnected[22m
 [33m[1mLogux[22m[39m state is [1mconnecting[22m
   Node ID: [1m10:1:1[22m
   Server: [1mws://example.com[22m
 [33m[1mLogux[22m[39m subscribing to [1musers[22m channel
-  Action {\\"channel\\":\\"users\\",\\"type\\":\\"logux/subscribe\\",\\"since\\":{\\"id\\":\\"2 server:uuid 0\\",\\"time\\":2}}
+  Action {"channel":"users","type":"logux/subscribe","since":{"id":"2 server:uuid 0","time":2}}
 [33m[1mLogux[22m[39m state is [1msynchronized[22m
   Server ID: [1mserver:uuid[22m
 [33m[1mLogux[22m[39m subscribing to [1musers[22m channel
-  Action {\\"channel\\":\\"users\\",\\"since\\":1,\\"type\\":\\"logux/subscribe\\"}
+  Action {"channel":"users","since":1,"type":"logux/subscribe"}
 [33m[1mLogux[22m[39m state is [1msending[22m
 [33m[1mLogux[22m[39m state is [1msynchronized[22m
 [31m[1mLogux[22m[39m subscription to [31m[1musers[22m[39m was undone because of [31m[1merror[22m[39m
-  Reverted Action {\\"channel\\":\\"users\\",\\"since\\":1,\\"type\\":\\"logux/subscribe\\"}
-  Undo Action {\\"action\\":{\\"channel\\":\\"users\\",\\"since\\":1,\\"type\\":\\"logux/subscribe\\"},\\"id\\":\\"3 10:1:1 0\\",\\"reason\\":\\"error\\",\\"type\\":\\"logux/undo\\",\\"wrongProp\\":\\"sync\\"}
+  Reverted Action {"channel":"users","since":1,"type":"logux/subscribe"}
+  Undo Action {"action":{"channel":"users","since":1,"type":"logux/subscribe"},"id":"3 10:1:1 0","reason":"error","type":"logux/undo","wrongProp":"sync"}
 [33m[1mLogux[22m[39m unsubscribed from channel [1musers[22m
 [33m[1mLogux[22m[39m unsubscribed from channel [1musers[22m
-  Action {\\"bad\\":true,\\"channel\\":\\"users\\",\\"type\\":\\"logux/unsubscribe\\"}
+  Action {"bad":true,"channel":"users","type":"logux/unsubscribe"}
 [33m[1mLogux[22m[39m added [32m[1mB[22m[39m action
-  Action {\\"type\\":\\"B\\"}
-  Meta {\\"sync\\":true,\\"id\\":\\"8 10:1:1 0\\",\\"time\\":8,\\"reasons\\":[\\"syncing\\"],\\"subprotocol\\":\\"1.0.0\\",\\"added\\":7}
+  Action {"type":"B"}
+  Meta {"sync":true,"id":"8 10:1:1 0","time":8,"reasons":["syncing"],"subprotocol":"1.0.0","added":7}
 [33m[1mLogux[22m[39m state is [1msending[22m
 [33m[1mLogux[22m[39m state is [1msynchronized[22m
 [33m[1mLogux[22m[39m action [1mlogux/unsubscribe[22m was processed
-  Processed Action {\\"bad\\":true,\\"channel\\":\\"users\\",\\"type\\":\\"logux/unsubscribe\\"}
+  Processed Action {"bad":true,"channel":"users","type":"logux/unsubscribe"}
 [33m[1mLogux[22m[39m action [1m200 10:1:1 0[22m was processed
 [31m[1mLogux[22m[39m action [31m[1mB[22m[39m was undone because of [31m[1merror[22m[39m
-  Reverted Action {\\"type\\":\\"B\\"}
+  Reverted Action {"type":"B"}
 [33m[1mLogux[22m[39m user ID was changed to [1m20[22m
   Node ID: [1m20:2:2[22m
 "
