@@ -24,13 +24,15 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
       }
 
       let stores = new Map()
-      filterStore.setKey('stores', stores)
       let isLoading = true
-      filterStore.setKey('isLoading', true)
-      filterStore.setKey('isEmpty', true)
-
       let list = []
       filterStore.setKey('list', list)
+      filterStore.set({
+        isEmpty: true,
+        isLoading: true,
+        list,
+        stores
+      })
 
       let channelPrefix = Template.plural + '/'
 
