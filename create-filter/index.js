@@ -232,14 +232,19 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
             })
         }
 
+        if (Template.remote) {
+          unbinds.push(
+            client.type(createdType, setReason, { event: 'preadd' }),
+            client.type(createType, setReason, { event: 'preadd' })
+          )
+        }
+
         unbinds.push(
           client.type('logux/subscribed', action => {
             if (action.channel.startsWith(channelPrefix)) {
               subscribed.add(action.channel)
             }
           }),
-          client.type(createdType, setReason, { event: 'preadd' }),
-          client.type(createType, setReason, { event: 'preadd' }),
           client.type(createdType, async (action, meta) => {
             if (checkAllFields(action.fields)) {
               add(
