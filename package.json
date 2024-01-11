@@ -107,7 +107,7 @@
     "eslint-plugin-prefer-let": "^3.0.1",
     "eslint-plugin-promise": "^6.1.1",
     "fake-indexeddb": "^5.0.2",
-    "happy-dom": "^12.10.3",
+    "happy-dom": "^13.0.0",
     "nanospy": "^1.0.0",
     "nanostores": "^0.9.5",
     "picocolors": "^1.0.0",
