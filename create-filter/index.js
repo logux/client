@@ -108,8 +108,8 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
 
       let endTask = startTask()
       filterStore.loading = new Promise((resolve, reject) => {
-        async function processSubscribe(subscribtion) {
-          await subscribtion
+        async function processSubscribe(subscription) {
+          await subscription
             .then(() => {
               if (isLoading) {
                 isLoading = false
@@ -172,7 +172,7 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
                     type === changeType
                   ) {
                     if (checkSomeFields(action.fields)) {
-                      let check = async () => {
+                      async function check() {
                         loadAndCheck(Template(action.id, client))
                       }
                       checking.push(check())
