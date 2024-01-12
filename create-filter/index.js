@@ -131,7 +131,7 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
           let clear = child.listen(() => {})
           if (child.value.isLoading) await child.loading
           if (checkAllFields(child.value)) {
-            add(child)
+            await add(child)
           }
           clear()
         }
@@ -172,10 +172,7 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
                     type === changeType
                   ) {
                     if (checkSomeFields(action.fields)) {
-                      async function check() {
-                        loadAndCheck(Template(action.id, client))
-                      }
-                      checking.push(check())
+                      checking.push(loadAndCheck(Template(action.id, client)))
                       ignore.add(action.id)
                     }
                   } else if (type === deletedType || type === deleteType) {
