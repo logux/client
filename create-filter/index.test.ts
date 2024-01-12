@@ -268,6 +268,7 @@ it('loads store from the log for offline stores', async () => {
 
   let posts = createFilter(client, LocalPost, { projectId: '10' })
   posts.listen(() => {})
+  expect(posts.get().isLoading).toBe(true)
   await posts.loading
   expect(posts.get().isLoading).toBe(false)
   expect(Array.from(ensureLoaded(posts.get()).stores.keys()).sort()).toEqual([
