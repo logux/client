@@ -3,11 +3,7 @@ import type { Action, Meta } from '@logux/core'
 import type { MapCreator, MapStore, StoreValue } from 'nanostores'
 
 import type { Client } from '../client/index.js'
-import type {
-  FilterStore,
-  FilterValue,
-  LoadedFilterValue
-} from '../create-filter/index.js'
+import type { FilterValue, LoadedFilterValue } from '../create-filter/index.js'
 
 interface SyncMapStoreExt {
   /**
@@ -311,9 +307,9 @@ type LoadableStore = ReadableStore<{ isLoading: boolean }> & {
  *
  * @param store Store to load.
  */
-export function loadValue<Store extends FilterStore>(
-  store: Store
-): Promise<LoadedValue<StoreValue<Store>>>
-export function loadValue<Store extends LoadableStore>(
+export function loadValue<Store extends SyncMapStore>(
   store: Store
 ): Promise<LoadedValue<StoreValue<Store>> | undefined>
+export function loadValue<Store extends LoadableStore>(
+  store: Store
+): Promise<LoadedValue<StoreValue<Store>>>
