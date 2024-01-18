@@ -220,16 +220,18 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
         }
 
         let removeAndListen = (childId, actionId) => {
-          let child = Template(childId, client)
-          let clear = child.listen(() => {})
           remove(childId)
-          track(client, actionId)
-            .catch(() => {
-              add(child)
-            })
-            .finally(() => {
-              clear()
-            })
+          if (Template.remote) {
+            let child = Template(childId, client)
+            let clear = child.listen(() => {})
+            track(client, actionId)
+              .catch(() => {
+                add(child)
+              })
+              .finally(() => {
+                clear()
+              })
+          }
         }
 
         if (Template.remote) {
@@ -296,7 +298,12 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
             } else if (checkSomeFields(action.fields)) {
               let child = Template(action.id, client)
               let clear = child.listen(() => {})
-              if (child.value.isLoading) await child.loading
+              try {
+                if (child.value.isLoading) await child.loading
+                /* c8 ignore next 3 */
+              } catch {
+                return
+              }
               if (checkAllFields(child.value)) {
                 clear()
                 add(child)
