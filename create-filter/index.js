@@ -129,11 +129,14 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
 
         async function loadAndCheck(child) {
           let clear = child.listen(() => {})
-          if (child.value.isLoading) await child.loading
-          if (checkAllFields(child.value)) {
-            await add(child)
+          try {
+            if (child.value.isLoading) await child.loading
+            if (checkAllFields(child.value)) {
+              await add(child)
+            }
+          } finally {
+            clear()
           }
-          clear()
         }
 
         for (let i in Template.cache) {
