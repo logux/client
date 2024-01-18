@@ -470,9 +470,23 @@ export function ensureLoaded(value) {
 }
 
 export async function loadValue(store) {
-  let unbind = store.listen(() => {})
-  if (store.get().isLoading) await store.loading
   let value = store.get()
-  unbind()
-  return value
+  if (value.isLoading) {
+    let unbind = store.listen(() => {})
+    try {
+      await store.loading
+    } catch (e) {
+      if (e.name === 'LoguxUndoError' && e.action.reason === 'notFound') {
+        return undefined
+        /* c8 ignore next 3 */
+      } else {
+        throw e
+      }
+    } finally {
+      unbind()
+    }
+    return store.get()
+  } else {
+    return value
+  }
 }

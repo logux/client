@@ -784,12 +784,16 @@ it('has helper to load value', async () => {
     title: 'B'
   })
   let post2 = LocalPost('2', client)
+  post2.listen(() => {})
   await post2.loading
   expect(await loadValue(post2)).toEqual({
     id: '2',
     isLoading: false,
     title: 'B'
   })
+
+  let post3 = LocalPost('3', client)
+  expect(await loadValue(post3)).toBeUndefined()
 })
 
 it('keeps action in a log for local values', async () => {
