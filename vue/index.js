@@ -18,7 +18,7 @@ import {
 import { createAuth } from '../create-auth/index.js'
 import { createFilter } from '../create-filter/index.js'
 
-const createSymbol = name => {
+function createSymbol(name) {
   return process.env.NODE_ENV !== 'production' ? Symbol(name) : Symbol()
 }
 
@@ -67,9 +67,10 @@ function useSyncStore(store) {
     })
   }
 
-  getCurrentScope() && onScopeDispose(() => {
-    unsubscribe()
-  })
+  getCurrentScope() &&
+    onScopeDispose(() => {
+      unsubscribe()
+    })
 
   if (process.env.NODE_ENV !== 'production') {
     registerStore(store)
@@ -78,10 +79,14 @@ function useSyncStore(store) {
   return [state, unsubscribe]
 }
 
-function syncRefs (source, target) {
-  return watch(source, value => {
-    target.value = value
-  }, { deep: true, flush: 'sync', immediate: true })
+function syncRefs(source, target) {
+  return watch(
+    source,
+    value => {
+      target.value = value
+    },
+    { deep: true, flush: 'sync', immediate: true }
+  )
 }
 
 export function useSync(Template, id, ...builderArgs) {

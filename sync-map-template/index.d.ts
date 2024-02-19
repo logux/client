@@ -1,8 +1,9 @@
 import type { SyncMapValues } from '@logux/actions'
 import type { Action, Meta } from '@logux/core'
-import type { MapCreator, MapStore } from 'nanostores'
+import type { MapCreator, MapStore, StoreValue } from 'nanostores'
 
 import type { Client } from '../client/index.js'
+import type { FilterValue, LoadedFilterValue } from '../create-filter/index.js'
 
 interface SyncMapStoreExt {
   /**
@@ -14,6 +15,11 @@ interface SyncMapStoreExt {
    * Meta from create action if the store was created locally.
    */
   createdAt?: Meta
+
+  /**
+   * Mark that store was deleted.
+   */
+  deleted?: true
 
   /**
    * While store is loading initial data from server or log.
@@ -256,3 +262,54 @@ export function deleteSyncMapById(
  *         or saving action to the log of fully offline classes.
  */
 export function deleteSyncMap(store: SyncMapStore): Promise<void>
+
+/**
+ * Change store’s value type to value with `isLoaded: false`.
+ *
+ * If store is still loading, this function will trow an error.
+ *
+ * Use it for tests written on TypeScript.
+ *
+ * ```js
+ * import { ensureLoaded } from '@logux/client'
+ *
+ * expect(ensureLoaded($currentUser)).toEqual({ id: 1, name: 'User' })
+ * ```
+ *
+ * @param value Store’s value.
+ */
+export function ensureLoaded<Value extends SyncMapValues>(
+  value: SyncMapValue<Value>
+): LoadedSyncMapValue<Value>
+export function ensureLoaded<Value extends SyncMapValues>(
+  value: FilterValue<Value>
+): LoadedFilterValue<Value>
+
+export type LoadedValue<Type extends { isLoading: boolean }> = Type & {
+  isLoading: false
+}
+
+type LoadableStore = ReadableStore<{ isLoading: boolean }> & {
+  readonly loading: Promise<void>
+}
+
+/**
+ * Return store’s value if store is loaded or wait until store will be loaded
+ * and return its value.
+ *
+ * Returns `undefined` on 404.
+ *
+ * ```js
+ * import { loadValue } from '@logux/client'
+ *
+ * let user = loadValue($currentUser)
+ * ```
+ *
+ * @param store Store to load.
+ */
+export function loadValue<Store extends SyncMapStore>(
+  store: Store
+): Promise<LoadedValue<StoreValue<Store>> | undefined>
+export function loadValue<Store extends LoadableStore>(
+  store: Store
+): Promise<LoadedValue<StoreValue<Store>>>

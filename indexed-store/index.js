@@ -246,15 +246,15 @@ export class IndexedStore {
             return
           }
 
+          entry.reasons = entry.reasons.filter(i => i !== reason)
+          entry.meta.reasons = entry.reasons
+
           let process
-          if (entry.reasons.length === 1) {
-            entry.meta.reasons = []
+          if (entry.reasons.length === 0) {
             entry.meta.added = entry.added
             callback(entry.action, entry.meta)
             process = log.delete(entry.added)
           } else {
-            entry.reasons.splice(entry.reasons.indexOf(reason), 1)
-            entry.meta.reasons = entry.reasons
             process = log.put(entry)
           }
 

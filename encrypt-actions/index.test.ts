@@ -1,7 +1,7 @@
 import { TestPair, TestTime } from '@logux/core'
 import { Crypto } from '@peculiar/webcrypto'
 import { delay } from 'nanodelay'
-import { TextDecoder, TextEncoder } from 'util'
+import { TextDecoder, TextEncoder } from 'node:util'
 import { expect, it } from 'vitest'
 
 import { Client, encryptActions } from '../index.js'
@@ -88,11 +88,16 @@ it('encrypts and decrypts actions', async () => {
     { type: 'sync', value: 'secret' }
   ])
 
-  client1.log.add({ type: 'sync', value: 'secret' }, { sync: true })
+  client1.log.add({ type: 'sync', value: 'same size' }, { sync: true })
+  client1.log.add({ type: 'sync', value: 'same size' }, { sync: true })
+  client1.log.add({ type: 'sync', value: 'same size' }, { sync: true })
+  client1.log.add({ type: 'sync', value: 'same size' }, { sync: true })
   await delay(100)
-  expect(getPair(client1).leftSent[0][2].d.length).not.toEqual(
-    getPair(client1).leftSent[1][2].d.length
-  )
+  let size1 = getPair(client1).leftSent[1][2].d.length
+  let size2 = getPair(client1).leftSent[2][2].d.length
+  let size3 = getPair(client1).leftSent[3][2].d.length
+  let size4 = getPair(client1).leftSent[4][2].d.length
+  expect(size1 !== size2 || size1 !== size3 || size1 !== size4).toBeTruthy()
 })
 
 it('ignores specific actions', async () => {
@@ -108,6 +113,8 @@ it('ignores specific actions', async () => {
   client1.log.add({ type: 'sync' }, { sync: true })
   await delay(10)
   client1.log.add({ type: 'server' }, { sync: true })
+  await delay(10)
+  client1.log.add({ type: 'nonsync' })
   await delay(10)
   expect(getPair(client1).leftSent).toMatchObject([
     [

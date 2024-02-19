@@ -10,6 +10,8 @@ import {
   createSyncMap,
   deleteSyncMap,
   deleteSyncMapById,
+  ensureLoaded,
+  loadValue,
   syncMapTemplate,
   type SyncMapValue,
   TestClient
@@ -562,7 +564,7 @@ it('deletes maps', async () => {
   expect(client.log.actions()).toEqual([])
 })
 
-it('creates and deletes local maps', async () => {
+it('creates and deletes local maps on uncleaned log', async () => {
   let client = new TestClient('10')
   client.log.keepActions()
 
@@ -695,7 +697,6 @@ it('allows to send create action and return instance', async () => {
 
 it('does not send subscription on local store creation', async () => {
   let client = new TestClient('10')
-  client.log.keepActions()
   await client.connect()
   expect(
     await client.sent(async () => {
@@ -741,4 +742,181 @@ it('loads data by created action', async () => {
     isLoading: true,
     title: 'A'
   })
+})
+
+it('has helper to insure that store is loaded', async () => {
+  let client = createAutoprocessingClient()
+  await client.connect()
+
+  let post = Post('ID', client)
+  let changes: SyncMapValue<PostValue>[] = []
+  post.subscribe(value => {
+    changes.push(clone(value))
+  })
+
+  expect(() => {
+    ensureLoaded(post.get())
+  }).toThrow('Store was not loaded yet')
+
+  await post.loading
+  expect(ensureLoaded(post.get())).toEqual({
+    id: 'ID',
+    isLoading: false
+  })
+})
+
+it('has helper to load value', async () => {
+  let client = new TestClient('10')
+  await createSyncMap(client, LocalPost, {
+    id: '1',
+    title: 'A'
+  })
+
+  let post1 = LocalPost('1', client)
+  expect(await loadValue(post1)).toEqual({
+    id: '1',
+    isLoading: false,
+    title: 'A'
+  })
+
+  await createSyncMap(client, LocalPost, {
+    id: '2',
+    title: 'B'
+  })
+  let post2 = LocalPost('2', client)
+  post2.listen(() => {})
+  await post2.loading
+  expect(await loadValue(post2)).toEqual({
+    id: '2',
+    isLoading: false,
+    title: 'B'
+  })
+
+  let post3 = LocalPost('3', client)
+  expect(await loadValue(post3)).toBeUndefined()
+})
+
+it('keeps action in a log for local values', async () => {
+  let client = new TestClient('10')
+  await createSyncMap(client, LocalPost, {
+    category: 'first',
+    id: '1',
+    title: 'A'
+  })
+  await buildNewSyncMap(client, LocalPost, {
+    id: '2',
+    title: 'B'
+  })
+  expect(client.log.actions()).toEqual([
+    {
+      fields: { category: 'first', title: 'A' },
+      id: '1',
+      type: 'localPosts/created'
+    },
+    {
+      fields: { title: 'B' },
+      id: '2',
+      type: 'localPosts/created'
+    }
+  ])
+
+  await changeSyncMapById(client, LocalPost, '1', { title: 'A1' })
+  expect(client.log.actions()).toEqual([
+    {
+      fields: { category: 'first', title: 'A' },
+      id: '1',
+      type: 'localPosts/created'
+    },
+    {
+      fields: { title: 'B' },
+      id: '2',
+      type: 'localPosts/created'
+    },
+    {
+      fields: { title: 'A1' },
+      id: '1',
+      type: 'localPosts/changed'
+    }
+  ])
+
+  await changeSyncMapById(client, LocalPost, '1', { title: 'A2' })
+  expect(client.log.actions()).toEqual([
+    {
+      fields: { category: 'first', title: 'A' },
+      id: '1',
+      type: 'localPosts/created'
+    },
+    {
+      fields: { title: 'B' },
+      id: '2',
+      type: 'localPosts/created'
+    },
+    {
+      fields: { title: 'A2' },
+      id: '1',
+      type: 'localPosts/changed'
+    }
+  ])
+
+  await changeSyncMapById(client, LocalPost, '1', { category: 'second' })
+  expect(client.log.actions()).toEqual([
+    {
+      fields: { title: 'B' },
+      id: '2',
+      type: 'localPosts/created'
+    },
+    {
+      fields: { title: 'A2' },
+      id: '1',
+      type: 'localPosts/changed'
+    },
+    {
+      fields: { category: 'second' },
+      id: '1',
+      type: 'localPosts/changed'
+    }
+  ])
+
+  await deleteSyncMapById(client, LocalPost, '2')
+  expect(client.log.actions()).toEqual([
+    {
+      fields: { title: 'A2' },
+      id: '1',
+      type: 'localPosts/changed'
+    },
+    {
+      fields: { category: 'second' },
+      id: '1',
+      type: 'localPosts/changed'
+    }
+  ])
+
+  await deleteSyncMapById(client, LocalPost, '1')
+  expect(client.log.actions()).toEqual([])
+})
+
+it('marks stores as deleted', async () => {
+  let client = new TestClient('10')
+  await client.connect()
+
+  let post1 = await buildNewSyncMap(client, Post, {
+    id: '1',
+    title: 'A'
+  })
+  post1.listen(() => {})
+  let post2 = await buildNewSyncMap(client, Post, {
+    id: '2',
+    title: 'B'
+  })
+  post2.listen(() => {})
+
+  expect(post1.deleted).toBe(undefined)
+  expect(post2.deleted).toBe(undefined)
+
+  await deleteSyncMapById(client, Post, post1.get().id)
+  expect(post1.deleted).toBe(true)
+  expect(post2.deleted).toBe(undefined)
+
+  await client.log.add({ id: '2', type: 'posts/deleted' })
+  expect(post2.deleted).toBe(true)
 })

@@ -18,11 +18,11 @@ let User = syncMapTemplate<{
 }>('users')
 
 let user = User('user:id', client)
-// THROWS { firstName: string; }' is not assignable to parameter
+// THROWS 'firstName' does not exist in type
 changeSyncMap(user, { firstName: 'Ivan' })
 // THROWS Type 'string' is not assignable to type 'number'
 changeSyncMap(user, { age: '26' })
-// THROWS is not assignable to parameter of type 'Partial
+// THROWS 'id' does not exist in type
 changeSyncMap(user, { id: '26' })
 // THROWS firstName"' is not assignable to parameter of type '"name" | "age"
 changeSyncMap(user, 'firstName', 'Ivan')

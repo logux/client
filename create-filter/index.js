@@ -24,13 +24,15 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
       }
 
       let stores = new Map()
-      filterStore.setKey('stores', stores)
       let isLoading = true
-      filterStore.setKey('isLoading', true)
-      filterStore.setKey('isEmpty', true)
-
       let list = []
       filterStore.setKey('list', list)
+      filterStore.set({
+        isEmpty: true,
+        isLoading: true,
+        list,
+        stores
+      })
 
       let channelPrefix = Template.plural + '/'
 
@@ -106,8 +108,8 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
 
       let endTask = startTask()
       filterStore.loading = new Promise((resolve, reject) => {
-        async function processSubscribe(subscribtion) {
-          await subscribtion
+        async function processSubscribe(subscription) {
+          await subscription
             .then(() => {
               if (isLoading) {
                 isLoading = false
@@ -127,11 +129,14 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
 
         async function loadAndCheck(child) {
           let clear = child.listen(() => {})
-          if (child.value.isLoading) await child.loading
-          if (checkAllFields(child.value)) {
-            add(child)
+          try {
+            if (child.value.isLoading) await child.loading
+            if (checkAllFields(child.value)) {
+              await add(child)
+            }
+          } finally {
+            clear()
           }
-          clear()
         }
 
         for (let i in Template.cache) {
@@ -170,10 +175,7 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
                     type === changeType
                   ) {
                     if (checkSomeFields(action.fields)) {
-                      let check = async () => {
-                        loadAndCheck(Template(action.id, client))
-                      }
-                      checking.push(check())
+                      checking.push(loadAndCheck(Template(action.id, client)))
                       ignore.add(action.id)
                     }
                   } else if (type === deletedType || type === deleteType) {
@@ -190,8 +192,12 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
                   endTask()
                   resolve()
                 } else if (Template.remote) {
-                  let subscribeSinceLatest = latestMeta !== undefined
-                      ? { ...subscribe, since: { id: latestMeta.id, time: latestMeta.time } }
+                  let subscribeSinceLatest =
+                    latestMeta !== undefined
+                      ? {
+                          ...subscribe,
+                          since: { id: latestMeta.id, time: latestMeta.time }
+                        }
                       : subscribe
                   await processSubscribe(client.sync(subscribeSinceLatest))
                 }
@@ -214,16 +220,25 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
         }
 
         let removeAndListen = (childId, actionId) => {
-          let child = Template(childId, client)
-          let clear = child.listen(() => {})
           remove(childId)
-          track(client, actionId)
-            .catch(() => {
-              add(child)
-            })
-            .finally(() => {
-              clear()
-            })
+          if (Template.remote) {
+            let child = Template(childId, client)
+            let clear = child.listen(() => {})
+            track(client, actionId)
+              .catch(() => {
+                add(child)
+              })
+              .finally(() => {
+                clear()
+              })
+          }
+        }
+
+        if (Template.remote) {
+          unbinds.push(
+            client.type(createdType, setReason, { event: 'preadd' }),
+            client.type(createType, setReason, { event: 'preadd' })
+          )
         }
 
         unbinds.push(
@@ -232,8 +247,6 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
               subscribed.add(action.channel)
             }
           }),
-          client.type(createdType, setReason, { event: 'preadd' }),
-          client.type(createType, setReason, { event: 'preadd' }),
           client.type(createdType, async (action, meta) => {
             if (checkAllFields(action.fields)) {
               add(
@@ -285,7 +298,12 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
             } else if (checkSomeFields(action.fields)) {
               let child = Template(action.id, client)
               let clear = child.listen(() => {})
-              if (child.value.isLoading) await child.loading
+              try {
+                if (child.value.isLoading) await child.loading
+                /* c8 ignore next 3 */
+              } catch {
+                return
+              }
               if (checkAllFields(child.value)) {
                 clear()
                 add(child)

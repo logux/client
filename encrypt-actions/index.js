@@ -108,17 +108,8 @@ export function encryptActions(client, secret, opts = {}) {
   }
 
   let ignore = new Set(opts.ignore || [])
-  async function outMap(action, meta) {
-    if (action.type === '0/clean' || ignore.has(action.type)) {
-      return [action, meta]
-    } else {
-      if (!key) key = await getKey()
-      let encrypted = await encrypt(action, key)
-      return [encrypted, meta]
-    }
-  }
 
-  async function inMap(action, meta) {
+  async function onReceive(action, meta) {
     if (action.type === '0') {
       if (!key) key = await getKey()
       let decrypted = await decrypt(action, key)
@@ -128,13 +119,21 @@ export function encryptActions(client, secret, opts = {}) {
     }
   }
 
-  let originOutMap = client.node.options.outMap
-  client.node.options.outMap = async (action, meta) => {
-    let converted = await originOutMap(action, meta)
-    return outMap(...converted)
+  let originOnSend = client.node.options.onSend
+  client.node.options.onSend = async (action, meta) => {
+    let result = await originOnSend(action, meta)
+    if (!result) {
+      return false
+    } else if (result[0].type === '0/clean' || ignore.has(result[0].type)) {
+      return [result[0], result[1]]
+    } else {
+      if (!key) key = await getKey()
+      let encrypted = await encrypt(result[0], key)
+      return [encrypted, result[1]]
+    }
   }
 
-  client.node.options.inMap = inMap
+  client.node.options.onReceive = onReceive
 
   client.log.on('clean', (action, meta) => {
     if (meta.sync) {

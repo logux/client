@@ -263,6 +263,15 @@ it('becomes leader without localStorage', () => {
   expect(connect.callCount).toEqual(1)
 })
 
+it('avoids connection on request', () => {
+  // @ts-expect-error
+  window.localStorage = undefined
+  client = createClient()
+  let connect = spyOn(client.node.connection, 'connect')
+  client.start(false)
+  expect(connect.called).toBe(false)
+})
+
 it('becomes leader without Web Locks', () => {
   Object.defineProperty(navigator, 'locks', {
     configurable: true,

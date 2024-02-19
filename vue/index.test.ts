@@ -1,4 +1,4 @@
-import { LoguxNotFoundError } from '@logux/actions'
+import { LoguxNotFoundError, type SyncMapValues } from '@logux/actions'
 import { cleanup, render, screen } from '@testing-library/vue'
 import { delay } from 'nanodelay'
 import { restoreAll, spyOn } from 'nanospy'
@@ -6,6 +6,7 @@ import { atom, cleanStores, map, type MapStore, onMount } from 'nanostores'
 import { afterEach, expect, it } from 'vitest'
 import {
   type Component,
+  type DeepReadonly,
   defineComponent,
   h,
   isReadonly,
@@ -17,6 +18,8 @@ import {
 import {
   changeSyncMapById,
   createSyncMap,
+  type FilterValue,
+  type LoadedFilterValue,
   LoguxUndoError,
   syncMapTemplate,
   type SyncMapTemplate,
@@ -32,6 +35,12 @@ import {
   useFilter,
   useSync
 } from './index.js'
+
+export function asLoaded<Value extends SyncMapValues>(
+  value: DeepReadonly<FilterValue<Value>>
+): DeepReadonly<LoadedFilterValue<Value>> {
+  return value as DeepReadonly<LoadedFilterValue<Value>>
+}
 
 function getCatcher(cb: () => void): [string[], Component] {
   let errors: string[] = []
@@ -373,13 +382,15 @@ it('renders filter', async () => {
   let renders: string[] = []
   let TestList = defineComponent(() => {
     let posts = useFilter(LocalPostStore, { projectId: '1' })
-    expect(posts.value.stores.size).toEqual(posts.value.list.length)
+    expect(asLoaded(posts.value).stores.size).toEqual(
+      asLoaded(posts.value).list.length
+    )
     return () => {
       renders.push('list')
       return h(
         'ul',
         { 'data-testid': 'test' },
-        posts.value.list.map((post, index) => {
+        asLoaded(posts.value).list.map((post, index) => {
           renders.push(post.id)
           return h('li', ` ${index}:${post.title}`)
         })
@@ -460,7 +471,7 @@ it('recreates filter on args changes', async () => {
         h(
           'ul',
           { 'data-testid': 'test' },
-          posts.value.list.map((post, index) => {
+          asLoaded(posts.value).list.map((post, index) => {
             renders.push(post.id)
             return h('li', ` ${index}:${post.title}`)
           })
@@ -485,20 +496,20 @@ it('recreates filter on args changes', async () => {
     createSyncMap(client, LocalPostStore, {
       id: '1',
       projectId: '1',
-      title: 'Y'
+      title: '1'
     }),
     createSyncMap(client, LocalPostStore, {
       id: '2',
-      projectId: '2',
-      title: 'Y'
+      projectId: '5',
+      title: '2'
     }),
     createSyncMap(client, LocalPostStore, {
       id: '3',
       projectId: '1',
-      title: 'A'
+      title: '3'
     })
   ])
-  expect(screen.getByTestId('test').textContent).toBe(' 0:Y 1:A')
+  expect(screen.getByTestId('test').textContent).toBe(' 0:1 1:3')
   expect(renders).toEqual(['list', 'list', '1', '3'])
 
   renders.splice(0, renders.length)
@@ -512,24 +523,24 @@ it('recreates filter on args changes', async () => {
   renders.splice(0, renders.length)
   await Promise.all([
     createSyncMap(client, LocalPostStore, {
-      id: '1',
+      id: '4',
       projectId: '1',
-      title: 'Y'
+      title: '4'
     }),
     createSyncMap(client, LocalPostStore, {
-      id: '2',
+      id: '5',
       projectId: '2',
-      title: 'Y'
+      title: '5'
     }),
     createSyncMap(client, LocalPostStore, {
-      id: '3',
+      id: '6',
       projectId: '1',
-      title: 'A'
+      title: '6'
     })
   ])
   await delay(10)
-  expect(screen.getByTestId('test').textContent).toBe(' 0:Y')
-  expect(renders).toEqual(['list', '2'])
+  expect(screen.getByTestId('test').textContent).toBe(' 0:5')
+  expect(renders).toEqual(['list', '5'])
 })
 
 it('renders authentication state', async () => {

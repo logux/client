@@ -8,7 +8,7 @@ import {
 } from '@logux/core'
 import { delay } from 'nanodelay'
 import { restoreAll, spyOn } from 'nanospy'
-import { afterEach, beforeEach, expect, it } from 'vitest'
+import { afterEach, beforeAll, beforeEach, expect, it } from 'vitest'
 
 import { Client, type ClientOptions } from '../index.js'
 import { setLocalStorage } from '../test/local-storage.js'
@@ -21,9 +21,13 @@ class WebSocket {
   close(): void {}
 }
 
-beforeEach(() => {
-  global.WebSocket = WebSocket as any
+beforeAll(() => {
   setLocalStorage()
+})
+
+beforeEach(() => {
+  localStorage.clear()
+  global.WebSocket = WebSocket as any
 })
 
 let originIndexedDB = global.indexedDB
@@ -302,11 +306,18 @@ it('uses test time', () => {
   expect(client.log.generateId()).toBe('1 10:1:1 0')
 })
 
-it('connects', () => {
+it('connects by default', () => {
   let client = createClient()
   let connect = spyOn(client.node.connection, 'connect')
   client.start()
   expect(connect.callCount).toEqual(1)
+})
+
+it('avoids connection on request', () => {
+  let client = createClient()
+  let connect = spyOn(client.node.connection, 'connect')
+  client.start(false)
+  expect(connect.called).toBe(false)
 })
 
 it('display server debug error stacktrace with prefix', () => {
