@@ -78,16 +78,16 @@ async function decrypt(action, key) {
   return bytesToObj(bytes)
 }
 
-export function encryptActions(client, secret, opts = {}) {
+export async function encryptActions(client, secret, opts = {}) {
   let key
   if (secret instanceof CryptoKey) {
     key = secret
   } else {
-    key = getKey()
+    key = await getKey()
   }
 
   async function getKey() {
-    await crypto.subtle.importKey(
+    let _key = crypto.subtle.importKey(
       'raw',
       await sha256(secret),
       { name: 'AES-GCM' },
@@ -95,7 +95,7 @@ export function encryptActions(client, secret, opts = {}) {
       ['encrypt', 'decrypt']
     )
 
-    return key
+    return _key
   }
 
   let ignore = new Set(opts.ignore || [])
