@@ -78,15 +78,6 @@ async function decrypt(action, key) {
   return bytesToObj(bytes)
 }
 
-/**
- * Patch the given client instance so that all actions are encrypted.
- *
- * @param {InstanceType<import("../client/index.js").Client>} client
- * The `logux` client instance
- * @param {string|CryptoKey} [secret] Password or CryptoKey
- * @param {{ ignore: string[] }} [opts={}] Can pass in an option `ignore` -- a
- * list of action types that should *not* be encrypted.
- */
 export function encryptActions(client, secret, opts = {}) {
   let key
   if (secret instanceof CryptoKey) {
