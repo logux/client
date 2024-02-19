@@ -60,9 +60,10 @@ function base64ToBytes(string) {
 
 async function encrypt(action, key) {
   let iv = getRandomBytes(12)
-  let crypted = await crypto.subtle.encrypt(aes(iv), key, objToBytes(action))
+  let encrypted = await crypto.subtle.encrypt(aes(iv), key, objToBytes(action))
+
   return {
-    d: bytesToBase64(new Uint8Array(crypted)),
+    d: bytesToBase64(new Uint8Array(encrypted)),
     iv: bytesToBase64(iv),
     type: '0'
   }
@@ -77,16 +78,32 @@ async function decrypt(action, key) {
   return bytesToObj(bytes)
 }
 
+/**
+ * Patch the given client instance so that all actions are encrypted.
+ *
+ * @param {InstanceType<import("../client/index.js").Client>} client
+ * The `logux` client instance
+ * @param {string|CryptoKey} [secret] Password or CryptoKey
+ * @param {{ ignore: string[] }} [opts={}] Can pass in an option `ignore` -- a
+ * list of action types that should *not* be encrypted.
+ */
 export function encryptActions(client, secret, opts = {}) {
   let key
+  if (secret instanceof CryptoKey) {
+    key = secret
+  } else {
+    key = getKey()
+  }
+
   async function getKey() {
-    key = await crypto.subtle.importKey(
+    await crypto.subtle.importKey(
       'raw',
       await sha256(secret),
       { name: 'AES-GCM' },
       false,
       ['encrypt', 'decrypt']
     )
+
     return key
   }
 

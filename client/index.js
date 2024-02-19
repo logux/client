@@ -343,10 +343,6 @@ export class Client {
     }
   }
 
-  get connected() {
-    return this.state !== 'disconnected' && this.state !== 'connecting'
-  }
-
   destroy() {
     this.onUnload()
     this.node.destroy()
@@ -379,10 +375,6 @@ export class Client {
     this.node.connection.connect()
   }
 
-  get state() {
-    return this.node.state
-  }
-
   sync(action, meta = {}) {
     meta.sync = true
     if (typeof meta.id === 'undefined') {
@@ -411,4 +403,13 @@ export class Client {
       })
     })
   }
+
+  get connected() {
+    return this.state !== 'disconnected' && this.state !== 'connecting'
+  }
+
+  get state() {
+    return this.node.state
+  }
+
 }
