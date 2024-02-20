@@ -348,6 +348,7 @@ it('has hook to get client', () => {
   let client = new TestClient('10')
   expect(
     getText(
+      // @ts-expect-error
       h(ClientContext.Provider, { children: h(Test, null), value: client })
     )
   ).toBe('10')

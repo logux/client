@@ -24,14 +24,15 @@ This repository contains Logux base components to build web client:
 
 Check **[demo page]** for widget UI.
 
-<a href="https://evilmartians.com/?utm_source=logux-client">
-  <img src="https://evilmartians.com/badges/sponsored-by-evil-martians.svg"
-       alt="Sponsored by Evil Martians" width="236" height="54">
-</a>
-
 [demo page]: https://logux.github.io/client/
 [cult-img]: http://cultofmartians.com/assets/badges/badge.svg
 [cult]: http://cultofmartians.com/done.html
+
+---
+
+<img src="https://cdn.evilmartians.com/badges/logo-no-label.svg" alt="" width="22" height="16" />  Made in <b><a href="https://evilmartians.com/devtools?utm_source=logux-client&utm_campaign=devtools-button&utm_medium=github">Evil Martians</a></b>, product consulting for <b>developer tools</b>.
+
+---
 
 
 ## Install

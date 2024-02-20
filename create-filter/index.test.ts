@@ -449,7 +449,7 @@ it('updates list on store create/deleted/change', async () => {
     projectId: '1'
   })
   let changes: string[] = []
-  posts.listen((value, key) => {
+  posts.listen((value, old, key) => {
     changes.push(key)
   })
 
@@ -609,7 +609,7 @@ it('triggers on child changes', async () => {
   let posts = createFilter(client, Post, { authorId: '10' })
   posts.listen(() => {})
   let calls: (string | undefined)[] = []
-  posts.subscribe((value, key) => {
+  posts.subscribe((value, old, key) => {
     calls.push(key)
   })
   await posts.loading
@@ -644,7 +644,7 @@ it('can ignore child changes', async () => {
   )
   posts.listen(() => {})
   let calls: (string | undefined)[] = []
-  posts.subscribe((value, key) => {
+  posts.subscribe((value, old, key) => {
     calls.push(key)
   })
   await posts.loading
