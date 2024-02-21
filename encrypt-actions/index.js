@@ -60,9 +60,10 @@ function base64ToBytes(string) {
 
 async function encrypt(action, key) {
   let iv = getRandomBytes(12)
-  let crypted = await crypto.subtle.encrypt(aes(iv), key, objToBytes(action))
+  let encrypted = await crypto.subtle.encrypt(aes(iv), key, objToBytes(action))
+
   return {
-    d: bytesToBase64(new Uint8Array(crypted)),
+    d: bytesToBase64(new Uint8Array(encrypted)),
     iv: bytesToBase64(iv),
     type: '0'
   }
@@ -77,17 +78,24 @@ async function decrypt(action, key) {
   return bytesToObj(bytes)
 }
 
-export function encryptActions(client, secret, opts = {}) {
+export async function encryptActions(client, secret, opts = {}) {
   let key
+  if (secret instanceof CryptoKey) {
+    key = secret
+  } else {
+    key = await getKey()
+  }
+
   async function getKey() {
-    key = await crypto.subtle.importKey(
+    let _key = crypto.subtle.importKey(
       'raw',
       await sha256(secret),
       { name: 'AES-GCM' },
       false,
       ['encrypt', 'decrypt']
     )
-    return key
+
+    return _key
   }
 
   let ignore = new Set(opts.ignore || [])

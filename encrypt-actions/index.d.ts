@@ -13,16 +13,17 @@ import type { Client } from '../client/index.js'
  * ```
  *
  * @param client Observed Client instance.
- * @param secret Password for encryption.
- * @param opts Encryption options.
+ * @param secret Password for encryption, or a CryptoKey AES key.
+ * @param opts Encryption options -- can pass in strings
+ * to *not* encrypt.
  * @returns Unbind listener.
  */
-export function encryptActions(
+export async function encryptActions(
   client: Client,
-  secret: string,
+  secret: CryptoKey|string,
   opts?: {
     ignore: string[]
   }
-): () => void
+):Promise<void>
 
 export function getRandomSpaces(): string
