@@ -11,11 +11,9 @@ window.TextEncoder = TextEncoder
 // @ts-expect-error
 window.TextDecoder = TextDecoder
 
-// For old Node.js, which doesn’t have Web Crypto
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-if (!window.crypto) {
-  window.crypto = new Crypto()
-  window.CryptoKey = CryptoKey
+if (process.version.startsWith('v18')) {
+  global.crypto = new Crypto()
+  global.CryptoKey = CryptoKey
 }
 
 function privateMethods(obj: object): any {
