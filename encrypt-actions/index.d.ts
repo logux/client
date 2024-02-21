@@ -18,12 +18,12 @@ import type { Client } from '../client/index.js'
  * to *not* encrypt.
  * @returns Unbind listener.
  */
-export async function encryptActions(
+export function encryptActions(
   client: Client,
-  secret: CryptoKey|string,
+  secret: CryptoKey | string,
   opts?: {
     ignore: string[]
   }
-):Promise<void>
+): void
 
 export function getRandomSpaces(): string

@@ -100,6 +100,43 @@ it('encrypts and decrypts actions', async () => {
   expect(size1 !== size2 || size1 !== size3 || size1 !== size4).toBeTruthy()
 })
 
+it('accepts key', async () => {
+  let client1 = createClient()
+  let client2 = createClient()
+
+  let key = await crypto.subtle.generateKey(
+    {
+      length: 256,
+      name: 'AES-GCM'
+    },
+    true,
+    ['encrypt', 'decrypt']
+  )
+
+  encryptActions(client1, key)
+  encryptActions(client2, key)
+
+  await Promise.all([connect(client1), connect(client2)])
+  getPair(client1).clear()
+
+  client1.log.add({ type: 'sync', value: 'secret' }, { sync: true })
+  await delay(50)
+  expect(getPair(client1).leftSent).toMatchObject([
+    [
+      'sync',
+      1,
+      { d: BASE64, iv: BASE64, type: '0' },
+      { id: 1, time: expect.any(Number) }
+    ]
+  ])
+
+  getPair(client2).right.send(getPair(client1).leftSent[0])
+  await delay(10)
+  expect(privateMethods(client2.log).actions()).toEqual([
+    { type: 'sync', value: 'secret' }
+  ])
+})
+
 it('ignores specific actions', async () => {
   let client1 = createClient()
   let client2 = createClient()
