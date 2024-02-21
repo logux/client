@@ -1,5 +1,5 @@
 import { TestPair, TestTime } from '@logux/core'
-import { Crypto } from '@peculiar/webcrypto'
+import { Crypto, CryptoKey } from '@peculiar/webcrypto'
 import { delay } from 'nanodelay'
 import { TextDecoder, TextEncoder } from 'node:util'
 import { expect, it } from 'vitest'
@@ -15,6 +15,7 @@ window.TextDecoder = TextDecoder
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 if (!window.crypto) {
   window.crypto = new Crypto()
+  window.CryptoKey = CryptoKey
 }
 
 function privateMethods(obj: object): any {
