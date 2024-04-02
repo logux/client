@@ -80,7 +80,7 @@
   },
   "devDependencies": {
     "@logux/core": "github:logux/core#next",
-    "@logux/eslint-config": "^52.0.2",
+    "@logux/eslint-config": "^53.0.0",
     "@nanostores/preact": "^0.5.1",
     "@nanostores/react": "^0.7.2",
     "@nanostores/vue": "^0.10.0",
@@ -93,20 +93,13 @@
     "@types/react": "^18.2.73",
     "@types/react-dom": "^18.2.23",
     "@types/ws": "^8.5.10",
-    "@typescript-eslint/eslint-plugin": "^7.5.0",
-    "@typescript-eslint/parser": "^7.5.0",
     "@vitest/coverage-v8": "^1.4.0",
     "@vue/compiler-sfc": "^3.4.21",
     "check-dts": "^0.7.2",
     "clean-publish": "^4.3.0",
     "eslint": "^8.57.0",
-    "eslint-config-standard": "^17.1.0",
-    "eslint-plugin-import": "^2.29.1",
-    "eslint-plugin-n": "^16.6.2",
-    "eslint-plugin-perfectionist": "^2.7.0",
-    "eslint-plugin-prefer-let": "^3.0.1",
-    "eslint-plugin-promise": "^6.1.1",
     "fake-indexeddb": "^5.0.2",
+    "globals": "^15.0.0",
     "happy-dom": "^14.3.10",
     "nanospy": "^1.0.0",
     "nanostores": "^0.10.2",
@@ -131,19 +124,6 @@
     "singleQuote": true,
     "trailingComma": "none"
   },
-  "eslintConfig": {
-    "extends": "@logux/eslint-config/ts",
-    "rules": {
-      "@typescript-eslint/no-explicit-any": "off",
-      "symbol-description": "off",
-      "no-console": "off",
-      "camelcase": "off"
-    }
-  },
-  "eslintIgnore": [
-    "test/demo/dist",
-    "**/errors.ts"
-  ],
   "size-limit": [
     {
       "name": "CrossTabClient",
