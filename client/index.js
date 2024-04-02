@@ -291,7 +291,7 @@ export class Client {
 
     this.onUnload = this.onUnload.bind(this)
     if (typeof window !== 'undefined' && window.addEventListener) {
-      window.addEventListener('unload', this.onUnload)
+      window.addEventListener('pagehide', this.onUnload)
     }
 
     this.processing = {}
@@ -347,7 +347,7 @@ export class Client {
     this.node.destroy()
     clearInterval(this.pinging)
     if (typeof window !== 'undefined' && window.removeEventListener) {
-      window.removeEventListener('unload', this.onUnload)
+      window.removeEventListener('pagehide', this.onUnload)
     }
   }
 

@@ -70,7 +70,7 @@ export class CrossTabClient extends Client {
 
     if (typeof window !== 'undefined' && window.addEventListener) {
       window.addEventListener('storage', e => this.onStorage(e))
-      window.addEventListener('unload', e => this.onUnload(e))
+      window.addEventListener('pagehide', e => this.onUnload(e))
     }
 
     if (this.isLocalStorage) {
