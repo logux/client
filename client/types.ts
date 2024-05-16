@@ -11,11 +11,11 @@ let client = new Client({
 
 client.log.add({ type: 'A' }, { extra: 1 })
 
-type UserRenameAction = Action & {
+type UserRenameAction = {
   name: string
   type: 'user/rename'
   userId: string
-}
+} & Action
 
 let userRename = defineAction<UserRenameAction>('user/rename')
 

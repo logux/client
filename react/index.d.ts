@@ -93,7 +93,7 @@ export const ErrorsContext: ReactContext<ReactErrorHandlers>
  * ```
  */
 export class ChannelErrors extends Component<
-  ReactErrorHandlers & { children?: ReactNode }
+  { children?: ReactNode } & ReactErrorHandlers
 > {}
 
 /**

@@ -77,7 +77,7 @@ function throwFromBroken(e: Error | string): void {
   }
 }
 
-type BrokenMap = MapStore<{ isLoading: boolean }> & { loading: Promise<void> }
+type BrokenMap = { loading: Promise<void> } & MapStore<{ isLoading: boolean }>
 
 let Broken = (): BrokenMap => {
   let store = map({ isLoading: true }) as BrokenMap

@@ -14,6 +14,12 @@ export default [
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       'camelcase': 'off',
+      'n/no-unsupported-features/node-builtins': [
+        'error',
+        {
+          ignores: ['WebSocket', 'navigator', 'crypto', 'CryptoKey']
+        }
+      ],
       'no-console': 'off',
       'symbol-description': 'off'
     }

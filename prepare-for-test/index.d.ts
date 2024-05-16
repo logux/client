@@ -12,12 +12,12 @@ interface PrepareForTest {
   <Value extends object>(
     client: Client,
     Template: SyncMapTemplateLike<Value>,
-    value: Omit<Value, 'id'> & { id?: string }
+    value: { id?: string } & Omit<Value, 'id'>
   ): MapStore<Value>
   <Value extends SyncMapValues>(
     client: Client,
     Template: SyncMapTemplate<Value>,
-    value: Omit<Value, 'id'> & { id?: string }
+    value: { id?: string } & Omit<Value, 'id'>
   ): SyncMapStore<Value>
 }
 

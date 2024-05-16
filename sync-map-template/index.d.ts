@@ -42,10 +42,10 @@ interface SyncMapStoreExt {
   remote: boolean
 }
 
-export type LoadedSyncMapValue<Value extends SyncMapValues> = Value & {
+export type LoadedSyncMapValue<Value extends SyncMapValues> = {
   id: string
   isLoading: false
-}
+} & Value
 
 export type SyncMapValue<Value extends SyncMapValues> =
   | { id: string; isLoading: true }
@@ -64,9 +64,9 @@ export interface SyncMapTemplate<
     id: string,
     client: Client,
     ...args: [] | [Action, Meta, boolean | undefined]
-  ): SyncMapStore<Value> & StoreExt
+  ): StoreExt & SyncMapStore<Value>
   cache: {
-    [id: string]: SyncMapStore<Value> & StoreExt
+    [id: string]: StoreExt & SyncMapStore<Value>
   }
   offline: boolean
   readonly plural: string
@@ -135,7 +135,7 @@ export function syncMapTemplate<Value extends SyncMapValues>(
 export function createSyncMap<Value extends SyncMapValues>(
   client: Client,
   Template: SyncMapTemplate<Value>,
-  value: Value & { id: string }
+  value: { id: string } & Value
 ): Promise<void>
 
 /**
@@ -158,7 +158,7 @@ export function createSyncMap<Value extends SyncMapValues>(
 export function buildNewSyncMap<Value extends SyncMapValues>(
   client: Client,
   Template: SyncMapTemplate<Value>,
-  value: Value & { id: string }
+  value: { id: string } & Value
 ): Promise<SyncMapStore<Value>>
 
 /**
@@ -285,13 +285,13 @@ export function ensureLoaded<Value extends SyncMapValues>(
   value: FilterValue<Value>
 ): LoadedFilterValue<Value>
 
-export type LoadedValue<Type extends { isLoading: boolean }> = Type & {
+export type LoadedValue<Type extends { isLoading: boolean }> = {
   isLoading: false
-}
+} & Type
 
-type LoadableStore = ReadableStore<{ isLoading: boolean }> & {
+type LoadableStore = {
   readonly loading: Promise<void>
-}
+} & ReadableStore<{ isLoading: boolean }>
 
 /**
  * Return store’s value if store is loaded or wait until store will be loaded
