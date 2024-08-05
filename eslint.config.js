@@ -17,7 +17,13 @@ export default [
       'n/no-unsupported-features/node-builtins': [
         'error',
         {
-          ignores: ['WebSocket', 'navigator', 'crypto', 'CryptoKey']
+          ignores: [
+            'WebSocket',
+            'navigator',
+            'crypto',
+            'CryptoKey',
+            'localStorage'
+          ]
         }
       ],
       'no-console': 'off',

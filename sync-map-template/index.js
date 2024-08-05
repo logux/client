@@ -103,7 +103,7 @@ export function syncMapTemplate(plural, opts = {}) {
         }
       } else {
         let endTask = startTask()
-        let loadingResolve, loadingReject
+        let loadingReject, loadingResolve
         store.loading = new Promise((resolve, reject) => {
           loadingResolve = () => {
             resolve()
