@@ -32,13 +32,13 @@ importers:
         version: 53.3.0(@typescript-eslint/parser@8.0.1(eslint@9.8.0)(typescript@5.5.4))(eslint@9.8.0)(typescript@5.5.4)
       '@nanostores/preact':
         specifier: ^0.5.2
-        version: 0.5.2(nanostores@0.10.3)(preact@10.22.0)
+        version: 0.5.2(nanostores@0.11.2)(preact@10.22.0)
       '@nanostores/react':
         specifier: ^0.7.3
-        version: 0.7.3(nanostores@0.10.3)(react@18.3.1)
+        version: 0.7.3(nanostores@0.11.2)(react@18.3.1)
       '@nanostores/vue':
         specifier: ^0.10.0
-        version: 0.10.0(nanostores@0.10.3)(vue@3.4.35(typescript@5.5.4))
+        version: 0.10.0(nanostores@0.11.2)(vue@3.4.35(typescript@5.5.4))
       '@peculiar/webcrypto':
         specifier: ^1.5.0
         version: 1.5.0
@@ -94,8 +94,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
       nanostores:
-        specifier: ^0.10.3
-        version: 0.10.3
+        specifier: ^0.11.2
+        version: 0.11.2
       picocolors:
         specifier: ^1.0.1
         version: 1.0.1
@@ -1692,8 +1692,8 @@ packages:
     resolution: {integrity: sha512-wvmmALNstRRhLhy7RV11NCRY2k1zxstImiju4VyyKNNRIKDVjyBtmEd/Q4G82/3dN4VSTe+0PRR3DUAASSbEEQ==}
     engines: {node: ^8.0.0 || ^10.0.0 || ^12.0.0 || ^14.0.0 || ^16.0.0 || ^18.0.0 || >=20.0.0}
 
-  nanostores@0.10.3:
-    resolution: {integrity: sha512-Nii8O1XqmawqSCf9o2aWqVxhKRN01+iue9/VEd1TiJCr9VT5XxgPFbF1Edl1XN6pwJcZRsl8Ki+z01yb/T/C2g==}
+  nanostores@0.11.2:
+    resolution: {integrity: sha512-6bucNxMJA5rNV554WQl+MWGng0QVMzlRgpKTHHfIbVLrhQ+yRXBychV9ECGVuuUfCMQPjfIG9bj8oJFZ9hYP/Q==}
     engines: {node: ^18.0.0 || >=20.0.0}
 
   natural-compare-lite@1.4.0:
@@ -2459,19 +2459,19 @@ snapshots:
       - typescript
       - vue-eslint-parser
 
-  '@nanostores/preact@0.5.2(nanostores@0.10.3)(preact@10.22.0)':
+  '@nanostores/preact@0.5.2(nanostores@0.11.2)(preact@10.22.0)':
     dependencies:
-      nanostores: 0.10.3
+      nanostores: 0.11.2
       preact: 10.22.0
 
-  '@nanostores/react@0.7.3(nanostores@0.10.3)(react@18.3.1)':
+  '@nanostores/react@0.7.3(nanostores@0.11.2)(react@18.3.1)':
     dependencies:
-      nanostores: 0.10.3
+      nanostores: 0.11.2
       react: 18.3.1
 
-  '@nanostores/vue@0.10.0(nanostores@0.10.3)(vue@3.4.35(typescript@5.5.4))':
+  '@nanostores/vue@0.10.0(nanostores@0.11.2)(vue@3.4.35(typescript@5.5.4))':
     dependencies:
-      nanostores: 0.10.3
+      nanostores: 0.11.2
       vue: 3.4.35(typescript@5.5.4)
 
   '@nodelib/fs.scandir@2.1.5':
@@ -3939,7 +3939,7 @@ snapshots:
 
   nanospy@1.0.0: {}
 
-  nanostores@0.10.3: {}
+  nanostores@0.11.2: {}
 
   natural-compare-lite@1.4.0: {}
 
