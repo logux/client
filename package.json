@@ -38,7 +38,7 @@
     "node": "^18.0.0 || ^20.0.0 || >=22.0.0"
   },
   "peerDependencies": {
-    "@logux/core": "^0.8.0",
+    "@logux/core": "^0.9.0",
     "@nanostores/preact": ">=0.0.0",
     "@nanostores/react": ">=0.0.0",
     "@nanostores/vue": ">=0.0.0",
@@ -72,14 +72,14 @@
     }
   },
   "dependencies": {
-    "@logux/actions": "^0.3.1",
+    "@logux/actions": "^0.4.0",
     "fast-json-stable-stringify": "^2.1.0",
     "nanodelay": "^2.0.2",
     "nanoevents": "^9.0.0",
     "nanoid": "^5.0.7"
   },
   "devDependencies": {
-    "@logux/core": "github:logux/core#next",
+    "@logux/core": "^0.9.0",
     "@logux/eslint-config": "^53.3.0",
     "@nanostores/preact": "^0.5.2",
     "@nanostores/react": "^0.7.3",
@@ -94,7 +94,7 @@
     "@types/react-dom": "^18.3.0",
     "@types/ws": "^8.5.12",
     "@vitest/coverage-v8": "^2.0.5",
-    "@vue/compiler-sfc": "^3.4.35",
+    "@vue/compiler-sfc": "^3.4.36",
     "check-dts": "^0.8.0",
     "clean-publish": "^5.0.0",
     "eslint": "^9.8.0",
@@ -105,7 +105,7 @@
     "nanostores": "^0.11.2",
     "picocolors": "^1.0.1",
     "postcss": "^8.4.41",
-    "preact": "10.22.0",
+    "preact": "10.23.1",
     "print-snapshots": "^0.4.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -114,7 +114,7 @@
     "typescript": "^5.5.4",
     "vite": "^5.3.5",
     "vitest": "^2.0.5",
-    "vue": "^3.4.35"
+    "vue": "^3.4.36"
   },
   "prettier": {
     "arrowParens": "avoid",
