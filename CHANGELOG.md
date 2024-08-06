@@ -1,6 +1,17 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.21.0
+* Added `loadValue()`.
+* Added `ensureLoaded()` helper for tests.
+* Added `connect` argument to `Client#start`.
+* Added key support in `encryptActions` (by @nichoth).
+* Added Nano Stores 0.10 support.
+* Added `SyncMapStore#deleted`.
+* Added `LoadedValue` type to exports.
+* Fixed support of local `SyncMap`.
+* Removed Node.js 16 support.
+
 ## 0.20.1
 * Fixed double subscription on `createFilter` (by Eduard Aksamitov).
 
