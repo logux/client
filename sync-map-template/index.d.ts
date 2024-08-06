@@ -1,6 +1,6 @@
 import type { SyncMapValues } from '@logux/actions'
 import type { Action, Meta } from '@logux/core'
-import type { MapCreator, MapStore, StoreValue } from 'nanostores'
+import type { MapCreator, MapStore, ReadableAtom, StoreValue } from 'nanostores'
 
 import type { Client } from '../client/index.js'
 import type { FilterValue, LoadedFilterValue } from '../create-filter/index.js'
@@ -291,7 +291,7 @@ export type LoadedValue<Type extends { isLoading: boolean }> = {
 
 type LoadableStore = {
   readonly loading: Promise<void>
-} & ReadableStore<{ isLoading: boolean }>
+} & ReadableAtom<{ isLoading: boolean }>
 
 /**
  * Return store’s value if store is loaded or wait until store will be loaded
