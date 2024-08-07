@@ -1,6 +1,9 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.21.1
+* Fixed types.
+
 ## 0.21.0
 * Added `loadValue()`.
 * Added `ensureLoaded()` helper for tests.
