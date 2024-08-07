@@ -182,7 +182,7 @@ export function buildNewSyncMap<Value extends SyncMapValues>(
 export function changeSyncMapById<Value extends SyncMapValues>(
   client: Client,
   Template: SyncMapTemplate<Value>,
-  id: { id: string } | string,
+  id: string,
   diff: Partial<Value>
 ): Promise<void>
 export function changeSyncMapById<
@@ -191,7 +191,7 @@ export function changeSyncMapById<
 >(
   client: Client,
   Template: SyncMapTemplate<Value>,
-  id: { id: string } | string,
+  id: string,
   key: ValueKey,
   value: Value[ValueKey]
 ): Promise<void>
@@ -244,7 +244,7 @@ export function changeSyncMap<
 export function deleteSyncMapById(
   client: Client,
   Template: SyncMapTemplate,
-  id: { id: string } | string
+  id: string
 ): Promise<void>
 
 /**
