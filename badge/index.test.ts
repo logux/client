@@ -87,7 +87,7 @@ it('shows synchronized state', async () => {
   setState(test.leftNode, 'sending')
   setState(test.leftNode, 'synchronized')
   expect(badgeStyle().display).toBe('block')
-  expect(badgeStyle().backgroundImage).toBe('url("/badge/styles/refresh.svg")')
+  expect(badgeStyle().backgroundColor).toBe('#000')
   test.leftNode.log.add({ id: '1 1:1:1 0', type: 'logux/processed' })
   await delay(1)
 
@@ -104,7 +104,7 @@ it('shows disconnected state', async () => {
   test.leftNode.connected = false
   setState(test.leftNode, 'disconnected')
   expect(badgeStyle().display).toBe('block')
-  expect(badgeStyle().backgroundImage).toBe('url("/badge/styles/offline.svg")')
+  expect(badgeStyle().backgroundColor).toBe('#000')
   expect(getBadgeMessage()).toEqual(badgeEn.disconnected)
 })
 
@@ -115,7 +115,7 @@ it('shows wait state', async () => {
   setState(test.leftNode, 'wait')
   await test.leftNode.log.add({ type: 'A' }, { reasons: ['t'], sync: true })
   expect(badgeStyle().display).toBe('block')
-  expect(badgeStyle().backgroundImage).toBe('url("/badge/styles/offline.svg")')
+  expect(badgeStyle().backgroundColor).toBe('#000')
   expect(getBadgeMessage()).toEqual(badgeEn.wait)
 })
 
@@ -133,7 +133,7 @@ it('shows sending state', async () => {
 
   setState(test.leftNode, 'connecting')
   expect(badgeStyle().display).toBe('block')
-  expect(badgeStyle().backgroundImage).toBe('url("/badge/styles/offline.svg")')
+  expect(badgeStyle().backgroundColor).toBe('#000')
   expect(getBadgeMessage()).toEqual(badgeEn.wait)
   await delay(105)
 
@@ -146,7 +146,7 @@ it('shows error', async () => {
   let test = await createTest()
   emit(test.leftNode, 'error', { type: 'any error' })
   expect(badgeStyle().display).toBe('block')
-  expect(badgeStyle().backgroundImage).toBe('url("/badge/styles/error.svg")')
+  expect(badgeStyle().backgroundColor).toBe('#F42A2A')
   expect(getBadgeMessage()).toEqual(badgeEn.syncError)
 })
 
@@ -158,7 +158,7 @@ it('shows server errors', async () => {
   })
   emit(test.leftNode, 'error', protocol)
   expect(badgeStyle().display).toBe('block')
-  expect(badgeStyle().backgroundImage).toBe('url("/badge/styles/refresh.svg")')
+  expect(badgeStyle().backgroundColor).toBe('#000')
   expect(getBadgeMessage()).toEqual(badgeEn.protocolError)
 
   let subprotocol = new LoguxError('wrong-subprotocol', {
@@ -167,7 +167,7 @@ it('shows server errors', async () => {
   })
   emit(test.leftNode, 'error', subprotocol)
   expect(badgeStyle().display).toBe('block')
-  expect(badgeStyle().backgroundImage).toBe('url("/badge/styles/refresh.svg")')
+  expect(badgeStyle().backgroundColor).toBe('#000')
   expect(getBadgeMessage()).toEqual(badgeEn.protocolError)
 })
 
@@ -177,7 +177,7 @@ it('shows client error', async () => {
   emit(test.leftNode, 'clientError', error)
 
   expect(badgeStyle().display).toBe('block')
-  expect(badgeStyle().backgroundImage).toBe('url("/badge/styles/error.svg")')
+  expect(badgeStyle().backgroundColor).toBe('#F42A2A')
   expect(getBadgeMessage()).toEqual(badgeEn.syncError)
 })
 
@@ -185,7 +185,7 @@ it('shows error undo actions', async () => {
   let test = await createTest()
   test.leftNode.log.add({ reason: 'error', type: 'logux/undo' })
   expect(badgeStyle().display).toBe('block')
-  expect(badgeStyle().backgroundImage).toBe('url("/badge/styles/error.svg")')
+  expect(badgeStyle().backgroundColor).toBe('#F42A2A')
   expect(getBadgeMessage()).toEqual(badgeEn.error)
 })
 
@@ -193,7 +193,7 @@ it('shows denied undo actions', async () => {
   let test = await createTest()
   test.leftNode.log.add({ reason: 'denied', type: 'logux/undo' })
   expect(badgeStyle().display).toBe('block')
-  expect(badgeStyle().backgroundImage).toBe('url("/badge/styles/error.svg")')
+  expect(badgeStyle().backgroundColor).toBe('#F42A2A')
   expect(getBadgeMessage()).toEqual(badgeEn.denied)
 })
 

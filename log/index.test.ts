@@ -1,3 +1,5 @@
+import './force-colors.js'
+
 import { type TestLog, TestPair, TestTime } from '@logux/core'
 import { spyOn } from 'nanospy'
 import pico from 'picocolors'
