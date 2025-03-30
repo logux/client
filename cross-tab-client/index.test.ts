@@ -29,7 +29,7 @@ beforeEach(() => {
   setLocalStorage()
 })
 
-let client: CrossTabClient<{}, TestLog>
+let client: CrossTabClient<object, TestLog>
 let originWebSocket = global.WebSocket
 afterEach(() => {
   client.destroy()
@@ -60,8 +60,8 @@ function emit(obj: any, event: string, ...args: any[]): void {
 
 function createClient(
   overrides: Partial<ClientOptions> = {}
-): CrossTabClient<{}, TestLog> {
-  let result = new CrossTabClient<{}, TestLog>({
+): CrossTabClient<object, TestLog> {
+  let result = new CrossTabClient<object, TestLog>({
     server: 'wss://localhost:1337',
     subprotocol: '1.0.0',
     time: new TestTime(),
@@ -304,7 +304,7 @@ it('becomes follower on taken lock', () => {
   expect(connect.called).toBe(false)
 })
 
-it('updates state if tab is a leader', async () => {
+it('updates state if tab is a leader', () => {
   client = createClient()
 
   client.start()
@@ -490,7 +490,7 @@ it('ignores subprotocols from server', () => {
   expect(error).toBeUndefined()
 })
 
-it('disables cross-tab communication on localStorage error', async () => {
+it('disables cross-tab communication on localStorage error', () => {
   client = createClient()
   client.start()
 

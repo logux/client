@@ -12,13 +12,13 @@ function emit(obj: any, event: string, ...args: any[]): void {
   obj.emitter.emit(event, ...args)
 }
 
-async function createTest(options?: { duration?: number }): Promise<{
+function createTest(options?: { duration?: number }): Promise<{
   args: any[]
   calls: string[]
-  client: CrossTabClient<{}, TestLog>
+  client: CrossTabClient<object, TestLog>
 }> {
   let pair = new TestPair()
-  let client = new CrossTabClient<{}, TestLog>({
+  let client = new CrossTabClient<object, TestLog>({
     server: pair.left,
     subprotocol: '1.0.0',
     time: new TestTime(),
@@ -40,7 +40,7 @@ async function createTest(options?: { duration?: number }): Promise<{
     options
   )
 
-  return { args, calls, client }
+  return Promise.resolve({ args, calls, client })
 }
 
 it('notifies about states', async () => {

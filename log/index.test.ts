@@ -18,11 +18,11 @@ function privateMethods(obj: object): any {
 }
 
 async function createClient(): Promise<
-  CrossTabClient<{}, TestLog<ClientMeta>>
+  CrossTabClient<object, TestLog<ClientMeta>>
 > {
   let pair = new TestPair()
   privateMethods(pair.left).url = 'ws://example.com'
-  let client = new CrossTabClient<{}, TestLog<ClientMeta>>({
+  let client = new CrossTabClient<object, TestLog<ClientMeta>>({
     server: pair.left,
     subprotocol: '1.0.0',
     time: new TestTime(),

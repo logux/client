@@ -45,6 +45,14 @@ function unsubscribeChannel(client, unsubscribe) {
 }
 
 export class Client {
+  get connected() {
+    return this.state !== 'disconnected' && this.state !== 'connecting'
+  }
+
+  get state() {
+    return this.node.state
+  }
+
   constructor(opts = {}) {
     this.options = opts
 
@@ -401,13 +409,5 @@ export class Client {
         }
       })
     })
-  }
-
-  get connected() {
-    return this.state !== 'disconnected' && this.state !== 'connecting'
-  }
-
-  get state() {
-    return this.node.state
   }
 }

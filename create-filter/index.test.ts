@@ -167,7 +167,7 @@ it('subscribes to channels for remote stores', async () => {
   ])
 
   expect(
-    await client.sent(async () => {
+    await client.sent(() => {
       let local = createFilter(client, LocalPost, { projectId: '1' })
       let unbindLocal = local.listen(() => {})
       unbindLocal()
@@ -288,7 +288,7 @@ it('does not send since when subscribing to remote stores', async () => {
   let filter1 = createFilter(client, Post, {})
   await client.server.freezeProcessing(async () => {
     filter1.listen(() => {})
-    delay(1)
+    await delay(1)
   })
   await allTasks()
 
@@ -308,7 +308,7 @@ it('does not send since when subscribing to remote stores', async () => {
   let filter2 = createFilter(client, Post, { projectId: '10' })
   await client.server.freezeProcessing(async () => {
     filter2.listen(() => {})
-    delay(1)
+    await delay(1)
   })
   await allTasks()
 
@@ -347,7 +347,7 @@ it('sends since when subscribing to filter if actions are cached for remote offl
   let filter1 = createFilter(client, CachedPost, {})
   await client.server.freezeProcessing(async () => {
     filter1.listen(() => {})
-    delay(1)
+    await delay(1)
   })
   await filter1.loading
   await allTasks()
@@ -367,7 +367,7 @@ it('sends since when subscribing to filter if actions are cached for remote offl
   let filter2 = createFilter(client, CachedPost, { projectId: '10' })
   await client.server.freezeProcessing(async () => {
     filter2.listen(() => {})
-    delay(1)
+    await delay(1)
   })
   await filter2.loading
   await allTasks()
@@ -410,9 +410,10 @@ it('supports both offline and remote stores', async () => {
   })
 
   let posts = createFilter(client, CachedPost, { projectId: '10' })
-  await client.server.freezeProcessing(async () => {
+  await client.server.freezeProcessing(() => {
     posts.listen(() => {})
     expect(posts.get().isLoading).toBe(true)
+    return Promise.resolve()
   })
   await allTasks()
   expect(posts.get().isLoading).toBe(false)

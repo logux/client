@@ -67,10 +67,10 @@ function getPair(client: Client): TestPair {
 async function createDialog(
   opts: Partial<ClientOptions> = {},
   token: string | undefined = undefined
-): Promise<Client<{}, TestLog>> {
+): Promise<Client<object, TestLog>> {
   let pair = new TestPair()
 
-  let client = new Client<{}, TestLog>({
+  let client = new Client<object, TestLog>({
     server: pair.left,
     subprotocol: '1.0.0',
     time: new TestTime(),
@@ -111,8 +111,8 @@ async function createDialog(
   return client
 }
 
-function createClient(): Client<{}, TestLog> {
-  let client = new Client<{}, TestLog>({
+function createClient(): Client<object, TestLog> {
+  let client = new Client<object, TestLog>({
     server: 'wss://localhost:1337',
     subprotocol: '1.0.0',
     time: new TestTime(),

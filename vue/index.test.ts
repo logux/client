@@ -97,7 +97,7 @@ let defineSyncTest = (Template: SyncMapTemplate): Component => {
 }
 
 let ErrorCatcher = defineComponent((props, { slots }) => {
-  let message = ref<{} | null>(null)
+  let message = ref<null | object>(null)
   onErrorCaptured(e => {
     // @ts-ignore
     message.value = e.message

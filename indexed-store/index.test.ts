@@ -72,7 +72,7 @@ afterEach(async () => {
 
 eachStoreCheck((desc, creator) => {
   it(
-    `${desc}`,
+    desc,
     creator(() => {
       store = new IndexedStore()
       return store

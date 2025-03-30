@@ -29,5 +29,12 @@ export default [
       'no-console': 'off',
       'symbol-description': 'off'
     }
+  },
+  {
+    files: ['indexed-store/index.test.ts'],
+    rules: {
+      '@typescript-eslint/no-namespace': 'off',
+      '@typescript-eslint/prefer-promise-reject-errors': 'off'
+    }
   }
 ]

@@ -225,7 +225,7 @@ it('throws store init errors', () => {
   expect(errors).toEqual(['Test'])
 })
 
-it('throws on missed ID for builder', async () => {
+it('throws on missed ID for builder', () => {
   let store = atom<undefined>()
   let [errors, Catcher] = getCatcher(() => {
     // @ts-expect-error
@@ -295,7 +295,7 @@ it('could process not found via common error component', async () => {
   expect(screen.getByTestId('test').textContent).toEqual('500 notFound')
 })
 
-it('throws an error on missed ChannelErrors', async () => {
+it('throws an error on missed ChannelErrors', () => {
   spyOn(console, 'error', () => {})
   expect(
     getText(h(ErrorCatcher, {}, h(SyncTest, { Template: RemotePost })))
@@ -305,7 +305,7 @@ it('throws an error on missed ChannelErrors', async () => {
   )
 })
 
-it('throws an error on ChannelErrors with missed argument', async () => {
+it('throws an error on ChannelErrors with missed argument', () => {
   spyOn(console, 'error', () => {})
   expect(
     getText(
@@ -325,7 +325,7 @@ it('throws an error on ChannelErrors with missed argument', async () => {
   )
 })
 
-it('does not throw on ChannelErrors with 404 and 403', async () => {
+it('does not throw on ChannelErrors with 404 and 403', () => {
   spyOn(console, 'error', () => {})
   expect(
     getText(

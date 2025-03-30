@@ -78,10 +78,10 @@ function createAutoprocessingClient(): TestClient {
 }
 
 function clone<From extends object>(obj: From): From {
-  return JSON.parse(JSON.stringify(obj))
+  return JSON.parse(JSON.stringify(obj)) as From
 }
 
-afterEach(async () => {
+afterEach(() => {
   cleanStores(Post, CachedPost, LocalPost)
 })
 
@@ -114,9 +114,10 @@ it('subscribes and unsubscribes', async () => {
 
   let post = Post('ID', client)
   let unbind = (): void => {}
-  await client.server.freezeProcessing(async () => {
+  await client.server.freezeProcessing(() => {
     unbind = post.listen(() => {})
     expect(post.get().isLoading).toBe(true)
+    return Promise.resolve()
   })
 
   await Promise.resolve()

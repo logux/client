@@ -58,7 +58,7 @@ export type SyncMapStore<Value extends SyncMapValues = any> = MapStore<
 
 export interface SyncMapTemplate<
   Value extends SyncMapValues = any,
-  StoreExt = {}
+  StoreExt = object
 > extends MapCreator {
   (
     id: string,

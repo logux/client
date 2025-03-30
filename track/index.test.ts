@@ -6,7 +6,7 @@ import { Client, track } from '../index.js'
 
 it('tracks action processing', async () => {
   let pair = new TestPair()
-  let client = new Client<{}, TestLog>({
+  let client = new Client<object, TestLog>({
     server: pair.left,
     subprotocol: '1.0.0',
     time: new TestTime(),
@@ -43,7 +43,7 @@ it('tracks action processing', async () => {
 
 it('works on multiple calls', async () => {
   let pair = new TestPair()
-  let client = new Client<{}, TestLog>({
+  let client = new Client<object, TestLog>({
     server: pair.left,
     subprotocol: '1.0.0',
     time: new TestTime(),

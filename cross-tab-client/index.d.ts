@@ -26,7 +26,7 @@ import type { ClientActionListener, ClientMeta } from '../client/index.js'
  * ```
  */
 export class CrossTabClient<
-  Headers extends object = {},
+  Headers extends object = object,
   ClientLog extends Log = Log<ClientMeta>
 > extends Client<Headers, ClientLog> {
   /**

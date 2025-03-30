@@ -40,7 +40,7 @@ function emit(obj: any, event: string, ...args: any[]): void {
 
 async function createTest(override?: Partial<BadgeOptions>): Promise<TestPair> {
   let pair = new TestPair()
-  let client = new CrossTabClient<{}, TestLog<ClientMeta>>({
+  let client = new CrossTabClient<object, TestLog<ClientMeta>>({
     server: pair.left,
     subprotocol: '1.0.0',
     time: new TestTime(),

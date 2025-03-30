@@ -127,7 +127,7 @@ export interface ClientOptions {
  * ```
  */
 export class Client<
-  Headers extends object = {},
+  Headers extends object = object,
   ClientLog extends Log = Log<ClientMeta>
 > {
   /**
@@ -249,7 +249,6 @@ export class Client<
   destroy(): void
 
   on(event: 'user', listener: (userId: string) => void): Unsubscribe
-
   /**
    * Subscribe for synchronization events. It implements Nano Events API.
    * Supported events:
@@ -329,7 +328,6 @@ export class Client<
     listener: ClientActionListener<TypeAction>,
     opts?: { event?: 'add' | 'clean' | 'preadd'; id?: string }
   ): Unsubscribe
-
   /**
    * @param actionCreator Action creator function.
    * @param callbacks Callbacks for action created by creator.

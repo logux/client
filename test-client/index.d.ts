@@ -30,7 +30,7 @@ export interface TestClientOptions<Headers extends object> {
  * })
  * ```
  */
-export class TestClient<Headers extends object = {}> extends Client<
+export class TestClient<Headers extends object = object> extends Client<
   Headers,
   TestLog<ClientMeta>
 > {
