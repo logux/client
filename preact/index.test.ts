@@ -103,7 +103,6 @@ function getText(component: VNode): null | string {
   let client = new TestClient('10')
   render(
     h(ClientContext.Provider, {
-      // @ts-expect-error
       children: h('div', { 'data-testid': 'test' }, component),
       value: client
     })
@@ -152,8 +151,8 @@ async function catchLoadingError(
   }
 
   runWithClient(
+    // @ts-expect-error
     h(
-      // @ts-expect-error
       'div',
       { 'data-testid': 'test' },
       h(
@@ -263,8 +262,8 @@ it('could process denied via common error component', async () => {
     return h('div', {}, `500 ${props.error.action.reason}`)
   }
   runWithClient(
+    // @ts-expect-error
     h(
-      // @ts-expect-error
       'div',
       { 'data-testid': 'test' },
       h(ChannelErrors, { Error }, h(IdTest, { Template: Broken }))
@@ -283,8 +282,8 @@ it('could process not found via common error component', async () => {
     return h('div', {}, `500 ${props.error.action.reason}`)
   }
   runWithClient(
+    // @ts-expect-error
     h(
-      // @ts-expect-error
       'div',
       { 'data-testid': 'test' },
       h(ChannelErrors, { Error }, h(IdTest, { Template: Broken }))
@@ -362,7 +361,6 @@ it('renders filter', async () => {
     expect(asLoaded(posts).stores.size).toEqual(asLoaded(posts).list.length)
     renders.push('list')
     return h(
-      // @ts-expect-error
       'ul',
       { 'data-testid': 'test' },
       asLoaded(posts).list.map((post, index) => {
@@ -435,7 +433,6 @@ it('recreating filter on args changes', async () => {
         }
       }),
       h(
-        // @ts-expect-error
         'ul',
         { 'data-testid': 'test' },
         asLoaded(posts).list.map((post, index) => {
@@ -490,7 +487,6 @@ it('renders authentication state', async () => {
   let TestProfile: FC = () => {
     let { isAuthenticated, userId } = useAuth()
     return h(
-      // @ts-expect-error
       'div',
       { 'data-testid': 'test' },
       isAuthenticated ? userId : 'loading'
