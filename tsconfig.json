@@ -9,5 +9,5 @@
     "strict": true,
     "noEmit": true
   },
-  "exclude": ["**/errors.ts", "test/demo/dist/**.js"]
+  "exclude": ["**/errors.ts", "test/demo/dist/**.js", "./coverage/*.js"]
 }

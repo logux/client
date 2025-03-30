@@ -1,0 +1,7 @@
+ReferenceError: onfig is not defined
+    at check (file:///workspaces/logux-client/node_modules/.pnpm/check-dts@0.8.2_typescript@5.8.2/node_modules/check-dts/check.js:113:17)
+    at run (file:///workspaces/logux-client/node_modules/.pnpm/check-dts@0.8.2_typescript@5.8.2/node_modules/check-dts/bin.js:25:24)
+    at file:///workspaces/logux-client/node_modules/.pnpm/check-dts@0.8.2_typescript@5.8.2/node_modules/check-dts/bin.js:38:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:274:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:644:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:98:5)

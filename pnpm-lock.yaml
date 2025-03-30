@@ -70,8 +70,8 @@ importers:
         specifier: ^3.5.13
         version: 3.5.13
       check-dts:
-        specifier: ^0.8.2
-        version: 0.8.2(typescript@5.8.2)
+        specifier: ^0.9.0
+        version: 0.9.0(typescript@5.8.2)
       clean-publish:
         specifier: ^5.1.0
         version: 5.1.0
@@ -952,8 +952,8 @@ packages:
     resolution: {integrity: sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA==}
     engines: {node: '>=10'}
 
-  check-dts@0.8.2:
-    resolution: {integrity: sha512-+G9GREoEYIS/mLleQCIcsUdX6AyrURr8UENN3PzzBIe/mO2dKN/eNxsLu2atNrkjkY7ri1Gn5rjiy44IFgFxCw==}
+  check-dts@0.9.0:
+    resolution: {integrity: sha512-xAs/RKFiB1dHEFPK3+ACk0f2WdngQywmghiPsKJF2JmrsOHCQAfcqkD7C52V3FjwPtU5s8sdTJwX4pLP/66+Bw==}
     engines: {node: '>=18.0.0'}
     hasBin: true
     peerDependencies:
@@ -3263,7 +3263,7 @@ snapshots:
       ansi-styles: 4.3.0
       supports-color: 7.2.0
 
-  check-dts@0.8.2(typescript@5.8.2):
+  check-dts@0.9.0(typescript@5.8.2):
     dependencies:
       fast-glob: 3.3.3
       nanospinner: 1.2.2
