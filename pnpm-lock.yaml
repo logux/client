@@ -39,9 +39,6 @@ importers:
       '@nanostores/vue':
         specifier: ^0.10.0
         version: 0.10.0(nanostores@0.11.2)(vue@3.4.36(typescript@5.5.4))
-      '@peculiar/webcrypto':
-        specifier: ^1.5.0
-        version: 1.5.0
       '@size-limit/preset-small-lib':
         specifier: ^11.1.4
         version: 11.1.4(size-limit@11.1.4)
@@ -435,17 +432,6 @@ packages:
   '@one-ini/wasm@0.1.1':
     resolution: {integrity: sha512-XuySG1E38YScSJoMlqovLru4KTUNSjgVTIjyh7qMX6aNN5HY5Ct5LhRJdxO79JtTzKfzV/bnWpz+zquYrISsvw==}
 
-  '@peculiar/asn1-schema@2.3.13':
-    resolution: {integrity: sha512-3Xq3a01WkHRZL8X04Zsfg//mGaA21xlL4tlVn4v2xGT0JStiztATRkMwa5b+f/HXmY2smsiLXYK46Gwgzvfg3g==}
-
-  '@peculiar/json-schema@1.1.12':
-    resolution: {integrity: sha512-coUfuoMeIB7B8/NMekxaDzLhaYmp0HZNPEjYRm9goRou8UZIC3z21s0sL9AWoCw4EG876QyO3kYrc61WNF9B/w==}
-    engines: {node: '>=8.0.0'}
-
-  '@peculiar/webcrypto@1.5.0':
-    resolution: {integrity: sha512-BRs5XUAwiyCDQMsVA9IDvDa7UBR9gAvPHgugOeGng3YN6vJ9JYonyDc0lNczErgtCWtucjR5N7VtaonboD/ezg==}
-    engines: {node: '>=10.12.0'}
-
   '@pkgjs/parseargs@0.11.0':
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
     engines: {node: '>=14'}
@@ -818,10 +804,6 @@ packages:
   arraybuffer.prototype.slice@1.0.3:
     resolution: {integrity: sha512-bMxMKAjg13EBSVscxTaYA4mRc5t1UAXa2kXiGTNfZ079HIWXEkKmkgFrh/nJqamaLSrXO5H4WFFkPEaLJWbs3A==}
     engines: {node: '>= 0.4'}
-
-  asn1js@3.0.5:
-    resolution: {integrity: sha512-FVnvrKJwpt9LP2lAMl8qZswRNm3T4q9CON+bxldk2iwk3FFpuwhx2FfinyitizWHsVYyaY+y5JzDR0rCMV5yTQ==}
-    engines: {node: '>=12.0.0'}
 
   assertion-error@2.0.1:
     resolution: {integrity: sha512-Izi8RQcffqCeNVgFigKli1ssklIbpHnCYc6AknXGYoB6grJqyeby7jv12JUQgmTAnIDnbck1uxksT4dzN3PWBA==}
@@ -1847,13 +1829,6 @@ packages:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
     engines: {node: '>=6'}
 
-  pvtsutils@1.3.5:
-    resolution: {integrity: sha512-ARvb14YB9Nm2Xi6nBq1ZX6dAM0FsJnuk+31aUp4TrcZEdKUlSqOqsxJHUPJDNE3qiIp+iUPEIeR6Je/tgV7zsA==}
-
-  pvutils@1.1.3:
-    resolution: {integrity: sha512-pMpnA0qRdFp32b1sJl1wOJNxZLQ2cbQx+k6tjNtZ8CpvVhNqEPRgivZ2WOUev2YMajecdH7ctUPDvEe87nariQ==}
-    engines: {node: '>=6.0.0'}
-
   queue-microtask@1.2.3:
     resolution: {integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==}
 
@@ -2080,9 +2055,6 @@ packages:
   tsconfig-paths@3.15.0:
     resolution: {integrity: sha512-2Ac2RgzDe/cn48GvOe3M+o82pEFewD3UPbyoUHHdKasHwJKjds4fLXWf/Ux5kATBKN20oaFGu+jbElp1pos0mg==}
 
-  tslib@2.6.3:
-    resolution: {integrity: sha512-xNvxJEOUiWPGhUuUdQgAJPKOOJfGnIyKySOc09XkKsgdUV/3E2zvwZYdejjmRgPCgcym1juLH3226yA7sEFJKQ==}
-
   type-check@0.4.0:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
     engines: {node: '>= 0.8.0'}
@@ -2213,9 +2185,6 @@ packages:
     peerDependenciesMeta:
       typescript:
         optional: true
-
-  webcrypto-core@1.8.0:
-    resolution: {integrity: sha512-kR1UQNH8MD42CYuLzvibfakG5Ew5seG85dMMoAM/1LqvckxaF6pUiidLuraIu4V+YCIFabYecUZAW0TuxAoaqw==}
 
   webidl-conversions@7.0.0:
     resolution: {integrity: sha512-VwddBukDzu71offAQR975unBIGqfKZpM+8ZX6ySk8nYhVoo5CYaZyzt3YBvYtRtO+aoGlqxPg/B87NGVZ/fu6g==}
@@ -2492,24 +2461,6 @@ snapshots:
       fastq: 1.17.1
 
   '@one-ini/wasm@0.1.1': {}
-
-  '@peculiar/asn1-schema@2.3.13':
-    dependencies:
-      asn1js: 3.0.5
-      pvtsutils: 1.3.5
-      tslib: 2.6.3
-
-  '@peculiar/json-schema@1.1.12':
-    dependencies:
-      tslib: 2.6.3
-
-  '@peculiar/webcrypto@1.5.0':
-    dependencies:
-      '@peculiar/asn1-schema': 2.3.13
-      '@peculiar/json-schema': 1.1.12
-      pvtsutils: 1.3.5
-      tslib: 2.6.3
-      webcrypto-core: 1.8.0
 
   '@pkgjs/parseargs@0.11.0':
     optional: true
@@ -2952,12 +2903,6 @@ snapshots:
       get-intrinsic: 1.2.4
       is-array-buffer: 3.0.4
       is-shared-array-buffer: 1.0.3
-
-  asn1js@3.0.5:
-    dependencies:
-      pvtsutils: 1.3.5
-      pvutils: 1.1.3
-      tslib: 2.6.3
 
   assertion-error@2.0.1: {}
 
@@ -4084,12 +4029,6 @@ snapshots:
 
   punycode@2.3.1: {}
 
-  pvtsutils@1.3.5:
-    dependencies:
-      tslib: 2.6.3
-
-  pvutils@1.1.3: {}
-
   queue-microtask@1.2.3: {}
 
   react-dom@18.3.1(react@18.3.1):
@@ -4335,8 +4274,6 @@ snapshots:
       minimist: 1.2.8
       strip-bom: 3.0.0
 
-  tslib@2.6.3: {}
-
   type-check@0.4.0:
     dependencies:
       prelude-ls: 1.2.1
@@ -4493,14 +4430,6 @@ snapshots:
       '@vue/shared': 3.4.36
     optionalDependencies:
       typescript: 5.5.4
-
-  webcrypto-core@1.8.0:
-    dependencies:
-      '@peculiar/asn1-schema': 2.3.13
-      '@peculiar/json-schema': 1.1.12
-      asn1js: 3.0.5
-      pvtsutils: 1.3.5
-      tslib: 2.6.3
 
   webidl-conversions@7.0.0: {}
 

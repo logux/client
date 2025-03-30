@@ -1,5 +1,4 @@
 import { TestPair, TestTime } from '@logux/core'
-import { Crypto, CryptoKey } from '@peculiar/webcrypto'
 import { delay } from 'nanodelay'
 import { TextDecoder, TextEncoder } from 'node:util'
 import { expect, it } from 'vitest'
@@ -10,11 +9,6 @@ import { getRandomSpaces } from './index.js'
 window.TextEncoder = TextEncoder
 // @ts-expect-error
 window.TextDecoder = TextDecoder
-
-if (process.version.startsWith('v18')) {
-  global.crypto = new Crypto()
-  global.CryptoKey = CryptoKey
-}
 
 function privateMethods(obj: object): any {
   return obj
