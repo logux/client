@@ -340,7 +340,7 @@ export function syncMapTemplate(plural, opts = {}) {
         for (let id in Template.filters) {
           Template.filters[id][clean]()
         }
-        delete Template.filters
+        Template.filters = {}
       }
     }
   }
