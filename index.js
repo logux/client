@@ -22,7 +22,7 @@ export {
   deleteSyncMap,
   deleteSyncMapById,
   ensureLoaded,
-  ensureStoreLoaded,
+  ensureLoadedStore,
   loadValue,
   syncMapTemplate
 } from './sync-map-template/index.js'

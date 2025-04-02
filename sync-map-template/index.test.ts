@@ -11,6 +11,7 @@ import {
   deleteSyncMap,
   deleteSyncMapById,
   ensureLoaded,
+  ensureLoadedStore,
   loadValue,
   syncMapTemplate,
   type SyncMapValue,
@@ -758,9 +759,16 @@ it('has helper to insure that store is loaded', async () => {
   expect(() => {
     ensureLoaded(post.get())
   }).toThrow('Store was not loaded yet')
+  expect(() => {
+    ensureLoadedStore(post)
+  }).toThrow('Store was not loaded yet')
 
   await post.loading
   expect(ensureLoaded(post.get())).toEqual({
+    id: 'ID',
+    isLoading: false
+  })
+  expect(ensureLoadedStore(post).get()).toEqual({
     id: 'ID',
     isLoading: false
   })

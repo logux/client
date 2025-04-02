@@ -319,6 +319,6 @@ export type LoadedSyncMap<Store extends SyncMapStore> = MapStore<
 > &
   SyncMapStoreExt
 
-export function ensureStoreLoaded<Store extends SyncMapStore>(
+export function ensureLoadedStore<Store extends SyncMapStore>(
   store: Store
 ): LoadedSyncMap<Store>

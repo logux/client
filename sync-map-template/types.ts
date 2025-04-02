@@ -3,7 +3,7 @@ import {
   changeSyncMap,
   Client,
   createSyncMap,
-  ensureStoreLoaded,
+  ensureLoadedStore,
   syncMapTemplate
 } from '../index.js'
 
@@ -26,4 +26,4 @@ changeSyncMap(user, 'age', 26)
 createSyncMap(client, User, { id: 'user:1', name: 'A' })
 buildNewSyncMap(client, User, { age: 12, id: 'user:2', name: 'B' })
 
-console.log(ensureStoreLoaded(user).get().name)
+console.log(ensureLoadedStore(user).get().name)
