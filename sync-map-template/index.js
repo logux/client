@@ -469,6 +469,11 @@ export function ensureLoaded(value) {
   return value
 }
 
+export function ensureLoadedStore(store) {
+  ensureLoaded(store.get())
+  return store
+}
+
 export async function loadValue(store) {
   let value = store.get()
   if (value.isLoading) {

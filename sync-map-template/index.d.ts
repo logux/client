@@ -313,3 +313,12 @@ export function loadValue<Store extends SyncMapStore>(
 export function loadValue<Store extends LoadableStore>(
   store: Store
 ): Promise<LoadedValue<StoreValue<Store>>>
+
+export type LoadedSyncMap<Store extends SyncMapStore> = MapStore<
+  LoadedSyncMapValue<StoreValue<Store>>
+> &
+  SyncMapStoreExt
+
+export function ensureStoreLoaded<Store extends SyncMapStore>(
+  store: Store
+): LoadedSyncMap<Store>

@@ -42,6 +42,8 @@ export {
   deleteSyncMap,
   deleteSyncMapById,
   ensureLoaded,
+  ensureStoreLoaded,
+  LoadedSyncMap,
   LoadedSyncMapValue,
   LoadedValue,
   loadValue,
