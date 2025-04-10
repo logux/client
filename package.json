@@ -43,7 +43,7 @@
     "@nanostores/preact": ">=0.0.0",
     "@nanostores/react": ">=0.0.0",
     "@nanostores/vue": ">=0.0.0",
-    "nanostores": "^0.9.0 || ^0.10.0 || ^0.11.0",
+    "nanostores": "^0.9.0 || ^0.10.0 || ^0.11.0 || ^1.0.0",
     "preact": ">=10.0.0",
     "react": ">=18.0.0",
     "react-dom": ">=16.8.0",
