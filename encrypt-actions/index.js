@@ -45,11 +45,22 @@ function aes(iv) {
 
 function bytesToBase64(bytes) {
   let binaryString = String.fromCharCode.apply(null, bytes)
-  return window.btoa(binaryString)
+  if (typeof window !== 'undefined') {
+    return window.btoa(binaryString)
+  } else {
+    /* c8 ignore next 2 */
+    return Buffer.from(binaryString, 'binary').toString('base64')
+  }
 }
 
 function base64ToBytes(string) {
-  let binaryString = window.atob(string)
+  let binaryString
+  if (typeof window !== 'undefined') {
+    binaryString = window.atob(string)
+  } else {
+    /* c8 ignore next 2 */
+    binaryString = Buffer.from(string, 'base64').toString('binary')
+  }
   let length = binaryString.length
   let bytes = new Uint8Array(length)
   for (let i = 0; i < length; i++) {
