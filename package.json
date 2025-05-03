@@ -73,7 +73,7 @@
     }
   },
   "dependencies": {
-    "@logux/actions": "^0.4.0",
+    "@logux/actions": "github:logux/actions#next",
     "fast-json-stable-stringify": "^2.1.0",
     "nanodelay": "^2.0.2",
     "nanoevents": "^9.1.0",

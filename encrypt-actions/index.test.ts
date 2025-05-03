@@ -1,6 +1,5 @@
 import { TestPair, TestTime } from '@logux/core'
 import { delay } from 'nanodelay'
-import test from 'node:test'
 import { TextDecoder, TextEncoder } from 'node:util'
 import { expect, it } from 'vitest'
 
@@ -212,7 +211,7 @@ it('has normal distribution of random spaces', () => {
   expect(deviation(symbols, 100000)).toBeLessThan(0.2)
 })
 
-test('works in Node.js', async () => {
+it('compresses long actions', async () => {
   let client1 = createClient()
   let client2 = createClient()
 
@@ -222,9 +221,17 @@ test('works in Node.js', async () => {
   await Promise.all([connect(client1), connect(client2)])
   getPair(client1).clear()
 
-  client1.log.add({ type: 'sync', value: 'secret' }, { sync: true })
+  let long = 'a'.repeat(1000)
+
+  client1.log.add({ type: 'sync', value: long }, { sync: true })
   await delay(50)
+  let action = getPair(client1).leftSent[0][2]
+  expect(action.d.length).toBeLessThan(100)
+  expect(action.z).toBe(true)
+
+  getPair(client2).right.send(getPair(client1).leftSent[0])
+  await delay(10)
   expect(privateMethods(client2.log).actions()).toEqual([
-    { type: 'sync', value: 'secret' }
+    { type: 'sync', value: long }
   ])
 })

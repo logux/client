@@ -20,9 +20,12 @@ export default [
           ignores: [
             'WebSocket',
             'navigator',
+            'localStorage',
+            'CompressionStream',
+            'Response',
+            'DecompressionStream',
             'crypto',
-            'CryptoKey',
-            'localStorage'
+            'CryptoKey'
           ]
         }
       ],

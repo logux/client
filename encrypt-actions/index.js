@@ -69,14 +69,34 @@ function base64ToBytes(string) {
   return bytes
 }
 
+async function compress(bytes) {
+  let cs = new CompressionStream('deflate-raw')
+  let writer = cs.writable.getWriter()
+  writer.write(bytes)
+  writer.close()
+  return new Uint8Array(await new Response(cs.readable).arrayBuffer())
+}
+
+async function decompress(bytes) {
+  let ds = new DecompressionStream('deflate-raw')
+  let writer = ds.writable.getWriter()
+  writer.write(new Uint8Array(bytes))
+  writer.close()
+  return new Uint8Array(await new Response(ds.readable).arrayBuffer())
+}
+
 async function encrypt(action, key) {
   let iv = getRandomBytes(12)
-  let encrypted = await crypto.subtle.encrypt(aes(iv), key, objToBytes(action))
+  let bytes = objToBytes(action)
+  let z = bytes.length > 100
+  if (z) bytes = await compress(bytes)
+  let encrypted = await crypto.subtle.encrypt(aes(iv), key, bytes)
 
   return {
     d: bytesToBase64(new Uint8Array(encrypted)),
     iv: bytesToBase64(iv),
-    type: '0'
+    type: '0',
+    z
   }
 }
 
@@ -86,6 +106,7 @@ async function decrypt(action, key) {
     key,
     base64ToBytes(action.d)
   )
+  if (action.z) bytes = await decompress(bytes)
   return bytesToObj(bytes)
 }
 
