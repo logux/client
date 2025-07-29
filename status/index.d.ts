@@ -2,19 +2,21 @@ import type { Action } from '@logux/core'
 
 import type { Client, ClientMeta } from '../client/index.js'
 
+export type StatusValue =
+  | 'connecting'
+  | 'connectingAfterWait'
+  | 'denied'
+  | 'disconnected'
+  | 'error'
+  | 'protocolError'
+  | 'syncError'
+  | 'synchronized'
+  | 'synchronizedAfterWait'
+  | 'wait'
+
 interface StatusListener {
   (
-    current:
-      | 'connecting'
-      | 'connectingAfterWait'
-      | 'denied'
-      | 'disconnected'
-      | 'error'
-      | 'protocolError'
-      | 'syncError'
-      | 'synchronized'
-      | 'synchronizedAfterWait'
-      | 'wait',
+    current: StatusValue,
     details: { action: Action; meta: ClientMeta } | { error: Error } | undefined
   ): void
 }

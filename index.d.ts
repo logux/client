@@ -33,7 +33,7 @@ export {
 } from './logux-undo-error/index.js'
 export { emptyInTest, prepareForTest } from './prepare-for-test/index.js'
 export { request, RequestOptions } from './request/index.js'
-export { status } from './status/index.js'
+export { status, StatusValue } from './status/index.js'
 export {
   buildNewSyncMap,
   changeSyncMap,
