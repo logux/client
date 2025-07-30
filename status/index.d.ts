@@ -9,6 +9,8 @@ export type StatusValue =
   | 'disconnected'
   | 'error'
   | 'protocolError'
+  | 'sending'
+  | 'sendingAfterWait'
   | 'syncError'
   | 'synchronized'
   | 'synchronizedAfterWait'
