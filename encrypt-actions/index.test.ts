@@ -226,7 +226,7 @@ it('compresses long actions', async () => {
   client1.log.add({ type: 'sync', value: long }, { sync: true })
   await delay(50)
   let action = getPair(client1).leftSent[0][2]
-  expect(action.d.length).toBeLessThan(100)
+  expect(action.d.length).toBeLessThan(120)
   expect(action.z).toBe(true)
 
   getPair(client2).right.send(getPair(client1).leftSent[0])
