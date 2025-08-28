@@ -54,7 +54,7 @@ let userId = document.querySelector('meta[name=user]').content
 let token = document.querySelector('meta[name=token]').content
 
 const client = new CrossTabClient({
-  subprotocol: '1.0.0',
+  subprotocol: 1,
   server: 'wss://example.com:1337',
   userId,
   token

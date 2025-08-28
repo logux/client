@@ -39,7 +39,6 @@
     "node": "^20.0.0 || >=22.0.0"
   },
   "peerDependencies": {
-    "@logux/core": "^0.9.0",
     "@nanostores/preact": ">=0.0.0",
     "@nanostores/react": ">=0.0.0",
     "@nanostores/vue": ">=0.0.0",
@@ -74,13 +73,13 @@
   },
   "dependencies": {
     "@logux/actions": "github:logux/actions#next",
+    "@logux/core": "github:logux/core#next",
     "fast-json-stable-stringify": "^2.1.0",
     "nanodelay": "^2.0.2",
     "nanoevents": "^9.1.0",
     "nanoid": "^5.1.5"
   },
   "devDependencies": {
-    "@logux/core": "^0.9.0",
     "@logux/eslint-config": "^56.1.0",
     "@nanostores/preact": "^1.0.0",
     "@nanostores/react": "^1.0.0",
@@ -130,7 +129,7 @@
       "name": "CrossTabClient",
       "path": "./cross-tab-client/index.js",
       "import": "{ CrossTabClient }",
-      "limit": "4 KB"
+      "limit": "8 KB"
     },
     {
       "name": "Helpers",
@@ -145,7 +144,7 @@
         "./index.js": "{ CrossTabClient, syncMapTemplate, changeSyncMap }",
         "./react/index.js": "{ ClientContext, useSync, ChannelErrors, useFilter, useAuth }"
       },
-      "limit": "7 KB"
+      "limit": "11 KB"
     },
     {
       "name": "Vue",
@@ -153,7 +152,7 @@
         "./index.js": "{ CrossTabClient, syncMapTemplate, changeSyncMap }",
         "./vue/index.js": "{ loguxPlugin, useSync, ChannelErrors, useFilter, useAuth }"
       },
-      "limit": "7 KB"
+      "limit": "11 KB"
     }
   ]
 }

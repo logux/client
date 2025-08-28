@@ -20,7 +20,7 @@ function createTest(options?: { duration?: number }): Promise<{
   let pair = new TestPair()
   let client = new CrossTabClient<object, TestLog>({
     server: pair.left,
-    subprotocol: '1.0.0',
+    subprotocol: 10,
     time: new TestTime(),
     userId: '10'
   })
@@ -155,14 +155,14 @@ it('notifies about old client', async () => {
   let test = await createTest()
   await test.client.node.connection.connect()
   let protocol = new LoguxError('wrong-protocol', {
-    supported: '1.0.0',
-    used: '0.1.0'
+    supported: 5,
+    used: 4
   })
   emit(test.client.node, 'error', protocol)
 
   let subprotocol = new LoguxError('wrong-subprotocol', {
-    supported: '1.0.0',
-    used: '0.1.0'
+    supported: 10,
+    used: 9
   })
   emit(test.client.node, 'error', subprotocol)
 
@@ -193,7 +193,7 @@ it('removes listeners', () => {
   let pair = new TestPair()
   let client = new CrossTabClient({
     server: pair.left,
-    subprotocol: '1.0.0',
+    subprotocol: 10,
     time: new TestTime(),
     userId: '10'
   })

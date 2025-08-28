@@ -7,7 +7,7 @@ import type { TestServer } from '../test-server/index.js'
 export interface TestClientOptions<Headers extends object> {
   headers?: Headers
   server?: TestServer
-  subprotocol?: string
+  subprotocol?: number
 }
 
 /**

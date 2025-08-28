@@ -21,21 +21,6 @@ function sendToTabs(client, event, data) {
   }
 }
 
-function compareSubprotocols(left, right) {
-  let leftParts = left.split('.')
-  let rightParts = right.split('.')
-  for (let i = 0; i < 3; i++) {
-    let leftNumber = parseInt(leftParts[i] || 0)
-    let rightNumber = parseInt(rightParts[i] || 0)
-    if (leftNumber > rightNumber) {
-      return 1
-    } else if (leftNumber < rightNumber) {
-      return -1
-    }
-  }
-  return 0
-}
-
 function setState(client, state) {
   client.state = state
   client.emitter.emit('state')
@@ -166,10 +151,9 @@ export class CrossTabClient extends Client {
       }
     } else if (e.key === storageKey(this, 'subprotocol')) {
       let other = JSON.parse(e.newValue)
-      let compare = compareSubprotocols(this.options.subprotocol, other)
-      if (compare === 1) {
+      if (this.options.subprotocol > other) {
         sendToTabs(this, 'subprotocol', this.options.subprotocol)
-      } else if (compare === -1) {
+      } else if (this.options.subprotocol < other) {
         let err = new LoguxError(
           'wrong-subprotocol',
           { supported: other, used: this.options.subprotocol },

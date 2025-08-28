@@ -79,9 +79,9 @@ export interface ClientOptions {
   store?: LogStore
 
   /**
-   * Client subprotocol version in SemVer format.
+   * Client subprotocol version.
    */
-  subprotocol: string
+  subprotocol: number
 
   /**
    * Test time to test client.
@@ -119,7 +119,7 @@ export interface ClientOptions {
  *
  * const client = new Client({
  *   credentials: token,
- *   subprotocol: '1.0.0',
+ *   subprotocol: 1,
  *   server: 'wss://example.com:1337',
  *   userId: userId
  * })

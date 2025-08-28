@@ -30,7 +30,7 @@ function createClient(): Client {
   let pair = new TestPair()
   let client = new Client({
     server: pair.left,
-    subprotocol: '1.0.0',
+    subprotocol: 10,
     time: new TestTime(),
     userId: '10'
   })

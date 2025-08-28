@@ -26,7 +26,7 @@ async function createClient(): Promise<
   privateMethods(pair.left).url = 'ws://example.com'
   let client = new CrossTabClient<object, TestLog<ClientMeta>>({
     server: pair.left,
-    subprotocol: '1.0.0',
+    subprotocol: 10,
     time: new TestTime(),
     userId: '10'
   })

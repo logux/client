@@ -17,7 +17,7 @@ async function createClient(): Promise<CrossTabClient> {
 
   let client = new CrossTabClient({
     server: pair.left,
-    subprotocol: '1.0.0',
+    subprotocol: 10,
     userId: '10'
   })
 

@@ -4,7 +4,7 @@ import { Action } from '@logux/core'
 import { Client } from '../index.js'
 
 let client = new Client({
-  subprotocol: '1.0.0',
+  subprotocol: 10,
   server: 'ws://localhost',
   userId: '10'
 })
@@ -13,7 +13,7 @@ let client = new Client({
 client.log.add({ type: 'A' }, { tab: 1 })
 
 new Client({
-  subprotocol: '1.0.0',
+  subprotocol: 10,
   server: 'ws://localhost',
   // THROWS Type 'boolean' is not assignable to type 'string'.
   userId: false

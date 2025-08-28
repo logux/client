@@ -11,7 +11,7 @@ export class TestClient extends Client {
     super({
       attempts: 0,
       server: pair.left,
-      subprotocol: opts.subprotocol || '0.0.0',
+      subprotocol: opts.subprotocol || 0,
       time: server.time,
       userId
     })

@@ -3,7 +3,7 @@
 exports[`ignores actions by request 1`] = `
 "[33m[1mLogux[22m[39m added and cleaned [32m[1mC[22m[39m action
   Action {"type":"C"}
-  Meta {"id":"3 10:1:1 0","time":3,"reasons":[],"subprotocol":"1.0.0"}
+  Meta {"id":"3 10:1:1 0","time":3,"reasons":[],"subprotocol":10}
 "
 `;
 
@@ -16,12 +16,12 @@ exports[`prints log 1`] = `
   Server ID: [1mserver:uuid[22m
 [33m[1mLogux[22m[39m added [32m[1mA[22m[39m action
   Action {"type":"A"}
-  Meta {"sync":true,"id":"1 10:1:1 0","time":1,"reasons":["syncing"],"subprotocol":"1.0.0","added":1}
+  Meta {"sync":true,"id":"1 10:1:1 0","time":1,"reasons":["syncing"],"subprotocol":10,"added":1}
 [33m[1mLogux[22m[39m state is [1msending[22m
 [33m[1mLogux[22m[39m state is [1msynchronized[22m
 [33m[1mLogux[22m[39m cleaned [1mA[22m action
   Action {"type":"A"}
-  Meta {"sync":true,"id":"1 10:1:1 0","time":1,"reasons":[],"subprotocol":"1.0.0","added":1}
+  Meta {"sync":true,"id":"1 10:1:1 0","time":1,"reasons":[],"subprotocol":10,"added":1}
 [31m[1mLogux[22m[39m action [31m[1mA[22m[39m was undone because of [31m[1merror[22m[39m
   Reverted Action {"type":"A"}
 [33m[1mLogux[22m[39m subscribing to [1musers[22m channel
@@ -54,7 +54,7 @@ exports[`prints log 1`] = `
   Action {"bad":true,"channel":"users","type":"logux/unsubscribe"}
 [33m[1mLogux[22m[39m added [32m[1mB[22m[39m action
   Action {"type":"B"}
-  Meta {"sync":true,"id":"8 10:1:1 0","time":8,"reasons":["syncing"],"subprotocol":"1.0.0","added":7}
+  Meta {"sync":true,"id":"8 10:1:1 0","time":8,"reasons":["syncing"],"subprotocol":10,"added":7}
 [33m[1mLogux[22m[39m state is [1msending[22m
 [33m[1mLogux[22m[39m state is [1msynchronized[22m
 [33m[1mLogux[22m[39m action [1mlogux/unsubscribe[22m was processed

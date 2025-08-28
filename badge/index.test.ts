@@ -42,7 +42,7 @@ async function createTest(override?: Partial<BadgeOptions>): Promise<TestPair> {
   let pair = new TestPair()
   let client = new CrossTabClient<object, TestLog<ClientMeta>>({
     server: pair.left,
-    subprotocol: '1.0.0',
+    subprotocol: 10,
     time: new TestTime(),
     userId: '1'
   })
@@ -153,8 +153,8 @@ it('shows error', async () => {
 it('shows server errors', async () => {
   let test = await createTest()
   let protocol = new LoguxError('wrong-protocol', {
-    supported: '1.0.0',
-    used: '0.1.0'
+    supported: 5,
+    used: 4
   })
   emit(test.leftNode, 'error', protocol)
   expect(badgeStyle().display).toBe('block')
@@ -162,8 +162,8 @@ it('shows server errors', async () => {
   expect(getBadgeMessage()).toEqual(badgeEn.protocolError)
 
   let subprotocol = new LoguxError('wrong-subprotocol', {
-    supported: '1.0.0',
-    used: '0.1.0'
+    supported: 11,
+    used: 10
   })
   emit(test.leftNode, 'error', subprotocol)
   expect(badgeStyle().display).toBe('block')
@@ -228,7 +228,7 @@ it('removes badge from DOM', () => {
   let pair = new TestPair()
   let client = new CrossTabClient({
     server: pair.left,
-    subprotocol: '1.0.0',
+    subprotocol: 10,
     time: new TestTime(),
     userId: '10'
   })

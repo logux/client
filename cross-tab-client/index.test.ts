@@ -63,7 +63,7 @@ function createClient(
 ): CrossTabClient<object, TestLog> {
   let result = new CrossTabClient<object, TestLog>({
     server: 'wss://localhost:1337',
-    subprotocol: '1.0.0',
+    subprotocol: 10,
     time: new TestTime(),
     userId: '10',
     ...overrides
@@ -74,21 +74,21 @@ function createClient(
 it('saves options', () => {
   client = new CrossTabClient({
     server: 'wss://localhost:1337',
-    subprotocol: '1.0.0',
+    subprotocol: 10,
     userId: '10'
   })
-  expect(client.options.subprotocol).toBe('1.0.0')
+  expect(client.options.subprotocol).toBe(10)
 })
 
 it('saves client ID', () => {
   client = new CrossTabClient({
     server: 'wss://localhost:1337',
-    subprotocol: '1.0.0',
+    subprotocol: 10,
     userId: '10'
   })
   let another = new CrossTabClient({
     server: 'wss://localhost:1337',
-    subprotocol: '1.0.0',
+    subprotocol: 10,
     userId: '10'
   })
   expect(client.clientId).toEqual(another.clientId)
@@ -161,7 +161,7 @@ it('does not use broken localStorage', async () => {
   breakLocalStorage(new Error('The quota has been exceeded'))
   client = new CrossTabClient({
     server: 'wss://localhost:1337',
-    subprotocol: '1.0.0',
+    subprotocol: 10,
     userId: '10'
   })
   await client.log.add({ type: 'A' }, { reasons: ['tab' + client.tabId] })
@@ -173,23 +173,23 @@ it('synchronizes actions between tabs', async () => {
   }
   client = new CrossTabClient({
     server: 'wss://localhost:1337',
-    subprotocol: '1.0.0',
+    subprotocol: 10,
     userId: '10'
   })
   let client2 = new CrossTabClient({
     server: 'wss://localhost:1337',
-    subprotocol: '1.0.0',
+    subprotocol: 10,
     userId: '10'
   })
   let client3 = new CrossTabClient({
     prefix: 'other',
     server: 'wss://localhost:1337',
-    subprotocol: '1.0.0',
+    subprotocol: 10,
     userId: '10'
   })
   let client4 = new CrossTabClient({
     server: 'wss://localhost:1337',
-    subprotocol: '1.0.0',
+    subprotocol: 10,
     userId: '20'
   })
 
@@ -413,28 +413,28 @@ it('copies actions on memory store', () => {
 
 it('detects higher subprotocol from other tab', () => {
   client = createClient()
-  expect(localStorage.storage['logux:10:subprotocol']).toBe('"1.0.0"')
+  expect(localStorage.storage['logux:10:subprotocol']).toBe('10')
 
   let error: Error | undefined
   client.node.on('error', e => {
     error = e
   })
-  emitStorage('logux:10:subprotocol', '"1.0.1"')
+  emitStorage('logux:10:subprotocol', '11')
   expect(error?.toString()).toContain(
-    'Only 1.0.1 application subprotocols are supported, but you use 1.0.0'
+    'Only 11 application subprotocols are supported, but you use 10'
   )
 })
 
 it('detects lower subprotocol from other tab', () => {
   client = createClient()
-  emitStorage('logux:10:subprotocol', '"0.9.9"')
-  expect(localStorage.storage['logux:10:subprotocol']).toBe('"1.0.0"')
+  emitStorage('logux:10:subprotocol', '9')
+  expect(localStorage.storage['logux:10:subprotocol']).toBe('10')
 })
 
 it('detects the same subprotocol from other tab', () => {
   client = createClient()
-  emitStorage('logux:10:subprotocol', '"1.0.0"')
-  expect(localStorage.storage['logux:10:subprotocol']).toBe('"1.0.0"')
+  emitStorage('logux:10:subprotocol', '10')
+  expect(localStorage.storage['logux:10:subprotocol']).toBe('10')
 })
 
 it('does not show alert on higher subprotocol', () => {
@@ -448,30 +448,14 @@ it('does not show alert on higher subprotocol', () => {
     '["other",{"type":"A"},' +
       '{"id":"1 ' +
       client.nodeId +
-      ' 0","reasons":[],"subprotocol":"1.0.0"}]'
+      ' 0","reasons":[],"subprotocol":10}]'
   )
   emitStorage(
     'logux:10:add',
     '["other",{"type":"A"},' +
       '{"id":"1 ' +
       client.nodeId +
-      ' 0","reasons":[],"subprotocol":"0.9.0"}]'
-  )
-  expect(error).toBeUndefined()
-})
-
-it('ignores non-digit subprotocols', () => {
-  client = createClient({ subprotocol: '1.0.0-beta' })
-  let error
-  client.node.on('error', e => {
-    error = e
-  })
-  emitStorage(
-    'logux:10:add',
-    '["other",{"type":"A"},' +
-      '{"id":"1 ' +
-      client.nodeId +
-      ' 0","reasons":[],"subprotocol":"1.0.0"}]'
+      ' 0","reasons":[],"subprotocol":9}]'
   )
   expect(error).toBeUndefined()
 })
@@ -485,7 +469,7 @@ it('ignores subprotocols from server', () => {
   emitStorage(
     'logux:10:add',
     '["other",{"type":"A"},' +
-      '{"id":"1 10:other 0","reasons":[],"subprotocol":"2.0.0"}]'
+      '{"id":"1 10:other 0","reasons":[],"subprotocol":20}]'
   )
   expect(error).toBeUndefined()
 })

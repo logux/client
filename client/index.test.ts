@@ -72,7 +72,7 @@ async function createDialog(
 
   let client = new Client<object, TestLog>({
     server: pair.left,
-    subprotocol: '1.0.0',
+    subprotocol: 10,
     time: new TestTime(),
     userId: '10',
     ...opts
@@ -114,7 +114,7 @@ async function createDialog(
 function createClient(): Client<object, TestLog> {
   let client = new Client<object, TestLog>({
     server: 'wss://localhost:1337',
-    subprotocol: '1.0.0',
+    subprotocol: 10,
     time: new TestTime(),
     userId: '10'
   })
@@ -126,16 +126,16 @@ function createClient(): Client<object, TestLog> {
 it('saves options', () => {
   let client = new Client({
     server: 'wss://localhost:1337',
-    subprotocol: '1.0.0',
+    subprotocol: 10,
     userId: '10'
   })
-  expect(client.options.subprotocol).toBe('1.0.0')
+  expect(client.options.subprotocol).toBe(10)
 })
 
 it('throws on missed server', () => {
   expect(() => {
     // @ts-expect-error
-    new Client({ subprotocol: '1.0.0', userId: '10' })
+    new Client({ subprotocol: 10, userId: '10' })
   }).toThrow(/server/)
 })
 
@@ -149,7 +149,7 @@ it('throws on missed subprotocol', () => {
 it('throws on missed user ID', () => {
   expect(() => {
     // @ts-expect-error
-    new Client({ server: 'wss://localhost:1337', subprotocol: '1.0.0' })
+    new Client({ server: 'wss://localhost:1337', subprotocol: 10 })
   }).toThrow(/userId/)
 })
 
@@ -157,7 +157,7 @@ it('throws on colon in user ID', () => {
   expect(() => {
     new Client({
       server: 'wss://localhost:1337',
-      subprotocol: '1.0.0',
+      subprotocol: 10,
       userId: 'admin:1'
     })
   }).toThrow(/colon/)
@@ -167,7 +167,7 @@ it('throws on false in user ID', () => {
   expect(() => {
     new Client({
       server: 'wss://localhost:1337',
-      subprotocol: '1.0.0',
+      subprotocol: 10,
       // @ts-expect-error
       userId: false
     })
@@ -178,7 +178,7 @@ it('throws on non-string in user ID', () => {
   expect(() => {
     new Client({
       server: 'wss://localhost:1337',
-      subprotocol: '1.0.0',
+      subprotocol: 10,
       // @ts-expect-error
       userId: 10
     })
@@ -230,7 +230,7 @@ it('ignores WS in development', async () => {
 it('uses user ID in node ID', () => {
   let client1 = new Client({
     server: 'wss://localhost:1337',
-    subprotocol: '1.0.0',
+    subprotocol: 10,
     userId: '10'
   })
   expect(client1.clientId).toMatch(/^10:[\w-]{8}$/)
@@ -239,7 +239,7 @@ it('uses user ID in node ID', () => {
 
   let client2 = new Client({
     server: 'wss://localhost:1337',
-    subprotocol: '1.0.0',
+    subprotocol: 10,
     userId: '10'
   })
   expect(client2.nodeId).toEqual(client2.clientId + ':' + client2.tabId)
@@ -248,7 +248,7 @@ it('uses user ID in node ID', () => {
 it('uses node ID in ID generator', () => {
   let client = new Client({
     server: 'wss://localhost:1337',
-    subprotocol: '1.0.0',
+    subprotocol: 10,
     time: new TestTime(),
     userId: '10'
   })
@@ -261,7 +261,7 @@ it('uses custom store', () => {
   let client = new Client({
     server: 'wss://localhost:1337',
     store,
-    subprotocol: '1.0.0',
+    subprotocol: 10,
     userId: '10'
   })
   expect(client.log.store).toBe(store)
@@ -273,7 +273,7 @@ it('sends options to connection', () => {
     maxDelay: 500,
     minDelay: 100,
     server: 'wss://localhost:1337',
-    subprotocol: '1.0.0',
+    subprotocol: 10,
     userId: '10'
   })
   expect(privateMethods(client.node.connection).options).toEqual({
@@ -290,12 +290,12 @@ it('sends options to node', () => {
   let client = new Client({
     ping: 1000,
     server: 'wss://localhost:1337',
-    subprotocol: '1.0.0',
+    subprotocol: 10,
     timeout: 2000,
     token: 'token',
     userId: '10'
   })
-  expect(client.node.options.subprotocol).toBe('1.0.0')
+  expect(client.node.options.subprotocol).toBe(10)
   expect(client.node.options.token).toBe('token')
   expect(client.node.options.timeout).toBe(2000)
   expect(client.node.options.ping).toBe(1000)
@@ -407,7 +407,7 @@ it('cleans other tab action after timeout', async () => {
 it('adds current subprotocol to meta', async () => {
   let client = createClient()
   await client.log.add({ type: 'A' }, { reasons: ['test'] })
-  expect(client.log.entries()[0][1].subprotocol).toBe('1.0.0')
+  expect(client.log.entries()[0][1].subprotocol).toBe(10)
 })
 
 it('adds current subprotocol only to own actions', async () => {
@@ -421,11 +421,8 @@ it('adds current subprotocol only to own actions', async () => {
 
 it('allows to override subprotocol in meta', async () => {
   let client = createClient()
-  await client.log.add(
-    { type: 'A' },
-    { reasons: ['test'], subprotocol: '0.1.0' }
-  )
-  expect(client.log.entries()[0][1].subprotocol).toBe('0.1.0')
+  await client.log.add({ type: 'A' }, { reasons: ['test'], subprotocol: 9 })
+  expect(client.log.entries()[0][1].subprotocol).toBe(9)
 })
 
 it('sends only special actions', async () => {
@@ -490,7 +487,7 @@ it('compresses subprotocol', async () => {
       {
         id: '1 10:client:id 0',
         reasons: ['test'],
-        subprotocol: '1.0.0',
+        subprotocol: 10,
         sync: true
       }
     ),
@@ -499,7 +496,7 @@ it('compresses subprotocol', async () => {
       {
         id: '2 10:client:id 0',
         reasons: ['test'],
-        subprotocol: '2.0.0',
+        subprotocol: 11,
         sync: true
       }
     )
@@ -516,7 +513,7 @@ it('compresses subprotocol', async () => {
       { type: 'a' },
       {
         id: [2, '10:client:id', 0],
-        subprotocol: '2.0.0',
+        subprotocol: 11,
         time: 2
       }
     ]
@@ -885,13 +882,7 @@ it('works with unsubscribe in offline', async () => {
   await delay(10)
 
   expect(pair.leftSent).toEqual([
-    [
-      'connect',
-      client.node.localProtocol,
-      '10:1:1',
-      0,
-      { subprotocol: '1.0.0' }
-    ],
+    ['connect', client.node.localProtocol, '10:1:1', 0, { subprotocol: 10 }],
     [
       'sync',
       3,

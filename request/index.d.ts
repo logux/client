@@ -19,7 +19,7 @@ export interface RequestOptions extends Omit<ClientOptions, 'userId'> {
  *
  * request(action, {
  *   server: 'wss://example.com',
- *   subprotocol: '1.0.0
+ *   subprotocol: 10
  * }).then(response => {
  *   saveToken(response.token)
  * }).catch(error => {

@@ -7,7 +7,7 @@ import {
 } from '../index.js'
 
 let client = new Client({
-  subprotocol: '1.0.0',
+  subprotocol: 10,
   server: 'ws://localhost',
   userId: '10'
 })

@@ -27,7 +27,7 @@ async function createTest(
 
   request(action, {
     server: test.pair.left,
-    subprotocol: '1.0.0',
+    subprotocol: 10,
     time,
     ...opts
   })
@@ -48,7 +48,7 @@ async function connectTest(
 ): Promise<Test> {
   let test = await createTest(action, opts)
   await test.pair.wait()
-  test.pair.right.send(['connected', 4, 'server:uuid', [0, 0]])
+  test.pair.right.send(['connected', 5, 'server:uuid', [0, 0]])
   await delay(15)
   return test
 }
@@ -58,7 +58,7 @@ it('sends action to the server and wait for response', async () => {
   await delay(1)
   expect(test.answer).toBeUndefined()
   expect(test.pair.leftSent).toEqual([
-    ['connect', 4, 'anonymous:1:1', 0, { subprotocol: '1.0.0' }],
+    ['connect', 5, 'anonymous:1:1', 0, { subprotocol: 10 }],
     ['sync', 1, { type: 'test' }, { id: 1, time: 1 }]
   ])
 
@@ -71,7 +71,7 @@ it('waits for logux/undo', async () => {
 
   expect(test.answer).toBeUndefined()
   expect(test.pair.leftSent).toEqual([
-    ['connect', 4, '10:1:1', 0, { subprotocol: '1.0.0' }],
+    ['connect', 5, '10:1:1', 0, { subprotocol: 10 }],
     ['sync', 1, { type: 'test' }, { id: 1, time: 1 }]
   ])
 
@@ -82,7 +82,7 @@ it('waits for logux/undo', async () => {
 it('throws Logux errors', async () => {
   let test = await createTest({ type: 'test ' })
 
-  test.pair.right.send(['error', 'wrong-subprotocol', { supported: '2.0.0' }])
+  test.pair.right.send(['error', 'wrong-subprotocol', { supported: 20 }])
   await delay(20)
 
   expect(test.answer?.name).toBe('LoguxError')

@@ -9,7 +9,7 @@ import {
 
 let client = new Client({
   server: 'ws://localhost',
-  subprotocol: '1.0.0',
+  subprotocol: 10,
   userId: '10'
 })
 

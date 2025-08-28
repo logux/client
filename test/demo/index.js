@@ -33,7 +33,7 @@ serverLog.on('add', (action, meta) => {
 
 let client = new CrossTabClient({
   server: 'wss://example.com/',
-  subprotocol: location.hash.slice(1) || '1.0.0',
+  subprotocol: location.hash.slice(1) === '2' ? 2 : 1,
   userId: '10'
 })
 
@@ -152,15 +152,15 @@ document.querySelector('#serverError').onclick = () => {
 
 document.querySelector('#subprotocolError').onclick = () => {
   client.node.syncError('wrong-subprotocol', {
-    supported: '2.x',
-    used: '1.0.0'
+    supported: 3,
+    used: 1
   })
 }
 
-if (client.options.subprotocol === '1.0.1') {
+if (client.options.subprotocol === 2) {
   document.querySelector('#subprotocolClient').disabled = true
 } else {
   document.querySelector('#subprotocolClient').onclick = () => {
-    window.open(location.toString() + '#1.0.1', '_blank')
+    window.open(location.toString() + '#2', '_blank')
   }
 }

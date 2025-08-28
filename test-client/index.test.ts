@@ -255,7 +255,7 @@ it('supports subprotocols', async () => {
   let client1 = new TestClient('10')
   let client2 = new TestClient('20', {
     server: client1.server,
-    subprotocol: '1.0.1'
+    subprotocol: 10
   })
   client1.log.keepActions()
   client2.log.keepActions()
@@ -270,14 +270,14 @@ it('supports subprotocols', async () => {
     { id: '1 10:2:2 0', type: 'logux/processed' },
     { type: 'client2' }
   ])
-  expect(client1.log.entries()[2][1].subprotocol).toBe('1.0.1')
+  expect(client1.log.entries()[2][1].subprotocol).toBe(10)
 
   expect(client2.log.actions()).toEqual([
     { type: 'client1' },
     { type: 'client2' },
     { id: '3 20:3:3 0', type: 'logux/processed' }
   ])
-  expect(client2.log.entries()[0][1].subprotocol).toBe('0.0.0')
+  expect(client2.log.entries()[0][1].subprotocol).toBe(0)
 })
 
 it('freezes processing', async () => {
