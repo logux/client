@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v5.0.0
       - name: Extract the changelog
         id: changelog
         run: |
@@ -36,7 +36,7 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
       - name: Create the release
         if: steps.changelog.outputs.changelog_content != ''
-        uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 # v2.3.2
+        uses: softprops/action-gh-release@fbadcc90e88ecface60a0a0d123795b784ceb239 # v2.3.2
         with:
           name: ${{ github.ref_name }}
           body: '${{ steps.changelog.outputs.changelog_content }}'
