@@ -1,6 +1,17 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.22.0
+* Added compression to E2EE.
+* Moved to number as subprotocol.
+* Moved to Logux Core 0.10 and Logux Protocol 5.
+* Removed Node.js 18.
+* Moved to Nano Stores 1.0.
+* Fixed race condition.
+* Fixed Node.js support for E2EE.
+* Fixed sending `0/clean` for ignoring actions.
+* Added `StatusValue` type.
+
 ## 0.21.1
 * Fixed types.
 
