@@ -100,7 +100,7 @@
     "eslint": "^9.34.0",
     "fake-indexeddb": "^6.2.2",
     "globals": "^16.3.0",
-    "happy-dom": "^18.0.1",
+    "happy-dom": "^20.0.0",
     "nanospy": "^1.0.0",
     "nanostores": "^1.0.1",
     "picocolors": "^1.1.1",
