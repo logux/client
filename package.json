@@ -101,6 +101,7 @@
     "fake-indexeddb": "^6.2.2",
     "globals": "^16.3.0",
     "happy-dom": "^20.0.0",
+    "multiocular": "^0.8.1",
     "nanospy": "^1.0.0",
     "nanostores": "^1.0.1",
     "picocolors": "^1.1.1",
