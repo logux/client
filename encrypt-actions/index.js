@@ -112,7 +112,7 @@ async function decrypt(action, key) {
 
 export function encryptActions(client, secret, opts = {}) {
   let key
-  if (secret instanceof CryptoKey) {
+  if (typeof CryptoKey !== 'undefined' && secret instanceof CryptoKey) {
     key = secret
   }
 
