@@ -1,6 +1,9 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.22.1
+* Fixed `CryptoKey is not defined` issue in some environment.
+
 ## 0.22.0
 * Added compression to E2EE.
 * Moved to number as subprotocol.
