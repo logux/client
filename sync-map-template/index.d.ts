@@ -289,7 +289,7 @@ export type LoadedValue<Type extends { isLoading: boolean }> = {
   isLoading: false
 } & Type
 
-type LoadableStore = {
+export type LoadableStore = {
   readonly loading: Promise<unknown>
 } & ReadableAtom<{ isLoading: boolean }>
 

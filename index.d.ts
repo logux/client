@@ -16,7 +16,9 @@ export {
   Filter,
   FilterOptions,
   FilterStore,
+  FilterStoreExt,
   FilterValue,
+  LoadedFilter,
   LoadedFilterValue
 } from './create-filter/index.js'
 export { CrossTabClient } from './cross-tab-client/index.js'
@@ -43,11 +45,13 @@ export {
   deleteSyncMapById,
   ensureLoaded,
   ensureLoadedStore,
+  LoadableStore,
   LoadedSyncMap,
   LoadedSyncMapValue,
   LoadedValue,
   loadValue,
   SyncMapStore,
+  SyncMapStoreExt,
   syncMapTemplate,
   SyncMapTemplate,
   SyncMapTemplateLike,

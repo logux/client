@@ -27,13 +27,15 @@ export type FilterValue<Value extends SyncMapValues> =
   | { isLoading: true }
   | LoadedFilterValue<Value>
 
-export interface FilterStore<Value extends SyncMapValues = any>
-  extends MapStore<FilterValue<Value>> {
+export interface FilterStoreExt {
   /**
    * While store is loading initial data from server or log.
    */
   readonly loading: Promise<void>
 }
+
+export type FilterStore<Value extends SyncMapValues = any> = FilterStoreExt &
+  MapStore<FilterValue<Value>>
 
 /**
  * Load list of `SyncMap` with simple key-value requirements.
@@ -62,3 +64,6 @@ export function createFilter<Value extends SyncMapValues>(
   filter?: Filter<Value>,
   opts?: FilterOptions
 ): FilterStore<Value>
+
+export type LoadedFilter<Store extends FilterStore> = FilterStoreExt &
+  MapStore<LoadedFilterValue<StoreValue<Store>>>
