@@ -300,8 +300,8 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
               let clear = child.listen(() => {})
               try {
                 if (child.value.isLoading) await child.loading
-                /* c8 ignore next 3 */
               } catch {
+                /* v8 ignore next 2 -- @preserve */
                 return
               }
               if (checkAllFields(child.value)) {

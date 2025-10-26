@@ -122,7 +122,7 @@ export function useSync(Template, id, ...builderArgs) {
   if (process.env.NODE_ENV !== 'production') {
     return readonly(state)
   }
-  /* c8 ignore next 2 */
+  /* v8 ignore next 1 -- @preserve */
   return state
 }
 
@@ -153,7 +153,7 @@ export function useFilter(Template, filter = {}, opts = {}) {
   if (process.env.NODE_ENV !== 'production') {
     return readonly(state)
   }
-  /* c8 ignore next 2 */
+  /* v8 ignore next 1 -- @preserve */
   return state
 }
 

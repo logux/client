@@ -99,7 +99,7 @@ export class ChannelErrors extends React.Component {
     let h = React.createElement
     if (!error) {
       if (process.env.NODE_ENV === 'production') {
-        /* c8 ignore next */
+        /* c8 ignore next 1 -- @preserve */
         return this.props.children
       } else {
         return h(ErrorsCheckerProvider, this.props)

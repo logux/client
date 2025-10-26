@@ -483,8 +483,8 @@ export async function loadValue(store) {
     } catch (e) {
       if (e.name === 'LoguxUndoError' && e.action.reason === 'notFound') {
         return undefined
-        /* c8 ignore next 3 */
       } else {
+        /* v8 ignore next 2 -- @preserve */
         throw e
       }
     } finally {

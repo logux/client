@@ -48,7 +48,7 @@ function bytesToBase64(bytes) {
   if (typeof window !== 'undefined') {
     return window.btoa(binaryString)
   } else {
-    /* c8 ignore next 2 */
+    /* v8 ignore next 2 -- @preserve */
     return Buffer.from(binaryString, 'binary').toString('base64')
   }
 }
@@ -58,7 +58,7 @@ function base64ToBytes(string) {
   if (typeof window !== 'undefined') {
     binaryString = window.atob(string)
   } else {
-    /* c8 ignore next 2 */
+    /* v8 ignore next 2 -- @preserve */
     binaryString = Buffer.from(string, 'base64').toString('binary')
   }
   let length = binaryString.length

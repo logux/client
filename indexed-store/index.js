@@ -4,7 +4,7 @@ const VERSION = 2
 
 function rejectify(request, reject) {
   request.onerror = e => {
-    /* c8 ignore next 2 */
+    /* v8 ignore next 2 -- @preserve */
     reject(e.target.error)
   }
 }
@@ -159,7 +159,7 @@ export class IndexedStore {
       }
       if (e.oldVersion < 2) {
         if (!log) {
-          /* c8 ignore next 2 */
+          /* v8 ignore next 2 -- @preserve */
           log = opening.transaction.objectStore('log')
         }
         log.createIndex('indexes', 'indexes', { multiEntry: true })

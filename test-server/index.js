@@ -144,7 +144,7 @@ export class TestServer {
           delete this.subscriptions[action.channel][nodeId]
         }
       } else {
-        /* c8 ignore next 8 */
+        /* v8 ignore next 8 -- @preserve */
         throw new Error(
           `Client was not subscribed to ${action.channel} ` +
             (action.filter

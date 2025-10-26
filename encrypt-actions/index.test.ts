@@ -6,7 +6,6 @@ import { expect, it } from 'vitest'
 import { Client, encryptActions } from '../index.js'
 import { getRandomSpaces } from './index.js'
 
-// @ts-expect-error
 window.TextEncoder = TextEncoder
 // @ts-expect-error
 window.TextDecoder = TextDecoder

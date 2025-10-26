@@ -1,6 +1,12 @@
 import { useStore } from '@nanostores/preact'
 import { Component, createContext, h } from 'preact'
-import { useContext, useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks'
+import {
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState
+} from 'preact/hooks'
 
 import { createAuth } from '../create-auth/index.js'
 import { createFilter } from '../create-filter/index.js'
@@ -9,7 +15,8 @@ export let ClientContext = /*#__PURE__*/ createContext()
 
 export let ErrorsContext = /*#__PURE__*/ createContext()
 
-let useIsomorphicLayoutEffect = typeof document !== 'undefined' ? useLayoutEffect : useEffect
+let useIsomorphicLayoutEffect =
+  typeof document !== 'undefined' ? useLayoutEffect : useEffect
 
 export function useClient() {
   let client = useContext(ClientContext)
@@ -100,7 +107,7 @@ export class ChannelErrors extends Component {
     let error = this.state.error
     if (!error) {
       if (process.env.NODE_ENV === 'production') {
-        /* c8 ignore next */
+        /* node:coverage ignore next 1 -- @preserve */
         return this.props.children
       } else {
         return h(ErrorsCheckerProvider, this.props)
