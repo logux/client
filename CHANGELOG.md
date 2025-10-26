@@ -1,6 +1,12 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.22.2
+* Added `FilterStoreExt` type export.
+* Added `LoadedFilter` type export.
+* Added `LoadableStore` type export.
+* Added `SyncMapStoreExt` type export.
+
 ## 0.22.1
 * Fixed `CryptoKey is not defined` issue in some environment.
 
