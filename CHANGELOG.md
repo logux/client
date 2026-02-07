@@ -1,6 +1,9 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.22.3
+* Fixed `0/clean` infinite loop.
+
 ## 0.22.2
 * Added `FilterStoreExt` type export.
 * Added `LoadedFilter` type export.
