@@ -66,7 +66,7 @@ function getPair(client: Client): TestPair {
 
 async function createDialog(
   opts: Partial<ClientOptions> = {},
-  token: string | undefined = undefined
+  token?: string
 ): Promise<Client<object, TestLog>> {
   let pair = new TestPair()
 

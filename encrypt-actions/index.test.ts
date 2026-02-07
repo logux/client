@@ -7,7 +7,6 @@ import { Client, encryptActions } from '../index.js'
 import { getRandomSpaces } from './index.js'
 
 window.TextEncoder = TextEncoder
-// @ts-expect-error
 window.TextDecoder = TextDecoder
 
 function privateMethods(obj: object): any {
