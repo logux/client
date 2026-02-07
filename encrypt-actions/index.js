@@ -155,7 +155,7 @@ export function encryptActions(client, secret, opts = {}) {
   client.node.options.onReceive = onReceive
 
   client.log.on('clean', (action, meta) => {
-    if (meta.sync && !ignore.has(action.type)) {
+    if (meta.sync && !ignore.has(action.type) && action.type !== '0/clean') {
       client.log.add({ id: meta.id, type: '0/clean' }, { sync: true })
     }
   })
