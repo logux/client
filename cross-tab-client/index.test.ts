@@ -508,6 +508,31 @@ it('notifies other tabs on user change', () => {
   expect(users).toEqual(['20'])
 })
 
+it('forces connection from follower through leader', () => {
+  localStorage.setItem = (name, value) => {
+    emitStorage(name, value)
+  }
+
+  client = createClient()
+  let follower = createClient()
+
+  client.start()
+  giveLock()
+  follower.start()
+
+  client.state = 'disconnected'
+  let connect = spyOn(client.node.connection, 'connect')
+
+  client.forceConnect()
+  expect(connect.callCount).toEqual(1)
+
+  connect.callCount = 0
+  follower.forceConnect()
+  expect(connect.callCount).toEqual(1)
+
+  follower.destroy()
+})
+
 it('sends event on user changing in other tab', () => {
   client = createClient()
   let users: string[] = []

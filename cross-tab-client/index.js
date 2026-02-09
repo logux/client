@@ -98,6 +98,16 @@ export class CrossTabClient extends Client {
     }
   }
 
+  forceConnect() {
+    if (this.state === 'disconnected') {
+      if (this.role === 'leader') {
+        this.node.connection.connect()
+      }
+    } else {
+      sendToTabs(this, 'connect', Date.now())
+    }
+  }
+
   getClientId() {
     let key = storageKey(this, 'client')
     if (!this.isLocalStorage) {
@@ -161,6 +171,8 @@ export class CrossTabClient extends Client {
         )
         this.node.emitter.emit('error', err)
       }
+    } else if (e.key === storageKey(this, 'connect')) {
+      if (this.role === 'leader') this.forceConnect()
     }
   }
 

@@ -47,6 +47,11 @@ export class CrossTabClient<
    */
   role: 'follower' | 'leader'
 
+  /**
+   * Start web socket reconnection.
+   */
+  forceConnect(): void
+
   on(
     event: 'add' | 'clean' | 'preadd',
     listener: ClientActionListener<Action>
