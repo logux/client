@@ -2,7 +2,7 @@ export function status(client, callback, options = {}) {
   let observable = client.on ? client : client.node
   let disconnected = observable.state === 'disconnected'
   let wait = false
-  let old = false
+  let error = false
 
   if (typeof options.duration === 'undefined') options.duration = 3000
 
@@ -27,18 +27,20 @@ export function status(client, callback, options = {}) {
   function changeState() {
     clearTimeout(timeout)
 
-    if (old) return
     if (observable.state === 'disconnected') {
       disconnected = true
-      callback(wait ? 'wait' : 'disconnected')
+      if (!error) callback(wait ? 'wait' : 'disconnected')
     } else if (observable.state === 'synchronized') {
+      error = false
       disconnected = false
       setSynchronized()
     } else if (observable.state === 'connecting') {
-      timeout = setTimeout(() => {
-        callback('connecting' + (wait ? 'AfterWait' : ''))
-      }, 100)
-    } else {
+      if (!error) {
+        timeout = setTimeout(() => {
+          callback('connecting' + (wait ? 'AfterWait' : ''))
+        }, 100)
+      }
+    } else if (!error) {
       callback(client.state + (wait ? 'AfterWait' : ''))
     }
   }
@@ -46,24 +48,23 @@ export function status(client, callback, options = {}) {
   unbind.push(observable.on('state', changeState))
 
   unbind.push(
-    client.node.on('error', error => {
-      if (
-        error.type === 'wrong-protocol' ||
-        error.type === 'wrong-subprotocol'
-      ) {
-        old = true
+    client.node.on('error', e => {
+      if (e.type === 'wrong-protocol' || e.type === 'wrong-subprotocol') {
+        error = true
         callback('protocolError')
-      } else if (error.type === 'wrong-credentials') {
+      } else if (e.type === 'wrong-credentials') {
+        error = true
         callback('wrongCredentials')
-      } else if (error.type !== 'timeout') {
-        callback('syncError', { error })
+      } else if (e.type !== 'timeout') {
+        error = true
+        callback('syncError', { error: e })
       }
     })
   )
 
   unbind.push(
-    client.node.on('clientError', error => {
-      callback('syncError', { error })
+    client.node.on('clientError', e => {
+      callback('syncError', { error: e })
     })
   )
 

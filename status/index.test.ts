@@ -139,6 +139,8 @@ it('notifies about synchronization error', async () => {
   let error2 = new LoguxError('timeout', 10, true)
   emit(test.client.node, 'clientError', error2)
 
+  setState(test.client.node, 'disconnected')
+
   expect(test.calls).toEqual(['disconnected', 'syncError', 'syncError'])
   expect(test.args).toEqual([undefined, { error: error1 }, { error: error2 }])
 })
@@ -154,8 +156,8 @@ it('ignores timeout error', async () => {
 it('notifies about wrong credentials', async () => {
   let test = await createTest()
   await test.client.node.connection.connect()
-  let error = { type: 'wrong-credentials' }
-  emit(test.client.node, 'error', error)
+  emit(test.client.node, 'error', { type: 'wrong-credentials' })
+  setState(test.client.node, 'disconnected')
   expect(test.calls).toEqual(['disconnected', 'wrongCredentials'])
 })
 
