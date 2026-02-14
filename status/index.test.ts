@@ -151,6 +151,14 @@ it('ignores timeout error', async () => {
   expect(test.calls).toEqual(['disconnected'])
 })
 
+it('notifies about wrong credentials', async () => {
+  let test = await createTest()
+  await test.client.node.connection.connect()
+  let error = { type: 'wrong-credentials' }
+  emit(test.client.node, 'error', error)
+  expect(test.calls).toEqual(['disconnected', 'wrongCredentials'])
+})
+
 it('notifies about old client', async () => {
   let test = await createTest()
   await test.client.node.connection.connect()

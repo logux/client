@@ -15,6 +15,7 @@ export type StatusValue =
   | 'synchronized'
   | 'synchronizedAfterWait'
   | 'wait'
+  | 'wrongCredentials'
 
 interface StatusListener {
   (

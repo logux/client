@@ -53,6 +53,8 @@ export function status(client, callback, options = {}) {
       ) {
         old = true
         callback('protocolError')
+      } else if (error.type === 'wrong-credentials') {
+        callback('wrongCredentials')
       } else if (error.type !== 'timeout') {
         callback('syncError', { error })
       }
