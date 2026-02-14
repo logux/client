@@ -1,6 +1,11 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.23.0
+* Added separated `wrongCredentials` to `status()` since it need special UI.
+* Added hiding `disconnected` in `status()` after error to not hide error.
+* Added `CrossTabClient#forceConnect()`.
+
 ## 0.22.3
 * Fixed `0/clean` infinite loop.
 
