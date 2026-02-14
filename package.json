@@ -14,9 +14,9 @@
     "test:lint": "eslint .",
     "test:size": "size-limit",
     "test:types": "check-dts",
-    "test:build": "pnpm build",
+    "test:build": "pnpm build && rm -Rf test/demo/dist/",
     "test:coverage": "vitest run --coverage",
-    "test": "pnpm run /^test:/",
+    "test": "pnpm run clean && pnpm run /^test:/",
     "build": "vite build test/demo/ -m production --base /client/",
     "start": "vite test/demo/ --open"
   },
