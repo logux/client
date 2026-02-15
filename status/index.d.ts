@@ -1,4 +1,4 @@
-import type { Action } from '@logux/core'
+import type { LoguxUndoAction } from '@logux/actions'
 
 import type { Client, ClientMeta } from '../client/index.js'
 
@@ -20,7 +20,10 @@ export type StatusValue =
 interface StatusListener {
   (
     current: StatusValue,
-    details: { action: Action; meta: ClientMeta } | { error: Error } | undefined
+    details:
+      | { action: LoguxUndoAction; meta: ClientMeta }
+      | { error: Error }
+      | undefined
   ): void
 }
 
