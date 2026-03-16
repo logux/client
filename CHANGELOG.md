@@ -1,6 +1,9 @@
 # Change Log
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.23.2
+* Fixed `sending`-`synchronized` jiggling in `status()`.
+
 ## 0.23.1
 * Fixed `status()` action type on undo error.
 
