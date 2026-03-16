@@ -14,6 +14,7 @@ export default [
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       'camelcase': 'off',
+      'prefer-let/prefer-let': 'off', // Temporary fix until new release
       'n/no-unsupported-features/node-builtins': [
         'error',
         {

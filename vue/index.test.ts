@@ -263,7 +263,7 @@ it('throws store init errors', () => {
         })
       )
     )
-  }).toThrowError('Test')
+  }).toThrow('Test')
 })
 
 it('throws and catches not found error', async () => {
