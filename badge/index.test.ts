@@ -76,6 +76,7 @@ it('shows synchronized state', async () => {
 
   test.leftNode.connected = true
   setState(test.leftNode, 'synchronized')
+  await delay(510)
   expect(badgeStyle().display).toBe('none')
 
   test.leftNode.connected = false

@@ -49,6 +49,8 @@ it('notifies about states', async () => {
   await delay(105)
   test.client.node.connected = true
   setState(test.client.node, 'synchronized')
+  expect(test.calls).toEqual(['disconnected', 'connecting'])
+  await delay(505)
   expect(test.calls).toEqual(['disconnected', 'connecting', 'synchronized'])
 })
 
@@ -56,6 +58,8 @@ it('notifies about other tab states', async () => {
   let test = await createTest()
   test.client.state = 'synchronized'
   emit(test.client, 'state')
+  expect(test.calls).toEqual(['disconnected'])
+  await delay(505)
   expect(test.calls).toEqual(['disconnected', 'synchronized'])
 })
 
@@ -126,6 +130,8 @@ it('skips connecting notification if it took less than 100ms', async () => {
   setState(test.client.node, 'connecting')
   test.client.node.connected = true
   setState(test.client.node, 'synchronized')
+  expect(test.calls).toEqual(['disconnected'])
+  await delay(505)
   expect(test.calls).toEqual(['disconnected', 'synchronized'])
 })
 

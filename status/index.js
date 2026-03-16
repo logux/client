@@ -1,3 +1,5 @@
+const NO_JIGGLING_TIMEOUT = 500
+
 export function status(client, callback, options = {}) {
   let observable = client.on ? client : client.node
   let disconnected = observable.state === 'disconnected'
@@ -12,6 +14,7 @@ export function status(client, callback, options = {}) {
 
   function setSynchronized() {
     if (Object.keys(processing).length === 0) {
+      clearTimeout(timeout)
       if (wait) {
         wait = false
         callback('synchronizedAfterWait')
@@ -19,7 +22,9 @@ export function status(client, callback, options = {}) {
           callback('synchronized')
         }, options.duration)
       } else {
-        callback('synchronized')
+        timeout = setTimeout(() => {
+          callback('synchronized')
+        }, NO_JIGGLING_TIMEOUT)
       }
     }
   }
