@@ -75,7 +75,6 @@
     "@logux/actions": "^0.5.0",
     "@logux/core": "^0.10.0",
     "fast-json-stable-stringify": "^2.1.0",
-    "nanodelay": "^2.0.2",
     "nanoevents": "^9.1.0",
     "nanoid": "^5.1.6"
   },
@@ -102,6 +101,7 @@
     "globals": "^17.4.0",
     "happy-dom": "^20.8.4",
     "multiocular": "^0.8.2",
+    "nanodelay": "^2.0.2",
     "nanospy": "^1.0.0",
     "nanostores": "^1.2.0",
     "picocolors": "^1.1.1",

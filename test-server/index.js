@@ -1,6 +1,5 @@
 import { parseId, ServerNode, TestTime } from '@logux/core'
 import stringify from 'fast-json-stable-stringify'
-import { delay } from 'nanodelay'
 
 export class TestServer {
   constructor() {
@@ -91,7 +90,9 @@ export class TestServer {
       this.process(action, meta)
     }
     this.deferred = []
-    await delay(20)
+    await new Promise(resolve => {
+      setTimeout(resolve, 20)
+    })
   }
 
   onChannel(channel, response) {
@@ -163,7 +164,9 @@ export class TestServer {
 
   async sendAll(action, meta = {}) {
     await this.log.add(action, { ...meta, nodes: Array.from(this.connected) })
-    await delay(10)
+    await new Promise(resolve => {
+      setTimeout(resolve, 10)
+    })
   }
 
   sendUndo(action, meta, record) {

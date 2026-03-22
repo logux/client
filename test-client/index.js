@@ -1,5 +1,4 @@
 import { TestPair } from '@logux/core'
-import { delay } from 'nanodelay'
 
 import { Client } from '../client/index.js'
 import { TestServer } from '../test-server/index.js'
@@ -37,7 +36,9 @@ export class TestClient extends Client {
       }
     })
     await test()
-    await delay(1)
+    await new Promise(resolve => {
+      setTimeout(resolve, 1)
+    })
     unbind()
     return actions
   }
