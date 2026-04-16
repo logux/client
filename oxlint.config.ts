@@ -6,7 +6,6 @@ export default defineConfig({
   ignorePatterns: ['test/demo/dist', '**/errors.ts'],
   rules: {
     'typescript/no-unnecessary-type-parameters': 'off',
-    'typescript/no-floating-promises': 'off',
     'typescript/no-unnecessary-type-arguments': 'off',
     'unicorn/prefer-add-event-listener': 'off',
     'unicorn/consistent-function-scoping': 'off',
@@ -14,12 +13,6 @@ export default defineConfig({
     'no-console': 'off'
   },
   overrides: [
-    {
-      files: ['**/*.js'],
-      rules: {
-        'typescript/no-unnecessary-type-conversion': 'off'
-      }
-    },
     {
       files: ['**/*.ts'],
       rules: {

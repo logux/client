@@ -20,7 +20,7 @@ export function setLocalStorage() {
     setItem(key, value) {
       if (errorOnSet) throw errorOnSet
       this[key] = value
-      this.storage[key] = String(value)
+      this.storage[key] = value
     },
     storage: {}
   }

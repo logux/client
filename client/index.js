@@ -332,7 +332,7 @@ export class Client {
     this.node.options.token = token
 
     this.emitter.emit('user', userId)
-    if (wasConnected) this.node.connection.connect()
+    if (wasConnected) void this.node.connection.connect()
   }
 
   clean() {
@@ -383,7 +383,7 @@ export class Client {
 
   start(connect = true) {
     this.cleanPrevActions()
-    if (connect) this.node.connection.connect()
+    if (connect) void this.node.connection.connect()
   }
 
   sync(action, meta = {}) {

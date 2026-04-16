@@ -50,7 +50,7 @@ export class CrossTabClient<
   /**
    * Start web socket reconnection.
    */
-  forceConnect(): void
+  forceConnect(): Promise<void>
 
   on(
     event: 'add' | 'clean' | 'preadd',

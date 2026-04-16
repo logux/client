@@ -131,7 +131,7 @@ export function syncMapTemplate(plural, opts = {}) {
         }
 
         if (store.remote && !store.offline) {
-          processSubscribe(client.sync(subscribe))
+          void processSubscribe(client.sync(subscribe))
         }
         if (store.offline) {
           let found

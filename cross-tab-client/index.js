@@ -101,7 +101,7 @@ export class CrossTabClient extends Client {
   forceConnect() {
     if (this.state === 'disconnected') {
       if (this.role === 'leader') {
-        this.node.connection.connect()
+        void this.node.connection.connect()
       }
     } else {
       sendToTabs(this, 'connect', Date.now())
@@ -140,7 +140,7 @@ export class CrossTabClient extends Client {
         let meta = data[2]
         if (!meta.tab || meta.tab === this.tabId) {
           if (isMemory(this.log.store)) {
-            this.log.store.add(action, meta)
+            void this.log.store.add(action, meta)
           }
           actionEvents(this.emitter, 'add', action, meta)
           if (this.role === 'leader') {
@@ -187,7 +187,7 @@ export class CrossTabClient extends Client {
     ) {
       this.role = 'leader'
       this.emitter.emit('role')
-      if (connect) this.node.connection.connect()
+      if (connect) void this.node.connection.connect()
       return
     }
 
@@ -197,10 +197,10 @@ export class CrossTabClient extends Client {
       this.emitter.emit('state')
     }
 
-    navigator.locks.request('logux_leader', () => {
+    void navigator.locks.request('logux_leader', () => {
       this.role = 'leader'
       this.emitter.emit('role')
-      if (connect) this.node.connection.connect()
+      if (connect) void this.node.connection.connect()
       return new Promise(resolve => {
         this.unlead = resolve
       })

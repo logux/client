@@ -140,7 +140,7 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
         }
 
         for (let i in Template.cache) {
-          loadAndCheck(Template.cache[i])
+          void loadAndCheck(Template.cache[i])
         }
 
         let load = true
@@ -205,7 +205,7 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
           }
 
           if (Template.remote && !Template.offline) {
-            processSubscribe(client.sync(subscribe))
+            void processSubscribe(client.sync(subscribe))
           }
         }
 
@@ -226,7 +226,7 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
             let clear = child.listen(() => {})
             track(client, actionId)
               .catch(() => {
-                add(child)
+                return add(child)
               })
               .finally(() => {
                 clear()
@@ -249,7 +249,7 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
           }),
           client.type(createdType, async (action, meta) => {
             if (checkAllFields(action.fields)) {
-              add(
+              await add(
                 Template(
                   action.id,
                   client,
@@ -264,7 +264,7 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
             if (checkAllFields(action.fields)) {
               let child = Template(action.id, client, action, meta)
               try {
-                add(child)
+                await add(child)
                 track(client, meta.id).catch(() => {
                   remove(action.id)
                 })
@@ -278,7 +278,7 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
                 remove(action.id)
               }
             } else if (checkSomeFields(action.fields)) {
-              loadAndCheck(
+              await loadAndCheck(
                 Template(
                   action.id,
                   client,
@@ -306,7 +306,7 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
               }
               if (checkAllFields(child.value)) {
                 clear()
-                add(child)
+                void add(child)
                 track(client, meta.id).catch(async () => {
                   let unbind = child.listen(() => {
                     if (!checkAllFields(child.value)) {

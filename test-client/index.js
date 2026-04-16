@@ -20,7 +20,7 @@ export class TestClient extends Client {
 
   connect() {
     this.server.connect(this.nodeId, this.pair.right)
-    this.node.connection.connect()
+    void this.node.connection.connect()
     return this.node.waitFor('synchronized')
   }
 

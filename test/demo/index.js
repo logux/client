@@ -25,8 +25,8 @@ new BaseNode('server:uuid', serverLog, pair.right)
 
 serverLog.on('add', (action, meta) => {
   if (action.type !== 'logux/processed') {
-    setTimeout(() => {
-      serverLog.add({ id: meta.id, type: 'logux/processed' })
+    setTimeout(async () => {
+      await serverLog.add({ id: meta.id, type: 'logux/processed' })
     }, 500)
   }
 })
@@ -92,7 +92,7 @@ client.on('clean', action => {
   updateTitle()
 })
 
-client.log
+void client.log
   .each(action => {
     if (action.type === 'TICK') count++
   })
@@ -106,27 +106,27 @@ client.on('role', () => {
   document.all.disabled.style.display = isLeader ? 'none' : 'inline'
 })
 
-client.start()
+void client.start()
 
-document.querySelector('#connection').onchange = e => {
+document.querySelector('#connection').onchange = async e => {
   if (e.target.checked) {
-    client.node.connection.connect()
+    await client.node.connection.connect()
   } else {
     client.node.connection.disconnect()
   }
 }
 
-document.querySelector('#add').onclick = () => {
-  client.log.add({ type: 'TICK' }, { reasons: ['tick'], sync: true })
+document.querySelector('#add').onclick = async () => {
+  await client.log.add({ type: 'TICK' }, { reasons: ['tick'], sync: true })
 }
 
-document.querySelector('#clean').onclick = () => {
-  client.log.removeReason('tick')
+document.querySelector('#clean').onclick = async () => {
+  await client.log.removeReason('tick')
 }
 
 document.querySelector('#error').onclick = () => {
-  setTimeout(() => {
-    client.log.add({
+  setTimeout(async () => {
+    await client.log.add({
       action: { type: 'TICK' },
       reason: 'error',
       type: 'logux/undo'
@@ -135,8 +135,8 @@ document.querySelector('#error').onclick = () => {
 }
 
 document.querySelector('#denied').onclick = () => {
-  setTimeout(() => {
-    client.log.add({
+  setTimeout(async () => {
+    await client.log.add({
       action: { type: 'TICK' },
       reason: 'denied',
       type: 'logux/undo'

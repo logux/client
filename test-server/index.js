@@ -119,13 +119,13 @@ export class TestServer {
       if (Array.isArray(responses)) {
         for (let response of responses) {
           if (Array.isArray(response)) {
-            this.log.add(response[0], { nodes, ...response[1] })
+            void this.log.add(response[0], { nodes, ...response[1] })
           } else {
-            this.log.add(response, { nodes })
+            void this.log.add(response, { nodes })
           }
         }
       } else {
-        this.log.add(responses, { nodes })
+        void this.log.add(responses, { nodes })
       }
     } else if (action.type === 'logux/unsubscribe') {
       let hasValue
@@ -155,7 +155,7 @@ export class TestServer {
         )
       }
     }
-    this.log.add({ id, type: 'logux/processed' }, { nodes })
+    void this.log.add({ id, type: 'logux/processed' }, { nodes })
   }
 
   resend(type, resend) {
@@ -172,7 +172,7 @@ export class TestServer {
   sendUndo(action, meta, record) {
     if (!record) return false
     let [reason, extra] = record
-    this.log.add(
+    void this.log.add(
       { action, id: meta.id, reason, type: 'logux/undo', ...extra },
       { nodes: [parseId(meta.id).nodeId] }
     )

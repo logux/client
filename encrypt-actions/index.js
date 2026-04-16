@@ -72,16 +72,16 @@ function base64ToBytes(string) {
 async function compress(bytes) {
   let cs = new CompressionStream('deflate-raw')
   let writer = cs.writable.getWriter()
-  writer.write(bytes)
-  writer.close()
+  void writer.write(bytes)
+  void writer.close()
   return new Uint8Array(await new Response(cs.readable).arrayBuffer())
 }
 
 async function decompress(bytes) {
   let ds = new DecompressionStream('deflate-raw')
   let writer = ds.writable.getWriter()
-  writer.write(new Uint8Array(bytes))
-  writer.close()
+  void writer.write(new Uint8Array(bytes))
+  void writer.close()
   return new Uint8Array(await new Response(ds.readable).arrayBuffer())
 }
 
