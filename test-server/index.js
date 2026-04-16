@@ -108,6 +108,8 @@ export class TestServer {
     if (this.sendUndo(action, meta, this.bad[stringify(action)])) return
 
     if (action.type === 'logux/subscribe') {
+      /* v8 ignore next -- @preserve */
+      if (action.channel === '__proto__') return
       if (!this.subscriptions[action.channel]) {
         this.subscriptions[action.channel] = {}
       }
