@@ -7,20 +7,20 @@ Logux is a new way to connect client and server. Instead of sending
 HTTP requests (e.g., AJAX and GraphQL) it synchronizes log of operations
 between client, server, and other clients.
 
-* **[Guide, recipes, and API](https://logux.org/)**
-* **[Issues](https://github.com/logux/logux/issues)**
+- **[Guide, recipes, and API](https://logux.org/)**
+- **[Issues](https://github.com/logux/logux/issues)**
   and **[roadmap](https://github.com/orgs/logux/projects/1)**
-* **[Projects](https://logux.org/guide/architecture/parts/)**
+- **[Projects](https://logux.org/guide/architecture/parts/)**
   inside Logux ecosystem
 
 This repository contains Logux base components to build web client:
 
-* `CrossTabClient` and `Client` to create web client for Logux.
-* `IndexedStore` to store Logux log in `IndexedDB`.
-* `badge()` widget to show Logux synchronization status in UI.
-* `status()` to write own UI to show Logux synchronization status in UI.
-* `attention()`, `confirm()`, `favicon()` to improve UX in Logux web app.
-* `log()` to print Logux synchronization status to browser DevTools.
+- `CrossTabClient` and `Client` to create web client for Logux.
+- `IndexedStore` to store Logux log in `IndexedDB`.
+- `badge()` widget to show Logux synchronization status in UI.
+- `status()` to write own UI to show Logux synchronization status in UI.
+- `attention()`, `confirm()`, `favicon()` to improve UX in Logux web app.
+- `log()` to print Logux synchronization status to browser DevTools.
 
 Check **[demo page]** for widget UI.
 
@@ -30,17 +30,15 @@ Check **[demo page]** for widget UI.
 
 ---
 
-<img src="https://cdn.evilmartians.com/badges/logo-no-label.svg" alt="" width="22" height="16" />  Made at <b><a href="https://evilmartians.com/devtools?utm_source=logux-client&utm_campaign=devtools-button&utm_medium=github">Evil Martians</a></b>, product consulting for <b>developer tools</b>.
+<img src="https://cdn.evilmartians.com/badges/logo-no-label.svg" alt="" width="22" height="16" /> Made at <b><a href="https://evilmartians.com/devtools?utm_source=logux-client&utm_campaign=devtools-button&utm_medium=github">Evil Martians</a></b>, product consulting for <b>developer tools</b>.
 
 ---
-
 
 ## Install
 
 ```sh
 npm install @logux/core @logux/client nanostores
 ```
-
 
 ## Usage
 

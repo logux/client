@@ -2,7 +2,7 @@ name: Update API
 on:
   create:
     tags:
-      - "*.*.*"
+      - '*.*.*'
 permissions: {}
 jobs:
   api:

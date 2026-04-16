@@ -1,4 +1,4 @@
-let errorOnSet
+let errorOnSet = new Error()
 
 export function setLocalStorage() {
   errorOnSet = undefined

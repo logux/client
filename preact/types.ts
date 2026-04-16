@@ -1,4 +1,4 @@
-import type { MapStore} from 'nanostores'
+import type { MapStore } from 'nanostores'
 import { map } from 'nanostores'
 
 import { syncMapTemplate } from '../sync-map-template/index.js'

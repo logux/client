@@ -3,29 +3,18 @@
   "version": "0.23.2",
   "description": "Logux base components to build web client",
   "keywords": [
-    "logux",
     "client",
-    "websocket",
     "cross-tab",
-    "indexeddb"
+    "indexeddb",
+    "logux",
+    "websocket"
   ],
-  "scripts": {
-    "clean": "rm -Rf coverage/ test/demo/dist/",
-    "test:lint": "eslint .",
-    "test:size": "size-limit",
-    "test:types": "check-dts",
-    "test:build": "pnpm build && rm -Rf test/demo/dist/",
-    "test:coverage": "vitest run --coverage",
-    "test": "pnpm run clean && pnpm run /^test:/",
-    "build": "vite build test/demo/ -m production --base /client/",
-    "start": "vite test/demo/ --open"
-  },
-  "author": "Andrey Sitnik <andrey@sitnik.es>",
-  "license": "MIT",
   "homepage": "https://logux.org/",
+  "license": "MIT",
+  "author": "Andrey Sitnik <andrey@sitnik.es>",
   "repository": "logux/client",
-  "sideEffects": false,
   "type": "module",
+  "sideEffects": false,
   "types": "./index.d.ts",
   "exports": {
     ".": "./index.js",
@@ -35,8 +24,64 @@
     "./package.json": "./package.json",
     "./badge/styles": "./badge/styles/index.js"
   },
-  "engines": {
-    "node": "^20.0.0 || >=22.0.0"
+  "scripts": {
+    "clean": "rm -Rf coverage/ test/demo/dist/",
+    "test:lint": "oxlint",
+    "test:size": "size-limit",
+    "test:types": "check-dts",
+    "test:build": "pnpm build && rm -Rf test/demo/dist/",
+    "test:coverage": "vitest run --coverage",
+    "test": "pnpm run clean && pnpm run /^test:/",
+    "build": "vite build test/demo/ -m production --base /client/",
+    "start": "vite test/demo/ --open"
+  },
+  "dependencies": {
+    "@logux/actions": "^0.5.0",
+    "@logux/core": "^0.10.0",
+    "fast-json-stable-stringify": "^2.1.0",
+    "nanoevents": "^9.1.0",
+    "nanoid": "^5.1.9"
+  },
+  "devDependencies": {
+    "@logux/oxc-configs": "^0.3.3",
+    "@nanostores/preact": "^1.1.0",
+    "@nanostores/react": "^1.1.0",
+    "@nanostores/vue": "^1.1.0",
+    "@size-limit/preset-small-lib": "^12.1.0",
+    "@testing-library/preact": "^3.2.4",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/vue": "^8.1.0",
+    "@types/node": "^25.6.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@types/ws": "^8.18.1",
+    "@vitest/coverage-v8": "^4.1.4",
+    "@vue/compiler-sfc": "^3.5.32",
+    "actions-up": "^1.14.0",
+    "check-dts": "^1.0.0",
+    "clean-publish": "^6.0.5",
+    "eslint-plugin-prefer-let": "^4.2.2",
+    "fake-indexeddb": "^6.2.5",
+    "globals": "^17.5.0",
+    "happy-dom": "^20.9.0",
+    "multiocular": "^0.8.2",
+    "nanodelay": "^2.0.2",
+    "nanospy": "^1.0.0",
+    "nanostores": "^1.2.0",
+    "oxlint": "^1.60.0",
+    "oxlint-tsgolint": "^0.21.0",
+    "picocolors": "^1.1.1",
+    "postcss": "^8.5.10",
+    "preact": "10.29.1",
+    "print-snapshots": "^0.4.2",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "size-limit": "^12.1.0",
+    "svgo": "^4.0.1",
+    "typescript": "^6.0.2",
+    "vite": "^8.0.8",
+    "vitest": "^4.1.4",
+    "vue": "^3.5.32"
   },
   "peerDependencies": {
     "@nanostores/preact": ">=0.0.0",
@@ -71,60 +116,6 @@
       "optional": true
     }
   },
-  "dependencies": {
-    "@logux/actions": "^0.5.0",
-    "@logux/core": "^0.10.0",
-    "fast-json-stable-stringify": "^2.1.0",
-    "nanoevents": "^9.1.0",
-    "nanoid": "^5.1.9"
-  },
-  "devDependencies": {
-    "@logux/eslint-config": "^57.1.0",
-    "@nanostores/preact": "^1.1.0",
-    "@nanostores/react": "^1.1.0",
-    "@nanostores/vue": "^1.1.0",
-    "@size-limit/preset-small-lib": "^12.1.0",
-    "@testing-library/preact": "^3.2.4",
-    "@testing-library/react": "^16.3.2",
-    "@testing-library/vue": "^8.1.0",
-    "@types/node": "^25.6.0",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@types/ws": "^8.18.1",
-    "@vitest/coverage-v8": "^4.1.4",
-    "@vue/compiler-sfc": "^3.5.32",
-    "actions-up": "^1.14.0",
-    "check-dts": "^1.0.0",
-    "clean-publish": "^6.0.5",
-    "eslint": "^10.2.0",
-    "fake-indexeddb": "^6.2.5",
-    "globals": "^17.5.0",
-    "happy-dom": "^20.9.0",
-    "multiocular": "^0.8.2",
-    "nanodelay": "^2.0.2",
-    "nanospy": "^1.0.0",
-    "nanostores": "^1.2.0",
-    "picocolors": "^1.1.1",
-    "postcss": "^8.5.10",
-    "preact": "10.29.1",
-    "print-snapshots": "^0.4.2",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5",
-    "size-limit": "^12.1.0",
-    "svgo": "^4.0.1",
-    "typescript": "^6.0.2",
-    "vite": "^8.0.8",
-    "vitest": "^4.1.4",
-    "vue": "^3.5.32"
-  },
-  "prettier": {
-    "arrowParens": "avoid",
-    "jsxSingleQuote": false,
-    "quoteProps": "consistent",
-    "semi": false,
-    "singleQuote": true,
-    "trailingComma": "none"
-  },
   "size-limit": [
     {
       "name": "CrossTabClient",
@@ -155,5 +146,8 @@
       },
       "limit": "11 KB"
     }
-  ]
+  ],
+  "engines": {
+    "node": "^20.0.0 || >=22.0.0"
+  }
 }

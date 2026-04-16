@@ -13,7 +13,7 @@ import { nanoid } from 'nanoid'
 import { LoguxUndoError } from '../logux-undo-error/index.js'
 import { track } from '../track/index.js'
 
-let ALLOWED_META = ['id', 'time', 'subprotocol']
+const ALLOWED_META = ['id', 'time', 'subprotocol']
 
 function tabPing(c) {
   localStorage.setItem(c.options.prefix + ':tab:' + c.tabId, Date.now())
@@ -258,7 +258,11 @@ export class Client {
       token: this.options.token
     })
 
-    if (/^ws:\/\//.test(this.options.server) && !opts.allowDangerousProtocol) {
+    if (
+      typeof this.options.server === 'string' &&
+      this.options.server.startsWith('ws://') &&
+      !opts.allowDangerousProtocol
+    ) {
       let unbindEnvTest = this.node.on('state', () => {
         if (this.node.state === 'synchronized') {
           unbindEnvTest()

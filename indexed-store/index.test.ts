@@ -17,11 +17,6 @@ declare global {
   interface Document {
     reload: () => void
   }
-  namespace NodeJS {
-    interface Global {
-      indexedDB: IDBFactory
-    }
-  }
 }
 
 function privateMethods(obj: object): any {
@@ -31,7 +26,7 @@ function privateMethods(obj: object): any {
 function promisify(request: IDBRequest): Promise<any> {
   return new Promise((resolve, reject) => {
     request.onerror = (e: any) => {
-      reject(e.target.error)
+      reject(e.target.error as Error)
     }
     request.onsuccess = resolve
   })
@@ -106,7 +101,7 @@ it('reloads page on database update', async () => {
       resolve()
     }
     opening.onerror = (e: any) => {
-      reject(e.target.error)
+      reject(e.target.error as Error)
     }
   })
   expect(reload.callCount).toEqual(1)

@@ -271,10 +271,9 @@ it('loads store from the log for offline stores', async () => {
   expect(posts.get().isLoading).toBe(true)
   await posts.loading
   expect(posts.get().isLoading).toBe(false)
-  expect(Array.from(ensureLoaded(posts.get()).stores.keys()).sort()).toEqual([
-    '4',
-    '5'
-  ])
+  expect(
+    Array.from(ensureLoaded(posts.get()).stores.keys()).toSorted()
+  ).toEqual(['4', '5'])
   await delay(1020)
   expect(cachedIds(LocalPost)).toEqual(['4', '5'])
 })

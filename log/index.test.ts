@@ -1,4 +1,4 @@
-import './force-colors.js'
+import './force-colors.ts'
 
 import { type TestLog, TestPair, TestTime } from '@logux/core'
 import { spyOn } from 'nanospy'

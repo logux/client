@@ -5,11 +5,10 @@ import type { Client } from '../client/index.js'
 /**
  * Auth store. Use {@link createAuth} to create it.
  */
-export interface AuthStore
-  extends ReadableAtom<{
-    isAuthenticated: boolean
-    userId: string
-  }> {
+export interface AuthStore extends ReadableAtom<{
+  isAuthenticated: boolean
+  userId: string
+}> {
   /**
    * While store is loading initial state.
    */
