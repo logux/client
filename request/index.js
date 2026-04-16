@@ -19,6 +19,6 @@ export function request(action, opts) {
       }
     })
     void client.log.add(action, { sync: true })
-    void client.start()
+    client.start()
   })
 }

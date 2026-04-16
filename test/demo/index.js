@@ -106,7 +106,7 @@ client.on('role', () => {
   document.all.disabled.style.display = isLeader ? 'none' : 'inline'
 })
 
-void client.start()
+client.start()
 
 document.querySelector('#connection').onchange = async e => {
   if (e.target.checked) {
