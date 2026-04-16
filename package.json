@@ -20,7 +20,7 @@
     "build": "vite build test/demo/ -m production --base /client/",
     "start": "vite test/demo/ --open"
   },
-  "author": "Andrey Sitnik <andrey@sitnik.ru>",
+  "author": "Andrey Sitnik <andrey@sitnik.es>",
   "license": "MIT",
   "homepage": "https://logux.org/",
   "repository": "logux/client",
