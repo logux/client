@@ -35,7 +35,6 @@ jobs:
         node-version:
           - 24
           - 22
-          - 20
     name: Node.js ${{ matrix.node-version }} Quick
     steps:
       - name: Checkout the repository
