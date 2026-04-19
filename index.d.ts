@@ -21,6 +21,13 @@ export {
   LoadedFilter,
   LoadedFilterValue
 } from './create-filter/index.js'
+export {
+  createReducer,
+  createStorageReducer,
+  ReducerMigrationStatus,
+  Reducer,
+  StorageReducer
+} from './create-reducer/index.js'
 export { CrossTabClient } from './cross-tab-client/index.js'
 export { encryptActions } from './encrypt-actions/index.js'
 export { favicon } from './favicon/index.js'
