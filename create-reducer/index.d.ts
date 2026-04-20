@@ -99,7 +99,7 @@ interface Convertor<Value> {
 interface StorageReducer<Value> {
   value: ReadableAtom<Value>
 
-  status: ReadableAtom<MigrationStatus>
+  status: ReadableAtom<ReducerMigrationStatus>
 
   type<TypeAction extends Action = Action>(
     type: TypeAction['type'],
@@ -111,16 +111,35 @@ interface StorageReducer<Value> {
   ): void
 }
 
+/**
+ * Create a reducer that reduces actions into a single value stored in
+ * `localStorage`. The value is loaded on first run and kept in sync across
+ * tabs via `storage` events.
+ *
+ * ```ts
+ * import { createStorageReducer } from '@logux/client'
+ *
+ * let counter = createStorageReducer(client, 'counter', 1, 0, {
+ *   decode: s => parseInt(s, 10),
+ *   encode: v => String(v),
+ *   repeat() {
+ *     return client.log.each(action => action.type === 'inc')
+ *   }
+ * })
+ * counter.type<{ type: 'inc' }>('inc', prev => prev + 1)
+ * ```
+ */
+export function createStorageReducer<Value extends string = string>(
+  client: Client,
+  name: string,
+  version: number,
+  initialValue: NoInfer<Value>,
+  callbacks: StorageCallbacks
+): StorageReducer<Value>
 export function createStorageReducer<Value>(
   client: Client,
   name: string,
   version: number,
   initialValue: Value,
   callbacks: StorageCallbacks & Convertor<Value>
-): StorageReducer<Value>
-export function createStorageReducer<Value extends string>(
-  client: Client,
-  name: string,
-  version: number,
-  callbacks: StorageCallbacks
 ): StorageReducer<Value>

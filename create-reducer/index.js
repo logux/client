@@ -9,9 +9,9 @@ function startStorageTracking(key, callback) {
     storageTracking = true
     if (typeof window !== 'undefined') {
       window.addEventListener('storage', event => {
-        if (event.newValue) {
+        if (event.newValue !== null) {
           let cb = storageListeners[event.key]
-          if (cb) cb(parseInt(event.newValue, 10))
+          if (cb) cb(event.newValue)
         }
       })
     }
@@ -56,8 +56,7 @@ export function createReducer(client, name, version, callbacks) {
     let oldVersion = parseInt(oldStorage, 10)
     if (oldVersion < version) {
       status.set('updating')
-      let cleaning = clean(oldVersion) ?? Promise.resolve()
-      cleaning.then(async entries => {
+      void Promise.resolve(clean(oldVersion)).then(async entries => {
         await init()
         for (let entry of entries ?? []) {
           let listener = actionListeners[entry[0].type]
@@ -86,8 +85,8 @@ export function createReducer(client, name, version, callbacks) {
     isLeader = true
   }
 
-  startStorageTracking(key, newVersion => {
-    if (newVersion > version) {
+  startStorageTracking(key, newValue => {
+    if (parseInt(newValue, 10) > version) {
       status.set('outdated')
       stop()
       releaseLock()
@@ -114,4 +113,46 @@ export function createReducer(client, name, version, callbacks) {
   }
 
   return reducer
+}
+
+export function createStorageReducer(
+  client,
+  name,
+  version,
+  initialValue,
+  callbacks
+) {
+  let encode = callbacks.encode ?? (v => v)
+  let decode = callbacks.decode ?? (s => s)
+
+  let value = atom(initialValue)
+
+  let stored = localStorage.getItem(name)
+  if (stored !== null) {
+    value.set(decode(stored))
+  }
+
+  let reducer = createReducer(client, name, version, {
+    clean() {
+      value.set(initialValue)
+      localStorage.removeItem(name)
+      return callbacks.repeat()
+    }
+  })
+
+  startStorageTracking(name, newValue => {
+    value.set(decode(newValue))
+  })
+
+  return {
+    status: reducer.status,
+    type(type, listener) {
+      reducer.type(type, async (action, meta) => {
+        let newValue = await listener(value.get(), action, meta)
+        value.set(newValue)
+        localStorage.setItem(name, encode(newValue))
+      })
+    },
+    value
+  }
 }
