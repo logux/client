@@ -30,14 +30,16 @@ it('waits for async init on first run before switching to ready', async () => {
     clean() {}
   })
   expect(reducer.status.get()).toBe('initializing')
-  expect(String(localStorage.getItem('logux:reducer:db'))).toBe('1')
+  expect(localStorage.getItem('logux:reducer:db')).toBeNull()
 
   await delay(1)
   expect(reducer.status.get()).toBe('initializing')
+  expect(localStorage.getItem('logux:reducer:db')).toBeNull()
 
   resolveInit()
   await delay(1)
   expect(reducer.status.get()).toBe('ready')
+  expect(String(localStorage.getItem('logux:reducer:db'))).toBe('1')
 })
 
 it('skips migration when version matches', async () => {
@@ -216,10 +218,12 @@ it('runs events on order', async () => {
   expect(reducer.status.get()).toBe('updating')
   await delay(1)
   expect(calls).toEqual(['clean:start'])
+  expect(localStorage.getItem('logux:reducer:db')).toBe('1')
 
   await client.log.add({ id: '1', type: 'users/create' })
   await delay(1)
   expect(calls).toEqual(['clean:start'])
+  expect(localStorage.getItem('logux:reducer:db')).toBe('1')
 
   resolveClean([
     [
@@ -233,10 +237,12 @@ it('runs events on order', async () => {
   ] satisfies [UserAction, ClientMeta][])
   await delay(1)
   expect(calls).toEqual(['clean:start', 'clean:end', 'init:start'])
+  expect(localStorage.getItem('logux:reducer:db')).toBe('1')
 
   await client.log.add({ id: '2', type: 'users/create' })
   await delay(1)
   expect(calls).toEqual(['clean:start', 'clean:end', 'init:start'])
+  expect(localStorage.getItem('logux:reducer:db')).toBe('1')
 
   resolveInit()
   await delay(1)
@@ -248,6 +254,7 @@ it('runs events on order', async () => {
     'init:end',
     'action:a:start'
   ])
+  expect(localStorage.getItem('logux:reducer:db')).toBe('1')
 
   // add action while clean entry a is still running — should be buffered
   await client.log.add({ id: 'mid', type: 'users/create' })
@@ -272,6 +279,7 @@ it('runs events on order', async () => {
     'action:a:end',
     'action:b:start'
   ])
+  expect(localStorage.getItem('logux:reducer:db')).toBe('1')
 
   resolveListener['b']()
   await delay(1)
@@ -287,6 +295,7 @@ it('runs events on order', async () => {
     'action:b:end',
     'action:1:start'
   ])
+  expect(localStorage.getItem('logux:reducer:db')).toBe('2')
 
   await client.log.add({ id: '3', type: 'users/create' })
   await delay(1)

@@ -76,3 +76,49 @@ export function createReducer(
   version: number,
   callbacks: ReducerInitCallbacks
 ): Reducer
+
+interface StorageActionListener<ListenAction extends Action, Value> {
+  (
+    prevValue: Value,
+    action: ListenAction,
+    meta: ClientMeta
+  ): Value | Promise<Value>
+}
+
+interface StorageCallbacks {
+  repeat(): [Action, ClientMeta][] | Promise<[Action, ClientMeta][]>
+}
+
+interface Convertor<Value> {
+  encode(value: Value): string
+  decode(str: string): Value
+}
+
+interface StorageReducer<Value> {
+  value: ReadableAtom<Value>
+
+  status: ReadableAtom<MigrationStatus>
+
+  type<TypeAction extends Action = Action>(
+    type: TypeAction['type'],
+    listener: StorageActionListener<TypeAction, Value>
+  ): void
+  type<Creator extends AbstractActionCreator>(
+    actionCreator: Creator,
+    listener: StorageActionListener<ReturnType<Creator>, Value>
+  ): void
+}
+
+export function createStorageReducer<Value>(
+  client: Client,
+  name: string,
+  version: number,
+  initialValue: Value,
+  callbacks: StorageCallbacks & Convertor<Value>
+): StorageReducer<Value>
+export function createStorageReducer<Value extends string>(
+  client: Client,
+  name: string,
+  version: number,
+  callbacks: StorageCallbacks
+): StorageReducer<Value>

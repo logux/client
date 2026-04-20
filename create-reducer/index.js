@@ -43,9 +43,12 @@ export function createReducer(client, name, version, callbacks) {
   let key = `logux:reducer:${name}`
   let oldStorage = localStorage.getItem(key)
   if (!oldStorage) {
-    localStorage.setItem(key, version)
     let initializing = init() ?? Promise.resolve()
-    initializing.then(ready)
+    initializing
+      .then(() => {
+        localStorage.setItem(key, String(version))
+      })
+      .then(ready)
   } else {
     let oldVersion = parseInt(oldStorage, 10)
     if (oldVersion < version) {
@@ -57,6 +60,7 @@ export function createReducer(client, name, version, callbacks) {
           let listener = actionListeners[entry[0].type]
           if (listener) await listener(entry[0], entry[1])
         }
+        localStorage.setItem(key, String(version))
         ready()
       })
     } else if (oldVersion > version) {
