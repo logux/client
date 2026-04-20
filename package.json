@@ -131,6 +131,13 @@
       "limit": "3 KB"
     },
     {
+      "name": "Reducer",
+      "import": {
+        "./index.js": "{ createReducer }"
+      },
+      "limit": "1 KB"
+    },
+    {
       "name": "React",
       "import": {
         "./index.js": "{ CrossTabClient, syncMapTemplate, changeSyncMap }",
