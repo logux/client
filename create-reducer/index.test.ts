@@ -1,6 +1,6 @@
 import { defineAction } from '@logux/actions'
 import { delay } from 'nanodelay'
-import { beforeAll, beforeEach, expect, it } from 'vitest'
+import { afterEach, beforeAll, beforeEach, expect, it } from 'vitest'
 
 import { type ClientMeta, createReducer, TestClient } from '../index.js'
 import { setLocalStorage } from '../test/local-storage.js'
@@ -11,6 +11,13 @@ beforeAll(() => {
 
 beforeEach(() => {
   localStorage.clear()
+})
+
+afterEach(() => {
+  Object.defineProperty(navigator, 'locks', {
+    configurable: true,
+    value: null
+  })
 })
 
 function emitStorage(key: string, newValue: string): void {
@@ -386,3 +393,57 @@ it('runs events on order', async () => {
     'action:3:end'
   ])
 })
+
+it('runs reducer only in leader tab and releases lock on new version', async () => {
+  let lockCallbacks: (() => Promise<unknown>)[] = []
+  Object.defineProperty(navigator, 'locks', {
+    configurable: true,
+    value: {
+      request(_name: string, fn: () => Promise<unknown>) {
+        lockCallbacks.push(fn)
+      }
+    }
+  })
+
+  let client = new TestClient('10')
+  await client.connect()
+
+  let stopCalled = 0
+  let reducer = createReducer(client, 'db', 1, {
+    clean() {},
+    stop() {
+      stopCalled += 1
+    }
+  })
+  let received: string[] = []
+  reducer.type('users/create', action => {
+    received.push(action.type)
+  })
+
+  await delay(1)
+  await client.log.add({ type: 'users/create' })
+  await delay(1)
+  expect(received).toEqual([])
+
+  let lockReleased = false
+  void lockCallbacks[0]().then(() => {
+    lockReleased = true
+  })
+  await delay(1)
+
+  await client.log.add({ type: 'users/create' })
+  await delay(1)
+  expect(received).toEqual(['users/create'])
+  expect(lockReleased).toBe(false)
+
+  emitStorage('logux:reducer:db', '2')
+  await delay(1)
+  expect(reducer.status.get()).toBe('outdated')
+  expect(stopCalled).toBe(1)
+  expect(lockReleased).toBe(true)
+
+  await client.log.add({ type: 'users/create' })
+  await delay(1)
+  expect(received).toEqual(['users/create'])
+})
+

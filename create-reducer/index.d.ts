@@ -43,6 +43,8 @@ interface Reducer {
  * Create long-term persistent Logux actions reducer. It can be used to store
  * Logux data in WASM sqlite or localStorage.
  *
+ * Only one browser tab will reduce the log.
+ *
  * ```ts
  * import { createReducer } from '@logux/client'
  *

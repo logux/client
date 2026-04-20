@@ -28,6 +28,9 @@ export function createReducer(client, name, version, callbacks) {
   let actionsWaiting = []
   let actionListeners = {}
 
+  let isLeader = false
+  let releaseLock = () => {}
+
   let promise = Promise.resolve()
   function ready() {
     for (let entry of actionsWaiting) {
@@ -71,16 +74,29 @@ export function createReducer(client, name, version, callbacks) {
     }
   }
 
+  if (typeof navigator !== 'undefined' && navigator.locks) {
+    void navigator.locks.request(`${key}:lock`, () => {
+      if (status.get() === 'outdated') return Promise.resolve()
+      isLeader = true
+      return new Promise(resolve => {
+        releaseLock = resolve
+      })
+    })
+  } else {
+    isLeader = true
+  }
+
   startStorageTracking(key, newVersion => {
     if (newVersion > version) {
       status.set('outdated')
       stop()
+      releaseLock()
     }
   })
 
   client.on('add', (action, meta) => {
     let listener = actionListeners[action.type]
-    if (listener) {
+    if (listener && isLeader) {
       if (status.get() !== 'ready') {
         actionsWaiting.push([action, meta])
       } else {
