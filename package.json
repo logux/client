@@ -59,7 +59,6 @@
     "@vue/compiler-sfc": "^3.5.32",
     "actions-up": "^1.14.0",
     "check-dts": "^1.0.0",
-    "clean-publish": "^6.0.5",
     "eslint-plugin-prefer-let": "^4.2.2",
     "fake-indexeddb": "^6.2.5",
     "globals": "^17.5.0",
