@@ -535,7 +535,7 @@ it('creates maps', async () => {
   expect(created).toBe(false)
 
   await client.log.add({
-    id: client.log.entries()[0][1].id,
+    id: client.log.entries()[0]![1].id,
     type: 'logux/processed'
   })
   await delay(1)

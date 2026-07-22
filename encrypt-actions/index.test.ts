@@ -74,7 +74,7 @@ it('encrypts and decrypts actions', async () => {
     ]
   ])
 
-  getPair(client2).right.send(getPair(client1).leftSent[0])
+  getPair(client2).right.send(getPair(client1).leftSent[0]!)
   await delay(100)
   expect(privateMethods(client2.log).actions()).toEqual([
     { type: 'sync', value: 'secret' }
@@ -85,10 +85,10 @@ it('encrypts and decrypts actions', async () => {
   client1.log.add({ type: 'sync', value: 'same size' }, { sync: true })
   client1.log.add({ type: 'sync', value: 'same size' }, { sync: true })
   await delay(100)
-  let size1 = getPair(client1).leftSent[1][2].d.length
-  let size2 = getPair(client1).leftSent[2][2].d.length
-  let size3 = getPair(client1).leftSent[3][2].d.length
-  let size4 = getPair(client1).leftSent[4][2].d.length
+  let size1 = getPair(client1).leftSent[1]![2].d.length
+  let size2 = getPair(client1).leftSent[2]![2].d.length
+  let size3 = getPair(client1).leftSent[3]![2].d.length
+  let size4 = getPair(client1).leftSent[4]![2].d.length
   expect(size1 !== size2 || size1 !== size3 || size1 !== size4).toBeTruthy()
 })
 
@@ -122,7 +122,7 @@ it('accepts key', async () => {
     ]
   ])
 
-  getPair(client2).right.send(getPair(client1).leftSent[0])
+  getPair(client2).right.send(getPair(client1).leftSent[0]!)
   await delay(10)
   expect(privateMethods(client2.log).actions()).toEqual([
     { type: 'sync', value: 'secret' }
@@ -155,8 +155,8 @@ it('ignores specific actions', async () => {
     ['sync', 2, { type: 'server' }, { id: 2, time: expect.any(Number) }]
   ])
 
-  getPair(client2).right.send(getPair(client1).leftSent[0])
-  getPair(client2).right.send(getPair(client1).leftSent[1])
+  getPair(client2).right.send(getPair(client1).leftSent[0]!)
+  getPair(client2).right.send(getPair(client1).leftSent[1]!)
   await delay(10)
   expect(privateMethods(client2.log).actions()).toEqual([
     { type: 'sync' },
@@ -195,7 +195,7 @@ it('has normal distribution of random spaces', () => {
     let spaces = getRandomSpaces()
 
     if (!sizes[spaces.length]) sizes[spaces.length] = 0
-    sizes[spaces.length] += 1
+    sizes[spaces.length]! += 1
 
     for (let symbol of spaces) {
       if (!symbols[symbol]) symbols[symbol] = 0
@@ -224,11 +224,11 @@ it('compresses long actions', async () => {
 
   client1.log.add({ type: 'sync', value: long }, { sync: true })
   await delay(100)
-  let action = getPair(client1).leftSent[0][2]
+  let action = getPair(client1).leftSent[0]![2]
   expect(action.d.length).toBeLessThan(120)
   expect(action.z).toBe(true)
 
-  getPair(client2).right.send(getPair(client1).leftSent[0])
+  getPair(client2).right.send(getPair(client1).leftSent[0]!)
   await delay(100)
   expect(privateMethods(client2.log).actions()).toEqual([
     { type: 'sync', value: long }

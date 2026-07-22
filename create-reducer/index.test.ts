@@ -280,7 +280,7 @@ describe('createReducer', () => {
       'action:a:start'
     ])
 
-    resolveListener['a']()
+    resolveListener['a']!()
     await delay(1)
     expect(reducer.status.get()).toBe('updating')
     expect(calls).toEqual([
@@ -294,7 +294,7 @@ describe('createReducer', () => {
     ])
     expect(localStorage.getItem('logux:reducer:db')).toBe('1')
 
-    resolveListener['b']()
+    resolveListener['b']!()
     await delay(1)
     expect(reducer.status.get()).toBe('ready')
     expect(calls).toEqual([
@@ -324,7 +324,7 @@ describe('createReducer', () => {
       'action:1:start'
     ])
 
-    resolveListener['1']()
+    resolveListener['1']!()
     await delay(1)
     expect(calls).toEqual([
       'clean:start',
@@ -340,7 +340,7 @@ describe('createReducer', () => {
       'action:2:start'
     ])
 
-    resolveListener['2']()
+    resolveListener['2']!()
     await delay(1)
     expect(calls).toEqual([
       'clean:start',
@@ -358,7 +358,7 @@ describe('createReducer', () => {
       'action:mid:start'
     ])
 
-    resolveListener['mid']()
+    resolveListener['mid']!()
     await delay(1)
     expect(calls).toEqual([
       'clean:start',
@@ -378,7 +378,7 @@ describe('createReducer', () => {
       'action:3:start'
     ])
 
-    resolveListener['3']()
+    resolveListener['3']!()
     await delay(1)
     expect(calls).toEqual([
       'clean:start',
@@ -432,7 +432,7 @@ describe('createReducer', () => {
     expect(received).toEqual([])
 
     let lockReleased = false
-    void lockCallbacks[0]().then(() => {
+    void lockCallbacks[0]!().then(() => {
       lockReleased = true
     })
     await delay(1)

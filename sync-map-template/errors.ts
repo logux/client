@@ -24,11 +24,11 @@ changeSyncMap(user, { firstName: 'Ivan' })
 changeSyncMap(user, { age: '26' })
 // THROWS 'id' does not exist in type
 changeSyncMap(user, { id: '26' })
-// THROWS firstName"' is not assignable to parameter of type '"name" | "age"
+// THROWS firstName"' is not assignable to parameter of type '"age" | "name"
 changeSyncMap(user, 'firstName', 'Ivan')
 // THROWS 'string' is not assignable to parameter of type 'number'
 changeSyncMap(user, 'age', '26')
-// THROWS '"id"' is not assignable to parameter of type '"name" | "age"
+// THROWS '"id"' is not assignable to parameter of type '"age" | "name"
 changeSyncMap(user, 'id', '26')
 
 // THROWS '{ name: string; }' is not assignable to parameter

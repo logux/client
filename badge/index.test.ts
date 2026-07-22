@@ -27,7 +27,7 @@ function badgeStyle(): any {
 }
 
 function getBadgeMessage(): string {
-  return badgeNode()?.children[0].innerHTML ?? 'NO BADGE'
+  return badgeNode()?.children[0]?.innerHTML ?? 'NO BADGE'
 }
 
 function setState(node: any, state: string): void {

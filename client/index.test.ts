@@ -84,9 +84,9 @@ async function createDialog(
     let events2 = getEvents(pair.left)
     for (let i in events1) {
       if (typeof events2[i] !== 'undefined') {
-        events2[i] = events2[i].concat(events1[i])
+        events2[i] = events2[i].concat(events1[i]!)
       } else {
-        events2[i] = events1[i].slice(0)
+        events2[i] = events1[i]!.slice(0)
       }
     }
     client.node.connection = pair.left
@@ -407,7 +407,7 @@ it('cleans other tab action after timeout', async () => {
 it('adds current subprotocol to meta', async () => {
   let client = createClient()
   await client.log.add({ type: 'A' }, { reasons: ['test'] })
-  expect(client.log.entries()[0][1].subprotocol).toBe(10)
+  expect(client.log.entries()[0]![1].subprotocol).toBe(10)
 })
 
 it('adds current subprotocol only to own actions', async () => {
@@ -416,13 +416,13 @@ it('adds current subprotocol only to own actions', async () => {
     { type: 'A' },
     { id: '1 0:client:other 0', reasons: ['test'] }
   )
-  expect(client.log.entries()[0][1].subprotocol).toBeUndefined()
+  expect(client.log.entries()[0]![1].subprotocol).toBeUndefined()
 })
 
 it('allows to override subprotocol in meta', async () => {
   let client = createClient()
   await client.log.add({ type: 'A' }, { reasons: ['test'], subprotocol: 9 })
-  expect(client.log.entries()[0][1].subprotocol).toBe(9)
+  expect(client.log.entries()[0]![1].subprotocol).toBe(9)
 })
 
 it('sends only special actions', async () => {
@@ -773,8 +773,8 @@ it('tracks server processing of action', async () => {
     })
 
   expect(result).toBe('none')
-  expect(client.log.entries()[0][1].sync).toBe(true)
-  let id = client.log.entries()[0][1].id
+  expect(client.log.entries()[0]![1].sync).toBe(true)
+  let id = client.log.entries()[0]![1].id
   client.log.add({ id, type: 'logux/processed' })
   await delay(10)
 

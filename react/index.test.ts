@@ -123,13 +123,13 @@ function runWithClient(component: ReactElement): void {
 }
 
 class ErrorCatcher extends Component<{ children?: ReactNode }> {
-  state: { message?: string } = {}
+  override state: { message?: string } = {}
 
   static getDerivedStateFromError(e: Error): object {
     return { message: e.message }
   }
 
-  render(): ReactNode {
+  override render(): ReactNode {
     if (typeof this.state.message === 'string') {
       return h('div', {}, this.state.message)
     } else {

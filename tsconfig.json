@@ -1,14 +1,18 @@
 {
   "compilerOptions": {
-    "allowImportingTsExtensions": true,
-    "target": "ES2024",
+    "allowJs": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "esModuleInterop": true,
+    "noEmit": true,
+    "noImplicitOverride": true,
+    "noUncheckedIndexedAccess": true,
     "skipLibCheck": true,
-    "allowJs": true,
+    "stableTypeOrdering": true,
     "strict": true,
-    "noEmit": true
+    "target": "es2024",
+    "types": ["node"]
   },
   "exclude": ["**/errors.ts", "test/demo/dist/**.js", "./coverage/*.js"]
 }

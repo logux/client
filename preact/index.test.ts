@@ -121,9 +121,9 @@ function runWithClient(component: VNode): void {
 }
 
 class ErrorCatcher extends Component {
-  state: { message?: string } = {}
+  override state: { message?: string } = {}
 
-  static getDerivedStateFromError(e: Error): object {
+  static override getDerivedStateFromError(e: Error): object {
     return { message: e.message }
   }
 

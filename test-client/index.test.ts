@@ -63,7 +63,7 @@ it('connects, sends, and processes actions', async () => {
     { type: 'offline1' },
     { id: '2 10:2:2 0', type: 'logux/processed' }
   ])
-  expect(client.log.entries()[2][1].nodes).toBeUndefined()
+  expect(client.log.entries()[2]![1].nodes).toBeUndefined()
 
   client.disconnect()
 
@@ -215,7 +215,7 @@ it('supports multiple clients with same server', async () => {
     { id: '3 20:3:3 0', type: 'logux/processed' },
     { name: 'B', type: 'name', userId: '1' }
   ])
-  expect(client2.log.entries()[3][1].channels).toBeUndefined()
+  expect(client2.log.entries()[3]![1].channels).toBeUndefined()
 
   await client2.sync({ channel: 'users/1', type: 'logux/unsubscribe' })
   await client1.sync({ name: 'C', type: 'name', userId: '1' })
@@ -270,14 +270,14 @@ it('supports subprotocols', async () => {
     { id: '1 10:2:2 0', type: 'logux/processed' },
     { type: 'client2' }
   ])
-  expect(client1.log.entries()[2][1].subprotocol).toBe(10)
+  expect(client1.log.entries()[2]![1].subprotocol).toBe(10)
 
   expect(client2.log.actions()).toEqual([
     { type: 'client1' },
     { type: 'client2' },
     { id: '3 20:3:3 0', type: 'logux/processed' }
   ])
-  expect(client2.log.entries()[0][1].subprotocol).toBe(0)
+  expect(client2.log.entries()[0]![1].subprotocol).toBe(0)
 })
 
 it('freezes processing', async () => {
