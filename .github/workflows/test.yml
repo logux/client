@@ -46,7 +46,7 @@ jobs:
       - name: Install dependencies
         run: pnpm ci
       - name: Run unit tests
-      run: pnpm vitest run
+        run: pnpm vitest run
   deploy:
     name: Demo Deploy
     runs-on: ubuntu-latest
