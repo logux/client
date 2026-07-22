@@ -9,12 +9,13 @@ import { afterEach, beforeAll, beforeEach, expect, it } from 'vitest'
 import { type ClientMeta, loadValue, TestClient } from '../index.js'
 import { setLocalStorage } from '../test/local-storage.js'
 import {
+  bigint,
   boolean,
   createCrdtDatabase,
-  date,
   number,
   oneOf,
   optional,
+  pgliteDialect,
   string
 } from './index.js'
 
@@ -39,10 +40,10 @@ function emitStorage(key: string, newValue: string): void {
 
 const USER_SCHEMA = {
   age: optional(number()),
-  createdAt: date({ default: () => new Date(2026, 0, 1) }),
-  isAdmin: boolean({ default: false }),
+  createdAt: bigint({ default: () => new Date(2026, 0, 1).getTime() }),
+  isAdmin: number({ default: 0 }),
   name: string(),
-  publishedAt: optional(date()),
+  publishedAt: optional(bigint()),
   role: oneOf(['admin', 'guest', 'user'], { default: 'user' })
 }
 
@@ -86,7 +87,7 @@ it('creates tables and applies create, update and delete actions', async () => {
   expect(JSON.parse(rows[0]!.updatedAt).name).toBeTypeOf('string')
   expect(JSON.parse(rows[0]!.updatedAt).age).toBeUndefined()
 
-  await user.update(id, { age: 30, isAdmin: true })
+  await user.update(id, { age: 30, isAdmin: 1 })
   await delay(10)
   let updated = await loadList($all)
   expect(updated[0]!.age).toBe(30)
@@ -94,9 +95,10 @@ it('creates tables and applies create, update and delete actions', async () => {
   expect(updated[0]!.name).toBe('Ann')
   expect(JSON.parse(updated[0]!.updatedAt).age).toBeTypeOf('string')
 
-  await user.update(id, { age: undefined })
+  await user.update(id, { age: null, name: undefined })
   await delay(10)
   expect((await loadList($all))[0]!.age).toBeNull()
+  expect((await loadList($all))[0]!.name).toBe('Ann')
 
   await user.delete(id)
   await delay(10)
@@ -105,7 +107,7 @@ it('creates tables and applies create, update and delete actions', async () => {
   cleanStores($all)
 })
 
-it('supports custom id, date and boolean values in select params', async () => {
+it('passes raw select params to the driver', async () => {
   let { client, db } = await setup()
   let crdt = createCrdtDatabase(client, db)
   let user = crdt.table('user', USER_SCHEMA)
@@ -113,22 +115,22 @@ it('supports custom id, date and boolean values in select params', async () => {
 
   let id = await user.create({
     id: 'ID1',
-    isAdmin: true,
+    isAdmin: 1,
     name: 'Ben',
-    publishedAt: new Date(1000),
+    publishedAt: 1000,
     role: 'admin'
   })
   expect(id).toBe('ID1')
-  let id2 = await user.create({ name: 'Ann', publishedAt: new Date(3000) })
+  let id2 = await user.create({ name: 'Ann', publishedAt: 3000 })
   await delay(10)
 
-  let $admins = user.select`WHERE "isAdmin" = ${true} ORDER BY "name"`
+  let $admins = user.select`WHERE "isAdmin" = ${1} ORDER BY "name"`
   let admins = await loadList($admins)
   expect(admins.map(i => i.id)).toEqual(['ID1'])
   expect(admins[0]!.publishedAt).toBe(1000)
   expect(admins[0]!.role).toBe('admin')
 
-  let $late = user.select`WHERE "publishedAt" > ${new Date(2000)}`
+  let $late = user.select`WHERE "publishedAt" > ${2000}`
   expect((await loadList($late)).map(i => i.name)).toEqual(['Ann'])
 
   let $named = user.select`WHERE "name" = ${'Ann'}`
@@ -418,6 +420,9 @@ it('generates SQL with dialect-specific and extra column SQL', async () => {
       executed.push(sql)
       return Promise.resolve()
     },
+    select() {
+      return Promise.resolve([])
+    },
     subscribe() {
       return () => {}
     },
@@ -428,11 +433,13 @@ it('generates SQL with dialect-specific and extra column SQL', async () => {
 
   let client = new TestClient('10')
   let crdt = createCrdtDatabase(client, openDb(fakeDriver), {
-    dialect: 'pglite'
+    dialect: pgliteDialect
   })
   crdt.table('user', {
     email: string({ sql: { pglite: 'UNIQUE', sqlite: 'COLLATE NOCASE' } }),
     name: string('COLLATE NOCASE'),
+    pinned: boolean(),
+    postedAt: bigint(),
     quote: oneOf(["o'ne", 'two'])
   })
   await delay(10)
@@ -443,6 +450,8 @@ it('generates SQL with dialect-specific and extra column SQL', async () => {
       '"id" TEXT PRIMARY KEY, ' +
       '"email" TEXT UNIQUE, ' +
       '"name" TEXT COLLATE NOCASE, ' +
+      '"pinned" BOOLEAN, ' +
+      '"postedAt" BIGINT, ' +
       `"quote" TEXT CHECK ("quote" IN ('o''ne', 'two')), ` +
       '"updatedAt" TEXT)'
   ])
@@ -478,20 +487,20 @@ it('filters rows by JOIN with another table in select()', async () => {
   let user = crdt.table('user', USER_SCHEMA)
   let post = crdt.table('post', {
     authorId: string(),
-    draft: boolean({ default: true }),
+    draft: number({ default: 1 }),
     title: string()
   })
   await delay(10)
 
   await user.create({ id: 'U1', name: 'Ann' })
   await user.create({ id: 'U2', name: 'Ben' })
-  await post.create({ authorId: 'U1', draft: false, title: 'A' })
+  await post.create({ authorId: 'U1', draft: 0, title: 'A' })
   await post.create({ authorId: 'U2', title: 'B' })
   await delay(10)
 
   let $published = user.select`
     JOIN "post" ON "post"."authorId" = "user"."id"
-    WHERE "post"."draft" = ${false}
+    WHERE "post"."draft" = ${0}
   `
   let rows = await loadList($published)
   expect(rows.map(i => i.id)).toEqual(['U1'])
@@ -506,20 +515,20 @@ it('supports manual SQL with joined columns and aggregations', async () => {
   let user = crdt.table('user', USER_SCHEMA)
   let post = crdt.table('post', {
     authorId: string(),
-    publishedAt: optional(date()),
+    publishedAt: optional(bigint()),
     title: string()
   })
   await delay(10)
 
   await user.create({ id: 'U1', name: 'Ann' })
-  await post.create({ authorId: 'U1', publishedAt: new Date(3000), title: 'A' })
+  await post.create({ authorId: 'U1', publishedAt: 3000, title: 'A' })
   await post.create({ authorId: 'U1', title: 'Draft' })
   await delay(10)
 
   let $feed = crdt.sql<{ author: string; publishedAt: number; title: string }>`
     SELECT "post"."title", "user"."name" AS "author", "post"."publishedAt"
     FROM "post" JOIN "user" ON "user"."id" = "post"."authorId"
-    WHERE "post"."publishedAt" > ${new Date(2000)}
+    WHERE "post"."publishedAt" > ${2000}
   `
   let rows = await loadList($feed)
   expect(rows).toEqual([{ author: 'Ann', publishedAt: 3000, title: 'A' }])
@@ -541,4 +550,13 @@ it('throws on table() call after initialization', async () => {
   expect(() => {
     crdt.table('post', { title: string() })
   }).toThrow(/synchronously/)
+})
+
+it('throws on column type unsupported by dialect', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  expect(() => {
+    // @ts-expect-error
+    crdt.table('user', { isAdmin: boolean() })
+  }).toThrow('Dialect "sqlite" does not support boolean columns')
 })

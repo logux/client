@@ -3,12 +3,15 @@ import type { Database } from '@nanostores/sql'
 
 import { Client } from '../index.js'
 import {
+  bigint,
   boolean,
   createCrdtDatabase,
-  date,
+  type CrdtDialect,
   number,
   oneOf,
   optional,
+  pgliteDialect,
+  sqliteDialect,
   string
 } from './index.js'
 
@@ -21,7 +24,7 @@ let client = new Client({
 declare let db: Database
 
 let crdt = createCrdtDatabase(client, db, {
-  dialect: 'pglite',
+  dialect: sqliteDialect,
   key: 'widget:db',
   repeat() {
     return []
@@ -31,11 +34,11 @@ let crdt = createCrdtDatabase(client, db, {
 
 let user = crdt.table('user', {
   age: optional(number()),
-  createdAt: date({ default: () => new Date() }),
+  createdAt: bigint({ default: () => Date.now() }),
   email: string('COLLATE NOCASE'),
-  isAdmin: boolean({ default: false }),
+  isAdmin: number({ default: 0 }),
   name: string(),
-  publishedAt: optional(date()),
+  publishedAt: optional(bigint()),
   role: oneOf(['admin', 'guest', 'user'], { default: 'user' }),
   theme: string<'dark' | 'light'>({ default: 'dark' })
 })
@@ -44,22 +47,23 @@ async function test(): Promise<void> {
   let id: string = await user.create({ email: 'a@b.c', name: 'Ann' })
   await user.create({
     age: 30,
-    createdAt: new Date(),
+    createdAt: Date.now(),
     email: 'a@b.c',
-    isAdmin: true,
+    isAdmin: 1,
     name: 'Ann',
-    publishedAt: new Date(),
+    publishedAt: Date.now(),
     role: 'admin'
   })
 
   await user.update(id, { age: 31 })
   await user.update(id, { role: 'guest', theme: 'light' })
-  await user.update(id, { publishedAt: new Date() })
+  await user.update(id, { publishedAt: Date.now() })
+  await user.update(id, { publishedAt: null })
 
   await user.delete(id)
 
   let $admins = user.select`
-    WHERE "isAdmin" = ${true} AND "createdAt" > ${new Date(2026, 0, 1)}
+    WHERE "isAdmin" = ${1} AND "createdAt" > ${new Date(2026, 0, 1).getTime()}
   `
   let value = $admins.get()
   if (!value.isLoading) {
@@ -89,7 +93,7 @@ async function test(): Promise<void> {
 
   let $joined = user.select`
     JOIN "post" ON "post"."authorId" = "user"."id"
-    WHERE "post"."draft" = ${false}
+    WHERE "post"."draft" = ${0}
   `
   let joined = $joined.get()
   if (!joined.isLoading) {
@@ -104,7 +108,7 @@ async function test(): Promise<void> {
   }>`
     SELECT "post"."title", "user"."name" AS "author", "post"."publishedAt"
     FROM "post" JOIN "user" ON "user"."id" = "post"."authorId"
-    WHERE "post"."publishedAt" > ${new Date(2026, 0, 1)}
+    WHERE "post"."publishedAt" > ${new Date(2026, 0, 1).getTime()}
   `
   let feed = $feed.get()
   if (!feed.isLoading) {
@@ -120,6 +124,48 @@ async function test(): Promise<void> {
     let posts: SyncMapTypes = count.value[0]!.posts
     console.log(posts)
   }
+}
+
+let pg = createCrdtDatabase(client, db, { dialect: pgliteDialect })
+let pgUser = pg.table('user', {
+  createdAt: bigint({ default: () => Date.now() }),
+  isAdmin: boolean({ default: false }),
+  name: string(),
+  publishedAt: optional(bigint())
+})
+
+let pgValue = pgUser.select`WHERE "isAdmin" = ${true}`.get()
+if (!pgValue.isLoading) {
+  let pgRow = pgValue.value[0]!
+  let pgAdmin: boolean = pgRow.isAdmin
+  let pgCreated: number = pgRow.createdAt
+  let pgPublished: null | number = pgRow.publishedAt
+  let pgName: string = pgRow.name
+  console.log(pgAdmin, pgCreated, pgPublished, pgName)
+}
+
+let mysqlDialect: CrdtDialect<'bigint' | 'number' | 'string'> = {
+  name: 'mysql',
+  types: {
+    bigint: 'BIGINT',
+    number: 'DOUBLE',
+    string: 'TEXT'
+  }
+}
+
+let my = createCrdtDatabase(client, db, { dialect: mysqlDialect })
+let myUser = my.table('user', {
+  name: string({ sql: { mysql: 'UNIQUE', sqlite: 'COLLATE NOCASE' } }),
+  pinned: number({ default: 0 }),
+  postedAt: bigint()
+})
+
+let myValue = myUser.select().get()
+if (!myValue.isLoading) {
+  let myRow = myValue.value[0]!
+  let myPinned: number = myRow.pinned
+  let myPosted: number = myRow.postedAt
+  console.log(myPinned, myPosted)
 }
 
 test()

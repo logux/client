@@ -3,22 +3,6 @@ import stringify from 'fast-json-stable-stringify'
 import { nanoid } from 'nanoid'
 import { atom } from 'nanostores'
 
-const VERBS = new Set([
-  'change',
-  'changed',
-  'create',
-  'created',
-  'delete',
-  'deleted'
-])
-
-const SQL_TYPES = {
-  boolean: 'INTEGER',
-  date: 'BIGINT',
-  number: 'DOUBLE PRECISION',
-  string: 'TEXT'
-}
-
 function column(type, opts = {}) {
   if (typeof opts === 'string') opts = { sql: opts }
   return { required: !('default' in opts), type, ...opts }
@@ -36,8 +20,8 @@ export function boolean(opts) {
   return column('boolean', opts)
 }
 
-export function date(opts) {
-  return column('date', opts)
+export function bigint(opts) {
+  return column('bigint', opts)
 }
 
 export function oneOf(values, opts) {
@@ -48,54 +32,57 @@ export function optional(col) {
   return { ...col, nullable: true, required: false }
 }
 
-function encodeValue(col, value) {
-  if (value === null || value === undefined) return null
-  if (col.type === 'boolean') return value ? 1 : 0
-  if (col.type === 'date') {
-    return value instanceof Date ? value.getTime() : Number(value)
+export const sqliteDialect = {
+  name: 'sqlite',
+  types: {
+    bigint: 'BIGINT',
+    number: 'DOUBLE PRECISION',
+    string: 'TEXT'
   }
-  return value
 }
 
-function serializeFields(fields) {
-  let serialized = {}
-  for (let key in fields) {
-    let value = fields[key]
-    if (value instanceof Date) value = value.getTime()
-    serialized[key] = value ?? null
+export const pgliteDialect = {
+  name: 'pglite',
+  types: {
+    bigint: 'BIGINT',
+    boolean: 'BOOLEAN',
+    number: 'DOUBLE PRECISION',
+    string: 'TEXT'
   }
-  return serialized
-}
-
-function encodeParam(value) {
-  if (typeof value === 'boolean') return value ? 1 : 0
-  if (value instanceof Date) return value.getTime()
-  return value
 }
 
 function columnSql(name, col, dialect) {
-  let sql = `"${name}" ${SQL_TYPES[col.type]}`
+  let sql = `"${name}" ${dialect.types[col.type]}`
   if (col.values) {
     let values = col.values.map(i => `'${i.replaceAll("'", "''")}'`)
     sql += ` CHECK ("${name}" IN (${values.join(', ')}))`
   }
   let extra = col.sql
-  if (extra && typeof extra === 'object') extra = extra[dialect]
+  if (extra && typeof extra === 'object') extra = extra[dialect.name]
   if (extra) sql += ` ${extra}`
   return sql
 }
 
-function queryRows(driver, sql, params) {
-  return new Promise(resolve => {
-    let unsubscribe = driver.subscribe(sql, params, rows => {
-      resolve(rows)
-      void Promise.resolve().then(() => unsubscribe())
-    })
-  })
+function createTableSql(plural, schema, dialect) {
+  let columns = ['"id" TEXT PRIMARY KEY']
+  for (let name in schema) {
+    columns.push(columnSql(name, schema[name], dialect))
+  }
+  columns.push('"updatedAt" TEXT')
+  return `CREATE TABLE IF NOT EXISTS "${plural}" (${columns.join(', ')})`
 }
 
+const VERBS = new Set([
+  'change',
+  'changed',
+  'create',
+  'created',
+  'delete',
+  'deleted'
+])
+
 export function createCrdtDatabase(client, db, callbacks = {}) {
-  let dialect = callbacks.dialect ?? 'sqlite'
+  let dialect = callbacks.dialect ?? sqliteDialect
   let storageKey = callbacks.key ?? 'logux:db'
   let stop = callbacks.stop ?? (() => {})
   let driver = db.driver
@@ -121,22 +108,25 @@ export function createCrdtDatabase(client, db, callbacks = {}) {
   }
 
   async function applyFields(plural, schema, id, fields, meta) {
-    let rows = await queryRows(
-      driver,
+    let existing = await driver.select(
       `SELECT "updatedAt" FROM "${plural}" WHERE "id" = ?`,
       [id]
     )
-    let updatedAt = rows.length > 0 ? JSON.parse(rows[0].updatedAt) : {}
+    let updatedAt = existing.length > 0 ? JSON.parse(existing[0].updatedAt) : {}
     let changes = {}
     for (let key in fields) {
-      if (schema[key] && isFirstOlder(updatedAt[key], meta)) {
+      if (
+        schema[key] &&
+        fields[key] !== undefined &&
+        isFirstOlder(updatedAt[key], meta)
+      ) {
         changes[key] = fields[key]
         updatedAt[key] = meta.id
       }
     }
     let keys = Object.keys(changes)
-    let values = keys.map(key => encodeValue(schema[key], changes[key]))
-    if (rows.length === 0) {
+    let values = keys.map(key => changes[key])
+    if (existing.length === 0) {
       let names = ['id', ...keys, 'updatedAt'].map(i => `"${i}"`)
       let holes = names.map(() => '?')
       await driver.exec(
@@ -260,7 +250,7 @@ export function createCrdtDatabase(client, db, callbacks = {}) {
 
   return {
     sql(template, ...params) {
-      return db.store(template, ...params.map(i => encodeParam(i)))
+      return db.store(template, ...params)
     },
     status,
     table(plural, schema) {
@@ -269,6 +259,14 @@ export function createCrdtDatabase(client, db, callbacks = {}) {
           'All tables must be defined synchronously ' +
             'after createCrdtDatabase() call'
         )
+      }
+      for (let name in schema) {
+        if (!dialect.types[schema[name].type]) {
+          throw new Error(
+            `Dialect "${dialect.name}" does not support ` +
+              `${schema[name].type} columns`
+          )
+        }
       }
       tables[plural] = schema
       return {
@@ -282,7 +280,7 @@ export function createCrdtDatabase(client, db, callbacks = {}) {
             }
           }
           await client.log.add(
-            { fields: serializeFields(values), id, type: `${plural}/create` },
+            { fields: values, id, type: `${plural}/create` },
             { sync: true }
           )
           return id
@@ -299,24 +297,15 @@ export function createCrdtDatabase(client, db, callbacks = {}) {
           let parts = template
             ? [`${prefix} ${template[0]}`, ...template.slice(1)]
             : [prefix]
-          return db.store(parts, ...params.map(i => encodeParam(i)))
+          return db.store(parts, ...params)
         },
         async update(id, diff) {
           await client.log.add(
-            { fields: serializeFields(diff), id, type: `${plural}/change` },
+            { fields: diff, id, type: `${plural}/change` },
             { sync: true }
           )
         }
       }
     }
   }
-}
-
-function createTableSql(plural, schema, dialect) {
-  let columns = ['"id" TEXT PRIMARY KEY']
-  for (let name in schema) {
-    columns.push(columnSql(name, schema[name], dialect))
-  }
-  columns.push('"updatedAt" TEXT')
-  return `CREATE TABLE IF NOT EXISTS "${plural}" (${columns.join(', ')})`
 }
