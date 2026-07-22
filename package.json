@@ -13,6 +13,12 @@
   "license": "MIT",
   "author": "Andrey Sitnik <andrey@sitnik.es>",
   "repository": "logux/client",
+  "funding": [
+    {
+      "type": "github",
+      "url": "https://github.com/sponsors/ai"
+    }
+  ],
   "type": "module",
   "sideEffects": false,
   "types": "./index.d.ts",
