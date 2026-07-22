@@ -24,6 +24,7 @@
   "types": "./index.d.ts",
   "exports": {
     ".": "./index.js",
+    "./db": "./create-crdt-table/index.js",
     "./vue": "./vue/index.js",
     "./react": "./react/index.js",
     "./preact": "./preact/index.js",
@@ -52,6 +53,7 @@
     "@logux/oxc-configs": "^0.4.0",
     "@nanostores/preact": "^1.1.0",
     "@nanostores/react": "^1.1.0",
+    "@nanostores/sql": "^0.2.0",
     "@nanostores/vue": "^1.1.0",
     "@size-limit/preset-small-lib": "^12.1.0",
     "@testing-library/preact": "^3.2.4",
@@ -91,6 +93,7 @@
   "peerDependencies": {
     "@nanostores/preact": ">=0.0.0",
     "@nanostores/react": ">=0.0.0",
+    "@nanostores/sql": ">=0.0.0",
     "@nanostores/vue": ">=0.0.0",
     "nanostores": "^0.9.0 || ^0.10.0 || ^0.11.0 || ^1.0.0",
     "preact": ">=10.0.0",
@@ -103,6 +106,9 @@
       "optional": true
     },
     "@nanostores/react": {
+      "optional": true
+    },
+    "@nanostores/sql": {
       "optional": true
     },
     "@nanostores/vue": {
@@ -141,6 +147,13 @@
         "./index.js": "{ createReducer }"
       },
       "limit": "1 KB"
+    },
+    {
+      "name": "DB",
+      "import": {
+        "./create-crdt-table/index.js": "{ createCrdtDatabase }"
+      },
+      "limit": "3 KB"
     },
     {
       "name": "React",
