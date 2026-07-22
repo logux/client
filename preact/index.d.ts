@@ -1,9 +1,9 @@
 import type { LoguxNotFoundError, SyncMapValues } from '@logux/actions'
 import type { StoreValue } from 'nanostores'
-import { Component } from 'preact'
 import type {
   ComponentChild,
   ComponentType,
+  Component,
   Context as PreactContext
 } from 'preact'
 

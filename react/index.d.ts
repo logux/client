@@ -1,7 +1,11 @@
 import type { LoguxNotFoundError, SyncMapValues } from '@logux/actions'
 import type { StoreValue } from 'nanostores'
-import { Component } from 'react'
-import type { ComponentType, Context as ReactContext, ReactNode } from 'react'
+import type {
+  ComponentType,
+  Context as ReactContext,
+  ReactNode,
+  Component
+} from 'react'
 
 import type { Client } from '../client/index.js'
 import type { AuthStore } from '../create-auth/index.js'

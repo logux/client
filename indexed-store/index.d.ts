@@ -1,4 +1,4 @@
-import { LogStore } from '@logux/core'
+import type { LogStore } from '@logux/core'
 
 /**
  * `IndexedDB` store for Logux log.

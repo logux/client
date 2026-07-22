@@ -1,7 +1,6 @@
 import type { Action, TestLog, TestPair } from '@logux/core'
 
-import { Client } from '../client/index.js'
-import type { ClientMeta } from '../client/index.js'
+import type { ClientMeta, Client } from '../client/index.js'
 import type { TestServer } from '../test-server/index.js'
 
 export interface TestClientOptions<Headers extends object> {
