@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: Checkout the repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
       - name: Install Node.js & pnpm
         uses: pnpm/setup@5d160c5bc68a09337ad0d5654e237e03253b5879 # v1.0.0
         with:
@@ -23,7 +25,6 @@ jobs:
         run: pnpm ci
       - name: Run tests
         run: pnpm test
-
   short:
     runs-on: ubuntu-latest
     strategy:
@@ -35,6 +36,8 @@ jobs:
     steps:
       - name: Checkout the repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
       - name: Install Node.js & pnpm
         uses: pnpm/setup@5d160c5bc68a09337ad0d5654e237e03253b5879 # v1.0.0
         with:
@@ -43,32 +46,4 @@ jobs:
       - name: Install dependencies
         run: pnpm ci
       - name: Run unit tests
-        run: pnpm vitest run
-
-  deploy:
-    name: Demo Deploy
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    needs:
-      - full
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout the repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          persist-credentials: false
-      - name: Install Node.js & pnpm
-        uses: pnpm/setup@5d160c5bc68a09337ad0d5654e237e03253b5879 # v1.0.0
-        with:
-          version: 11
-          runtime: node@26
-      - name: Install dependencies
-        run: pnpm ci
-      - name: Build
-        run: pnpm build
-      - name: Deploy
-        uses: JamesIves/github-pages-deploy-action@d92aa235d04922e8f08b40ce78cc5442fcfbfa2f # v4.8.0
-        with:
-          folder: test/demo/dist
-          branch: gh-pages
+        run: pnpm bnt
