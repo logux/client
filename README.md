@@ -64,4 +64,64 @@ log(client)
 client.start()
 ```
 
+## SQL Tables
+
+`@logux/client/db` keeps CRDT tables in a local SQL database
+(like SQLite in the browser) filled from Logux log. All changes are
+synchronized as Logux actions, and edit conflicts are resolved with
+per-field last write wins.
+
+It needs [Nano Stores SQL] database:
+
+```sh
+npm install @nanostores/sql
+```
+
+```js
+import { openDb } from '@nanostores/sql'
+import { sqlocalDriver } from '@nanostores/sql/sqlocal'
+import {
+  bigint,
+  createCrdtDatabase,
+  number,
+  optional,
+  string
+} from '@logux/client/db'
+
+let db = openDb(sqlocalDriver('app.sqlite'))
+let crdt = createCrdtDatabase(client, db, {
+  async repeat() {
+    // Ask server to the full client log
+    // Remove if you store the whole lo locally
+  }
+})
+
+let user = crdt.table('user', {
+  age: optional(number()),
+  createdAt: bigint({ default: () => Date.now() }),
+  name: string()
+})
+
+let id = await user.create({ name: 'Ann' })
+await user.update(id, { age: 30 })
+
+let $adults = user.select`WHERE "age" >= ${18} ORDER BY "name"`
+```
+
+[Nano Stores SQL]: https://github.com/nanostores/sql
+
+## End-to-End Encryption
+
+`encryptActions()` encrypts actions before sending them to the server,
+so the server can’t read users’ data. Pass a password or an AES
+`CryptoKey` and list action types to be kept unencrypted.
+
+```js
+import { encryptActions } from '@logux/client'
+
+encryptActions(client, localStorage.getItem('userPassword'), {
+  ignore: ['server/public']
+})
+```
+
 [documentation]: https://github.com/logux/logux
