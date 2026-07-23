@@ -167,9 +167,11 @@ it('supports undo for specific action', async () => {
   let client = new TestClient('10')
   await client.connect()
 
-  client.server.undoAction({ extra: 1, type: 'B' })
+  client.server.undoAction({ extra: 1, list: [1, { nested: true }], type: 'B' })
   await client.sync({ type: 'A' })
-  let error = await catchError(() => client.sync({ extra: 1, type: 'B' }))
+  let error = await catchError(() =>
+    client.sync({ extra: 1, list: [1, { nested: true }], type: 'B' })
+  )
   expect(error.name).toBe('LoguxUndoError')
 })
 

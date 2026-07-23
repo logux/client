@@ -9,6 +9,7 @@ export default defineConfig({
     'typescript/no-unnecessary-type-arguments': 'off',
     'unicorn/prefer-add-event-listener': 'off',
     'unicorn/consistent-function-scoping': 'off',
+    'unicorn/no-array-sort': 'off',
     'symbol-description': 'off',
     'no-console': 'off'
   },

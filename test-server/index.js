@@ -1,5 +1,20 @@
 import { parseId, ServerNode, TestTime } from '@logux/core'
-import stringify from 'fast-json-stable-stringify'
+
+function stringify(value) {
+  if (Array.isArray(value)) {
+    return `[${value.map(i => stringify(i) ?? 'null').join(',')}]`
+  } else if (typeof value === 'object' && value !== null) {
+    let pairs = []
+    for (let key of Object.keys(value).sort()) {
+      if (value[key] !== undefined) {
+        pairs.push(`${JSON.stringify(key)}:${stringify(value[key])}`)
+      }
+    }
+    return `{${pairs.join(',')}}`
+  } else {
+    return JSON.stringify(value)
+  }
+}
 
 export class TestServer {
   constructor() {

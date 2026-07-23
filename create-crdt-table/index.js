@@ -1,5 +1,4 @@
 import { isFirstOlder } from '@logux/core'
-import stringify from 'fast-json-stable-stringify'
 import { nanoid } from 'nanoid'
 import { atom } from 'nanostores'
 
@@ -60,6 +59,14 @@ const VERBS = {
 }
 
 const RESULT = ['', 0]
+
+function sortKeys(object, map) {
+  let sorted = {}
+  for (let key of Object.keys(object).sort()) {
+    sorted[key] = map ? map(object[key]) : object[key]
+  }
+  return sorted
+}
 
 export function createCrdtDatabase(client, db, opts = {}) {
   let dialect = opts.dialect ?? 'sqlite'
@@ -152,17 +159,16 @@ export function createCrdtDatabase(client, db, opts = {}) {
 
   void Promise.resolve().then(async () => {
     started = true
-    hash = stringify(
-      Object.fromEntries(
-        Object.entries(tables).map(([plural, schema]) => [
-          plural,
-          Object.fromEntries(
-            Object.entries(schema).map(([name, col]) => [
-              name,
-              { sql: col.sql, type: col.type, values: col.values }
-            ])
-          )
-        ])
+    hash = JSON.stringify(
+      sortKeys(tables, schema =>
+        sortKeys(schema, col => ({
+          sql:
+            col.sql && typeof col.sql === 'object'
+              ? sortKeys(col.sql)
+              : col.sql,
+          type: col.type,
+          values: col.values
+        }))
       )
     )
 
