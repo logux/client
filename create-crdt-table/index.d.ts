@@ -27,10 +27,10 @@ export interface CrdtColumnOptions<Type extends CrdtColumnValue> {
   /**
    * Extra SQL appended to the column definition, like
    * `'UNIQUE COLLATE NOCASE'`. Pass a string to use it for every database,
-   * or an object with {@link CrdtDatabaseCallbacks#dialect} names as keys
+   * or an object with {@link CrdtDatabaseOptions#dialect} names as keys
    * to set SQL per database dialect.
    */
-  sql?: Record<string, string> | string
+  sql?: Record<Dialects, string> | string
 }
 
 /**
@@ -220,12 +220,12 @@ export type CrdtCreateFields<Schema extends CrdtTableSchema> = {
 }
 
 /**
- * Values for SQL template parameters of {@link CrdtTable#select} and
- * {@link CrdtDatabase#sql}. Parameters are passed to the database driver
- * as-is, without any conversion. Booleans are allowed only in dialects
+ * Values for SQL template parameters of {@link CrdtTable#select}.
+ * Parameters are passed to the database driver as-is, without any
+ * conversion. Booleans are allowed only in dialects
  * with {@link boolean} columns (not in `'sqlite'`).
  */
-export type CrdtSqlParam<Dialect extends string = 'sqlite'> =
+export type CrdtSqlParam<Dialect extends Dialects = 'sqlite'> =
   | (Dialect extends 'sqlite' ? never : boolean)
   | number
   | string
@@ -286,7 +286,8 @@ export interface CrdtTable<
    * The SQL is appended to `SELECT "plural".* FROM "plural"`,
    * so it can contain `WHERE`, `ORDER BY`, `LIMIT`, and even `JOIN`
    * to filter rows by other tables (only this table’s columns are
-   * returned; use {@link CrdtDatabase#sql} to select joined columns).
+   * returned; use `db.store` from Nano Stores SQL for manual queries
+   * with joined columns or aggregations).
    *
    * ```ts
    * let $all = user.select()
@@ -322,7 +323,7 @@ export interface CrdtTable<
   update(id: string, diff: Partial<CrdtRowFields<Schema>>): Promise<void>
 }
 
-export interface CrdtDatabaseCallbacks<Dialect extends string = 'sqlite'> {
+export interface CrdtDatabaseOptions<Dialect extends string = 'sqlite'> {
   /**
    * SQL dialect of the database: `'sqlite'` (default), `'pglite'`
    * or any other name for your own dialect. The dialect selects
@@ -334,7 +335,7 @@ export interface CrdtDatabaseCallbacks<Dialect extends string = 'sqlite'> {
   dialect?: Dialect
 
   /**
-   * `localStorage` key to store the schema version hash
+   * `localStorage` key to store the schema version
    * (also used as the prefix of the leader tab lock name).
    * Change it when the database is used in a third-party widget
    * to avoid conflicts with the website’s own Logux database.
@@ -360,41 +361,11 @@ export interface CrdtDatabaseCallbacks<Dialect extends string = 'sqlite'> {
 
 export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
   /**
-   * Reactive query with manual SQL. Use it for `JOIN` between tables,
-   * aggregations and other queries which cannot be expressed with
-   * {@link CrdtTable#select}.
-   *
-   * Use it as a template string tag (like `db.store` in Nano Stores SQL);
-   * interpolated values are passed as bound SQL parameters to
-   * the database driver as-is, so use raw dialect values like in rows
-   * (see {@link CrdtSqlParam}). Rows contain values as the driver
-   * returns them; pass the row type as a generic to type them.
-   *
-   * ```ts
-   * let $count = crdt.sql<{ posts: number }>`
-   *   SELECT COUNT(*) AS "posts" FROM "post"
-   * `
-   * let $feed = crdt.sql<{ author: string; publishedAt: number }>`
-   *   SELECT "user"."name" AS "author", "post"."publishedAt"
-   *   FROM "post" JOIN "user" ON "user"."id" = "post"."authorId"
-   *   WHERE "post"."publishedAt" > ${new Date(2026, 0, 1).getTime()}
-   * `
-   * ```
-   *
-   * @param sql Full SQL query template.
-   * @param params Interpolated template values.
-   */
-  sql<Row = Record<string, SyncMapTypes>>(
-    sql: TemplateStringsArray,
-    ...params: CrdtSqlParam<Dialect>[]
-  ): SqlStore<Row[]>
-
-  /**
    * Database preparing status:
    *
    * - `initializing`: reading schema version, checking tables.
    * - `updating`: schema was changed, tables are being dropped and refilled
-   *   from the log and {@link CrdtDatabaseCallbacks#repeat}.
+   *   from the log and {@link CrdtDatabaseOptions#repeat}.
    * - `ready`: tables can be used.
    * - `outdated`: another tab has a newer schema, this tab must be reloaded.
    */
@@ -404,7 +375,7 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
    * Define CRDT table in the database.
    *
    * All tables must be defined synchronously after
-   * {@link createCrdtDatabase} call, because the schema version hash
+   * {@link createCrdtDatabase} call, because the schema version
    * is calculated from all tables.
    *
    * @param plural Table name and actions type prefix.
@@ -425,6 +396,8 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
   ): CrdtTable<Schema, Dialect>
 }
 
+export type Dialects = 'sqlite' | 'pglite'
+
 /**
  * Create CRDT LWW Map tables on top of SQL database filled from Logux log.
  *
@@ -442,9 +415,10 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
  * with the last change time of every field to resolve edit conflicts with
  * per-field last write wins strategy.
  *
- * The schema version is a hash of all tables’ schemas kept in
- * `localStorage`. On any schema change the tables are dropped and refilled
- * by replaying actions from the log and from the `repeat()` callback.
+ * The schema version — serialized schemas of all tables — is kept in
+ * `localStorage`. On any schema change all tables (including tables
+ * removed from the schema) are dropped and refilled by replaying actions
+ * from the log and from the `repeat()` callback.
  *
  * ```ts
  * import { openDb, sqlocalDriver } from '@nanostores/sql'
@@ -479,10 +453,10 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
  *
  * @param client Logux client.
  * @param db SQL database from `@nanostores/sql` `openDb()`.
- * @param callbacks Old actions source and outdated schema callbacks.
+ * @param opts Old actions source and outdated schema callbacks.
  */
-export function createCrdtDatabase<Dialect extends string = 'sqlite'>(
+export function createCrdtDatabase<Dialect extends Dialects = 'sqlite'>(
   client: Client,
   db: Database,
-  callbacks?: CrdtDatabaseCallbacks<Dialect>
+  opts?: CrdtDatabaseOptions<Dialect>
 ): CrdtDatabase<Dialect>

@@ -1,4 +1,3 @@
-import type { SyncMapTypes } from '@logux/actions'
 import type { Database } from '@nanostores/sql'
 
 import { Client } from '../index.js'
@@ -98,7 +97,7 @@ async function test(): Promise<void> {
     console.log(joinedName)
   }
 
-  let $feed = crdt.sql<{
+  let $feed = db.store<{
     author: string
     publishedAt: null | number
     title: string
@@ -115,10 +114,12 @@ async function test(): Promise<void> {
     console.log(author, publishedAt, title)
   }
 
-  let $count = crdt.sql`SELECT COUNT(*) AS "posts" FROM "post"`
+  let $count = db.store<{
+    posts: number
+  }>`SELECT COUNT(*) AS "posts" FROM "post"`
   let count = $count.get()
   if (!count.isLoading) {
-    let posts: SyncMapTypes = count.value[0]!.posts
+    let posts: number = count.value[0]!.posts
     console.log(posts)
   }
 }
@@ -139,21 +140,6 @@ if (!pgValue.isLoading) {
   let pgPublished: null | number = pgRow.publishedAt
   let pgName: string = pgRow.name
   console.log(pgAdmin, pgCreated, pgPublished, pgName)
-}
-
-let my = createCrdtDatabase(client, db, { dialect: 'mysql' })
-let myUser = my.table('user', {
-  name: string({ sql: { mysql: 'UNIQUE', sqlite: 'COLLATE NOCASE' } }),
-  pinned: boolean({ default: false }),
-  postedAt: bigint()
-})
-
-let myValue = myUser.select().get()
-if (!myValue.isLoading) {
-  let myRow = myValue.value[0]!
-  let myPinned: boolean = myRow.pinned
-  let myPosted: number = myRow.postedAt
-  console.log(myPinned, myPosted)
 }
 
 test()

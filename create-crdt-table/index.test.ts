@@ -225,9 +225,10 @@ it('fills table from existing log on first run', async () => {
 
 it('rebuilds database on schema change and replays repeat() entries', async () => {
   let { client, db } = await setup()
-  localStorage.setItem('logux:db', 'old-hash')
+  localStorage.setItem('logux:db', JSON.stringify({ removed: {}, user: {} }))
   await db.driver.exec('CREATE TABLE "user" ("id" TEXT PRIMARY KEY)', [])
   await db.driver.exec('INSERT INTO "user" ("id") VALUES (?)', ['garbage'])
+  await db.driver.exec('CREATE TABLE "removed" ("id" TEXT PRIMARY KEY)', [])
 
   await client.log.add(
     { fields: { name: 'FromLog' }, id: 'U1', type: 'user/created' },
@@ -259,12 +260,18 @@ it('rebuilds database on schema change and replays repeat() entries', async () =
   let rows = await loadList(user.select`ORDER BY "id"`)
   expect(rows.map(i => i.id)).toEqual(['U1', 'U2'])
   expect(rows.map(i => i.name)).toEqual(['FromLog', 'FromRepeat'])
-  expect(localStorage.getItem('logux:db')).not.toBe('old-hash')
+  expect(localStorage.getItem('logux:db')).toContain('"user":')
+
+  let leftover = await db.driver.select(
+    'SELECT "name" FROM "sqlite_master" WHERE "type" = ? AND "name" = ?',
+    ['table', 'removed']
+  )
+  expect(leftover).toEqual([])
 })
 
 it('rebuilds database on schema change without repeat()', async () => {
   let { client, db } = await setup()
-  localStorage.setItem('logux:db', 'old-hash')
+  localStorage.setItem('logux:db', '{}')
 
   let crdt = createCrdtDatabase(client, db)
   let user = crdt.table('user', USER_SCHEMA)
@@ -541,7 +548,7 @@ it('supports manual SQL with joined columns and aggregations', async () => {
   await post.create({ authorId: 'U1', title: 'Draft' })
   await delay(10)
 
-  let $feed = crdt.sql<{ author: string; publishedAt: number; title: string }>`
+  let $feed = db.store<{ author: string; publishedAt: number; title: string }>`
     SELECT "post"."title", "user"."name" AS "author", "post"."publishedAt"
     FROM "post" JOIN "user" ON "user"."id" = "post"."authorId"
     WHERE "post"."publishedAt" > ${2000}
@@ -549,7 +556,7 @@ it('supports manual SQL with joined columns and aggregations', async () => {
   let rows = await loadList($feed)
   expect(rows).toEqual([{ author: 'Ann', publishedAt: 3000, title: 'A' }])
 
-  let $count = crdt.sql`SELECT COUNT(*) AS "posts" FROM "post"`
+  let $count = db.store<{ posts: number }>`SELECT COUNT(*) AS "posts" FROM "post"`
   expect(await loadList($count)).toEqual([{ posts: 2 }])
 
   await user.update('U1', { name: 'Anna' })

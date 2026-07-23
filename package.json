@@ -54,7 +54,7 @@
     "@logux/oxc-configs": "^0.4.1",
     "@nanostores/preact": "^1.1.0",
     "@nanostores/react": "^1.1.0",
-    "@nanostores/sql": "^0.3.0",
+    "@nanostores/sql": "^0.3.1",
     "@nanostores/vue": "^1.1.0",
     "@size-limit/preset-small-lib": "^12.1.0",
     "@testing-library/preact": "^3.2.4",

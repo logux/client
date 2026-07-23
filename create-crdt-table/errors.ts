@@ -40,7 +40,7 @@ async function test(): Promise<void> {
   // THROWS Object literal may only specify known properties
   await user.update('id', { unknown: 1 })
 
-  let $stats = crdt.sql<{ total: number }>`
+  let $stats = db.store<{ total: number }>`
     SELECT COUNT(*) AS "total" FROM "user"
   `
   let stats = $stats.get()

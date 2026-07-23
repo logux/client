@@ -61,10 +61,10 @@ const VERBS = {
 
 const RESULT = ['', 0]
 
-export function createCrdtDatabase(client, db, callbacks = {}) {
-  let dialect = callbacks.dialect ?? 'sqlite'
-  let storageKey = callbacks.key ?? 'logux:db'
-  let stop = callbacks.stop ?? (() => {})
+export function createCrdtDatabase(client, db, opts = {}) {
+  let dialect = opts.dialect ?? 'sqlite'
+  let storageKey = opts.key ?? 'logux:db'
+  let stop = opts.stop ?? (() => {})
   let driver = db.driver
   db.pause()
 
@@ -184,7 +184,12 @@ export function createCrdtDatabase(client, db, callbacks = {}) {
       }
       ready()
     } else {
-      if (old !== null) status.set('updating')
+      if (old !== null) {
+        status.set('updating')
+        for (let oldTable in JSON.parse(old)) {
+          await driver.exec(`DROP TABLE IF EXISTS "${oldTable}"`, [])
+        }
+      }
       for (let plural in tables) {
         await driver.exec(`DROP TABLE IF EXISTS "${plural}"`, [])
         await driver.exec(createTableSql(plural, tables[plural], dialect), [])
@@ -193,8 +198,8 @@ export function createCrdtDatabase(client, db, callbacks = {}) {
       await client.log.each((action, meta) => {
         if (parseType(action.type)) entries.unshift([action, meta])
       })
-      if (old !== null && callbacks.repeat) {
-        entries = entries.concat(await callbacks.repeat())
+      if (old !== null && opts.repeat) {
+        entries = entries.concat(await opts.repeat())
       }
       for (let entry of entries) {
         await applyAction(entry[0], entry[1])
@@ -227,9 +232,6 @@ export function createCrdtDatabase(client, db, callbacks = {}) {
   })
 
   return {
-    sql(template, ...params) {
-      return db.store(template, ...params)
-    },
     status,
     table(plural, schema) {
       if (started) {
