@@ -27,8 +27,8 @@ export interface CrdtColumnOptions<Type extends CrdtColumnValue> {
   /**
    * Extra SQL appended to the column definition, like
    * `'UNIQUE COLLATE NOCASE'`. Pass a string to use it for every database,
-   * or an object with {@link CrdtDialect#name} keys to set SQL
-   * per database dialect.
+   * or an object with {@link CrdtDatabaseCallbacks#dialect} names as keys
+   * to set SQL per database dialect.
    */
   sql?: Record<string, string> | string
 }
@@ -49,7 +49,11 @@ export interface CrdtColumn<
   default?: (() => Type) | Type
   required: RequiredOnCreate
   sql?: Record<string, string> | string
-  type: 'bigint' | 'boolean' | 'number' | 'string'
+
+  /**
+   * SQL column type used in `CREATE TABLE`.
+   */
+  type: 'BIGINT' | 'BOOLEAN' | 'DOUBLE PRECISION' | 'TEXT'
   values?: readonly string[]
 }
 
@@ -70,42 +74,41 @@ export interface CrdtColumn<
  */
 export function string<Type extends string = string>(
   opts?: Omit<CrdtColumnOptions<Type>, 'default'> | string
-): { type: 'string' } & CrdtColumn<Type, true>
+): { type: 'TEXT' } & CrdtColumn<Type, true>
 export function string<Type extends string = string>(
   opts: { default: NoInfer<Type> } & CrdtColumnOptions<Type>
-): { type: 'string' } & CrdtColumn<Type, false>
+): { type: 'TEXT' } & CrdtColumn<Type, false>
 
 /**
- * `REAL`/`INTEGER` column with `number` value.
+ * `DOUBLE PRECISION` column with `number` value.
  *
  * @param opts Extra column definition SQL or column options.
  */
 export function number<Type extends number = number>(
   opts?: Omit<CrdtColumnOptions<Type>, 'default'> | string
-): { type: 'number' } & CrdtColumn<Type, true>
+): { type: 'DOUBLE PRECISION' } & CrdtColumn<Type, true>
 export function number<Type extends number = number>(
   opts: { default: NoInfer<Type> } & CrdtColumnOptions<Type>
-): { type: 'number' } & CrdtColumn<Type, false>
+): { type: 'DOUBLE PRECISION' } & CrdtColumn<Type, false>
 
 /**
- * Boolean column for dialects with native boolean support
- * like {@link pgliteDialect}. SQLite has no boolean type, so with
- * {@link sqliteDialect} use {@link number} column with `1`/`0` instead
- * (using this builder there is a type error and throws
- * in {@link CrdtDatabase#table}).
+ * `BOOLEAN` column for databases with native boolean support like PGlite.
+ * SQLite has no boolean type, so with `'sqlite'` dialect use
+ * {@link number} column with `1`/`0` instead (using this builder there
+ * is a type error and throws in {@link CrdtDatabase#table}).
  *
  * @param opts Extra column definition SQL or column options.
  */
 export function boolean(
   opts?: Omit<CrdtColumnOptions<boolean>, 'default'> | string
-): { type: 'boolean' } & CrdtColumn<boolean, true>
+): { type: 'BOOLEAN' } & CrdtColumn<boolean, true>
 export function boolean(
   opts: { default: (() => boolean) | boolean } & CrdtColumnOptions<boolean>
-): { type: 'boolean' } & CrdtColumn<boolean, false>
+): { type: 'BOOLEAN' } & CrdtColumn<boolean, false>
 
 /**
- * Enum column with union of string values. Stored as `TEXT` with `CHECK`
- * constraint in SQLite and as `ENUM` type in PGlite.
+ * Enum column with union of string values. Stored as `TEXT`
+ * with `CHECK` constraint.
  *
  * ```ts
  * import { oneOf } from '@logux/client/db'
@@ -122,13 +125,13 @@ export function boolean(
 export function oneOf<const Values extends readonly [string, ...string[]]>(
   values: Values,
   opts?: Omit<CrdtColumnOptions<Values[number]>, 'default'> | string
-): { type: 'string' } & CrdtColumn<Values[number], true>
+): { type: 'TEXT' } & CrdtColumn<Values[number], true>
 export function oneOf<const Values extends readonly [string, ...string[]]>(
   values: Values,
   opts: {
     default: (() => Values[number]) | Values[number]
   } & CrdtColumnOptions<Values[number]>
-): { type: 'string' } & CrdtColumn<Values[number], false>
+): { type: 'TEXT' } & CrdtColumn<Values[number], false>
 
 /**
  * `BIGINT` column with `number` value. Use it for timestamps
@@ -148,12 +151,12 @@ export function oneOf<const Values extends readonly [string, ...string[]]>(
  */
 export function bigint<Type extends number = number>(
   opts?: Omit<CrdtColumnOptions<Type>, 'default'> | string
-): { type: 'bigint' } & CrdtColumn<Type, true>
+): { type: 'BIGINT' } & CrdtColumn<Type, true>
 export function bigint<Type extends number = number>(
   opts: {
     default: (() => NoInfer<Type>) | NoInfer<Type>
   } & CrdtColumnOptions<Type>
-): { type: 'bigint' } & CrdtColumn<Type, false>
+): { type: 'BIGINT' } & CrdtColumn<Type, false>
 
 /**
  * Mark column as optional. The field can be omitted in
@@ -183,64 +186,6 @@ export interface CrdtTableSchema<
 > {
   [column: string]: { type: Types } & CrdtColumn
 }
-
-/**
- * SQL dialect definition: the dialect name and SQL column types.
- * All dialect-specific settings live in these objects, so unused
- * dialects can be removed from JS bundle by tree-shaking.
- *
- * Use {@link sqliteDialect}, {@link pgliteDialect} or define your own
- * dialect object. The `Types` generic lists column builders supported
- * by the dialect; using other builders in {@link CrdtDatabase#table}
- * schema is a type error.
- *
- * Values are passed between Logux actions and the database driver
- * without any conversion, so list `boolean` only if the database driver
- * binds and returns real JS booleans.
- *
- * ```ts
- * import type { CrdtDialect } from '@logux/client/db'
- *
- * let mysqlDialect: CrdtDialect<'bigint' | 'number' | 'string'> = {
- *   name: 'mysql',
- *   types: { bigint: 'BIGINT', number: 'DOUBLE', string: 'TEXT' }
- * }
- * ```
- */
-export interface CrdtDialect<
-  Types extends CrdtColumn['type'] = CrdtColumn['type']
-> {
-  /**
-   * Dialect name. It is used as the key of per-dialect extra column SQL
-   * in {@link CrdtColumnOptions#sql}.
-   */
-  name: string
-
-  /**
-   * SQL column types for the column builders supported by the dialect.
-   */
-  types: Record<Types, string>
-}
-
-/**
- * SQLite dialect (default). It has no {@link boolean} columns,
- * because SQLite stores booleans as integers; use {@link number}
- * columns with `1`/`0`.
- */
-export const sqliteDialect: CrdtDialect<'bigint' | 'number' | 'string'>
-
-/**
- * PGlite dialect with native `BOOLEAN` columns.
- *
- * ```ts
- * import { createCrdtDatabase, pgliteDialect } from '@logux/client/db'
- *
- * let crdt = createCrdtDatabase(client, db, { dialect: pgliteDialect })
- * ```
- */
-export const pgliteDialect: CrdtDialect<
-  'bigint' | 'boolean' | 'number' | 'string'
->
 
 export type CrdtColumnType<Column extends CrdtColumn> =
   Column extends CrdtColumn<infer Type, boolean> ? Type : never
@@ -278,12 +223,10 @@ export type CrdtCreateFields<Schema extends CrdtTableSchema> = {
  * Values for SQL template parameters of {@link CrdtTable#select} and
  * {@link CrdtDatabase#sql}. Parameters are passed to the database driver
  * as-is, without any conversion. Booleans are allowed only in dialects
- * with {@link boolean} columns.
+ * with {@link boolean} columns (not in `'sqlite'`).
  */
-export type CrdtSqlParam<
-  Dialect extends CrdtDialect<any> = typeof sqliteDialect
-> =
-  | ('boolean' extends keyof Dialect['types'] ? boolean : never)
+export type CrdtSqlParam<Dialect extends string = 'sqlite'> =
+  | (Dialect extends 'sqlite' ? never : boolean)
   | number
   | string
 
@@ -309,10 +252,10 @@ export type CrdtTableRow<Schema extends CrdtTableSchema> = {
 
 export interface CrdtTable<
   Schema extends CrdtTableSchema = CrdtTableSchema,
-  Dialect extends CrdtDialect<any> = typeof sqliteDialect
+  Dialect extends string = 'sqlite'
 > {
   /**
-   * Add `plural/create` action to the log. The table row will be inserted
+   * Add `plural/created` action to the log. The table row will be inserted
    * by the reducer (in a single browser tab) when the action is processed.
    *
    * @param fields Row fields. `id` will be generated if omitted.
@@ -321,7 +264,7 @@ export interface CrdtTable<
   create(fields: { id?: string } & CrdtCreateFields<Schema>): Promise<string>
 
   /**
-   * Add `plural/delete` action to the log to remove the row.
+   * Add `plural/deleted` action to the log to remove the row.
    *
    * @param id Row ID.
    * @returns Promise resolved when action was added to the log.
@@ -330,7 +273,7 @@ export interface CrdtTable<
 
   /**
    * Table name. It is used as SQL table name and as prefix
-   * of action types (`user/create`, `user/change`, `user/delete`).
+   * of action types (`user/created`, `user/changed`, `user/deleted`).
    */
   readonly plural: string
 
@@ -364,9 +307,10 @@ export interface CrdtTable<
   ): SqlStore<CrdtTableRow<Schema>[]>
 
   /**
-   * Add `plural/change` action to the log with changed fields.
+   * Add `plural/changed` action to the log with changed fields.
    * Conflicts with parallel changes are resolved with per-field
-   * last write wins by `updatedAt` values.
+   * last write wins by `updatedAt` values. Changes of rows deleted
+   * on another client are ignored.
    *
    * Set optional field to `null` to clear its value. `undefined` fields
    * are not changed (JSON, used to sync actions, has no `undefined`).
@@ -378,15 +322,14 @@ export interface CrdtTable<
   update(id: string, diff: Partial<CrdtRowFields<Schema>>): Promise<void>
 }
 
-export interface CrdtDatabaseCallbacks<
-  Dialect extends CrdtDialect<any> = typeof sqliteDialect
-> {
+export interface CrdtDatabaseCallbacks<Dialect extends string = 'sqlite'> {
   /**
-   * SQL dialect of the database: {@link sqliteDialect} (default),
-   * {@link pgliteDialect} or your own {@link CrdtDialect} object.
-   * The dialect object keeps column types and value encoding,
-   * so import only the dialect you use to avoid other dialects
-   * in JS bundle.
+   * SQL dialect of the database: `'sqlite'` (default), `'pglite'`
+   * or any other name for your own dialect. The dialect selects
+   * per-dialect extra column SQL in {@link CrdtColumnOptions#sql}
+   * and prohibits {@link boolean} columns in SQLite
+   * (values are passed to the database driver without conversion
+   * and SQLite has no boolean type).
    */
   dialect?: Dialect
 
@@ -415,9 +358,7 @@ export interface CrdtDatabaseCallbacks<
   stop?(): void
 }
 
-export interface CrdtDatabase<
-  Dialect extends CrdtDialect<any> = typeof sqliteDialect
-> {
+export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
   /**
    * Reactive query with manual SQL. Use it for `JOIN` between tables,
    * aggregations and other queries which cannot be expressed with
@@ -469,12 +410,14 @@ export interface CrdtDatabase<
    * @param plural Table name and actions type prefix.
    * @param schema Columns definition from {@link string}, {@link number},
    *               {@link bigint}, {@link boolean}, {@link oneOf},
-   *               {@link optional} builders. Only builders listed
-   *               in the dialect’s {@link CrdtDialect#types} are allowed.
+   *               {@link optional} builders. {@link boolean} is not
+   *               allowed with `'sqlite'` dialect.
    */
   table<
     Schema extends CrdtTableSchema<
-      CrdtColumn['type'] & keyof Dialect['types']
+      Dialect extends 'sqlite'
+        ? Exclude<CrdtColumn['type'], 'BOOLEAN'>
+        : CrdtColumn['type']
     >
   >(
     plural: string,
@@ -491,7 +434,7 @@ export interface CrdtDatabase<
  * to the log; the reducer applies them to the database.
  *
  * Actions are the same as in {@link syncMapTemplate}
- * (`user/create`, `user/change`, `user/delete` from `@logux/actions`),
+ * (`user/created`, `user/changed`, `user/deleted` from `@logux/actions`),
  * so tables are compatible with existing Logux servers and can be mixed
  * with `syncMapTemplate` stores on other clients.
  *
@@ -538,9 +481,7 @@ export interface CrdtDatabase<
  * @param db SQL database from `@nanostores/sql` `openDb()`.
  * @param callbacks Old actions source and outdated schema callbacks.
  */
-export function createCrdtDatabase<
-  Dialect extends CrdtDialect<any> = typeof sqliteDialect
->(
+export function createCrdtDatabase<Dialect extends string = 'sqlite'>(
   client: Client,
   db: Database,
   callbacks?: CrdtDatabaseCallbacks<Dialect>

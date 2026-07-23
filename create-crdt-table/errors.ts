@@ -8,7 +8,6 @@ import {
   number,
   oneOf,
   optional,
-  pgliteDialect,
   string
 } from './index.js'
 
@@ -60,10 +59,10 @@ async function test(): Promise<void> {
   user.select`WHERE "createdAt" > ${new Date()}`
 }
 
-// THROWS type: "boolean"; } & CrdtColumn<boolean, false>' is not assignable
+// THROWS type: "BOOLEAN"; } & CrdtColumn<boolean, false>' is not assignable
 crdt.table('bad', { isAdmin: boolean({ default: false }) })
 
-let pg = createCrdtDatabase(client, db, { dialect: pgliteDialect })
+let pg = createCrdtDatabase(client, db, { dialect: 'pglite' })
 let pgUser = pg.table('user', {
   isAdmin: boolean({ default: false }),
   name: string()

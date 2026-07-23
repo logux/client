@@ -11,7 +11,6 @@ import {
   boolean,
   createCrdtDatabase,
   optional,
-  pgliteDialect,
   string
 } from './index.js'
 
@@ -32,7 +31,7 @@ it('uses real BOOLEAN columns in PGlite', { timeout: 60000 }, async () => {
   let client = new TestClient('10')
   await client.connect()
   let db = openDb(pgliteDriver('memory://'))
-  let crdt = createCrdtDatabase(client, db, { dialect: pgliteDialect })
+  let crdt = createCrdtDatabase(client, db, { dialect: 'pglite' })
   let user = crdt.table('user', {
     createdAt: bigint({ default: () => new Date(2026, 0, 1).getTime() }),
     isAdmin: boolean({ default: false }),

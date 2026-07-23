@@ -15,7 +15,6 @@ import {
   number,
   oneOf,
   optional,
-  pgliteDialect,
   string
 } from './index.js'
 
@@ -144,20 +143,20 @@ it('resolves conflicts with per-field last write wins', async () => {
   await delay(10)
 
   await client.log.add(
+    { fields: { name: 'Oldest', role: 'admin' }, id: 'U1', type: 'user/created' },
+    { id: '10 10:other 0', time: 10 }
+  )
+  await delay(10)
+
+  await client.log.add(
     { fields: { name: 'New' }, id: 'U1', type: 'user/changed' },
     { id: '100 10:other 0', time: 100 }
   )
   await delay(10)
 
   await client.log.add(
-    { fields: { age: 20, name: 'Old' }, id: 'U1', type: 'user/change' },
+    { fields: { age: 20, name: 'Old' }, id: 'U1', type: 'user/changed' },
     { id: '50 10:other 0', time: 50 }
-  )
-  await delay(10)
-
-  await client.log.add(
-    { fields: { name: 'Oldest', role: 'admin' }, id: 'U1', type: 'user/create' },
-    { id: '10 10:other 0', time: 10 }
   )
   await delay(10)
 
@@ -178,6 +177,26 @@ it('resolves conflicts with per-field last write wins', async () => {
   let same = await loadList(user.select())
   expect(same[0]!.name).toBe('New')
   expect(JSON.parse(same[0]!.updatedAt).name).toBe('100 10:other 0')
+})
+
+it('ignores changes of deleted rows', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await delay(10)
+
+  let id = await user.create({ name: 'Ann' })
+  await delay(10)
+  await user.delete(id)
+  await delay(10)
+
+  await client.log.add(
+    { fields: { name: 'New' }, id, type: 'user/changed' },
+    { id: '200 10:other 0', time: 200 }
+  )
+  await delay(10)
+
+  expect(await loadList(user.select())).toEqual([])
 })
 
 it('fills table from existing log on first run', async () => {
@@ -313,7 +332,7 @@ it('becomes outdated on storage event with different hash', async () => {
   emitStorage('logux:db', 'even-newer-hash')
   expect(stopCalled).toBe(1)
 
-  await client.log.add({ fields: { name: 'Ann' }, id: 'U1', type: 'user/create' })
+  await client.log.add({ fields: { name: 'Ann' }, id: 'U1', type: 'user/created' })
   await delay(10)
   expect(await loadList($all)).toEqual([])
 })
@@ -338,7 +357,7 @@ it('applies actions only in the leader tab', async () => {
   expect(crdt.status.get()).toBe('ready')
   expect(lockNames).toEqual(['logux:db:lock'])
 
-  await client.log.add({ fields: { name: 'Ann' }, id: 'U1', type: 'user/create' })
+  await client.log.add({ fields: { name: 'Ann' }, id: 'U1', type: 'user/created' })
   await delay(10)
   expect(await loadList(user.select())).toEqual([])
 
@@ -348,7 +367,7 @@ it('applies actions only in the leader tab', async () => {
   })
   await delay(10)
 
-  await client.log.add({ fields: { name: 'Ann' }, id: 'U1', type: 'user/create' })
+  await client.log.add({ fields: { name: 'Ann' }, id: 'U1', type: 'user/created' })
   await delay(10)
   expect((await loadList(user.select())).map(i => i.id)).toEqual(['U1'])
   expect(lockReleased).toBe(false)
@@ -386,7 +405,7 @@ it('buffers actions added before database is ready', async () => {
 
   let $all = user.select()
   $all.listen(() => {})
-  await client.log.add({ fields: { name: 'Ann' }, id: 'U1', type: 'user/create' })
+  await client.log.add({ fields: { name: 'Ann' }, id: 'U1', type: 'user/created' })
   expect(crdt.status.get()).toBe('initializing')
 
   await delay(10)
@@ -401,9 +420,9 @@ it('ignores unknown action types and actions without fields', async () => {
   await delay(10)
 
   await client.log.add({ type: 'noslash' })
-  await client.log.add({ fields: { name: 'A' }, id: 'P1', type: 'post/create' })
+  await client.log.add({ fields: { name: 'A' }, id: 'P1', type: 'post/created' })
   await client.log.add({ id: 'U1', type: 'user/rename' })
-  await client.log.add({ id: 'U2', type: 'user/create' })
+  await client.log.add({ id: 'U2', type: 'user/created' })
   await delay(10)
 
   let rows = await loadList(user.select())
@@ -433,7 +452,7 @@ it('generates SQL with dialect-specific and extra column SQL', async () => {
 
   let client = new TestClient('10')
   let crdt = createCrdtDatabase(client, openDb(fakeDriver), {
-    dialect: pgliteDialect
+    dialect: 'pglite'
   })
   crdt.table('user', {
     email: string({ sql: { pglite: 'UNIQUE', sqlite: 'COLLATE NOCASE' } }),

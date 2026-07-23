@@ -9,56 +9,37 @@ function column(type, opts = {}) {
 }
 
 export function string(opts) {
-  return column('string', opts)
+  return column('TEXT', opts)
 }
 
 export function number(opts) {
-  return column('number', opts)
+  return column('DOUBLE PRECISION', opts)
 }
 
 export function boolean(opts) {
-  return column('boolean', opts)
+  return column('BOOLEAN', opts)
 }
 
 export function bigint(opts) {
-  return column('bigint', opts)
+  return column('BIGINT', opts)
 }
 
 export function oneOf(values, opts) {
-  return { ...column('string', opts), values }
+  return { ...column('TEXT', opts), values }
 }
 
 export function optional(col) {
   return { ...col, nullable: true, required: false }
 }
 
-export const sqliteDialect = {
-  name: 'sqlite',
-  types: {
-    bigint: 'BIGINT',
-    number: 'DOUBLE PRECISION',
-    string: 'TEXT'
-  }
-}
-
-export const pgliteDialect = {
-  name: 'pglite',
-  types: {
-    bigint: 'BIGINT',
-    boolean: 'BOOLEAN',
-    number: 'DOUBLE PRECISION',
-    string: 'TEXT'
-  }
-}
-
 function columnSql(name, col, dialect) {
-  let sql = `"${name}" ${dialect.types[col.type]}`
+  let sql = `"${name}" ${col.type}`
   if (col.values) {
     let values = col.values.map(i => `'${i.replaceAll("'", "''")}'`)
     sql += ` CHECK ("${name}" IN (${values.join(', ')}))`
   }
   let extra = col.sql
-  if (extra && typeof extra === 'object') extra = extra[dialect.name]
+  if (extra && typeof extra === 'object') extra = extra[dialect]
   if (extra) sql += ` ${extra}`
   return sql
 }
@@ -72,17 +53,16 @@ function createTableSql(plural, schema, dialect) {
   return `CREATE TABLE IF NOT EXISTS "${plural}" (${columns.join(', ')})`
 }
 
-const VERBS = new Set([
-  'change',
-  'changed',
-  'create',
-  'created',
-  'delete',
-  'deleted'
-])
+const VERBS = {
+  changed: 1,
+  created: 2,
+  deleted: 3
+}
+
+const RESULT = ['', 0]
 
 export function createCrdtDatabase(client, db, callbacks = {}) {
-  let dialect = callbacks.dialect ?? sqliteDialect
+  let dialect = callbacks.dialect ?? 'sqlite'
   let storageKey = callbacks.key ?? 'logux:db'
   let stop = callbacks.stop ?? (() => {})
   let driver = db.driver
@@ -102,62 +82,57 @@ export function createCrdtDatabase(client, db, callbacks = {}) {
     let slash = type.lastIndexOf('/')
     if (slash === -1) return undefined
     let plural = type.slice(0, slash)
-    let verb = type.slice(slash + 1)
-    if (!VERBS.has(verb) || !tables[plural]) return undefined
-    return [plural, verb]
-  }
-
-  async function applyFields(plural, schema, id, fields, meta) {
-    let existing = await driver.select(
-      `SELECT "updatedAt" FROM "${plural}" WHERE "id" = ?`,
-      [id]
-    )
-    let updatedAt = existing.length > 0 ? JSON.parse(existing[0].updatedAt) : {}
-    let changes = {}
-    for (let key in fields) {
-      if (
-        schema[key] &&
-        fields[key] !== undefined &&
-        isFirstOlder(updatedAt[key], meta)
-      ) {
-        changes[key] = fields[key]
-        updatedAt[key] = meta.id
-      }
-    }
-    let keys = Object.keys(changes)
-    let values = keys.map(key => changes[key])
-    if (existing.length === 0) {
-      let names = ['id', ...keys, 'updatedAt'].map(i => `"${i}"`)
-      let holes = names.map(() => '?')
-      await driver.exec(
-        `INSERT INTO "${plural}" (${names.join(', ')})` +
-          ` VALUES (${holes.join(', ')})`,
-        [id, ...values, JSON.stringify(updatedAt)]
-      )
-    } else if (keys.length > 0) {
-      let sets = keys.map(key => `"${key}" = ?`)
-      await driver.exec(
-        `UPDATE "${plural}" SET ${sets.join(', ')}, "updatedAt" = ?` +
-          ` WHERE "id" = ?`,
-        [...values, JSON.stringify(updatedAt), id]
-      )
-    }
+    if (!tables[plural]) return undefined
+    let verb = VERBS[type.slice(slash + 1)]
+    if (!verb) return undefined
+    RESULT[0] = plural
+    RESULT[1] = verb
+    return RESULT
   }
 
   async function applyAction(action, meta) {
     let parsed = parseType(action.type)
     if (!parsed) return
     let [plural, verb] = parsed
-    if (verb === 'delete' || verb === 'deleted') {
+    if (verb === VERBS.deleted) {
       await driver.exec(`DELETE FROM "${plural}" WHERE "id" = ?`, [action.id])
     } else {
-      await applyFields(
-        plural,
-        tables[plural],
-        action.id,
-        action.fields ?? {},
-        meta
+      let existing = await driver.select(
+        `SELECT "updatedAt" FROM "${plural}" WHERE "id" = ?`,
+        [action.id]
       )
+      if (existing.length === 0 && verb === VERBS.changed) return
+      let updatedAt =
+        existing.length > 0 ? JSON.parse(existing[0].updatedAt) : {}
+      let changes = {}
+      for (let key in action.fields ?? {}) {
+        if (
+          tables[plural][key] &&
+          action.fields[key] !== undefined &&
+          isFirstOlder(updatedAt[key], meta)
+        ) {
+          changes[key] = action.fields[key]
+          updatedAt[key] = meta.id
+        }
+      }
+      let keys = Object.keys(changes)
+      let values = keys.map(key => changes[key])
+      if (existing.length === 0) {
+        let names = ['id', ...keys, 'updatedAt'].map(i => `"${i}"`)
+        let holes = names.map(() => '?')
+        await driver.exec(
+          `INSERT INTO "${plural}" (${names.join(', ')})` +
+            ` VALUES (${holes.join(', ')})`,
+          [action.id, ...values, JSON.stringify(updatedAt)]
+        )
+      } else if (keys.length > 0) {
+        let sets = keys.map(key => `"${key}" = ?`)
+        await driver.exec(
+          `UPDATE "${plural}" SET ${sets.join(', ')}, "updatedAt" = ?` +
+            ` WHERE "id" = ?`,
+          [...values, JSON.stringify(updatedAt), action.id]
+        )
+      }
     }
   }
 
@@ -168,14 +143,6 @@ export function createCrdtDatabase(client, db, callbacks = {}) {
     actionsWaiting = []
     status.set('ready')
     db.resume()
-  }
-
-  function outdated() {
-    if (status.get() === 'outdated') return
-    status.set('outdated')
-    db.pause()
-    stop()
-    releaseLock()
   }
 
   void Promise.resolve().then(async () => {
@@ -196,7 +163,13 @@ export function createCrdtDatabase(client, db, callbacks = {}) {
 
     window.addEventListener('storage', event => {
       if (event.key !== storageKey || event.newValue === null) return
-      if (event.newValue !== hash) outdated()
+      if (event.newValue !== hash) {
+        if (status.get() === 'outdated') return
+        status.set('outdated')
+        db.pause()
+        stop()
+        releaseLock()
+      }
     })
 
     let old = localStorage.getItem(storageKey)
@@ -260,10 +233,8 @@ export function createCrdtDatabase(client, db, callbacks = {}) {
         )
       }
       for (let name in schema) {
-        if (!dialect.types[schema[name].type]) {
-          throw new Error(
-            `${dialect.name} does not support ${schema[name].type}`
-          )
+        if (schema[name].type === 'BOOLEAN' && dialect === 'sqlite') {
+          throw new Error('sqlite does not support boolean')
         }
       }
       tables[plural] = schema
@@ -278,14 +249,14 @@ export function createCrdtDatabase(client, db, callbacks = {}) {
             }
           }
           await client.log.add(
-            { fields: values, id, type: `${plural}/create` },
+            { fields: values, id, type: `${plural}/created` },
             { sync: true }
           )
           return id
         },
         async delete(id) {
           await client.log.add(
-            { id, type: `${plural}/delete` },
+            { id, type: `${plural}/deleted` },
             { sync: true }
           )
         },
@@ -299,7 +270,7 @@ export function createCrdtDatabase(client, db, callbacks = {}) {
         },
         async update(id, diff) {
           await client.log.add(
-            { fields: diff, id, type: `${plural}/change` },
+            { fields: diff, id, type: `${plural}/changed` },
             { sync: true }
           )
         }

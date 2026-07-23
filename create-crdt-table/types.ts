@@ -6,12 +6,9 @@ import {
   bigint,
   boolean,
   createCrdtDatabase,
-  type CrdtDialect,
   number,
   oneOf,
   optional,
-  pgliteDialect,
-  sqliteDialect,
   string
 } from './index.js'
 
@@ -24,7 +21,7 @@ let client = new Client({
 declare let db: Database
 
 let crdt = createCrdtDatabase(client, db, {
-  dialect: sqliteDialect,
+  dialect: 'sqlite',
   key: 'widget:db',
   repeat() {
     return []
@@ -126,7 +123,7 @@ async function test(): Promise<void> {
   }
 }
 
-let pg = createCrdtDatabase(client, db, { dialect: pgliteDialect })
+let pg = createCrdtDatabase(client, db, { dialect: 'pglite' })
 let pgUser = pg.table('user', {
   createdAt: bigint({ default: () => Date.now() }),
   isAdmin: boolean({ default: false }),
@@ -144,26 +141,17 @@ if (!pgValue.isLoading) {
   console.log(pgAdmin, pgCreated, pgPublished, pgName)
 }
 
-let mysqlDialect: CrdtDialect<'bigint' | 'number' | 'string'> = {
-  name: 'mysql',
-  types: {
-    bigint: 'BIGINT',
-    number: 'DOUBLE',
-    string: 'TEXT'
-  }
-}
-
-let my = createCrdtDatabase(client, db, { dialect: mysqlDialect })
+let my = createCrdtDatabase(client, db, { dialect: 'mysql' })
 let myUser = my.table('user', {
   name: string({ sql: { mysql: 'UNIQUE', sqlite: 'COLLATE NOCASE' } }),
-  pinned: number({ default: 0 }),
+  pinned: boolean({ default: false }),
   postedAt: bigint()
 })
 
 let myValue = myUser.select().get()
 if (!myValue.isLoading) {
   let myRow = myValue.value[0]!
-  let myPinned: number = myRow.pinned
+  let myPinned: boolean = myRow.pinned
   let myPosted: number = myRow.postedAt
   console.log(myPinned, myPosted)
 }
