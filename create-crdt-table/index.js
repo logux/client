@@ -101,9 +101,13 @@ export function createCrdtDatabase(client, db, callbacks = {}) {
         `SELECT "updatedAt" FROM "${plural}" WHERE "id" = ?`,
         [action.id]
       )
+      let updatedAt = {}
+      if (existing.length === 0) {
+        if (verb === VERBS.changed) return
+      } else {
+        updatedAt = JSON.parse(existing[0].updatedAt)
+      }
       if (existing.length === 0 && verb === VERBS.changed) return
-      let updatedAt =
-        existing.length > 0 ? JSON.parse(existing[0].updatedAt) : {}
       let changes = {}
       for (let key in action.fields ?? {}) {
         if (
@@ -116,22 +120,23 @@ export function createCrdtDatabase(client, db, callbacks = {}) {
         }
       }
       let keys = Object.keys(changes)
-      let values = keys.map(key => changes[key])
-      if (existing.length === 0) {
-        let names = ['id', ...keys, 'updatedAt'].map(i => `"${i}"`)
-        let holes = names.map(() => '?')
-        await driver.exec(
-          `INSERT INTO "${plural}" (${names.join(', ')})` +
-            ` VALUES (${holes.join(', ')})`,
-          [action.id, ...values, JSON.stringify(updatedAt)]
-        )
-      } else if (keys.length > 0) {
-        let sets = keys.map(key => `"${key}" = ?`)
-        await driver.exec(
-          `UPDATE "${plural}" SET ${sets.join(', ')}, "updatedAt" = ?` +
-            ` WHERE "id" = ?`,
-          [...values, JSON.stringify(updatedAt), action.id]
-        )
+      if (keys.length > 0) {
+        let values = keys.map(key => changes[key])
+        if (verb === VERBS.created && existing.length === 0) {
+          let names = ['id', ...keys, 'updatedAt'].map(i => `"${i}"`)
+          await driver.exec(
+            `INSERT INTO "${plural}" (${names.join(', ')})` +
+              ` VALUES (${names.map(() => '?').join(', ')})`,
+            [action.id, ...values, JSON.stringify(updatedAt)]
+          )
+        } else {
+          let sets = keys.map(key => `"${key}" = ?`)
+          await driver.exec(
+            `UPDATE "${plural}" SET ${sets.join(', ')}, "updatedAt" = ?` +
+              ` WHERE "id" = ?`,
+            [...values, JSON.stringify(updatedAt), action.id]
+          )
+        }
       }
     }
   }
@@ -212,9 +217,9 @@ export function createCrdtDatabase(client, db, callbacks = {}) {
   }
 
   client.on('add', (action, meta) => {
-    if (!isLeader || status.get() === 'outdated') return
+    if (!isLeader || status.value === 'outdated') return
     if (!parseType(action.type)) return
-    if (status.get() !== 'ready') {
+    if (status.value !== 'ready') {
       actionsWaiting.push([action, meta])
     } else {
       queue = queue.then(() => applyAction(action, meta))

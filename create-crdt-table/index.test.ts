@@ -425,10 +425,7 @@ it('ignores unknown action types and actions without fields', async () => {
   await client.log.add({ id: 'U2', type: 'user/created' })
   await delay(10)
 
-  let rows = await loadList(user.select())
-  expect(rows.map(i => i.id)).toEqual(['U2'])
-  expect(rows[0]!.name).toBeNull()
-  expect(rows[0]!.updatedAt).toBe('{}')
+  expect(await loadList(user.select())).toEqual([])
 })
 
 it('generates SQL with dialect-specific and extra column SQL', async () => {
