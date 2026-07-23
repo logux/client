@@ -1,4 +1,4 @@
-# Logux Client [![Cult Of Martians][cult-img]][cult]
+# Logux Client
 
 <img align="right" width="95" height="148" title="Logux logotype"
      src="https://logux.org/branding/logotype.svg">
@@ -25,8 +25,6 @@ This repository contains Logux base components to build web client:
 Check **[demo page]** for widget UI.
 
 [demo page]: https://logux.github.io/client/
-[cult-img]: http://cultofmartians.com/assets/badges/badge.svg
-[cult]: http://cultofmartians.com/done.html
 
 ---
 
