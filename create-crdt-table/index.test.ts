@@ -549,7 +549,7 @@ it('throws on table() call after initialization', async () => {
 
   expect(() => {
     crdt.table('post', { title: string() })
-  }).toThrow(/synchronously/)
+  }).toThrow(/sync/)
 })
 
 it('throws on column type unsupported by dialect', async () => {
@@ -558,5 +558,5 @@ it('throws on column type unsupported by dialect', async () => {
   expect(() => {
     // @ts-expect-error
     crdt.table('user', { isAdmin: boolean() })
-  }).toThrow('Dialect "sqlite" does not support boolean columns')
+  }).toThrow('sqlite does not support boolean')
 })

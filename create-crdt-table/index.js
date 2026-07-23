@@ -256,15 +256,13 @@ export function createCrdtDatabase(client, db, callbacks = {}) {
     table(plural, schema) {
       if (started) {
         throw new Error(
-          'All tables must be defined synchronously ' +
-            'after createCrdtDatabase() call'
+          'All tables must be defined sync after createCrdtDatabase()'
         )
       }
       for (let name in schema) {
         if (!dialect.types[schema[name].type]) {
           throw new Error(
-            `Dialect "${dialect.name}" does not support ` +
-              `${schema[name].type} columns`
+            `${dialect.name} does not support ${schema[name].type}`
           )
         }
       }
