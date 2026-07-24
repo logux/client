@@ -30,7 +30,7 @@ export interface RequestOptions extends Omit<ClientOptions, 'userId'> {
  * @param action Action which we need to send to the server.
  * @return Action of server response.
  */
-export function request<SentAction extends Action = Action>(
+export function request<SentAction extends Action = AnyAction>(
   action: AnyAction,
   opts: RequestOptions
 ): Promise<SentAction>

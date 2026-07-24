@@ -9,7 +9,7 @@ import { getRandomSpaces } from './index.js'
 window.TextEncoder = TextEncoder
 window.TextDecoder = TextDecoder
 
-function privateMethods(obj: object): any {
+function privateMethods(obj: unknown): any {
   return obj
 }
 
@@ -85,10 +85,10 @@ it('encrypts and decrypts actions', async () => {
   client1.log.add({ type: 'sync', value: 'same size' }, { sync: true })
   client1.log.add({ type: 'sync', value: 'same size' }, { sync: true })
   await delay(100)
-  let size1 = getPair(client1).leftSent[1]![2].d.length
-  let size2 = getPair(client1).leftSent[2]![2].d.length
-  let size3 = getPair(client1).leftSent[3]![2].d.length
-  let size4 = getPair(client1).leftSent[4]![2].d.length
+  let size1 = privateMethods(getPair(client1).leftSent[1]![2]).d.length
+  let size2 = privateMethods(getPair(client1).leftSent[2]![2]).d.length
+  let size3 = privateMethods(getPair(client1).leftSent[3]![2]).d.length
+  let size4 = privateMethods(getPair(client1).leftSent[4]![2]).d.length
   expect(size1 !== size2 || size1 !== size3 || size1 !== size4).toBeTruthy()
 })
 
@@ -224,7 +224,7 @@ it('compresses long actions', async () => {
 
   client1.log.add({ type: 'sync', value: long }, { sync: true })
   await delay(100)
-  let action = getPair(client1).leftSent[0]![2]
+  let action = privateMethods(getPair(client1).leftSent[0]![2])
   expect(action.d.length).toBeLessThan(120)
   expect(action.z).toBe(true)
 

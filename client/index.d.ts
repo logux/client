@@ -306,7 +306,10 @@ export class Client<
    * @param meta Optional meta.
    * @returns Promise for server processing.
    */
-  sync(action: AnyAction, meta?: Partial<ClientMeta>): Promise<ClientMeta>
+  sync<SyncAction extends Action = AnyAction>(
+    action: SyncAction,
+    meta?: Partial<ClientMeta>
+  ): Promise<ClientMeta>
 
   /**
    * Add listener for adding action with specific type.
