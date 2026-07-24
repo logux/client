@@ -172,18 +172,23 @@ export function createCrdtDatabase(client, db, opts = {}) {
       )
     )
 
-    window.addEventListener('storage', event => {
-      if (event.key !== storageKey || event.newValue === null) return
-      if (event.newValue !== hash) {
-        if (status.get() === 'outdated') return
-        status.set('outdated')
-        db.pause()
-        stop()
-        releaseLock()
-      }
-    })
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', event => {
+        if (event.key !== storageKey || event.newValue === null) return
+        if (event.newValue !== hash) {
+          if (status.get() === 'outdated') return
+          status.set('outdated')
+          db.pause()
+          stop()
+          releaseLock()
+        }
+      })
+    }
 
-    let old = localStorage.getItem(storageKey)
+    let old =
+      typeof localStorage === 'undefined'
+        ? null
+        : localStorage.getItem(storageKey)
     if (old === hash) {
       for (let plural in tables) {
         await driver.exec(createTableSql(plural, tables[plural], dialect), [])
@@ -210,7 +215,9 @@ export function createCrdtDatabase(client, db, opts = {}) {
       for (let entry of entries) {
         await applyAction(entry[0], entry[1])
       }
-      localStorage.setItem(storageKey, hash)
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(storageKey, hash)
+      }
       ready()
     }
   })
