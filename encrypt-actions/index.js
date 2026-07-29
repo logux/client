@@ -1,3 +1,5 @@
+import { WsBinaryConnection } from '@logux/core'
+
 let pool = new Uint8Array(128)
 let poolOffset = pool.length
 
@@ -62,21 +64,21 @@ async function decompress(bytes) {
 async function encrypt(action, key) {
   let iv = getRandomBytes(12)
   let bytes = objToBytes(action)
-  let z = bytes.length > 100
-  if (z) bytes = await compress(bytes)
+  let compressed = bytes.length > 100
+  if (compressed) bytes = await compress(bytes)
   let encrypted = await crypto.subtle.encrypt(aes(iv), key, bytes)
 
   return {
+    compressed,
     d: new Uint8Array(encrypted),
     iv: iv,
-    type: '0',
-    z
+    type: '0'
   }
 }
 
 async function decrypt(action, key) {
   let bytes = await crypto.subtle.decrypt(aes(action.iv), key, action.d)
-  if (action.z) bytes = await decompress(bytes)
+  if (action.compressed) bytes = await decompress(bytes)
   return bytesToObj(bytes)
 }
 
@@ -84,6 +86,14 @@ export function encryptActions(client, secret, opts = {}) {
   let key
   if (typeof CryptoKey !== 'undefined' && secret instanceof CryptoKey) {
     key = secret
+  }
+
+  if (typeof client.options.server === 'string') {
+    let reconnect = client.node.connection
+    let text = reconnect.connection
+    let binary = new WsBinaryConnection(text.url, text.Class, text.opts)
+    binary.emitter = text.emitter
+    reconnect.connection = binary
   }
 
   async function buildKey() {

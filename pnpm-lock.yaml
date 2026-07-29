@@ -10,7 +10,7 @@ importers:
     dependencies:
       '@logux/actions':
         specifier: github:logux/actions#next
-        version: git+ssh://git@github.com/logux/actions.git#da758a1d6a5b5e2e01ab3a2f24f2ca95c73f457d(@logux/core@git+ssh://git@github.com/logux/core.git#95181cad20716b0abd6950a37df623f7ff2d277e)
+        version: git+ssh://git@github.com/logux/actions.git#fbede590f2f311130c3db2c0a231228ca397a6f6(@logux/core@git+ssh://git@github.com/logux/core.git#95181cad20716b0abd6950a37df623f7ff2d277e)
       '@logux/core':
         specifier: github:logux/core#next
         version: git+ssh://git@github.com/logux/core.git#95181cad20716b0abd6950a37df623f7ff2d277e
@@ -40,8 +40,8 @@ importers:
         specifier: ^1.1.0
         version: 1.1.0(nanostores@1.4.1)(vue@3.5.40(typescript@7.0.2))
       '@size-limit/preset-small-lib':
-        specifier: ^13.0.1
-        version: 13.0.1(size-limit@13.0.1)
+        specifier: ^13.0.2
+        version: 13.0.2(size-limit@13.0.2)
       '@testing-library/preact':
         specifier: ^3.2.4
         version: 3.2.4(preact@10.29.7)
@@ -124,8 +124,8 @@ importers:
         specifier: ^19.2.8
         version: 19.2.8(react@19.2.8)
       size-limit:
-        specifier: ^13.0.1
-        version: 13.0.1
+        specifier: ^13.0.2
+        version: 13.0.2
       svgo:
         specifier: ^4.0.2
         version: 4.0.2
@@ -362,8 +362,8 @@ packages:
     peerDependencies:
       '@logux/core': ^0.10.0
 
-  '@logux/actions@git+ssh://git@github.com/logux/actions.git#da758a1d6a5b5e2e01ab3a2f24f2ca95c73f457d':
-    resolution: {commit: da758a1d6a5b5e2e01ab3a2f24f2ca95c73f457d, repo: git@github.com:logux/actions.git, type: git}
+  '@logux/actions@git+ssh://git@github.com/logux/actions.git#fbede590f2f311130c3db2c0a231228ca397a6f6':
+    resolution: {commit: fbede590f2f311130c3db2c0a231228ca397a6f6, repo: git@github.com:logux/actions.git, type: git}
     version: 0.5.0
     engines: {node: ^22.0.0 || ^24.0.0 || >=26.0.0}
     peerDependencies:
@@ -717,22 +717,22 @@ packages:
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
 
-  '@size-limit/esbuild@13.0.1':
-    resolution: {integrity: sha512-OCI6Fqpyh91XMGTC7S9iwBf/1yHeg+3mb4dT6PQfSoFb47vAfWiTRV99hgINUL6dxixCdNxe/9j8+8xTqzUs5g==}
+  '@size-limit/esbuild@13.0.2':
+    resolution: {integrity: sha512-+FA0qXnBxV+QgUgxA56bR6bVCpATJIn97qtnvfhlroKfZiah5nK3b8dTy08oBZ/J7L1s2foTwSIjEhEPRZMJ2A==}
     engines: {node: ^20.0.0 || ^22.0.0 || >=24.0.0}
     peerDependencies:
-      size-limit: 13.0.1
+      size-limit: 13.0.2
 
-  '@size-limit/file@13.0.1':
-    resolution: {integrity: sha512-qdbGUxRAjym5gnkYEjsNsdOfmkDUvDX06FLhLGUxQ0oJtIWDd2lsOmTMwh5JuAV1XmJCplbqpMJ2b5eIhHl7Lg==}
+  '@size-limit/file@13.0.2':
+    resolution: {integrity: sha512-2jUyuOP1qJMjcsbDuAhHV4xoRK89uFCrz0DZ+qIRFwTsTxME4Rjb6E6ZYb7VNAy5K2aQyM/BQJOS+eT01KLRjg==}
     engines: {node: ^20.0.0 || ^22.0.0 || >=24.0.0}
     peerDependencies:
-      size-limit: 13.0.1
+      size-limit: 13.0.2
 
-  '@size-limit/preset-small-lib@13.0.1':
-    resolution: {integrity: sha512-YRwOkNQN8C4UzbSEaXmXceA7Q1FV83TgPa8tCpy0hwlQvy3xjDSMFDXXayJ84prfYOxIuwtjdlKZTBKFhU7u0Q==}
+  '@size-limit/preset-small-lib@13.0.2':
+    resolution: {integrity: sha512-BC/f3be0XHBJHJGln4fuFYnaOj2Vr+juUS72JDvg4dhlJVyt+fHeu9zJ4fKzWdrSzuxsFgvsrFtF6XbaCe1cSQ==}
     peerDependencies:
-      size-limit: 13.0.1
+      size-limit: 13.0.2
 
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
@@ -1894,8 +1894,8 @@ packages:
     resolution: {integrity: sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw==}
     engines: {node: '>=14'}
 
-  size-limit@13.0.1:
-    resolution: {integrity: sha512-LKWgnVUfw79W5gcKGIHqjEqBMoZ+YgfYYzlDheYwbRJq1DaaRgOjotFm61YOI/4hbgh4V1Es0uGGp6HLktI3Vw==}
+  size-limit@13.0.2:
+    resolution: {integrity: sha512-bB8Hv6g7nBtmWW+mB9Y1lkyJoDOxk6pO6p7xPsK8Y6t9CyKvBWhzTRXLlhhv1H2Ru9HIyLKbCaVswXGHwVXiwg==}
     engines: {node: ^22.18.0 || ^24.0.0 || >=26.0.0}
     hasBin: true
 
@@ -2261,7 +2261,7 @@ snapshots:
     dependencies:
       '@logux/core': git+ssh://git@github.com/logux/core.git#95181cad20716b0abd6950a37df623f7ff2d277e
 
-  '@logux/actions@git+ssh://git@github.com/logux/actions.git#da758a1d6a5b5e2e01ab3a2f24f2ca95c73f457d(@logux/core@git+ssh://git@github.com/logux/core.git#95181cad20716b0abd6950a37df623f7ff2d277e)':
+  '@logux/actions@git+ssh://git@github.com/logux/actions.git#fbede590f2f311130c3db2c0a231228ca397a6f6(@logux/core@git+ssh://git@github.com/logux/core.git#95181cad20716b0abd6950a37df623f7ff2d277e)':
     dependencies:
       '@logux/core': git+ssh://git@github.com/logux/core.git#95181cad20716b0abd6950a37df623f7ff2d277e
 
@@ -2472,21 +2472,21 @@ snapshots:
 
   '@rolldown/pluginutils@1.0.1': {}
 
-  '@size-limit/esbuild@13.0.1(size-limit@13.0.1)':
+  '@size-limit/esbuild@13.0.2(size-limit@13.0.2)':
     dependencies:
       esbuild: 0.28.1
       nanoid: 6.0.0
-      size-limit: 13.0.1
+      size-limit: 13.0.2
 
-  '@size-limit/file@13.0.1(size-limit@13.0.1)':
+  '@size-limit/file@13.0.2(size-limit@13.0.2)':
     dependencies:
-      size-limit: 13.0.1
+      size-limit: 13.0.2
 
-  '@size-limit/preset-small-lib@13.0.1(size-limit@13.0.1)':
+  '@size-limit/preset-small-lib@13.0.2(size-limit@13.0.2)':
     dependencies:
-      '@size-limit/esbuild': 13.0.1(size-limit@13.0.1)
-      '@size-limit/file': 13.0.1(size-limit@13.0.1)
-      size-limit: 13.0.1
+      '@size-limit/esbuild': 13.0.2(size-limit@13.0.2)
+      '@size-limit/file': 13.0.2(size-limit@13.0.2)
+      size-limit: 13.0.2
 
   '@standard-schema/spec@1.1.0': {}
 
@@ -3684,7 +3684,7 @@ snapshots:
 
   signal-exit@4.1.0: {}
 
-  size-limit@13.0.1:
+  size-limit@13.0.2:
     dependencies:
       bytes-iec: 3.1.1
       lilconfig: 3.1.3

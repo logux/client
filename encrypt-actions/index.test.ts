@@ -1,7 +1,7 @@
-import { TestPair, TestTime } from '@logux/core'
+import { TestPair, TestTime, WsBinaryConnection } from '@logux/core'
 import { delay } from 'nanodelay'
 import { TextDecoder, TextEncoder } from 'node:util'
-import { expect, it } from 'vitest'
+import { afterEach, expect, it } from 'vitest'
 
 import { Client, encryptActions } from '../index.js'
 import { getRandomSpaces } from './index.js'
@@ -36,6 +36,86 @@ function createClient(): Client {
     meta.reasons.push('test')
   })
   return client
+}
+
+let waiting: Record<string, FakeWebSocket> = {}
+let originWebSocket = global.WebSocket
+
+afterEach(() => {
+  waiting = {}
+  global.WebSocket = originWebSocket
+})
+
+/**
+ * Two sockets with the same URL become the ends of the same wire.
+ */
+class FakeWebSocket {
+  binaryType = 'blob'
+  onclose: (() => void) | undefined
+  onerror: ((event: unknown) => void) | undefined
+  onmessage: ((event: { data: unknown }) => void) | undefined
+  onopen: (() => void) | undefined
+  OPEN = 1
+  peer: FakeWebSocket | undefined
+  readyState = 1
+
+  constructor(url: string) {
+    let other = waiting[url]
+    if (other) {
+      this.peer = other
+      other.peer = this
+      delete waiting[url]
+      queueMicrotask(() => {
+        this.onopen?.()
+        other.onopen?.()
+      })
+    } else {
+      waiting[url] = this
+    }
+  }
+
+  close(): void {
+    this.readyState = 3
+    this.onclose?.()
+  }
+
+  send(data: string | Uint8Array): void {
+    let peer = this.peer!
+    // Real WebSocket gives ArrayBuffer to `binaryType = 'arraybuffer'` client
+    let frame = typeof data === 'string' ? data : data.buffer
+    queueMicrotask(() => {
+      peer.onmessage?.({ data: frame })
+    })
+  }
+}
+
+function createWsClient(server: string): Client {
+  let client = new Client({
+    server,
+    subprotocol: 10,
+    time: new TestTime(),
+    userId: '10'
+  })
+  client.on('preadd', (action, meta) => {
+    meta.reasons.push('test')
+  })
+  return client
+}
+
+/**
+ * Minimal server on the other end of the wire, which speaks
+ * the same binary protocol and relays actions to another client.
+ */
+function createServer(url: string): WsBinaryConnection<FakeWebSocket> {
+  let connection = new WsBinaryConnection<FakeWebSocket>(url, FakeWebSocket)
+  connection.on('message', message => {
+    if (message[0] === 'connect') {
+      connection.send(['connected', message[1], 'server', [0, 0], {}])
+    } else if (message[0] === 'sync') {
+      connection.send(['synced', message[1]])
+    }
+  })
+  return connection
 }
 
 async function connect(client: Client): Promise<void> {
@@ -210,6 +290,53 @@ it('has normal distribution of random spaces', () => {
   expect(deviation(symbols, 100000)).toBeLessThan(0.2)
 })
 
+it('sends encrypted actions through binary protocol', async () => {
+  global.WebSocket = FakeWebSocket as any
+
+  let client1 = createWsClient('wss://one.test')
+  let client2 = createWsClient('wss://two.test')
+
+  encryptActions(client1, 'password')
+  encryptActions(client2, 'password')
+
+  let server1 = createServer('wss://one.test')
+  let server2 = createServer('wss://two.test')
+
+  let received: any[] = []
+  server1.on('message', message => {
+    if (message[0] === 'sync') {
+      received.push(message[2])
+      server2.send(message)
+    }
+  })
+
+  await Promise.all([
+    server1.connect(),
+    server2.connect(),
+    client1.node.connection.connect(),
+    client2.node.connection.connect()
+  ])
+  await delay(50)
+
+  let long = 'a'.repeat(1000)
+  client1.log.add({ type: 'sync', value: 'secret' }, { sync: true })
+  client1.log.add({ type: 'sync', value: long }, { sync: true })
+  await delay(100)
+
+  // Protocol keeps compression flag in action type byte, not in the object
+  expect(received).toEqual([
+    { d: BYTES, iv: BYTES, type: '0' },
+    { compressed: true, d: BYTES, iv: BYTES, type: '0' }
+  ])
+  expect(privateMethods(client2.log).actions()).toEqual([
+    { type: 'sync', value: 'secret' },
+    { type: 'sync', value: long }
+  ])
+
+  client1.destroy()
+  client2.destroy()
+})
+
 it('compresses long actions', async () => {
   let client1 = createClient()
   let client2 = createClient()
@@ -226,7 +353,7 @@ it('compresses long actions', async () => {
   await delay(100)
   let action = privateMethods(getPair(client1).leftSent[0]![2])
   expect(action.d.length).toBeLessThan(120)
-  expect(action.z).toBe(true)
+  expect(action.compressed).toBe(true)
 
   getPair(client2).right.send(getPair(client1).leftSent[0]!)
   await delay(100)

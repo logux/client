@@ -5,6 +5,9 @@ import type { Client } from '../client/index.js'
  *
  * Actions will be converted to `{ type: '0', d: encrypt(action) }`
  *
+ * Client will be switched to binary protocol, which has a compact format
+ * for encrypted actions. Call it before `client.start()`.
+ *
  * ```js
  * import { encryptActions } from '@logux/client'
  * encryptActions(client, localStorage.getItem('userPassword'), {
