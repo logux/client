@@ -1,4 +1,4 @@
-import { WsBinaryConnection } from '@logux/core'
+import { WsBinaryConnection, WsConnection } from '@logux/core'
 
 let pool = new Uint8Array(128)
 let poolOffset = pool.length
@@ -88,10 +88,13 @@ export function encryptActions(client, secret, opts = {}) {
     key = secret
   }
 
-  if (typeof client.options.server === 'string') {
-    let reconnect = client.node.connection
-    let text = reconnect.connection
+  // Binary protocol has a dedicated compact format for encrypted actions,
+  // so it sends `d` and `iv` bytes without Base64 overhead
+  let reconnect = client.node.connection
+  let text = reconnect.connection
+  if (text instanceof WsConnection) {
     let binary = new WsBinaryConnection(text.url, text.Class, text.opts)
+    // Node and Reconnect already subscribed to the events of old connection
     binary.emitter = text.emitter
     reconnect.connection = binary
   }

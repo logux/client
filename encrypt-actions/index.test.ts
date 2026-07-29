@@ -290,6 +290,19 @@ it('has normal distribution of random spaces', () => {
   expect(deviation(symbols, 100000)).toBeLessThan(0.2)
 })
 
+it('keeps non-WebSocket connections as is', () => {
+  // Like TestClient from Logux Server, which has no Client’s `options`
+  let pair = new TestPair()
+  let fake = {
+    log: { on: () => () => {} },
+    node: { connection: pair.left, options: { onSend: () => false } }
+  }
+
+  encryptActions(fake as unknown as Client, 'password')
+
+  expect(fake.node.connection).toBe(pair.left)
+})
+
 it('sends encrypted actions through binary protocol', async () => {
   global.WebSocket = FakeWebSocket as any
 
