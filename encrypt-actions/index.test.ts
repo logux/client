@@ -22,7 +22,7 @@ function deviation(array: Record<any, number>, runs: number): number {
   return (values.length * (Math.max(...values) - Math.min(...values))) / runs
 }
 
-const BASE64 = expect.stringMatching(/^[\w+/]+=?=?$/)
+const BYTES = expect.any(Uint8Array)
 
 function createClient(): Client {
   let pair = new TestPair()
@@ -69,7 +69,7 @@ it('encrypts and decrypts actions', async () => {
     [
       'sync',
       1,
-      { d: BASE64, iv: BASE64, type: '0' },
+      { d: BYTES, iv: BYTES, type: '0' },
       { id: 1, time: expect.any(Number) }
     ]
   ])
@@ -117,7 +117,7 @@ it('accepts key', async () => {
     [
       'sync',
       1,
-      { d: BASE64, iv: BASE64, type: '0' },
+      { d: BYTES, iv: BYTES, type: '0' },
       { id: 1, time: expect.any(Number) }
     ]
   ])
@@ -149,7 +149,7 @@ it('ignores specific actions', async () => {
     [
       'sync',
       1,
-      { d: BASE64, iv: BASE64, type: '0' },
+      { d: BYTES, iv: BYTES, type: '0' },
       { id: 1, time: expect.any(Number) }
     ],
     ['sync', 2, { type: 'server' }, { id: 2, time: expect.any(Number) }]

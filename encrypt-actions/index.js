@@ -43,32 +43,6 @@ function aes(iv) {
   return { iv, name: 'AES-GCM' }
 }
 
-function bytesToBase64(bytes) {
-  let binaryString = String.fromCharCode.apply(null, bytes)
-  if (typeof window !== 'undefined') {
-    return window.btoa(binaryString)
-  } else {
-    /* v8 ignore next 2 -- @preserve */
-    return Buffer.from(binaryString, 'binary').toString('base64')
-  }
-}
-
-function base64ToBytes(string) {
-  let binaryString
-  if (typeof window !== 'undefined') {
-    binaryString = window.atob(string)
-  } else {
-    /* v8 ignore next 2 -- @preserve */
-    binaryString = Buffer.from(string, 'base64').toString('binary')
-  }
-  let length = binaryString.length
-  let bytes = new Uint8Array(length)
-  for (let i = 0; i < length; i++) {
-    bytes[i] = binaryString.charCodeAt(i)
-  }
-  return bytes
-}
-
 async function compress(bytes) {
   let cs = new CompressionStream('deflate-raw')
   let writer = cs.writable.getWriter()
@@ -93,19 +67,15 @@ async function encrypt(action, key) {
   let encrypted = await crypto.subtle.encrypt(aes(iv), key, bytes)
 
   return {
-    d: bytesToBase64(new Uint8Array(encrypted)),
-    iv: bytesToBase64(iv),
+    d: new Uint8Array(encrypted),
+    iv: iv,
     type: '0',
     z
   }
 }
 
 async function decrypt(action, key) {
-  let bytes = await crypto.subtle.decrypt(
-    aes(base64ToBytes(action.iv)),
-    key,
-    base64ToBytes(action.d)
-  )
+  let bytes = await crypto.subtle.decrypt(aes(action.iv), key, action.d)
   if (action.z) bytes = await decompress(bytes)
   return bytesToObj(bytes)
 }
