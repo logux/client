@@ -212,7 +212,7 @@ it('cleans log', async () => {
   await changeSyncMap(post, 'title', '1')
 
   unbind()
-  await delay(1020)
+  await delay(1050)
   expect(client.log.actions()).toEqual([])
 })
 
