@@ -1,8 +1,6 @@
-import './force-colors.js'
-
 import { type TestLog, TestPair, TestTime } from '@logux/core'
 import { spyOn } from 'nanospy'
-import pico from 'picocolors'
+import { styleText } from 'node:util'
 import { beforeAll, beforeEach, expect, it } from 'vitest'
 
 import { type ClientMeta, CrossTabClient, log } from '../index.js'
@@ -41,9 +39,19 @@ async function createClient(): Promise<
 let group = false
 let out = ''
 
+function style(name: 'bold' | 'green' | 'red' | 'yellow') {
+  return (text: string): string =>
+    styleText(name, text, { validateStream: false })
+}
+
+let bold = style('bold')
+let green = style('green')
+let red = style('red')
+let yellow = style('yellow')
+
 function format(...args: (object | string)[]): string {
   let color = (s: string): string => s
-  let logoColor = pico.yellow
+  let logoColor = yellow
   return (
     (group ? '  ' : '') +
     args
@@ -53,10 +61,10 @@ function format(...args: (object | string)[]): string {
             return false
           } else if (i.includes('color:')) {
             if (i.includes('#c00000')) {
-              logoColor = pico.red
-              color = pico.red
+              logoColor = red
+              color = red
             } else if (i.includes('#008000')) {
-              color = pico.green
+              color = green
             }
             return false
           } else if (i.includes('font-weight:')) {
@@ -71,8 +79,8 @@ function format(...args: (object | string)[]): string {
       .map(i => {
         if (typeof i === 'string') {
           return i
-            .replace(/%cLogux%c/, logoColor(pico.bold('Logux')))
-            .replace(/%c([^%]+)(%c)?/g, color(pico.bold('$1')))
+            .replace(/%cLogux%c/, logoColor(bold('Logux')))
+            .replace(/%c([^%]+)(%c)?/g, color(bold('$1')))
         } else {
           return JSON.stringify(i)
         }

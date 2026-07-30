@@ -77,7 +77,6 @@
     "nanostores": "^1.4.2",
     "oxlint": "^1.76.0",
     "oxlint-tsgolint": "^7.0.2001",
-    "picocolors": "^1.1.1",
     "postcss": "^8.5.24",
     "preact": "^10.29.7",
     "print-snapshots": "^0.4.2",

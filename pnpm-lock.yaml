@@ -105,9 +105,6 @@ importers:
       oxlint-tsgolint:
         specifier: ^7.0.2001
         version: 7.0.2001
-      picocolors:
-        specifier: ^1.1.1
-        version: 1.1.1
       postcss:
         specifier: ^8.5.24
         version: 8.5.24
