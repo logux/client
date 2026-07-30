@@ -74,7 +74,7 @@
     "multiocular": "^0.8.4",
     "nanodelay": "^2.0.2",
     "nanospy": "^2.0.2",
-    "nanostores": "^1.4.1",
+    "nanostores": "^1.4.2",
     "oxlint": "^1.76.0",
     "oxlint-tsgolint": "^7.0.2001",
     "picocolors": "^1.1.1",

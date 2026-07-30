@@ -29,16 +29,16 @@ importers:
         version: 1.0.0(oxlint-tsgolint@7.0.2001)(oxlint@1.76.0(oxlint-tsgolint@7.0.2001))(typescript@7.0.2)
       '@nanostores/preact':
         specifier: ^1.1.0
-        version: 1.1.0(nanostores@1.4.1)(preact@10.29.7)
+        version: 1.1.0(nanostores@1.4.2)(preact@10.29.7)
       '@nanostores/react':
         specifier: ^1.1.0
-        version: 1.1.0(nanostores@1.4.1)(react@19.2.8)
+        version: 1.1.0(nanostores@1.4.2)(react@19.2.8)
       '@nanostores/sql':
         specifier: ^0.3.1
-        version: 0.3.1(@electric-sql/pglite@0.5.4)(nanostores@1.4.1)
+        version: 0.3.1(@electric-sql/pglite@0.5.4)(nanostores@1.4.2)
       '@nanostores/vue':
         specifier: ^1.1.0
-        version: 1.1.0(nanostores@1.4.1)(vue@3.5.40(typescript@7.0.2))
+        version: 1.1.0(nanostores@1.4.2)(vue@3.5.40(typescript@7.0.2))
       '@size-limit/preset-small-lib':
         specifier: ^13.0.2
         version: 13.0.2(size-limit@13.0.2)
@@ -97,8 +97,8 @@ importers:
         specifier: ^2.0.2
         version: 2.0.2
       nanostores:
-        specifier: ^1.4.1
-        version: 1.4.1
+        specifier: ^1.4.2
+        version: 1.4.2
       oxlint:
         specifier: ^1.76.0
         version: 1.76.0(oxlint-tsgolint@7.0.2001)
@@ -1686,8 +1686,8 @@ packages:
     resolution: {integrity: sha512-AvkslkHQavd4abp7clE0xsv4afGpBpnWUqWY23V3o4ljdyi/YIOpLiiWtrlLh1oR7kWC4GT7iBN5M2SjL5I5yw==}
     engines: {node: ^8.0.0 || ^10.0.0 || ^12.0.0 || ^14.0.0 || ^16.0.0 || ^18.0.0 || ^20.0.0 || ^22.0.0 || ^24.0.0 || >=26.0.0}
 
-  nanostores@1.4.1:
-    resolution: {integrity: sha512-PGd3uPojJB9Z07d5NX3Db/SOSBbyy3wLMUGq0GpnEEJfVzY9mq7daPMAZ3jObV5D3Jn+YKND636eI5ULg7F80Q==}
+  nanostores@1.4.2:
+    resolution: {integrity: sha512-Wxv8Roefr2nqtiRG0bnaFlpYqpIVtOEeJZHaH+4nGgOK1/7n6OHOuHCb/bhqrNQgZM8fyd0s1PqhdrJc9Ib44g==}
     engines: {node: ^20.0.0 || >=22.0.0}
 
   nopt@1.0.10:
@@ -2295,25 +2295,25 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@nanostores/preact@1.1.0(nanostores@1.4.1)(preact@10.29.7)':
+  '@nanostores/preact@1.1.0(nanostores@1.4.2)(preact@10.29.7)':
     dependencies:
-      nanostores: 1.4.1
+      nanostores: 1.4.2
       preact: 10.29.7
 
-  '@nanostores/react@1.1.0(nanostores@1.4.1)(react@19.2.8)':
+  '@nanostores/react@1.1.0(nanostores@1.4.2)(react@19.2.8)':
     dependencies:
-      nanostores: 1.4.1
+      nanostores: 1.4.2
       react: 19.2.8
 
-  '@nanostores/sql@0.3.1(@electric-sql/pglite@0.5.4)(nanostores@1.4.1)':
+  '@nanostores/sql@0.3.1(@electric-sql/pglite@0.5.4)(nanostores@1.4.2)':
     dependencies:
-      nanostores: 1.4.1
+      nanostores: 1.4.2
     optionalDependencies:
       '@electric-sql/pglite': 0.5.4
 
-  '@nanostores/vue@1.1.0(nanostores@1.4.1)(vue@3.5.40(typescript@7.0.2))':
+  '@nanostores/vue@1.1.0(nanostores@1.4.2)(vue@3.5.40(typescript@7.0.2))':
     dependencies:
-      nanostores: 1.4.1
+      nanostores: 1.4.2
       vue: 3.5.40(typescript@7.0.2)
 
   '@napi-rs/wasm-runtime@1.2.0(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)':
@@ -3428,7 +3428,7 @@ snapshots:
       dompurify: 3.4.12
       highlight.js: 11.11.1
       marked: 18.0.7
-      nanostores: 1.4.1
+      nanostores: 1.4.2
       yaml: 2.9.0
     transitivePeerDependencies:
       - '@logux/core'
@@ -3453,7 +3453,7 @@ snapshots:
 
   nanospy@2.0.2: {}
 
-  nanostores@1.4.1: {}
+  nanostores@1.4.2: {}
 
   nopt@1.0.10:
     dependencies:
