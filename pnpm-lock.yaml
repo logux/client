@@ -10,10 +10,10 @@ importers:
     dependencies:
       '@logux/actions':
         specifier: github:logux/actions#next
-        version: git+ssh://git@github.com/logux/actions.git#fbede590f2f311130c3db2c0a231228ca397a6f6(@logux/core@git+ssh://git@github.com/logux/core.git#95181cad20716b0abd6950a37df623f7ff2d277e)
+        version: git+ssh://git@github.com/logux/actions.git#fbede590f2f311130c3db2c0a231228ca397a6f6(@logux/core@git+ssh://git@github.com/logux/core.git#c558b5ff2c8b17bf29b39cf5db94af174966659e)
       '@logux/core':
         specifier: github:logux/core#next
-        version: git+ssh://git@github.com/logux/core.git#95181cad20716b0abd6950a37df623f7ff2d277e
+        version: git+ssh://git@github.com/logux/core.git#c558b5ff2c8b17bf29b39cf5db94af174966659e
       nanoevents:
         specifier: ^10.0.0
         version: 10.0.0
@@ -89,7 +89,7 @@ importers:
         version: 20.11.1
       multiocular:
         specifier: ^0.8.4
-        version: 0.8.4(@logux/core@git+ssh://git@github.com/logux/core.git#95181cad20716b0abd6950a37df623f7ff2d277e)
+        version: 0.8.4(@logux/core@git+ssh://git@github.com/logux/core.git#c558b5ff2c8b17bf29b39cf5db94af174966659e)
       nanodelay:
         specifier: ^2.0.2
         version: 2.0.2
@@ -373,8 +373,8 @@ packages:
     resolution: {integrity: sha512-VbgVkEloAe2ym5w0cjyRI16Eeyk2R0BgJa9pMYT1FcJEhFnzrB23E0ExIEhrok0iD48bFh7goledwmDLmgWaiw==}
     engines: {node: ^20.0.0 || >=22.0.0}
 
-  '@logux/core@git+ssh://git@github.com/logux/core.git#95181cad20716b0abd6950a37df623f7ff2d277e':
-    resolution: {commit: 95181cad20716b0abd6950a37df623f7ff2d277e, repo: git@github.com:logux/core.git, type: git}
+  '@logux/core@git+ssh://git@github.com/logux/core.git#c558b5ff2c8b17bf29b39cf5db94af174966659e':
+    resolution: {commit: c558b5ff2c8b17bf29b39cf5db94af174966659e, repo: git@github.com:logux/core.git, type: git}
     version: 0.10.0
     engines: {node: ^22.0.0 || ^24.0.0 || >=26.0.0}
 
@@ -2257,19 +2257,19 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@logux/actions@0.5.0(@logux/core@git+ssh://git@github.com/logux/core.git#95181cad20716b0abd6950a37df623f7ff2d277e)':
+  '@logux/actions@0.5.0(@logux/core@git+ssh://git@github.com/logux/core.git#c558b5ff2c8b17bf29b39cf5db94af174966659e)':
     dependencies:
-      '@logux/core': git+ssh://git@github.com/logux/core.git#95181cad20716b0abd6950a37df623f7ff2d277e
+      '@logux/core': git+ssh://git@github.com/logux/core.git#c558b5ff2c8b17bf29b39cf5db94af174966659e
 
-  '@logux/actions@git+ssh://git@github.com/logux/actions.git#fbede590f2f311130c3db2c0a231228ca397a6f6(@logux/core@git+ssh://git@github.com/logux/core.git#95181cad20716b0abd6950a37df623f7ff2d277e)':
+  '@logux/actions@git+ssh://git@github.com/logux/actions.git#fbede590f2f311130c3db2c0a231228ca397a6f6(@logux/core@git+ssh://git@github.com/logux/core.git#c558b5ff2c8b17bf29b39cf5db94af174966659e)':
     dependencies:
-      '@logux/core': git+ssh://git@github.com/logux/core.git#95181cad20716b0abd6950a37df623f7ff2d277e
+      '@logux/core': git+ssh://git@github.com/logux/core.git#c558b5ff2c8b17bf29b39cf5db94af174966659e
 
   '@logux/core@0.10.0':
     dependencies:
       nanoevents: 9.1.0
 
-  '@logux/core@git+ssh://git@github.com/logux/core.git#95181cad20716b0abd6950a37df623f7ff2d277e':
+  '@logux/core@git+ssh://git@github.com/logux/core.git#c558b5ff2c8b17bf29b39cf5db94af174966659e':
     dependencies:
       nanoevents: 10.0.0
 
@@ -2282,7 +2282,7 @@ snapshots:
 
   '@logux/server@0.14.0':
     dependencies:
-      '@logux/actions': 0.5.0(@logux/core@git+ssh://git@github.com/logux/core.git#95181cad20716b0abd6950a37df623f7ff2d277e)
+      '@logux/actions': 0.5.0(@logux/core@git+ssh://git@github.com/logux/core.git#c558b5ff2c8b17bf29b39cf5db94af174966659e)
       '@logux/core': 0.10.0
       cookie: 1.1.1
       fastq: 1.20.1
@@ -3420,9 +3420,9 @@ snapshots:
 
   minipass@7.1.3: {}
 
-  multiocular@0.8.4(@logux/core@git+ssh://git@github.com/logux/core.git#95181cad20716b0abd6950a37df623f7ff2d277e):
+  multiocular@0.8.4(@logux/core@git+ssh://git@github.com/logux/core.git#c558b5ff2c8b17bf29b39cf5db94af174966659e):
     dependencies:
-      '@logux/actions': 0.5.0(@logux/core@git+ssh://git@github.com/logux/core.git#95181cad20716b0abd6950a37df623f7ff2d277e)
+      '@logux/actions': 0.5.0(@logux/core@git+ssh://git@github.com/logux/core.git#c558b5ff2c8b17bf29b39cf5db94af174966659e)
       '@logux/server': 0.14.0
       diff2html: 3.4.56
       dompurify: 3.4.12
