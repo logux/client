@@ -6,10 +6,39 @@ function storageKey(client, name) {
   return client.options.prefix + ':' + client.options.userId + ':' + name
 }
 
+// localStorage keeps only strings, but actions can contain bytes. We encode
+// them as Base64 in a string with `\0` prefix. Real strings with `\0` prefix
+// get an extra `\0`, so encoding is lossless.
+const BINARY_MARK = '\0'
+
+function replacer(key, value) {
+  if (value instanceof Uint8Array) {
+    return BINARY_MARK + btoa(String.fromCharCode(...value))
+  } else if (typeof value === 'string' && value[0] === BINARY_MARK) {
+    return BINARY_MARK + value
+  } else {
+    return value
+  }
+}
+
+function reviver(key, value) {
+  if (typeof value !== 'string' || value[0] !== BINARY_MARK) {
+    return value
+  } else if (value[1] === BINARY_MARK) {
+    return value.slice(1)
+  } else {
+    return Uint8Array.from(atob(value.slice(1)), c => c.charCodeAt(0))
+  }
+}
+
+function parse(json) {
+  return JSON.parse(json, reviver)
+}
+
 function sendToTabs(client, event, data) {
   if (!client.isLocalStorage) return
   let key = storageKey(client, event)
-  let json = JSON.stringify(data)
+  let json = JSON.stringify(data, replacer)
   try {
     localStorage.setItem(key, json)
   } catch (e) {
@@ -134,7 +163,7 @@ export class CrossTabClient extends Client {
 
     let data
     if (e.key === storageKey(this, 'add')) {
-      data = JSON.parse(e.newValue)
+      data = parse(e.newValue)
       if (data[0] !== this.tabId) {
         let action = data[1]
         let meta = data[2]
@@ -149,18 +178,18 @@ export class CrossTabClient extends Client {
         }
       }
     } else if (e.key === storageKey(this, 'state')) {
-      let state = JSON.parse(localStorage.getItem(e.key))
+      let state = parse(localStorage.getItem(e.key))
       if (this.leaderState !== state) {
         this.leaderState = state
         this.emitter.emit('state')
       }
     } else if (e.key === storageKey(this, 'user')) {
-      data = JSON.parse(e.newValue)
+      data = parse(e.newValue)
       if (data[0] !== this.tabId) {
         this.emitter.emit('user', data[1])
       }
     } else if (e.key === storageKey(this, 'subprotocol')) {
-      let other = JSON.parse(e.newValue)
+      let other = parse(e.newValue)
       if (this.options.subprotocol > other) {
         sendToTabs(this, 'subprotocol', this.options.subprotocol)
       } else if (this.options.subprotocol < other) {
@@ -193,7 +222,7 @@ export class CrossTabClient extends Client {
 
     let json = localStorage.getItem(storageKey(this, 'state'))
     if (json && json !== null && json !== '"disconnected"') {
-      this.state = JSON.parse(json)
+      this.state = parse(json)
       this.emitter.emit('state')
     }
 

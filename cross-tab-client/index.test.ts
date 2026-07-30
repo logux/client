@@ -242,6 +242,68 @@ it('synchronizes actions from follower tabs', async () => {
   ])
 })
 
+it('synchronizes bytes in actions from follower tabs', async () => {
+  let pair = new TestPair()
+  client = createClient({ server: pair.left })
+  client.start()
+  giveLock()
+  await pair.wait('left')
+  pair.right.send(['connected', client.node.localProtocol, 'server', [0, 0]])
+  await client.node.waitFor('synchronized')
+  await delay(1)
+  pair.clear()
+  client.node.timeFix = 0
+  let action = JSON.stringify({ d: '\0AQID', type: '0' })
+  let meta = JSON.stringify({
+    added: 1,
+    id: '1 10:other 0',
+    reasons: [],
+    sync: true,
+    time: 1
+  })
+  emitStorage('logux:10:add', `["other",${action},${meta}]`)
+  await delay(50)
+  expect(pair.leftSent).toEqual([
+    [
+      'sync',
+      1,
+      { d: new Uint8Array([1, 2, 3]), type: '0' },
+      { id: [1, '10:other', 0], time: 1 }
+    ]
+  ])
+})
+
+it('sends bytes in actions to other tabs', async () => {
+  localStorage.setItem = (name, value) => {
+    emitStorage(name, value)
+  }
+  client = new CrossTabClient({
+    server: 'wss://localhost:1337',
+    subprotocol: 10,
+    userId: '10'
+  })
+  let client2 = new CrossTabClient({
+    server: 'wss://localhost:1337',
+    subprotocol: 10,
+    userId: '10'
+  })
+
+  let received: Action[] = []
+  client.on('add', action => {
+    received.push(action)
+  })
+
+  await client2.log.add({ d: new Uint8Array([1, 2, 3]), type: '0' })
+  await client2.log.add({ text: '\0keep it', type: 'B' })
+  client2.destroy()
+
+  expect(received).toHaveLength(2)
+  let bytes = (received[0] as any).d
+  expect(bytes).toBeInstanceOf(Uint8Array)
+  expect(Array.from(bytes)).toEqual([1, 2, 3])
+  expect(received[1]).toEqual({ text: '\0keep it', type: 'B' })
+})
+
 it('uses follower role from beginning', () => {
   client = createClient()
   expect(client.role).toBe('follower')
