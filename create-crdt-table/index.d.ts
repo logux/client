@@ -364,9 +364,9 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
    * Stop the database: release the leader tab lock, unsubscribe from the log
    * and from other tabs’ schema changes.
    *
-   * Call it before creating the next database in the same page (on user
-   * change or between tests). Without it the next database will wait for
-   * the lock of this one forever and will never apply new actions.
+   * Call it before creating the next database in the same page on user
+   * change or between tests, or if you have a browser tab
+   * with more recent JS bundle.
    *
    * ```js
    * crdt.destroy()
