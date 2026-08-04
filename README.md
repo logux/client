@@ -106,6 +106,15 @@ await user.update(id, { age: 30 })
 let $adults = user.select`WHERE "age" >= ${18} ORDER BY "name"`
 ```
 
+Call `crdt.destroy()` before creating the next database in the same page
+(on user change or between tests). It releases the leader tab lock,
+which the next database is waiting for.
+
+```js
+crdt.destroy()
+await db.close()
+```
+
 [Nano Stores SQL]: https://github.com/nanostores/sql
 
 ## End-to-End Encryption

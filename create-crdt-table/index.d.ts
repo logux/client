@@ -361,6 +361,21 @@ export interface CrdtDatabaseOptions<Dialect extends string = 'sqlite'> {
 
 export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
   /**
+   * Stop the database: release the leader tab lock, unsubscribe from the log
+   * and from other tabs’ schema changes.
+   *
+   * Call it before creating the next database in the same page (on user
+   * change or between tests). Without it the next database will wait for
+   * the lock of this one forever and will never apply new actions.
+   *
+   * ```js
+   * crdt.destroy()
+   * await db.close()
+   * ```
+   */
+  destroy(): void
+
+  /**
    * Database preparing status:
    *
    * - `initializing`: reading schema version, checking tables.

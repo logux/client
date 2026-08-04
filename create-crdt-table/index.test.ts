@@ -37,6 +37,71 @@ function emitStorage(key: string, newValue: string): void {
   window.dispatchEvent(new StorageEvent('storage', { key, newValue }))
 }
 
+function manualLocks(): {
+  callbacks: (() => Promise<unknown>)[]
+  names: string[]
+} {
+  let callbacks: (() => Promise<unknown>)[] = []
+  let names: string[] = []
+  Object.defineProperty(navigator, 'locks', {
+    configurable: true,
+    value: {
+      request(
+        name: string,
+        opts: { signal?: AbortSignal },
+        callback: () => Promise<unknown>
+      ) {
+        names.push(name)
+        callbacks.push(callback)
+        return new Promise((resolve, reject) => {
+          opts.signal?.addEventListener('abort', () => {
+            reject(new Error('AbortError'))
+          })
+        })
+      }
+    }
+  })
+  return { callbacks, names }
+}
+
+/**
+ * Locks are granted in the request order, like in real browsers.
+ */
+function queuedLocks(): void {
+  let tails: Record<string, Promise<void>> = {}
+  Object.defineProperty(navigator, 'locks', {
+    configurable: true,
+    value: {
+      request(
+        name: string,
+        opts: { signal?: AbortSignal },
+        callback: () => Promise<unknown>
+      ) {
+        let previous = tails[name] ?? Promise.resolve()
+        let free: (waiting?: PromiseLike<void> | void) => void = () => {}
+        tails[name] = new Promise<void>(resolve => {
+          free = resolve
+        })
+        return new Promise<void>((granted, aborted) => {
+          void previous.then(granted)
+          opts.signal?.addEventListener('abort', () => {
+            aborted(new Error('AbortError'))
+          })
+        }).then(
+          () =>
+            Promise.resolve(callback()).then(() => {
+              free()
+            }),
+          error => {
+            free(previous)
+            throw error
+          }
+        )
+      }
+    }
+  })
+}
+
 const USER_SCHEMA = {
   age: optional(number()),
   createdAt: bigint({ default: () => new Date(2026, 0, 1).getTime() }),
@@ -143,7 +208,11 @@ it('resolves conflicts with per-field last write wins', async () => {
   await delay(10)
 
   await client.log.add(
-    { fields: { name: 'Oldest', role: 'admin' }, id: 'U1', type: 'user/created' },
+    {
+      fields: { name: 'Oldest', role: 'admin' },
+      id: 'U1',
+      type: 'user/created'
+    },
     { id: '10 10:other 0', time: 10 }
   )
   await delay(10)
@@ -209,7 +278,10 @@ it('fills table from existing log on first run', async () => {
     { fields: { name: 'Ben' }, id: 'U2', type: 'user/created' },
     { reasons: ['test'] }
   )
-  await client.log.add({ id: 'U2', type: 'user/deleted' }, { reasons: ['test'] })
+  await client.log.add(
+    { id: 'U2', type: 'user/deleted' },
+    { reasons: ['test'] }
+  )
   await client.log.add({ type: 'other' }, { reasons: ['test'] })
 
   let crdt = createCrdtDatabase(client, db)
@@ -339,23 +411,17 @@ it('becomes outdated on storage event with different hash', async () => {
   emitStorage('logux:db', 'even-newer-hash')
   expect(stopCalled).toBe(1)
 
-  await client.log.add({ fields: { name: 'Ann' }, id: 'U1', type: 'user/created' })
+  await client.log.add({
+    fields: { name: 'Ann' },
+    id: 'U1',
+    type: 'user/created'
+  })
   await delay(10)
   expect(await loadList($all)).toEqual([])
 })
 
 it('applies actions only in the leader tab', async () => {
-  let lockCallbacks: (() => Promise<unknown>)[] = []
-  let lockNames: string[] = []
-  Object.defineProperty(navigator, 'locks', {
-    configurable: true,
-    value: {
-      request(name: string, fn: () => Promise<unknown>) {
-        lockNames.push(name)
-        lockCallbacks.push(fn)
-      }
-    }
-  })
+  let { callbacks: lockCallbacks, names: lockNames } = manualLocks()
 
   let { client, db } = await setup()
   let crdt = createCrdtDatabase(client, db)
@@ -364,7 +430,11 @@ it('applies actions only in the leader tab', async () => {
   expect(crdt.status.get()).toBe('ready')
   expect(lockNames).toEqual(['logux:db:lock'])
 
-  await client.log.add({ fields: { name: 'Ann' }, id: 'U1', type: 'user/created' })
+  await client.log.add({
+    fields: { name: 'Ann' },
+    id: 'U1',
+    type: 'user/created'
+  })
   await delay(10)
   expect(await loadList(user.select())).toEqual([])
 
@@ -374,7 +444,11 @@ it('applies actions only in the leader tab', async () => {
   })
   await delay(10)
 
-  await client.log.add({ fields: { name: 'Ann' }, id: 'U1', type: 'user/created' })
+  await client.log.add({
+    fields: { name: 'Ann' },
+    id: 'U1',
+    type: 'user/created'
+  })
   await delay(10)
   expect((await loadList(user.select())).map(i => i.id)).toEqual(['U1'])
   expect(lockReleased).toBe(false)
@@ -385,15 +459,7 @@ it('applies actions only in the leader tab', async () => {
 })
 
 it('does not become leader when lock is granted after outdate', async () => {
-  let lockCallbacks: (() => Promise<unknown>)[] = []
-  Object.defineProperty(navigator, 'locks', {
-    configurable: true,
-    value: {
-      request(name: string, fn: () => Promise<unknown>) {
-        lockCallbacks.push(fn)
-      }
-    }
-  })
+  let { callbacks: lockCallbacks } = manualLocks()
 
   let { client, db } = await setup()
   let crdt = createCrdtDatabase(client, db)
@@ -405,6 +471,121 @@ it('does not become leader when lock is granted after outdate', async () => {
   await lockCallbacks[0]!()
 })
 
+it('unsubscribes from the log and from other tabs on destroy()', async () => {
+  let { client, db } = await setup()
+  let stopCalled = 0
+  let crdt = createCrdtDatabase(client, db, {
+    stop() {
+      stopCalled += 1
+    }
+  })
+  let user = crdt.table('user', USER_SCHEMA)
+  await delay(10)
+
+  await user.create({ id: 'U1', name: 'Ann' })
+  await delay(10)
+  expect((await loadList(user.select())).map(i => i.id)).toEqual(['U1'])
+
+  crdt.destroy()
+  crdt.destroy()
+
+  await client.log.add({
+    fields: { name: 'Ben' },
+    id: 'U2',
+    type: 'user/created'
+  })
+  await delay(10)
+  expect((await loadList(user.select())).map(i => i.id)).toEqual(['U1'])
+
+  emitStorage('logux:db', 'newer-hash')
+  expect(crdt.status.get()).toBe('ready')
+  expect(stopCalled).toBe(0)
+})
+
+it('passes the leader lock to the next database after destroy()', async () => {
+  queuedLocks()
+
+  let { client, db } = await setup()
+  let crdt1 = createCrdtDatabase(client, db)
+  crdt1.table('user', USER_SCHEMA)
+  await delay(10)
+
+  let client2 = new TestClient('10')
+  await client2.connect()
+  let db2 = openDb(nodeDriver(':memory:'))
+  let crdt2 = createCrdtDatabase(client2, db2)
+  let user2 = crdt2.table('user', USER_SCHEMA)
+  await delay(10)
+  expect(crdt2.status.get()).toBe('ready')
+
+  await client2.log.add({
+    fields: { name: 'Ann' },
+    id: 'U1',
+    type: 'user/created'
+  })
+  await delay(10)
+  expect(await loadList(user2.select())).toEqual([])
+
+  crdt1.destroy()
+  await delay(10)
+
+  await client2.log.add({
+    fields: { name: 'Ben' },
+    id: 'U2',
+    type: 'user/created'
+  })
+  await delay(10)
+  expect((await loadList(user2.select())).map(i => i.id)).toEqual(['U2'])
+})
+
+it('cancels not granted lock request on destroy()', async () => {
+  queuedLocks()
+
+  let { client, db } = await setup()
+  let crdt1 = createCrdtDatabase(client, db)
+  crdt1.table('user', USER_SCHEMA)
+  await delay(10)
+
+  let client2 = new TestClient('10')
+  await client2.connect()
+  let db2 = openDb(nodeDriver(':memory:'))
+  let crdt2 = createCrdtDatabase(client2, db2)
+  let user2 = crdt2.table('user', USER_SCHEMA)
+  crdt2.destroy()
+  await delay(10)
+
+  crdt1.destroy()
+  await delay(10)
+
+  await client2.log.add({
+    fields: { name: 'Ann' },
+    id: 'U1',
+    type: 'user/created'
+  })
+  await delay(10)
+  expect(await loadList(user2.select())).toEqual([])
+})
+
+it('does not become leader when lock is granted after destroy()', async () => {
+  let { callbacks: lockCallbacks } = manualLocks()
+
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await delay(10)
+
+  crdt.destroy()
+  await lockCallbacks[0]!()
+
+  await client.log.add({
+    fields: { name: 'Ann' },
+    id: 'U1',
+    type: 'user/created'
+  })
+  await delay(10)
+  expect(await loadList(user.select())).toEqual([])
+})
+
 it('buffers actions added before database is ready', async () => {
   let { client, db } = await setup()
   let crdt = createCrdtDatabase(client, db)
@@ -412,7 +593,11 @@ it('buffers actions added before database is ready', async () => {
 
   let $all = user.select()
   $all.listen(() => {})
-  await client.log.add({ fields: { name: 'Ann' }, id: 'U1', type: 'user/created' })
+  await client.log.add({
+    fields: { name: 'Ann' },
+    id: 'U1',
+    type: 'user/created'
+  })
   expect(crdt.status.get()).toBe('initializing')
 
   await delay(10)
@@ -427,7 +612,11 @@ it('ignores unknown action types and actions without fields', async () => {
   await delay(10)
 
   await client.log.add({ type: 'noslash' })
-  await client.log.add({ fields: { name: 'A' }, id: 'P1', type: 'post/created' })
+  await client.log.add({
+    fields: { name: 'A' },
+    id: 'P1',
+    type: 'post/created'
+  })
   await client.log.add({ id: 'U1', type: 'user/rename' })
   await client.log.add({ id: 'U2', type: 'user/created' })
   await delay(10)
@@ -556,7 +745,9 @@ it('supports manual SQL with joined columns and aggregations', async () => {
   let rows = await loadList($feed)
   expect(rows).toEqual([{ author: 'Ann', publishedAt: 3000, title: 'A' }])
 
-  let $count = db.store<{ posts: number }>`SELECT COUNT(*) AS "posts" FROM "post"`
+  let $count = db.store<{
+    posts: number
+  }>`SELECT COUNT(*) AS "posts" FROM "post"`
   expect(await loadList($count)).toEqual([{ posts: 2 }])
 
   await user.update('U1', { name: 'Anna' })

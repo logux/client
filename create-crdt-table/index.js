@@ -84,6 +84,9 @@ export function createCrdtDatabase(client, db, opts = {}) {
   let isLeader = false
   let releaseLock = () => {}
   let queue = Promise.resolve()
+  let destroyed = false
+  let unbindStorage = () => {}
+  let lockRequest = new AbortController()
 
   function parseType(type) {
     let slash = type.lastIndexOf('/')
@@ -172,8 +175,8 @@ export function createCrdtDatabase(client, db, opts = {}) {
       )
     )
 
-    if (typeof window !== 'undefined') {
-      window.addEventListener('storage', event => {
+    if (typeof window !== 'undefined' && !destroyed) {
+      let onOutdated = event => {
         if (event.key !== storageKey || event.newValue === null) return
         if (event.newValue !== hash) {
           if (status.get() === 'outdated') return
@@ -182,7 +185,11 @@ export function createCrdtDatabase(client, db, opts = {}) {
           stop()
           releaseLock()
         }
-      })
+      }
+      window.addEventListener('storage', onOutdated)
+      unbindStorage = () => {
+        window.removeEventListener('storage', onOutdated)
+      }
     }
 
     let old =
@@ -223,18 +230,22 @@ export function createCrdtDatabase(client, db, opts = {}) {
   })
 
   if (typeof navigator !== 'undefined' && navigator.locks) {
-    void navigator.locks.request(`${storageKey}:lock`, () => {
-      if (status.get() === 'outdated') return Promise.resolve()
-      isLeader = true
-      return new Promise(resolve => {
-        releaseLock = resolve
+    navigator.locks
+      .request(`${storageKey}:lock`, { signal: lockRequest.signal }, () => {
+        if (status.get() === 'outdated' || destroyed) return Promise.resolve()
+        isLeader = true
+        return new Promise(resolve => {
+          releaseLock = resolve
+        })
       })
-    })
+      .catch(() => {
+        // Lock request was aborted by destroy()
+      })
   } else {
     isLeader = true
   }
 
-  client.on('add', (action, meta) => {
+  let unbindAdd = client.on('add', (action, meta) => {
     if (!isLeader || status.value === 'outdated') return
     if (!parseType(action.type)) return
     if (status.value !== 'ready') {
@@ -245,6 +256,15 @@ export function createCrdtDatabase(client, db, opts = {}) {
   })
 
   return {
+    destroy() {
+      if (destroyed) return
+      destroyed = true
+      isLeader = false
+      unbindAdd()
+      unbindStorage()
+      lockRequest.abort()
+      releaseLock()
+    },
     status,
     table(plural, schema) {
       if (started) {

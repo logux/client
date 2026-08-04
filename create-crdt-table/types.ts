@@ -144,3 +144,6 @@ if (!pgValue.isLoading) {
 
 test()
 console.log(user.plural satisfies string)
+
+crdt.destroy()
+pg.destroy()
