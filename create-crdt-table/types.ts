@@ -22,6 +22,9 @@ declare let db: Database
 let crdt = createCrdtDatabase(client, db, {
   dialect: 'sqlite',
   key: 'widget:db',
+  migrating(done) {
+    void done.then(() => {})
+  },
   repeat() {
     return []
   },
@@ -40,6 +43,11 @@ let user = crdt.table('user', {
 })
 
 async function test(): Promise<void> {
+  await crdt.ready
+  let status: 'initializing' | 'migrating' | 'outdated' | 'ready' =
+    crdt.status.get()
+  console.log(status)
+
   let id: string = await user.create({ email: 'a@b.c', name: 'Ann' })
   await user.create({
     age: 30,

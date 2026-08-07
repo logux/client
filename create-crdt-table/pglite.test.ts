@@ -39,7 +39,7 @@ it('uses real BOOLEAN columns in PGlite', { timeout: 60000 }, async () => {
     publishedAt: optional(bigint())
   })
 
-  while (crdt.status.get() !== 'ready') await delay(10)
+  await crdt.ready
 
   await user.create({
     id: 'U1',

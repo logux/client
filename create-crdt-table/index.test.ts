@@ -318,7 +318,11 @@ it('rebuilds database on schema change and replays repeat() entries', async () =
     ]
   ]
 
+  let migratings: Promise<void>[] = []
   let crdt = createCrdtDatabase(client, db, {
+    migrating(done) {
+      migratings.push(done)
+    },
     repeat: () => entries
   })
   let user = crdt.table('user', USER_SCHEMA)
@@ -327,7 +331,9 @@ it('rebuilds database on schema change and replays repeat() entries', async () =
     statuses.push(state)
   })
   await delay(10)
-  expect(statuses).toEqual(['initializing', 'updating', 'ready'])
+  expect(statuses).toEqual(['initializing', 'migrating', 'ready'])
+  expect(migratings).toEqual([crdt.ready])
+  await crdt.ready
 
   let rows = await loadList(user.select`ORDER BY "id"`)
   expect(rows.map(i => i.id)).toEqual(['U1', 'U2'])
@@ -352,8 +358,58 @@ it('rebuilds database on schema change without repeat()', async () => {
     statuses.push(state)
   })
   await delay(10)
-  expect(statuses).toEqual(['initializing', 'updating', 'ready'])
+  expect(statuses).toEqual(['initializing', 'migrating', 'ready'])
   expect(await loadList(user.select())).toEqual([])
+})
+
+it('resolves ready promise on ready and on outdated', async () => {
+  let { client, db } = await setup()
+  let migratingCalled = 0
+  let crdt = createCrdtDatabase(client, db, {
+    migrating() {
+      migratingCalled += 1
+    }
+  })
+  crdt.table('user', USER_SCHEMA)
+
+  let resolved = false
+  void crdt.ready.then(() => {
+    resolved = true
+  })
+  expect(resolved).toBe(false)
+
+  await crdt.ready
+  expect(resolved).toBe(true)
+  expect(crdt.status.get()).toBe('ready')
+  expect(migratingCalled).toBe(0)
+
+  let client2 = new TestClient('10')
+  let slowDriver: Driver = {
+    close() {},
+    exec() {
+      return new Promise(() => {})
+    },
+    select() {
+      return Promise.resolve([])
+    },
+    subscribe() {
+      return () => {}
+    },
+    transaction() {
+      throw new Error('Unsupported')
+    }
+  }
+  let crdt2 = createCrdtDatabase(client2, openDb(slowDriver), {
+    key: 'other:db'
+  })
+  crdt2.table('user', USER_SCHEMA)
+  await delay(10)
+  expect(crdt2.status.get()).toBe('initializing')
+
+  emitStorage('other:db', 'newer-hash')
+  await crdt2.ready
+  expect(crdt2.status.get()).toBe('outdated')
+  crdt2.destroy()
 })
 
 it('keeps database when schema hash matches', async () => {

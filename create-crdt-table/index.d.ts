@@ -5,7 +5,7 @@ import type { ReadableAtom } from 'nanostores'
 
 import type { Client, ClientMeta } from '../client/index.js'
 
-type CrdtMigrationStatus = 'initializing' | 'outdated' | 'ready' | 'updating'
+type CrdtMigrationStatus = 'initializing' | 'migrating' | 'outdated' | 'ready'
 
 /**
  * JS types of column values. Only JSON types are supported, because
@@ -344,6 +344,24 @@ export interface CrdtDatabaseOptions<Dialect extends string = 'sqlite'> {
   key?: string
 
   /**
+   * Called when the table schema was changed and tables are being dropped
+   * and refilled from the log. A good place to show a “migrating database”
+   * loader until the passed promise is resolved.
+   *
+   * ```js
+   * let crdt = createCrdtDatabase(client, db, {
+   *   migrating(done) {
+   *     showLoader('Migrating database', done)
+   *   }
+   * })
+   * ```
+   *
+   * @param done Promise resolved when the database is ready
+   *             (the same as {@link CrdtDatabase#ready}).
+   */
+  migrating?(done: Promise<void>): void
+
+  /**
    * Called after the database was dropped on schema change to get old
    * actions missing from the log (for instance, from the server or
    * from a compacted snapshot). Actions from the log will be replayed
@@ -376,10 +394,23 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
   destroy(): void
 
   /**
+   * Promise resolved when the database was prepared and tables can be used.
+   *
+   * It is also resolved when the database became `outdated`, so awaiting it
+   * will never hang. Check {@link CrdtDatabase#status} if you need to know
+   * which of them happened.
+   *
+   * ```js
+   * showLoaderUntil(crdt.ready, 'Loading data')
+   * ```
+   */
+  readonly ready: Promise<void>
+
+  /**
    * Database preparing status:
    *
    * - `initializing`: reading schema version, checking tables.
-   * - `updating`: schema was changed, tables are being dropped and refilled
+   * - `migrating`: schema was changed, tables are being dropped and refilled
    *   from the log and {@link CrdtDatabaseOptions#repeat}.
    * - `ready`: tables can be used.
    * - `outdated`: another tab has a newer schema, this tab must be reloaded.
@@ -443,6 +474,9 @@ export type Dialects = 'sqlite' | 'pglite'
  *
  * let db = openDb(sqlocalDriver('app.sqlite'))
  * let crdt = createCrdtDatabase(client, db, {
+ *   migrating(done) {
+ *     showLoader('Migrating database', done)
+ *   },
  *   async repeat() {
  *     return await fetchActionsSnapshot()
  *   },
@@ -450,6 +484,8 @@ export type Dialects = 'sqlite' | 'pglite'
  *     updateAppWarning.show()
  *   }
  * })
+ *
+ * showLoader('Loading data', crdt.ready)
  *
  * let user = crdt.table('user', {
  *   age: optional(number()),
@@ -468,7 +504,7 @@ export type Dialects = 'sqlite' | 'pglite'
  *
  * @param client Logux client.
  * @param db SQL database from `@nanostores/sql` `openDb()`.
- * @param opts Old actions source and outdated schema callbacks.
+ * @param opts Database options, old actions source and migration callbacks.
  */
 export function createCrdtDatabase<Dialect extends Dialects = 'sqlite'>(
   client: Client,

@@ -88,6 +88,9 @@ import {
 
 let db = openDb(sqlocalDriver('app.sqlite'))
 let crdt = createCrdtDatabase(client, db, {
+  migrating(done) {
+    // Show “Migrating database” loader until done promise
+  },
   async repeat() {
     // Ask server to the full client log
     // Remove if you store the whole lo locally
@@ -99,6 +102,8 @@ let user = crdt.table('user', {
   createdAt: bigint({ default: () => Date.now() }),
   name: string()
 })
+
+await crdt.ready
 
 let id = await user.create({ name: 'Ann' })
 await user.update(id, { age: 30 })

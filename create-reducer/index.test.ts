@@ -81,19 +81,56 @@ describe('createReducer', () => {
     localStorage.setItem('logux:reducer:db', '1')
 
     let calls: string[] = []
+    let migratings: Promise<void>[] = []
     let reducer = createReducer(client, 'db', 3, {
       clean(oldVersion) {
         calls.push(`clean:${oldVersion}`)
       },
       init() {
         calls.push('init')
+      },
+      migrating(done) {
+        migratings.push(done)
       }
     })
 
-    expect(reducer.status.get()).toBe('updating')
+    expect(reducer.status.get()).toBe('migrating')
+    expect(migratings).toEqual([reducer.ready])
     await delay(1)
     expect(calls).toEqual(['clean:1', 'init'])
     expect(reducer.status.get()).toBe('ready')
+    await reducer.ready
+  })
+
+  it('resolves ready promise on ready and on outdated', async () => {
+    let client = new TestClient('10')
+    let migratingCalled = 0
+    let reducer = createReducer(client, 'db', 1, {
+      clean() {},
+      migrating() {
+        migratingCalled += 1
+      }
+    })
+
+    let resolved = false
+    void reducer.ready.then(() => {
+      resolved = true
+    })
+    expect(resolved).toBe(false)
+
+    await reducer.ready
+    expect(resolved).toBe(true)
+    expect(reducer.status.get()).toBe('ready')
+    expect(migratingCalled).toBe(0)
+
+    emitStorage('logux:reducer:db', '2')
+    expect(reducer.status.get()).toBe('outdated')
+    await reducer.ready
+
+    localStorage.setItem('logux:reducer:old', '5')
+    let older = createReducer(client, 'old', 2, { clean() {} })
+    expect(older.status.get()).toBe('outdated')
+    await older.ready
   })
 
   it('calls stop and sets status to outdated when version is older', () => {
@@ -228,7 +265,7 @@ describe('createReducer', () => {
       })
     })
 
-    expect(reducer.status.get()).toBe('updating')
+    expect(reducer.status.get()).toBe('migrating')
     await delay(1)
     expect(calls).toEqual(['clean:start'])
     expect(localStorage.getItem('logux:reducer:db')).toBe('1')
@@ -259,7 +296,7 @@ describe('createReducer', () => {
 
     resolveInit()
     await delay(1)
-    expect(reducer.status.get()).toBe('updating')
+    expect(reducer.status.get()).toBe('migrating')
     expect(calls).toEqual([
       'clean:start',
       'clean:end',
@@ -282,7 +319,7 @@ describe('createReducer', () => {
 
     resolveListener['a']!()
     await delay(1)
-    expect(reducer.status.get()).toBe('updating')
+    expect(reducer.status.get()).toBe('migrating')
     expect(calls).toEqual([
       'clean:start',
       'clean:end',
@@ -548,17 +585,18 @@ describe('createStorageReducer', () => {
       ]
     ]
 
-    let reducer = createStorageReducer(
-      client,
-      'counter',
-      2,
-      0,
-      counterCallbacks(entries)
-    )
+    let migratings: Promise<void>[] = []
+    let reducer = createStorageReducer(client, 'counter', 2, 0, {
+      ...counterCallbacks(entries),
+      migrating(done) {
+        migratings.push(done)
+      }
+    })
     reducer.type<IncAction>('inc', (prev, action) => prev + action.amount)
 
-    expect(reducer.status.get()).toBe('updating')
-    await delay(1)
+    expect(reducer.status.get()).toBe('migrating')
+    expect(migratings).toEqual([reducer.ready])
+    await reducer.ready
     expect(reducer.status.get()).toBe('ready')
     expect(reducer.value.get()).toBe(5)
     expect(localStorage.getItem('counter')).toBe('5')

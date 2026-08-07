@@ -25,6 +25,11 @@ export function createReducer(client, name, version, callbacks) {
 
   let status = atom('initializing')
 
+  let setReady
+  let ready = new Promise(resolve => {
+    setReady = resolve
+  })
+
   let actionsWaiting = []
   let actionListeners = {}
 
@@ -32,7 +37,7 @@ export function createReducer(client, name, version, callbacks) {
   let releaseLock = () => {}
 
   let promise = Promise.resolve()
-  function ready() {
+  function becomeReady() {
     for (let entry of actionsWaiting) {
       let listener = actionListeners[entry[0].type]
       if (listener) {
@@ -41,6 +46,7 @@ export function createReducer(client, name, version, callbacks) {
     }
     actionsWaiting = []
     status.set('ready')
+    setReady()
   }
 
   let key = `logux:reducer:${name}`
@@ -51,11 +57,12 @@ export function createReducer(client, name, version, callbacks) {
       .then(() => {
         localStorage.setItem(key, String(version))
       })
-      .then(ready)
+      .then(becomeReady)
   } else {
     let oldVersion = parseInt(oldStorage, 10)
     if (oldVersion < version) {
-      status.set('updating')
+      status.set('migrating')
+      if (callbacks.migrating) callbacks.migrating(ready)
       void Promise.resolve(clean(oldVersion)).then(async entries => {
         await init()
         for (let entry of entries ?? []) {
@@ -63,13 +70,14 @@ export function createReducer(client, name, version, callbacks) {
           if (listener) await listener(entry[0], entry[1])
         }
         localStorage.setItem(key, String(version))
-        ready()
+        becomeReady()
       })
     } else if (oldVersion > version) {
       status.set('outdated')
       stop()
+      setReady()
     } else {
-      ready()
+      becomeReady()
     }
   }
 
@@ -90,6 +98,7 @@ export function createReducer(client, name, version, callbacks) {
       status.set('outdated')
       stop()
       releaseLock()
+      setReady()
     }
   })
 
@@ -105,6 +114,7 @@ export function createReducer(client, name, version, callbacks) {
   })
 
   let reducer = {
+    ready,
     status,
     type(type, listener) {
       if (typeof type !== 'string') type = type.type
@@ -137,7 +147,8 @@ export function createStorageReducer(
       value.set(initialValue)
       localStorage.removeItem(name)
       return callbacks.repeat()
-    }
+    },
+    migrating: callbacks.migrating
   })
 
   startStorageTracking(name, newValue => {
@@ -145,6 +156,7 @@ export function createStorageReducer(
   })
 
   return {
+    ready: reducer.ready,
     status: reducer.status,
     type(type, listener) {
       reducer.type(type, async (action, meta) => {

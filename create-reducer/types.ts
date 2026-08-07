@@ -12,8 +12,19 @@ let client = new Client({
 let reducer = createReducer(client, 'db', 1, {
   clean() {},
   init() {},
+  migrating(done) {
+    void done.then(() => {})
+  },
   stop() {}
 })
+
+async function testReady(): Promise<void> {
+  await reducer.ready
+  let status: 'initializing' | 'migrating' | 'outdated' | 'ready' =
+    reducer.status.get()
+  console.log(status)
+}
+testReady()
 
 reducer.type('users/create', action => {
   document.title = action.type
@@ -35,10 +46,14 @@ reducer.type(userRename, action => {
 })
 
 let stringReducer = createStorageReducer(client, 'name', 1, '', {
+  migrating(done) {
+    void done.then(() => {})
+  },
   repeat() {
     return []
   }
 })
+void stringReducer.ready.then(() => {})
 stringReducer.type<{ type: 'set'; value: string }>('set', (_prev, action) => {
   return action.value
 })

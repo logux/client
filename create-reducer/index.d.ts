@@ -21,12 +21,36 @@ interface ReducerInitCallbacks {
     | Promise<void>
     | [Action, ClientMeta][]
     | Promise<[Action, ClientMeta][]>
+
+  /**
+   * Called when the stored data has an older version and is being cleaned
+   * and reduced again. A good place to show a “migrating data” loader
+   * until the passed promise is resolved.
+   *
+   * @param done Promise resolved when the reducer is ready
+   *             (the same as {@link Reducer#ready}).
+   */
+  migrating?(done: Promise<void>): void
   stop?(): void
 }
 
-type ReducerMigrationStatus = 'initializing' | 'updating' | 'outdated' | 'ready'
+type ReducerMigrationStatus = 'initializing' | 'migrating' | 'outdated' | 'ready'
 
 interface Reducer {
+  /**
+   * Promise resolved when the data was prepared and all actions
+   * from the log were reduced.
+   *
+   * It is also resolved when the reducer became `outdated`, so awaiting it
+   * will never hang. Check {@link Reducer#status} if you need to know
+   * which of them happened.
+   *
+   * ```js
+   * showLoader('Loading data', reducer.ready)
+   * ```
+   */
+  readonly ready: Promise<void>
+
   status: ReadableAtom<ReducerMigrationStatus>
 
   type<TypeAction extends Action = Action>(
@@ -56,6 +80,9 @@ interface Reducer {
  *   },
  *   async init() {
  *     db.query('CREATE TABLE users …')
+ *   },
+ *   migrating(done) {
+ *     showLoader('Migrating data', done)
  *   },
  *   stop() {
  *     db.close()
@@ -88,6 +115,15 @@ interface StorageActionListener<ListenAction extends Action, Value> {
 }
 
 interface StorageCallbacks {
+  /**
+   * Called when the stored value has an older version and is being cleaned
+   * and reduced again from {@link StorageCallbacks#repeat} actions.
+   *
+   * @param done Promise resolved when the reducer is ready
+   *             (the same as {@link StorageReducer#ready}).
+   */
+  migrating?(done: Promise<void>): void
+
   repeat(): [Action, ClientMeta][] | Promise<[Action, ClientMeta][]>
 }
 
@@ -98,6 +134,13 @@ interface Convertor<Value> {
 
 interface StorageReducer<Value> {
   value: ReadableAtom<Value>
+
+  /**
+   * Promise resolved when the value was loaded and all actions
+   * from the log were reduced. It is also resolved when the reducer
+   * became `outdated`.
+   */
+  readonly ready: Promise<void>
 
   status: ReadableAtom<ReducerMigrationStatus>
 

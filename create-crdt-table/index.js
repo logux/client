@@ -78,6 +78,11 @@ export function createCrdtDatabase(client, db, opts = {}) {
   let status = atom('initializing')
   let tables = {}
 
+  let setReady
+  let ready = new Promise(resolve => {
+    setReady = resolve
+  })
+
   let started = false
   let hash
   let actionsWaiting = []
@@ -151,13 +156,14 @@ export function createCrdtDatabase(client, db, opts = {}) {
     }
   }
 
-  function ready() {
+  function becomeReady() {
     for (let entry of actionsWaiting) {
       queue = queue.then(() => applyAction(entry[0], entry[1]))
     }
     actionsWaiting = []
     status.set('ready')
     db.resume()
+    setReady()
   }
 
   void Promise.resolve().then(async () => {
@@ -184,6 +190,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
           db.pause()
           stop()
           releaseLock()
+          setReady()
         }
       }
       window.addEventListener('storage', onOutdated)
@@ -200,10 +207,11 @@ export function createCrdtDatabase(client, db, opts = {}) {
       for (let plural in tables) {
         await driver.exec(createTableSql(plural, tables[plural], dialect), [])
       }
-      ready()
+      becomeReady()
     } else {
       if (old !== null) {
-        status.set('updating')
+        status.set('migrating')
+        if (opts.migrating) opts.migrating(ready)
         for (let oldTable in JSON.parse(old)) {
           await driver.exec(`DROP TABLE IF EXISTS "${oldTable}"`, [])
         }
@@ -225,7 +233,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem(storageKey, hash)
       }
-      ready()
+      becomeReady()
     }
   })
 
@@ -265,6 +273,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
       lockRequest.abort()
       releaseLock()
     },
+    ready,
     status,
     table(plural, schema) {
       if (started) {
