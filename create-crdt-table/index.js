@@ -93,6 +93,15 @@ async function execAll(target, queries) {
   }
 }
 
+function blockClosing(e) {
+  e.returnValue = 'applying'
+  return 'applying'
+}
+
+function hasWindow() {
+  return typeof window !== 'undefined' && !!window.addEventListener
+}
+
 function sortKeys(object, map) {
   let sorted = {}
   for (let key of Object.keys(object).sort()) {
@@ -125,6 +134,32 @@ export function createCrdtDatabase(client, db, opts = {}) {
   let destroyed = false
   let unbindStorage = () => {}
   let lockRequest = new AbortController()
+  let applying = 0
+
+  function unblockClosing() {
+    applying = 0
+    if (hasWindow()) {
+      window.removeEventListener('beforeunload', blockClosing)
+    }
+  }
+
+  // Actions are already in the log, but the tab will lose their changes
+  // in the database if it will be closed before we apply them
+  function startApplying() {
+    applying += 1
+    if (applying === 1 && hasWindow()) {
+      window.addEventListener('beforeunload', blockClosing)
+    }
+  }
+
+  function endApplying() {
+    applying -= 1
+    if (applying <= 0) unblockClosing()
+  }
+
+  function enqueue(action, meta) {
+    queue = queue.then(() => applyAction(action, meta)).finally(endApplying)
+  }
 
   function parseType(type) {
     let slash = type.lastIndexOf('/')
@@ -267,7 +302,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
 
   function becomeReady() {
     for (let entry of actionsWaiting) {
-      queue = queue.then(() => applyAction(entry[0], entry[1]))
+      enqueue(entry[0], entry[1])
     }
     actionsWaiting = []
     status.set('ready')
@@ -301,6 +336,8 @@ export function createCrdtDatabase(client, db, opts = {}) {
           stop()
           releaseLock()
           setReady()
+          actionsWaiting = []
+          unblockClosing()
         }
       }
       window.addEventListener('storage', onOutdated)
@@ -370,10 +407,11 @@ export function createCrdtDatabase(client, db, opts = {}) {
   let unbindAdd = client.on('add', (action, meta) => {
     if (!isLeader || status.value === 'outdated') return
     if (!parseType(action.type)) return
+    startApplying()
     if (status.value !== 'ready') {
       actionsWaiting.push([action, meta])
     } else {
-      queue = queue.then(() => applyAction(action, meta))
+      enqueue(action, meta)
     }
   })
 
@@ -386,6 +424,8 @@ export function createCrdtDatabase(client, db, opts = {}) {
       unbindStorage()
       lockRequest.abort()
       releaseLock()
+      actionsWaiting = []
+      unblockClosing()
     },
     ready,
     status,

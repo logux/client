@@ -540,6 +540,9 @@ export type Dialects = 'sqlite' | 'pglite'
  * removed from the schema) are dropped and refilled by replaying actions
  * from the log and from the `repeat()` callback.
  *
+ * While there are actions waiting to be applied to the database, the tab
+ * asks the user to confirm closing to not lose their changes.
+ *
  * ```ts
  * import { openDb, sqlocalDriver } from '@nanostores/sql'
  * import {

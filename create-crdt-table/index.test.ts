@@ -19,12 +19,26 @@ import {
   withoutMeta
 } from './index.js'
 
+let unloaders: ((event: { returnValue: string }) => string)[] = []
+
 beforeAll(() => {
   setLocalStorage()
+
+  let originAdd = window.addEventListener.bind(window)
+  let originRemove = window.removeEventListener.bind(window)
+  window.addEventListener = (event: string, cb: any, ...args: any[]) => {
+    if (event === 'beforeunload') unloaders.push(cb)
+    originAdd(event as any, cb, ...args)
+  }
+  window.removeEventListener = (event: string, cb: any, ...args: any[]) => {
+    if (event === 'beforeunload') unloaders = unloaders.filter(i => i !== cb)
+    originRemove(event as any, cb, ...args)
+  }
 })
 
 beforeEach(() => {
   localStorage.clear()
+  unloaders = []
 })
 
 afterEach(() => {
@@ -841,6 +855,70 @@ it('buffers actions added before database is ready', async () => {
   await delay(10)
   expect(crdt.status.get()).toBe('ready')
   expect((await loadList($all)).map(i => i.name)).toEqual(['Ann'])
+})
+
+it('blocks closing tab until actions will be applied', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+
+  await client.log.add({ type: 'logux/subscribe' })
+  expect(unloaders).toHaveLength(0)
+
+  await client.log.add({
+    fields: { name: 'Ann' },
+    id: 'U1',
+    type: 'user/created'
+  })
+  expect(crdt.status.get()).toBe('initializing')
+  expect(unloaders).toHaveLength(1)
+
+  let event = { returnValue: '' }
+  expect(unloaders[0]!(event)).toBe('applying')
+  expect(event.returnValue).toBe('applying')
+
+  await delay(10)
+  expect((await loadList(user.select())).map(i => i.name)).toEqual(['Ann'])
+  expect(unloaders).toHaveLength(0)
+})
+
+it('stops blocking tab closing on outdated database', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  crdt.table('user', USER_SCHEMA)
+
+  await client.log.add({
+    fields: { name: 'Ann' },
+    id: 'U1',
+    type: 'user/created'
+  })
+  expect(unloaders).toHaveLength(1)
+
+  emitStorage('logux:db', 'newer-hash')
+  expect(crdt.status.get()).toBe('outdated')
+  expect(unloaders).toHaveLength(0)
+
+  await delay(10)
+  expect(unloaders).toHaveLength(0)
+})
+
+it('stops blocking tab closing on destroy()', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  crdt.table('user', USER_SCHEMA)
+
+  await client.log.add({
+    fields: { name: 'Ann' },
+    id: 'U1',
+    type: 'user/created'
+  })
+  expect(unloaders).toHaveLength(1)
+
+  crdt.destroy()
+  expect(unloaders).toHaveLength(0)
+
+  await delay(10)
+  expect(unloaders).toHaveLength(0)
 })
 
 it('ignores unknown action types and actions without fields', async () => {
