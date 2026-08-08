@@ -26,6 +26,17 @@ const DDL = [
 
 const SYNCED = ['received', 'sent']
 
+/**
+ * How many actions to load in a single `get()` page.
+ */
+const PAGE_SIZE = 1000
+
+/**
+ * How many times to repeat a transaction, which was locked by another tab
+ * writing to the same database.
+ */
+const RETRIES = 5
+
 async function addTags(tx, table, column, added, values) {
   for (let value of values ?? []) {
     await tx.exec(
@@ -37,6 +48,15 @@ async function addTags(tx, table, column, added, values) {
 
 function holders(count) {
   return Array(count).fill('?').join(', ')
+}
+
+/**
+ * Another tab can keep the write lock, and SQLite drivers have no timeout
+ * to wait for it, so we will just repeat the transaction.
+ */
+function isLocked(error) {
+  let text = `${error.code} ${error.message}`
+  return text.includes('SQLITE_BUSY') || text.includes('database is locked')
 }
 
 /**
@@ -91,8 +111,8 @@ export class SqlLogStore {
       )
       if (exist) return false
 
-      // Next `added` is taken by SQL to be safe with other tabs
-      // writing to the same database
+      // Next `added` is taken by SQL inside the immediate transaction
+      // to be safe with other tabs writing to the same database
       let [{ last }] = await tx.select(
         `SELECT coalesce(max("added"), 0) AS "last" FROM "logux_log"`,
         []
@@ -164,24 +184,7 @@ export class SqlLogStore {
 
   async get(opts = {}) {
     await this.init()
-    let where = ''
-    let params = []
-    if (opts.index) {
-      where =
-        ` WHERE "added" IN (SELECT "added" FROM "logux_index"` +
-        ` WHERE "name" = ?)`
-      params.push(opts.index)
-    }
-    let order =
-      opts.order === 'created'
-        ? '"time", "node", "counter", "nodeTime"'
-        : '"added"'
-    let rows = await this.driver.select(
-      `SELECT "added", "action", "meta" FROM "logux_log"${where}` +
-        ` ORDER BY ${order}`,
-      params
-    )
-    return { entries: rows.map(toEntry) }
+    return this.page(opts)
   }
 
   async getLastAdded() {
@@ -206,7 +209,7 @@ export class SqlLogStore {
 
   init() {
     if (!this.initing) {
-      this.initing = this.driver.transaction(async tx => {
+      this.initing = this.transaction(async tx => {
         // Format of this table will never change, so we can read it
         // before we will know the version of other tables
         await tx.exec(
@@ -216,9 +219,7 @@ export class SqlLogStore {
         let [row] = await tx.select(`SELECT "version" FROM "logux_version"`, [])
         let version = row ? Number(row.version) : 0
         if (version > LOGUX_SQL_LOG_VERSION) {
-          throw new Error(
-            'DB was created by a newer version of Logux Client'
-          )
+          throw new Error('DB was created by a newer version of Logux Client')
         }
         if (version < LOGUX_SQL_LOG_VERSION) {
           // Later we can replace re-creating with migrations
@@ -236,6 +237,58 @@ export class SqlLogStore {
     return this.initing
   }
 
+  /**
+   * Pages are loaded from the newest actions to the oldest ones by keyset
+   * pagination, so a big log will not be loaded into the memory at once.
+   */
+  async page(opts, cursor) {
+    let created = opts.order === 'created'
+    let where = []
+    let params = []
+    if (opts.index) {
+      where.push(
+        `"added" IN (SELECT "added" FROM "logux_index" WHERE "name" = ?)`
+      )
+      params.push(opts.index)
+    }
+    if (cursor) {
+      where.push(
+        created
+          ? `("time", "node", "counter", "nodeTime", "added")` +
+              ` < (${holders(5)})`
+          : `"added" < ?`
+      )
+      params.push(...cursor)
+    }
+    let order = created
+      ? `"time" DESC, "node" DESC, "counter" DESC, "nodeTime" DESC,` +
+        ` "added" DESC`
+      : `"added" DESC`
+    let rows = await this.driver.select(
+      `SELECT * FROM "logux_log"` +
+        (where.length > 0 ? ` WHERE ${where.join(' AND ')}` : '') +
+        ` ORDER BY ${order} LIMIT ${PAGE_SIZE}`,
+      params
+    )
+    rows.reverse()
+
+    let page = { entries: rows.map(toEntry) }
+    if (rows.length === PAGE_SIZE) {
+      let oldest = rows[0]
+      let next = created
+        ? [
+            oldest.time,
+            oldest.node,
+            oldest.counter,
+            oldest.nodeTime,
+            oldest.added
+          ]
+        : [oldest.added]
+      page.next = () => this.page(opts, next)
+    }
+    return page
+  }
+
   async remove(id) {
     return this.write(async tx => {
       let [row] = await tx.select(
@@ -249,7 +302,9 @@ export class SqlLogStore {
   }
 
   async removeReason(reason, criteria, callback) {
-    await this.write(async tx => {
+    // Callbacks are called after the commit, so they will not see
+    // the database in the middle of the changes
+    let cleaned = await this.write(async tx => {
       let where = [
         `"added" IN (SELECT "added" FROM "logux_reason" WHERE "reason" = ?)`
       ]
@@ -281,8 +336,7 @@ export class SqlLogStore {
         if (younger && !isFirstOlder(younger, meta)) continue
         meta.reasons = meta.reasons.filter(i => i !== reason)
         if (meta.reasons.length === 0) {
-          callback(action, meta)
-          removed.push(meta.added)
+          removed.push([action, meta])
         } else {
           await tx.exec(`UPDATE "logux_log" SET "meta" = ? WHERE "added" = ?`, [
             serializeToJSONWithBinary(meta),
@@ -294,8 +348,15 @@ export class SqlLogStore {
           )
         }
       }
-      if (removed.length > 0) await removeEntries(tx, removed)
+      if (removed.length > 0) {
+        await removeEntries(
+          tx,
+          removed.map(entry => entry[1].added)
+        )
+      }
+      return removed
     })
+    for (let [action, meta] of cleaned) callback(action, meta)
   }
 
   async setLastSynced(values) {
@@ -312,10 +373,26 @@ export class SqlLogStore {
     })
   }
 
+  async transaction(callback) {
+    for (let i = 0; ; i++) {
+      try {
+        // Immediate transaction takes the write lock before our `SELECT`,
+        // so another tab can’t change the data before our `INSERT`
+        return await this.driver.transaction(callback, { immediate: true })
+      } catch (e) {
+        if (i === RETRIES || !isLocked(e)) throw e
+        // Give another tab a time to finish its transaction
+        await new Promise(resolve => {
+          setTimeout(resolve, i * 10)
+        })
+      }
+    }
+  }
+
   write(callback) {
     let result = this.queue.then(async () => {
       await this.init()
-      return this.driver.transaction(callback)
+      return this.transaction(callback)
     })
     this.queue = result.catch(() => {})
     return result

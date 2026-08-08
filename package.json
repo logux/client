@@ -53,13 +53,13 @@
     "@logux/oxc-configs": "^1.1.0",
     "@nanostores/preact": "^1.1.0",
     "@nanostores/react": "^1.1.0",
-    "@nanostores/sql": "^0.3.1",
+    "@nanostores/sql": "^0.4.0",
     "@nanostores/vue": "^1.1.0",
     "@size-limit/preset-small-lib": "^13.0.3",
     "@testing-library/preact": "^3.2.4",
     "@testing-library/react": "^16.3.2",
     "@testing-library/vue": "^8.1.0",
-    "@types/node": "^26.1.2",
+    "@types/node": "^26.2.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "@types/ws": "^8.18.1",
@@ -70,7 +70,7 @@
     "eslint-plugin-prefer-let": "^4.2.2",
     "fake-indexeddb": "^6.2.5",
     "globals": "^17.9.0",
-    "happy-dom": "^20.11.1",
+    "happy-dom": "^20.11.2",
     "multiocular": "^0.8.4",
     "nanodelay": "^2.0.2",
     "nanospy": "^2.0.2",
@@ -92,7 +92,7 @@
   "peerDependencies": {
     "@nanostores/preact": ">=0.0.0",
     "@nanostores/react": ">=0.0.0",
-    "@nanostores/sql": ">=0.0.0",
+    "@nanostores/sql": ">=0.4.0",
     "@nanostores/vue": ">=0.0.0",
     "nanostores": "^0.9.0 || ^0.10.0 || ^0.11.0 || ^1.0.0",
     "preact": ">=10.0.0",
@@ -159,7 +159,7 @@
       "import": {
         "./sql-log-store/index.js": "{ SqlLogStore }"
       },
-      "limit": "2 KB"
+      "limit": "2.2 KB"
     },
     {
       "name": "React",
