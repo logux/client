@@ -31,6 +31,17 @@ export function optional(col) {
   return { ...col, nullable: true, required: false }
 }
 
+/**
+ * Prefix of columns with Logux Meta ID of the last change of every field
+ * for CRDT LWW.
+ */
+const META = 'updatedAt_'
+
+/**
+ * Version of the internal database format to update database on changes.
+ */
+const LOGUX_CRDT_TABLE_VERSION = 1
+
 function columnSql(name, col, dialect) {
   let sql = `"${name}" ${col.type}`
   if (col.values) {
@@ -45,11 +56,15 @@ function columnSql(name, col, dialect) {
 
 function createTableSql(plural, schema, dialect) {
   let columns = ['"id" TEXT PRIMARY KEY']
+  let metas = []
   for (let name in schema) {
     columns.push(columnSql(name, schema[name], dialect))
+    metas.push(`"${META}${name}" TEXT`)
   }
-  columns.push('"updatedAt" TEXT')
-  return `CREATE TABLE IF NOT EXISTS "${plural}" (${columns.join(', ')})`
+  return (
+    `CREATE TABLE IF NOT EXISTS "${plural}"` +
+    ` (${columns.concat(metas).join(', ')})`
+  )
 }
 
 const VERBS = {
@@ -59,6 +74,16 @@ const VERBS = {
 }
 
 const RESULT = ['', 0]
+
+function holders(count) {
+  return Array(count).fill('?').join(', ')
+}
+
+async function execAll(target, queries) {
+  for (let query of queries) {
+    await target.exec(query[0], query[1])
+  }
+}
 
 function sortKeys(object, map) {
   let sorted = {}
@@ -105,54 +130,130 @@ export function createCrdtDatabase(client, db, opts = {}) {
     return RESULT
   }
 
-  async function applyAction(action, meta) {
+  async function applyAction(action, meta, tx) {
     let parsed = parseType(action.type)
     if (!parsed) return
     let [plural, verb] = parsed
+    let schema = tables[plural]
+    let target = tx ?? driver
+
     if (verb === VERBS.deleted) {
-      await driver.exec(`DELETE FROM "${plural}" WHERE "id" = ?`, [action.id])
-    } else {
-      let existing = await driver.select(
-        `SELECT "updatedAt" FROM "${plural}" WHERE "id" = ?`,
-        [action.id]
+      let ids = action.ids ?? [action.id]
+      if (ids.length === 0) return
+      await target.exec(
+        `DELETE FROM "${plural}" WHERE "id" IN (${holders(ids.length)})`,
+        ids
       )
-      let updatedAt = {}
-      if (existing.length === 0) {
-        if (verb === VERBS.changed) return
-      } else {
-        updatedAt = JSON.parse(existing[0].updatedAt)
+      return
+    }
+
+    let records
+    if (action.records) {
+      records = action.records.map(fields => [fields.id, fields])
+    } else if (action.ids) {
+      records = action.ids.map(id => [id, action.fields])
+    } else {
+      records = [[action.id, action.fields]]
+    }
+    if (records.length === 0) return
+
+    let touched = new Set()
+    for (let record of records) {
+      for (let key in record[1]) {
+        if (schema[key]) touched.add(key)
       }
-      if (existing.length === 0 && verb === VERBS.changed) return
-      let changes = {}
-      for (let key in action.fields ?? {}) {
+    }
+    if (touched.size === 0) return
+
+    // Only meta of the fields from the action is necessary to resolve conflicts
+    let columns = ['"id"']
+    for (let key of touched) columns.push(`"${META}${key}"`)
+    let rows = await target.select(
+      `SELECT ${columns.join(', ')} FROM "${plural}"` +
+        ` WHERE "id" IN (${holders(records.length)})`,
+      records.map(record => record[0])
+    )
+    let known = new Map()
+    for (let row of rows) known.set(row.id, row)
+
+    let inserts = []
+    let updates = new Map()
+    for (let [id, fields] of records) {
+      let row = known.get(id)
+      let insert = row === undefined
+      if (insert) {
+        if (verb === VERBS.changed) continue
+        row = {}
+        known.set(id, row)
+      }
+      let keys = []
+      let values = []
+      for (let key in fields) {
         if (
-          tables[plural][key] &&
-          action.fields[key] !== undefined &&
-          isFirstOlder(updatedAt[key], meta)
+          schema[key] &&
+          fields[key] !== undefined &&
+          isFirstOlder(row[`${META}${key}`], meta)
         ) {
-          changes[key] = action.fields[key]
-          updatedAt[key] = meta.id
+          keys.push(key)
+          values.push(fields[key])
+          // Keep meta for the next record with the same ID in this batch
+          row[`${META}${key}`] = meta.id
         }
       }
-      let keys = Object.keys(changes)
-      if (keys.length > 0) {
-        let values = keys.map(key => changes[key])
-        if (verb === VERBS.created && existing.length === 0) {
-          let names = ['id', ...keys, 'updatedAt'].map(i => `"${i}"`)
-          await driver.exec(
-            `INSERT INTO "${plural}" (${names.join(', ')})` +
-              ` VALUES (${names.map(() => '?').join(', ')})`,
-            [action.id, ...values, JSON.stringify(updatedAt)]
-          )
-        } else {
-          let sets = keys.map(key => `"${key}" = ?`)
-          await driver.exec(
-            `UPDATE "${plural}" SET ${sets.join(', ')}, "updatedAt" = ?` +
-              ` WHERE "id" = ?`,
-            [...values, JSON.stringify(updatedAt), action.id]
-          )
+      if (keys.length === 0) continue
+      if (insert) {
+        inserts.push([id, keys, values])
+      } else {
+        // Rows with the same changes are updated by a single query,
+        // since all of them get the same action’s meta ID
+        let groupKey = JSON.stringify([keys, values])
+        let group = updates.get(groupKey)
+        if (!group) {
+          group = { ids: [], keys, values }
+          updates.set(groupKey, group)
         }
+        group.ids.push(id)
       }
+    }
+
+    let queries = []
+    if (inserts.length > 0) {
+      // All fields of the action are used as columns and fields missing
+      // in the record are inserted as NULL, so records with different
+      // fields still fit into a single query
+      let all = [...touched]
+      let names = ['"id"']
+      for (let key of all) names.push(`"${key}"`)
+      for (let key of all) names.push(`"${META}${key}"`)
+      let row = `(${holders(names.length)})`
+      let params = []
+      for (let [id, keys, values] of inserts) {
+        let indexes = all.map(key => keys.indexOf(key))
+        params.push(id)
+        for (let i of indexes) params.push(i === -1 ? null : values[i])
+        for (let i of indexes) params.push(i === -1 ? null : meta.id)
+      }
+      queries.push([
+        `INSERT INTO "${plural}" (${names.join(', ')})` +
+          ` VALUES ${Array(inserts.length).fill(row).join(', ')}`,
+        params
+      ])
+    }
+    for (let group of updates.values()) {
+      let sets = []
+      for (let key of group.keys) sets.push(`"${key}" = ?`)
+      for (let key of group.keys) sets.push(`"${META}${key}" = ?`)
+      queries.push([
+        `UPDATE "${plural}" SET ${sets.join(', ')}` +
+          ` WHERE "id" IN (${holders(group.ids.length)})`,
+        [...group.values, ...group.keys.map(() => meta.id), ...group.ids]
+      ])
+    }
+
+    if (tx || queries.length < 2) {
+      await execAll(target, queries)
+    } else {
+      await driver.transaction(newTx => execAll(newTx, queries))
     }
   }
 
@@ -168,8 +269,8 @@ export function createCrdtDatabase(client, db, opts = {}) {
 
   void Promise.resolve().then(async () => {
     started = true
-    hash = JSON.stringify(
-      sortKeys(tables, schema =>
+    hash = JSON.stringify({
+      tables: sortKeys(tables, schema =>
         sortKeys(schema, col => ({
           sql:
             col.sql && typeof col.sql === 'object'
@@ -178,8 +279,9 @@ export function createCrdtDatabase(client, db, opts = {}) {
           type: col.type,
           values: col.values
         }))
-      )
-    )
+      ),
+      version: LOGUX_CRDT_TABLE_VERSION
+    })
 
     if (typeof window !== 'undefined' && !destroyed) {
       let onOutdated = event => {
@@ -212,7 +314,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
       if (old !== null) {
         status.set('migrating')
         if (opts.migrating) opts.migrating(ready)
-        for (let oldTable in JSON.parse(old)) {
+        for (let oldTable in JSON.parse(old).tables) {
           await driver.exec(`DROP TABLE IF EXISTS "${oldTable}"`, [])
         }
       }
@@ -227,8 +329,12 @@ export function createCrdtDatabase(client, db, opts = {}) {
       if (old !== null && opts.repeat) {
         entries = entries.concat(await opts.repeat())
       }
-      for (let entry of entries) {
-        await applyAction(entry[0], entry[1])
+      if (entries.length > 0) {
+        await driver.transaction(async tx => {
+          for (let entry of entries) {
+            await applyAction(entry[0], entry[1], tx)
+          }
+        })
       }
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem(storageKey, hash)
@@ -285,18 +391,40 @@ export function createCrdtDatabase(client, db, opts = {}) {
         if (schema[name].type === 'BOOLEAN' && dialect === 'sqlite') {
           throw new Error('sqlite does not support boolean')
         }
+        if (name.startsWith(META)) {
+          throw new Error(`${META} prefix is reserved for fields meta`)
+        }
       }
       tables[plural] = schema
+
+      function withDefaults(fields) {
+        let { id = nanoid(), ...values } = fields
+        for (let key in schema) {
+          if (values[key] === undefined && 'default' in schema[key]) {
+            let byDefault = schema[key].default
+            values[key] =
+              typeof byDefault === 'function' ? byDefault() : byDefault
+          }
+        }
+        return [id, values]
+      }
+
       return {
         async create(fields) {
-          let { id = nanoid(), ...values } = fields
-          for (let key in schema) {
-            if (values[key] === undefined && 'default' in schema[key]) {
-              let byDefault = schema[key].default
-              values[key] =
-                typeof byDefault === 'function' ? byDefault() : byDefault
-            }
+          if (Array.isArray(fields)) {
+            let ids = []
+            let records = fields.map(i => {
+              let [id, values] = withDefaults(i)
+              ids.push(id)
+              return { id, ...values }
+            })
+            await client.log.add(
+              { records, type: `${plural}/created` },
+              { sync: true }
+            )
+            return ids
           }
+          let [id, values] = withDefaults(fields)
           await client.log.add(
             { fields: values, id, type: `${plural}/created` },
             { sync: true }
@@ -305,7 +433,9 @@ export function createCrdtDatabase(client, db, opts = {}) {
         },
         async delete(id) {
           await client.log.add(
-            { id, type: `${plural}/deleted` },
+            Array.isArray(id)
+              ? { ids: id, type: `${plural}/deleted` }
+              : { id, type: `${plural}/deleted` },
             { sync: true }
           )
         },
@@ -319,7 +449,9 @@ export function createCrdtDatabase(client, db, opts = {}) {
         },
         async update(id, diff) {
           await client.log.add(
-            { fields: diff, id, type: `${plural}/changed` },
+            Array.isArray(id)
+              ? { fields: diff, ids: id, type: `${plural}/changed` }
+              : { fields: diff, id, type: `${plural}/changed` },
             { sync: true }
           )
         }

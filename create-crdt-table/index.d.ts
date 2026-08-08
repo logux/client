@@ -191,7 +191,7 @@ export type CrdtColumnType<Column extends CrdtColumn> =
   Column extends CrdtColumn<infer Type, boolean> ? Type : never
 
 /**
- * Row fields (without `id` and `updatedAt`) inferred from table schema.
+ * Row fields (without `id` and fields meta) inferred from table schema.
  * Optional columns take `null` to clear the value
  * (`undefined` fields are not changed, like in JSON).
  */
@@ -234,20 +234,24 @@ export type CrdtSqlParam<Dialect extends Dialects = 'sqlite'> =
  * Table row returned by {@link CrdtTable#select}. Rows contain data
  * as the database driver returns it, without any conversion.
  * Missing optional columns are `null`.
+ *
+ * Every field has an extra `updatedAt_field` column with Logux Meta ID
+ * of the last action which changed it (`null` if the field was never set).
+ * They are used to resolve conflicts with per-field last write wins,
+ * and can be used in SQL, for instance, to sort by the last change:
+ *
+ * ```ts
+ * let $recent = user.select`ORDER BY "updatedAt_name" DESC`
+ * ```
  */
 export type CrdtTableRow<Schema extends CrdtTableSchema> = {
   id: string
-
-  /**
-   * JSON string with Logux Meta ID of the last action which changed
-   * every field. It is used to resolve conflicts with per-field
-   * last write wins.
-   */
-  updatedAt: string
 } & {
   [Column in keyof Schema]: undefined extends CrdtColumnType<Schema[Column]>
     ? Exclude<CrdtColumnType<Schema[Column]>, undefined> | null
     : CrdtColumnType<Schema[Column]>
+} & {
+  [Column in keyof Schema as `updatedAt_${Column & string}`]: null | string
 }
 
 export interface CrdtTable<
@@ -258,18 +262,42 @@ export interface CrdtTable<
    * Add `plural/created` action to the log. The table row will be inserted
    * by the reducer (in a single browser tab) when the action is processed.
    *
-   * @param fields Row fields. `id` will be generated if omitted.
-   * @returns Promise with row ID resolved when action was added to the log.
+   * Pass an array of rows to create them by a single batch action. It is
+   * much faster than an action per row: rows are sent in one message
+   * and are inserted in one SQL query.
+   *
+   * ```js
+   * let id = await user.create({ name: 'Ann' })
+   * let ids = await user.create([{ name: 'Ann' }, { name: 'Ben' }])
+   * ```
+   *
+   * @param fields Row fields or an array of rows for a batch action.
+   *               `id` will be generated if omitted.
+   * @returns Promise with row ID (or IDs of all rows in the batch)
+   *          resolved when action was added to the log.
    */
+  // Keep the single row overload the last one: TypeScript uses the last
+  // overload to infer fields types in `defineCrdtTableActions()`
+  create(
+    rows: ({ id?: string } & CrdtCreateFields<Schema>)[]
+  ): Promise<string[]>
   create(fields: { id?: string } & CrdtCreateFields<Schema>): Promise<string>
 
   /**
    * Add `plural/deleted` action to the log to remove the row.
    *
-   * @param id Row ID.
+   * Pass an array of IDs to remove all these rows by a single
+   * batch action.
+   *
+   * ```js
+   * await user.delete(id)
+   * await user.delete([id1, id2])
+   * ```
+   *
+   * @param id Row ID or an array of row IDs for a batch action.
    * @returns Promise resolved when action was added to the log.
    */
-  delete(id: string): Promise<void>
+  delete(id: string[] | string): Promise<void>
 
   /**
    * Table name. It is used as SQL table name and as prefix
@@ -310,17 +338,28 @@ export interface CrdtTable<
   /**
    * Add `plural/changed` action to the log with changed fields.
    * Conflicts with parallel changes are resolved with per-field
-   * last write wins by `updatedAt` values. Changes of rows deleted
+   * last write wins by `updatedAt_field` values. Changes of rows deleted
    * on another client are ignored.
    *
    * Set optional field to `null` to clear its value. `undefined` fields
    * are not changed (JSON, used to sync actions, has no `undefined`).
    *
-   * @param id Row ID.
+   * Pass an array of IDs to apply the same changes to all these rows
+   * by a single batch action.
+   *
+   * ```js
+   * await user.update(id, { role: 'admin' })
+   * await user.update([id1, id2], { role: 'admin' })
+   * ```
+   *
+   * @param id Row ID or an array of row IDs for a batch action.
    * @param diff Changed fields.
    * @returns Promise resolved when action was added to the log.
    */
-  update(id: string, diff: Partial<CrdtRowFields<Schema>>): Promise<void>
+  update(
+    id: string[] | string,
+    diff: Partial<CrdtRowFields<Schema>>
+  ): Promise<void>
 }
 
 export interface CrdtDatabaseOptions<Dialect extends string = 'sqlite'> {
@@ -455,11 +494,14 @@ export type Dialects = 'sqlite' | 'pglite'
  * Actions are the same as in {@link syncMapTemplate}
  * (`user/created`, `user/changed`, `user/deleted` from `@logux/actions`),
  * so tables are compatible with existing Logux servers and can be mixed
- * with `syncMapTemplate` stores on other clients.
+ * with `syncMapTemplate` stores on other clients. Arrays in
+ * {@link CrdtTable#create}, {@link CrdtTable#update} and
+ * {@link CrdtTable#delete} produce batch actions (with `records` or `ids`
+ * instead of `id`), which are applied to the database in a single query.
  *
- * Each table has extra `id` and `updatedAt` columns. `updatedAt` keeps JSON
- * with the last change time of every field to resolve edit conflicts with
- * per-field last write wins strategy.
+ * Each table has an extra `id` column and an `updatedAt_field` column
+ * for every field with the Logux Meta ID of its last change, to resolve
+ * edit conflicts with per-field last write wins strategy.
  *
  * The schema version — serialized schemas of all tables — is kept in
  * `localStorage`. On any schema change all tables (including tables

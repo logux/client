@@ -74,5 +74,24 @@ it('uses real BOOLEAN columns in PGlite', { timeout: 60000 }, async () => {
   await delay(100)
   expect((await loadList(user.select())).map(i => i.id)).toEqual(['U1'])
 
+  await user.create([
+    { id: 'U3', name: 'Cat' },
+    { id: 'U4', name: 'Dan', publishedAt: 7000 }
+  ])
+  await delay(100)
+  let created = await loadList(user.select`ORDER BY "id"`)
+  expect(created.map(i => i.id)).toEqual(['U1', 'U3', 'U4'])
+  expect(created.map(i => i.isAdmin)).toEqual([false, false, false])
+  expect(created.map(i => i.publishedAt)).toEqual([5000, null, 7000])
+
+  await user.update(['U3', 'U4'], { isAdmin: true })
+  await delay(100)
+  let batchAdmins = await loadList(user.select`WHERE "isAdmin" = ${true}`)
+  expect(batchAdmins.map(i => i.id)).toEqual(['U3', 'U4'])
+
+  await user.delete(['U3', 'U4'])
+  await delay(100)
+  expect((await loadList(user.select())).map(i => i.id)).toEqual(['U1'])
+
   await db.close()
 })

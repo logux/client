@@ -29,16 +29,30 @@ let user = crdt.table('user', {
 })
 
 async function test(): Promise<void> {
-  // THROWS Argument of type '{ age: number; }' is not assignable to parameter
+  // THROWS No overload matches this call.
   await user.create({ age: 30 })
-  // THROWS Type 'number' is not assignable to type 'string'.
+  // THROWS No overload matches this call.
   await user.create({ name: 5, role: 'user' })
-  // THROWS Type '"guest"' is not assignable to type
+  // THROWS No overload matches this call.
   await user.create({ name: 'Ann', role: 'guest' })
+  // THROWS No overload matches this call.
+  await user.create([{ age: 30 }])
+  // THROWS Type 'string' is not assignable to type 'number'.
+  await user.update(['id'], { createdAt: '2026-01-01' })
+  // THROWS Type 'number' is not assignable to type 'string'.
+  await user.delete([1])
   // THROWS Type 'string' is not assignable to type 'number'.
   await user.update('id', { createdAt: '2026-01-01' })
   // THROWS Object literal may only specify known properties
   await user.update('id', { unknown: 1 })
+
+  let all = user.select().get()
+  if (!all.isLoading) {
+    // THROWS Property 'updatedAt' does not exist
+    console.log(all.value[0]!.updatedAt)
+    // THROWS Property 'updatedAt_missing' does not exist
+    console.log(all.value[0]!.updatedAt_missing)
+  }
 
   let $stats = db.store<{ total: number }>`
     SELECT COUNT(*) AS "total" FROM "user"

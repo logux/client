@@ -10,7 +10,7 @@ importers:
     dependencies:
       '@logux/actions':
         specifier: github:logux/actions#next
-        version: git+ssh://git@github.com/logux/actions.git#fbede590f2f311130c3db2c0a231228ca397a6f6(@logux/core@git+ssh://git@github.com/logux/core.git#780a5438c013d9cb7899b86e344685cd722ede40)
+        version: git+ssh://git@github.com/logux/actions.git#179788d5528e061fde2cb4c35842acb40fc102d1(@logux/core@git+ssh://git@github.com/logux/core.git#780a5438c013d9cb7899b86e344685cd722ede40)
       '@logux/core':
         specifier: github:logux/core#next
         version: git+ssh://git@github.com/logux/core.git#780a5438c013d9cb7899b86e344685cd722ede40
@@ -350,8 +350,8 @@ packages:
     peerDependencies:
       '@logux/core': ^0.10.0
 
-  '@logux/actions@git+ssh://git@github.com/logux/actions.git#fbede590f2f311130c3db2c0a231228ca397a6f6':
-    resolution: {commit: fbede590f2f311130c3db2c0a231228ca397a6f6, repo: git@github.com:logux/actions.git, type: git}
+  '@logux/actions@git+ssh://git@github.com/logux/actions.git#179788d5528e061fde2cb4c35842acb40fc102d1':
+    resolution: {commit: 179788d5528e061fde2cb4c35842acb40fc102d1, repo: git@github.com:logux/actions.git, type: git}
     version: 0.5.0
     engines: {node: ^22.0.0 || ^24.0.0 || >=26.0.0}
     peerDependencies:
@@ -2215,7 +2215,7 @@ snapshots:
     dependencies:
       '@logux/core': git+ssh://git@github.com/logux/core.git#780a5438c013d9cb7899b86e344685cd722ede40
 
-  '@logux/actions@git+ssh://git@github.com/logux/actions.git#fbede590f2f311130c3db2c0a231228ca397a6f6(@logux/core@git+ssh://git@github.com/logux/core.git#780a5438c013d9cb7899b86e344685cd722ede40)':
+  '@logux/actions@git+ssh://git@github.com/logux/actions.git#179788d5528e061fde2cb4c35842acb40fc102d1(@logux/core@git+ssh://git@github.com/logux/core.git#780a5438c013d9cb7899b86e344685cd722ede40)':
     dependencies:
       '@logux/core': git+ssh://git@github.com/logux/core.git#780a5438c013d9cb7899b86e344685cd722ede40
 

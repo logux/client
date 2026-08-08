@@ -109,6 +109,11 @@ let id = await user.create({ name: 'Ann' })
 await user.update(id, { age: 30 })
 
 let $adults = user.select`WHERE "age" >= ${18} ORDER BY "name"`
+
+// Arrays create batch actions, applied in a single SQL query
+let ids = await user.create([{ name: 'Ben' }, { name: 'Cat' }])
+await user.update(ids, { age: 20 })
+await user.delete(ids)
 ```
 
 [Nano Stores SQL]: https://github.com/nanostores/sql

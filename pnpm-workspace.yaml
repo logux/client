@@ -1,4 +1,4 @@
 allowBuilds:
   esbuild: false
 minimumReleaseAgeExclude:
-  - '@nanostores/sql'
+  - '@logux/actions'

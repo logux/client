@@ -1,3 +1,4 @@
+import { defineCrdtTableActions } from '@logux/actions'
 import type { Database } from '@nanostores/sql'
 
 import { Client } from '../index.js'
@@ -59,12 +60,19 @@ async function test(): Promise<void> {
     role: 'admin'
   })
 
+  let ids: string[] = await user.create([
+    { email: 'a@b.c', name: 'Ann' },
+    { email: 'b@b.c', id: 'U2', name: 'Ben', role: 'admin' }
+  ])
+
   await user.update(id, { age: 31 })
   await user.update(id, { role: 'guest', theme: 'light' })
   await user.update(id, { publishedAt: Date.now() })
   await user.update(id, { publishedAt: null })
+  await user.update(ids, { role: 'guest' })
 
   await user.delete(id)
+  await user.delete(ids)
 
   let $admins = user.select`
     WHERE "isAdmin" = ${1} AND "createdAt" > ${new Date(2026, 0, 1).getTime()}
@@ -80,7 +88,7 @@ async function test(): Promise<void> {
     let role: 'admin' | 'guest' | 'user' = row.role
     let theme: 'dark' | 'light' = row.theme
     let rowId: string = row.id
-    let changed: string = row.updatedAt
+    let changed: null | string = row.updatedAt_name
     console.log(
       name,
       age,
@@ -149,6 +157,17 @@ if (!pgValue.isLoading) {
   let pgName: string = pgRow.name
   console.log(pgAdmin, pgCreated, pgPublished, pgName)
 }
+
+let [createdUser, changedUser, deletedUser] = defineCrdtTableActions(user)
+
+console.log(
+  createdUser({ fields: { email: 'a@b.c', name: 'Ann' }, id: 'U1' }),
+  createdUser({ records: [{ email: 'a@b.c', id: 'U1', name: 'Ann' }] }),
+  changedUser({ fields: { age: 31 }, id: 'U1' }),
+  changedUser({ fields: { age: 31 }, ids: ['U1', 'U2'] }),
+  deletedUser({ id: 'U1' }),
+  deletedUser({ ids: ['U1', 'U2'] })
+)
 
 test()
 console.log(user.plural satisfies string)

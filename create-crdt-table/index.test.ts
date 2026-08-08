@@ -148,8 +148,8 @@ it('creates tables and applies create, update and delete actions', async () => {
   expect(rows[0]!.role).toBe('user')
   expect(rows[0]!.createdAt).toBe(new Date(2026, 0, 1).getTime())
   expect(rows[0]!.publishedAt).toBeNull()
-  expect(JSON.parse(rows[0]!.updatedAt).name).toBeTypeOf('string')
-  expect(JSON.parse(rows[0]!.updatedAt).age).toBeUndefined()
+  expect(rows[0]!.updatedAt_name).toBeTypeOf('string')
+  expect(rows[0]!.updatedAt_age).toBeNull()
 
   await user.update(id, { age: 30, isAdmin: 1 })
   await delay(10)
@@ -157,7 +157,7 @@ it('creates tables and applies create, update and delete actions', async () => {
   expect(updated[0]!.age).toBe(30)
   expect(updated[0]!.isAdmin).toBe(1)
   expect(updated[0]!.name).toBe('Ann')
-  expect(JSON.parse(updated[0]!.updatedAt).age).toBeTypeOf('string')
+  expect(updated[0]!.updatedAt_age).toBeTypeOf('string')
 
   await user.update(id, { age: null, name: undefined })
   await delay(10)
@@ -169,6 +169,184 @@ it('creates tables and applies create, update and delete actions', async () => {
   expect(await loadList($all)).toEqual([])
 
   cleanStores($all)
+})
+
+it('creates, updates and deletes many rows by batch actions', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await delay(10)
+
+  let ids = await user.create([
+    { name: 'Ann' },
+    { id: 'U2', isAdmin: 1, name: 'Ben' },
+    { age: 20, name: 'Cat' }
+  ])
+  expect(ids).toHaveLength(3)
+  expect(ids[1]).toBe('U2')
+  await delay(10)
+
+  let $all = user.select`ORDER BY "name"`
+  let rows = await loadList($all)
+  expect(rows.map(i => i.name)).toEqual(['Ann', 'Ben', 'Cat'])
+  expect(rows.map(i => i.id)).toEqual(ids)
+  expect(rows.map(i => i.isAdmin)).toEqual([0, 1, 0])
+  expect(rows.map(i => i.age)).toEqual([null, null, 20])
+  expect(rows.map(i => i.role)).toEqual(['user', 'user', 'user'])
+  expect(rows[0]!.updatedAt_name).toBe(rows[2]!.updatedAt_name)
+
+  await user.update([ids[0]!, 'U2'], { isAdmin: 1, role: 'admin' })
+  await delay(10)
+  let updated = await loadList($all)
+  expect(updated.map(i => i.isAdmin)).toEqual([1, 1, 0])
+  expect(updated.map(i => i.role)).toEqual(['admin', 'admin', 'user'])
+  expect(updated[0]!.name).toBe('Ann')
+
+  await user.delete([ids[0]!, 'U2'])
+  await delay(10)
+  expect((await loadList($all)).map(i => i.name)).toEqual(['Cat'])
+
+  cleanStores($all)
+})
+
+it('resolves conflicts of batch actions with per-field last write wins', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await delay(10)
+
+  await client.log.add(
+    {
+      records: [
+        { id: 'U1', name: 'Ann' },
+        { id: 'U2', name: 'Ben', role: 'admin' }
+      ],
+      type: 'user/created'
+    },
+    { id: '50 10:other 0', time: 50 }
+  )
+  await delay(10)
+
+  await client.log.add(
+    { fields: { name: 'Older' }, ids: ['U1', 'U2'], type: 'user/changed' },
+    { id: '10 10:other 0', time: 10 }
+  )
+  await client.log.add(
+    {
+      fields: { age: 30, name: 'Newer' },
+      ids: ['U1', 'U2', 'U3'],
+      type: 'user/changed'
+    },
+    { id: '100 10:other 0', time: 100 }
+  )
+  await delay(10)
+
+  let rows = await loadList(user.select`ORDER BY "id"`)
+  expect(rows.map(i => i.id)).toEqual(['U1', 'U2'])
+  expect(rows.map(i => i.name)).toEqual(['Newer', 'Newer'])
+  expect(rows.map(i => i.age)).toEqual([30, 30])
+  expect(rows.map(i => i.role)).toEqual([null, 'admin'])
+  expect(rows[0]!.updatedAt_name).toBe('100 10:other 0')
+
+  await client.log.add(
+    {
+      records: [
+        { id: 'U1', name: 'Recreated' },
+        { id: 'U3', name: 'Cat' }
+      ],
+      type: 'user/created'
+    },
+    { id: '200 10:other 0', time: 200 }
+  )
+  await delay(10)
+  let mixed = await loadList(user.select`ORDER BY "id"`)
+  expect(mixed.map(i => i.id)).toEqual(['U1', 'U2', 'U3'])
+  expect(mixed.map(i => i.name)).toEqual(['Recreated', 'Newer', 'Cat'])
+  expect(mixed[0]!.age).toBe(30)
+})
+
+it('applies batch actions in the smallest number of queries', async () => {
+  let { client, db } = await setup()
+  let executed: string[] = []
+  let origin = db.driver.exec.bind(db.driver)
+  db.driver.exec = (sql, params) => {
+    executed.push(sql)
+    return origin(sql, params)
+  }
+  let transactions = 0
+  let originTransaction = db.driver.transaction.bind(db.driver)
+  db.driver.transaction = callback => {
+    transactions += 1
+    return originTransaction(tx => {
+      let originTxExec = tx.exec.bind(tx)
+      tx.exec = (sql, params) => {
+        executed.push(sql)
+        return originTxExec(sql, params)
+      }
+      return callback(tx)
+    })
+  }
+
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await delay(10)
+  executed = []
+
+  await user.create([
+    { id: 'U1', name: 'Ann' },
+    { id: 'U2', name: 'Ben' },
+    { age: 20, id: 'U3', name: 'Cat' }
+  ])
+  await delay(10)
+  expect(executed).toEqual([
+    'INSERT INTO "user" ("id", "name", "createdAt", "isAdmin", "role", "age",' +
+      ' "updatedAt_name", "updatedAt_createdAt", "updatedAt_isAdmin",' +
+      ' "updatedAt_role", "updatedAt_age")' +
+      ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),' +
+      ' (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+  ])
+  expect(transactions).toBe(0)
+
+  // Rows have different history now: U1’s name and U3’s age were changed
+  // by other actions, so all three rows have different fields meta
+  executed = []
+  await user.update('U1', { name: 'Anna' })
+  await delay(10)
+  expect(executed).toEqual([
+    'UPDATE "user" SET "name" = ?, "updatedAt_name" = ? WHERE "id" IN (?)'
+  ])
+
+  executed = []
+  await user.update(['U1', 'U2', 'U3'], { isAdmin: 1 })
+  await delay(10)
+  expect(executed).toEqual([
+    'UPDATE "user" SET "isAdmin" = ?, "updatedAt_isAdmin" = ?' +
+      ' WHERE "id" IN (?, ?, ?)'
+  ])
+  expect(transactions).toBe(0)
+
+  executed = []
+  await user.delete(['U1', 'U2'])
+  await delay(10)
+  expect(executed).toEqual(['DELETE FROM "user" WHERE "id" IN (?, ?)'])
+  expect(transactions).toBe(0)
+
+  expect((await loadList(user.select())).map(i => i.id)).toEqual(['U3'])
+})
+
+it('ignores empty batch actions', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await delay(10)
+
+  let ids = await user.create([])
+  expect(ids).toEqual([])
+  await user.update([], { name: 'Ann' })
+  await user.delete([])
+  await delay(10)
+
+  expect(await loadList(user.select())).toEqual([])
 })
 
 it('passes raw select params to the driver', async () => {
@@ -234,9 +412,8 @@ it('resolves conflicts with per-field last write wins', async () => {
   expect(rows[0]!.name).toBe('New')
   expect(rows[0]!.age).toBe(20)
   expect(rows[0]!.role).toBe('admin')
-  let updatedAt = JSON.parse(rows[0]!.updatedAt)
-  expect(updatedAt.name).toBe('100 10:other 0')
-  expect(updatedAt.age).toBe('50 10:other 0')
+  expect(rows[0]!.updatedAt_name).toBe('100 10:other 0')
+  expect(rows[0]!.updatedAt_age).toBe('50 10:other 0')
 
   await client.log.add(
     { fields: { name: 'New' }, id: 'U1', type: 'user/changed' },
@@ -245,7 +422,7 @@ it('resolves conflicts with per-field last write wins', async () => {
   await delay(10)
   let same = await loadList(user.select())
   expect(same[0]!.name).toBe('New')
-  expect(JSON.parse(same[0]!.updatedAt).name).toBe('100 10:other 0')
+  expect(same[0]!.updatedAt_name).toBe('100 10:other 0')
 })
 
 it('ignores changes of deleted rows', async () => {
@@ -297,7 +474,10 @@ it('fills table from existing log on first run', async () => {
 
 it('rebuilds database on schema change and replays repeat() entries', async () => {
   let { client, db } = await setup()
-  localStorage.setItem('logux:db', JSON.stringify({ removed: {}, user: {} }))
+  localStorage.setItem(
+    'logux:db',
+    JSON.stringify({ tables: { removed: {}, user: {} } })
+  )
   await db.driver.exec('CREATE TABLE "user" ("id" TEXT PRIMARY KEY)', [])
   await db.driver.exec('INSERT INTO "user" ("id") VALUES (?)', ['garbage'])
   await db.driver.exec('CREATE TABLE "removed" ("id" TEXT PRIMARY KEY)', [])
@@ -721,7 +901,11 @@ it('generates SQL with dialect-specific and extra column SQL', async () => {
       '"pinned" BOOLEAN, ' +
       '"postedAt" BIGINT, ' +
       `"quote" TEXT CHECK ("quote" IN ('o''ne', 'two')), ` +
-      '"updatedAt" TEXT)'
+      '"updatedAt_email" TEXT, ' +
+      '"updatedAt_name" TEXT, ' +
+      '"updatedAt_pinned" TEXT, ' +
+      '"updatedAt_postedAt" TEXT, ' +
+      '"updatedAt_quote" TEXT)'
   ])
 })
 
@@ -774,7 +958,7 @@ it('filters rows by JOIN with another table in select()', async () => {
   expect(rows.map(i => i.id)).toEqual(['U1'])
   expect(rows[0]!.name).toBe('Ann')
   expect(rows[0]!.isAdmin).toBe(0)
-  expect(JSON.parse(rows[0]!.updatedAt).name).toBeTypeOf('string')
+  expect(rows[0]!.updatedAt_name).toBeTypeOf('string')
 })
 
 it('supports manual SQL with joined columns and aggregations', async () => {
@@ -829,4 +1013,12 @@ it('throws on column type unsupported by dialect', async () => {
     // @ts-expect-error
     crdt.table('user', { isAdmin: boolean() })
   }).toThrow('sqlite does not support boolean')
+})
+
+it('throws on column name reserved for fields meta', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  expect(() => {
+    crdt.table('user', { name: string(), updatedAt_name: string() })
+  }).toThrow('updatedAt_ prefix is reserved for fields meta')
 })
