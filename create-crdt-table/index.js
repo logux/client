@@ -37,6 +37,14 @@ export function optional(col) {
  */
 const META = 'updatedAt_'
 
+export function withoutMeta(rows) {
+  return rows.map(row => {
+    return Object.fromEntries(
+      Object.entries(row).filter(([key]) => !key.startsWith(META))
+    )
+  })
+}
+
 /**
  * Version of the internal database format to update database on changes.
  */

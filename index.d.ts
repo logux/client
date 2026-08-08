@@ -11,6 +11,7 @@ export { confirm } from './confirm/index.js'
 
 export { AuthStore, createAuth } from './create-auth/index.js'
 export { createClientStore } from './create-client-store/index.js'
+export { WithoutMeta, withoutMeta } from './create-crdt-table/index.js'
 export {
   createFilter,
   Filter,

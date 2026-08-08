@@ -15,7 +15,8 @@ import {
   number,
   oneOf,
   optional,
-  string
+  string,
+  withoutMeta
 } from './index.js'
 
 beforeAll(() => {
@@ -994,6 +995,43 @@ it('supports manual SQL with joined columns and aggregations', async () => {
   await user.update('U1', { name: 'Anna' })
   await delay(10)
   expect((await loadList($feed))[0]!.author).toBe('Anna')
+})
+
+it('removes fields meta from rows', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await delay(10)
+
+  await user.create([
+    { id: 'U1', name: 'Ann' },
+    { age: 20, id: 'U2', name: 'Ben', publishedAt: 3000 }
+  ])
+  await delay(10)
+
+  let rows = await loadList(user.select`ORDER BY "id"`)
+  expect(rows[0]!.updatedAt_name).toBeTypeOf('string')
+  expect(withoutMeta(rows)).toEqual([
+    {
+      age: null,
+      createdAt: new Date(2026, 0, 1).getTime(),
+      id: 'U1',
+      isAdmin: 0,
+      name: 'Ann',
+      publishedAt: null,
+      role: 'user'
+    },
+    {
+      age: 20,
+      createdAt: new Date(2026, 0, 1).getTime(),
+      id: 'U2',
+      isAdmin: 0,
+      name: 'Ben',
+      publishedAt: 3000,
+      role: 'user'
+    }
+  ])
+  expect(withoutMeta([])).toEqual([])
 })
 
 it('throws on table() call after initialization', async () => {

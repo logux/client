@@ -8,7 +8,8 @@ import {
   number,
   oneOf,
   optional,
-  string
+  string,
+  withoutMeta
 } from './index.js'
 
 let client = new Client({
@@ -52,6 +53,8 @@ async function test(): Promise<void> {
     console.log(all.value[0]!.updatedAt)
     // THROWS Property 'updatedAt_missing' does not exist
     console.log(all.value[0]!.updatedAt_missing)
+    // THROWS Property 'updatedAt_name' does not exist
+    console.log(withoutMeta(all.value)[0]!.updatedAt_name)
   }
 
   let $stats = db.store<{ total: number }>`

@@ -4,6 +4,7 @@ export { Client } from './client/index.js'
 export { confirm } from './confirm/index.js'
 export { createAuth } from './create-auth/index.js'
 export { createClientStore } from './create-client-store/index.js'
+export { withoutMeta } from './create-crdt-table/index.js'
 export { createFilter } from './create-filter/index.js'
 export {
   createReducer,

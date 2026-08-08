@@ -1,7 +1,7 @@
 import { defineCrdtTableActions } from '@logux/actions'
 import type { Database } from '@nanostores/sql'
 
-import { Client } from '../index.js'
+import { Client, type WithoutMeta, withoutMeta } from '../index.js'
 import {
   bigint,
   boolean,
@@ -100,6 +100,15 @@ async function test(): Promise<void> {
       rowId,
       changed
     )
+
+    let clean: WithoutMeta<(typeof value.value)[number]>[] = withoutMeta(
+      value.value
+    )
+    let cleanId: string = clean[0]!.id
+    let cleanName: string = clean[0]!.name
+    let cleanAge: null | number = clean[0]!.age
+    let cleanRole: 'admin' | 'guest' | 'user' = clean[0]!.role
+    console.log(cleanId, cleanName, cleanAge, cleanRole)
   }
   await $admins.loading
 

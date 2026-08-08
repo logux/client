@@ -8,6 +8,12 @@ import type { Client, ClientMeta } from '../client/index.js'
 type CrdtMigrationStatus = 'initializing' | 'migrating' | 'outdated' | 'ready'
 
 /**
+ * Prefix of columns with Logux Meta ID of the last change of every field
+ * for CRDT LWW.
+ */
+declare const META: 'updatedAt_'
+
+/**
  * JS types of column values. Only JSON types are supported, because
  * all values are stored in Logux actions and passed to the database
  * driver as-is. Store dates as a number of milliseconds
@@ -253,6 +259,32 @@ export type CrdtTableRow<Schema extends CrdtTableSchema> = {
 } & {
   [Column in keyof Schema as `updatedAt_${Column & string}`]: null | string
 }
+
+/**
+ * Row without conflict resolution data of every field.
+ */
+export type WithoutMeta<Value> = {
+  [Key in keyof Value as Key extends `${typeof META}${string}`
+    ? never
+    : Key]: Value[Key]
+}
+
+/**
+ * Remove conflict resolution data, which is local and should not be
+ * in the backup or in tests expectations.
+ *
+ * ```ts
+ * expect(withoutMeta(await loadList(user.select()))).toEqual([
+ *   { id: 'U1', name: 'Ann' }
+ * ])
+ * ```
+ *
+ * @param rows Rows from {@link CrdtTable#select}.
+ * @returns Rows without `updatedAt_field` columns.
+ */
+export function withoutMeta<Value extends object>(
+  rows: Value[]
+): WithoutMeta<Value>[]
 
 export interface CrdtTable<
   Schema extends CrdtTableSchema = CrdtTableSchema,
