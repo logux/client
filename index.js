@@ -18,6 +18,7 @@ export { log } from './log/index.js'
 export { LoguxUndoError } from './logux-undo-error/index.js'
 export { emptyInTest, prepareForTest } from './prepare-for-test/index.js'
 export { request } from './request/index.js'
+export { SqlLogStore } from './sql-log-store/index.js'
 export { status } from './status/index.js'
 export {
   buildNewSyncMap,

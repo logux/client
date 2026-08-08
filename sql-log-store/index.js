@@ -1,0 +1,323 @@
+import { isFirstOlder } from '@logux/core'
+
+/**
+ * Version of the internal tables format to re-create the log on changes.
+ * It can only grow, so the log from a newer client is not supported.
+ */
+const LOGUX_SQL_LOG_VERSION = 1
+
+const TABLES = ['logux_log', 'logux_reason', 'logux_index', 'logux_extra']
+
+const DDL = [
+  `CREATE TABLE IF NOT EXISTS "logux_log" (` +
+    `"added" BIGINT PRIMARY KEY, "id" TEXT UNIQUE, "time" BIGINT,` +
+    ` "node" TEXT, "counter" BIGINT, "nodeTime" BIGINT,` +
+    ` "action" TEXT, "meta" TEXT)`,
+  `CREATE TABLE IF NOT EXISTS "logux_reason" (` +
+    `"added" BIGINT, "reason" TEXT, PRIMARY KEY ("added", "reason"))`,
+  `CREATE INDEX IF NOT EXISTS "logux_reason_reason"` +
+    ` ON "logux_reason" ("reason")`,
+  `CREATE TABLE IF NOT EXISTS "logux_index" (` +
+    `"added" BIGINT, "name" TEXT, PRIMARY KEY ("added", "name"))`,
+  `CREATE INDEX IF NOT EXISTS "logux_index_name" ON "logux_index" ("name")`,
+  `CREATE TABLE IF NOT EXISTS "logux_extra" (` +
+    `"key" TEXT PRIMARY KEY, "value" BIGINT)`
+]
+
+const SYNCED = ['received', 'sent']
+
+async function addTags(tx, table, column, added, values) {
+  for (let value of values ?? []) {
+    await tx.exec(
+      `INSERT INTO "${table}" ("added", "${column}") VALUES (?, ?)`,
+      [added, value]
+    )
+  }
+}
+
+function holders(count) {
+  return Array(count).fill('?').join(', ')
+}
+
+/**
+ * Actions can keep binary data from `encryptActions()`, so `Uint8Array`
+ * is marked by `$bytes` key in JSON.
+ */
+function parseJSONWithBinary(json) {
+  return JSON.parse(json, (key, value) => {
+    if (value && value.$bytes) return Uint8Array.from(value.$bytes)
+    return value
+  })
+}
+
+async function removeEntries(tx, added) {
+  for (let table of ['logux_log', 'logux_reason', 'logux_index']) {
+    await tx.exec(
+      `DELETE FROM "${table}" WHERE "added" IN (${holders(added.length)})`,
+      added
+    )
+  }
+}
+
+function serializeToJSONWithBinary(data) {
+  return JSON.stringify(data, (key, value) => {
+    if (value instanceof Uint8Array) return { $bytes: Array.from(value) }
+    return value
+  })
+}
+
+function toEntry(row) {
+  let meta = parseJSONWithBinary(row.meta)
+  meta.added = Number(row.added)
+  return [parseJSONWithBinary(row.action), meta]
+}
+
+function toNumber(value) {
+  let number = parseInt(value)
+  return Number.isNaN(number) ? 0 : number
+}
+
+export class SqlLogStore {
+  constructor(db) {
+    this.driver = db.driver
+    this.queue = Promise.resolve()
+  }
+
+  async add(action, meta) {
+    return this.write(async tx => {
+      let [exist] = await tx.select(
+        `SELECT "added" FROM "logux_log" WHERE "id" = ?`,
+        [meta.id]
+      )
+      if (exist) return false
+
+      // Next `added` is taken by SQL to be safe with other tabs
+      // writing to the same database
+      let [{ last }] = await tx.select(
+        `SELECT coalesce(max("added"), 0) AS "last" FROM "logux_log"`,
+        []
+      )
+      meta.added = Number(last) + 1
+
+      let id = meta.id.split(' ')
+      await tx.exec(
+        `INSERT INTO "logux_log"` +
+          ` ("added", "id", "time", "node", "counter", "nodeTime",` +
+          ` "action", "meta") VALUES (${holders(8)})`,
+        [
+          meta.added,
+          meta.id,
+          toNumber(meta.time),
+          id[1] ?? '',
+          toNumber(id[2]),
+          toNumber(id[0]),
+          serializeToJSONWithBinary(action),
+          serializeToJSONWithBinary(meta)
+        ]
+      )
+      await addTags(tx, 'logux_reason', 'reason', meta.added, meta.reasons)
+      await addTags(tx, 'logux_index', 'name', meta.added, meta.indexes)
+      return meta
+    })
+  }
+
+  async byId(id) {
+    await this.init()
+    let [row] = await this.driver.select(
+      `SELECT "added", "action", "meta" FROM "logux_log" WHERE "id" = ?`,
+      [id]
+    )
+    return row ? toEntry(row) : [null, null]
+  }
+
+  async changeMeta(id, diff) {
+    return this.write(async tx => {
+      let [row] = await tx.select(
+        `SELECT "added", "meta" FROM "logux_log" WHERE "id" = ?`,
+        [id]
+      )
+      if (!row) return false
+
+      let meta = parseJSONWithBinary(row.meta)
+      for (let key in diff) meta[key] = diff[key]
+      await tx.exec(`UPDATE "logux_log" SET "meta" = ? WHERE "added" = ?`, [
+        serializeToJSONWithBinary(meta),
+        row.added
+      ])
+      if (diff.reasons) {
+        await tx.exec(`DELETE FROM "logux_reason" WHERE "added" = ?`, [
+          row.added
+        ])
+        await addTags(tx, 'logux_reason', 'reason', row.added, diff.reasons)
+      }
+      return true
+    })
+  }
+
+  async clean() {
+    await this.write(async tx => {
+      for (let table of TABLES) {
+        await tx.exec(`DELETE FROM "${table}"`, [])
+      }
+    })
+  }
+
+  async get(opts = {}) {
+    await this.init()
+    let where = ''
+    let params = []
+    if (opts.index) {
+      where =
+        ` WHERE "added" IN (SELECT "added" FROM "logux_index"` +
+        ` WHERE "name" = ?)`
+      params.push(opts.index)
+    }
+    let order =
+      opts.order === 'created'
+        ? '"time", "node", "counter", "nodeTime"'
+        : '"added"'
+    let rows = await this.driver.select(
+      `SELECT "added", "action", "meta" FROM "logux_log"${where}` +
+        ` ORDER BY ${order}`,
+      params
+    )
+    return { entries: rows.map(toEntry) }
+  }
+
+  async getLastAdded() {
+    await this.init()
+    let [{ last }] = await this.driver.select(
+      `SELECT coalesce(max("added"), 0) AS "last" FROM "logux_log"`,
+      []
+    )
+    return Number(last)
+  }
+
+  async getLastSynced() {
+    await this.init()
+    let rows = await this.driver.select(
+      `SELECT "key", "value" FROM "logux_extra"`,
+      []
+    )
+    let synced = { received: 0, sent: 0 }
+    for (let row of rows) synced[row.key] = Number(row.value)
+    return synced
+  }
+
+  init() {
+    if (!this.initing) {
+      this.initing = this.driver.transaction(async tx => {
+        // Format of this table will never change, so we can read it
+        // before we will know the version of other tables
+        await tx.exec(
+          `CREATE TABLE IF NOT EXISTS "logux_version" ("version" BIGINT)`,
+          []
+        )
+        let [row] = await tx.select(`SELECT "version" FROM "logux_version"`, [])
+        let version = row ? Number(row.version) : 0
+        if (version > LOGUX_SQL_LOG_VERSION) {
+          throw new Error(
+            'DB was created by a newer version of Logux Client'
+          )
+        }
+        if (version < LOGUX_SQL_LOG_VERSION) {
+          // Later we can replace re-creating with migrations
+          for (let table of TABLES) {
+            await tx.exec(`DROP TABLE IF EXISTS "${table}"`, [])
+          }
+          await tx.exec(`DELETE FROM "logux_version"`, [])
+          await tx.exec(`INSERT INTO "logux_version" ("version") VALUES (?)`, [
+            LOGUX_SQL_LOG_VERSION
+          ])
+        }
+        for (let sql of DDL) await tx.exec(sql, [])
+      })
+    }
+    return this.initing
+  }
+
+  async remove(id) {
+    return this.write(async tx => {
+      let [row] = await tx.select(
+        `SELECT "added", "action", "meta" FROM "logux_log" WHERE "id" = ?`,
+        [id]
+      )
+      if (!row) return false
+      await removeEntries(tx, [row.added])
+      return toEntry(row)
+    })
+  }
+
+  async removeReason(reason, criteria, callback) {
+    await this.write(async tx => {
+      let where = [
+        `"added" IN (SELECT "added" FROM "logux_reason" WHERE "reason" = ?)`
+      ]
+      let params = [reason]
+      if (criteria.id !== undefined) {
+        where.push('"id" = ?')
+        params.push(criteria.id)
+      }
+      if (criteria.minAdded !== undefined) {
+        where.push('"added" >= ?')
+        params.push(criteria.minAdded)
+      }
+      if (criteria.maxAdded !== undefined) {
+        where.push('"added" <= ?')
+        params.push(criteria.maxAdded)
+      }
+      let rows = await tx.select(
+        `SELECT "added", "action", "meta" FROM "logux_log"` +
+          ` WHERE ${where.join(' AND ')} ORDER BY "added"`,
+        params
+      )
+
+      let removed = []
+      for (let row of rows) {
+        let [action, meta] = toEntry(row)
+        let older = criteria.olderThan
+        let younger = criteria.youngerThan
+        if (older && !isFirstOlder(meta, older)) continue
+        if (younger && !isFirstOlder(younger, meta)) continue
+        meta.reasons = meta.reasons.filter(i => i !== reason)
+        if (meta.reasons.length === 0) {
+          callback(action, meta)
+          removed.push(meta.added)
+        } else {
+          await tx.exec(`UPDATE "logux_log" SET "meta" = ? WHERE "added" = ?`, [
+            serializeToJSONWithBinary(meta),
+            meta.added
+          ])
+          await tx.exec(
+            `DELETE FROM "logux_reason" WHERE "added" = ? AND "reason" = ?`,
+            [meta.added, reason]
+          )
+        }
+      }
+      if (removed.length > 0) await removeEntries(tx, removed)
+    })
+  }
+
+  async setLastSynced(values) {
+    await this.write(async tx => {
+      for (let key of SYNCED) {
+        if (values[key] !== undefined) {
+          await tx.exec(
+            `INSERT INTO "logux_extra" ("key", "value") VALUES (?, ?)` +
+              ` ON CONFLICT ("key") DO UPDATE SET "value" = excluded."value"`,
+            [key, values[key]]
+          )
+        }
+      }
+    })
+  }
+
+  write(callback) {
+    let result = this.queue.then(async () => {
+      await this.init()
+      return this.driver.transaction(callback)
+    })
+    this.queue = result.catch(() => {})
+    return result
+  }
+}

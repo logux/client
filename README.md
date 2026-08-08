@@ -17,6 +17,7 @@ This repository contains Logux base components to build web client:
 
 - `CrossTabClient` and `Client` to create web client for Logux.
 - `IndexedStore` to store Logux log in `IndexedDB`.
+- `SqlLogStore` to store Logux log in SQLite or PGlite.
 - `badge()` widget to show Logux synchronization status in UI.
 - `status()` to write own UI to show Logux synchronization status in UI.
 - `attention()`, `confirm()`, `favicon()` to improve UX in Logux web app.
@@ -114,6 +115,18 @@ let $adults = user.select`WHERE "age" >= ${18} ORDER BY "name"`
 let ids = await user.create([{ name: 'Ben' }, { name: 'Cat' }])
 await user.update(ids, { age: 20 })
 await user.delete(ids)
+```
+
+The same database can keep the Logux log itself instead of `IndexedDB`:
+
+```js
+import { CrossTabClient } from '@logux/client'
+import { SqlLogStore } from '@logux/client/db'
+
+const client = new CrossTabClient({
+  …,
+  store: new SqlLogStore(db)
+})
 ```
 
 [Nano Stores SQL]: https://github.com/nanostores/sql
