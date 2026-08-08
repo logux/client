@@ -412,6 +412,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
       return {
         async create(fields) {
           if (Array.isArray(fields)) {
+            if (fields.length === 0) return []
             let ids = []
             let records = fields.map(i => {
               let [id, values] = withDefaults(i)
@@ -423,21 +424,28 @@ export function createCrdtDatabase(client, db, opts = {}) {
               { sync: true }
             )
             return ids
+          } else {
+            let [id, values] = withDefaults(fields)
+            await client.log.add(
+              { fields: values, id, type: `${plural}/created` },
+              { sync: true }
+            )
+            return id
           }
-          let [id, values] = withDefaults(fields)
-          await client.log.add(
-            { fields: values, id, type: `${plural}/created` },
-            { sync: true }
-          )
-          return id
         },
         async delete(id) {
-          await client.log.add(
-            Array.isArray(id)
-              ? { ids: id, type: `${plural}/deleted` }
-              : { id, type: `${plural}/deleted` },
-            { sync: true }
-          )
+          if (Array.isArray(id)) {
+            if (id.length === 0) return
+            await client.log.add(
+              { ids: id, type: `${plural}/deleted` },
+              { sync: true }
+            )
+          } else {
+            await client.log.add(
+              { id, type: `${plural}/deleted` },
+              { sync: true }
+            )
+          }
         },
         plural,
         select(template, ...params) {
@@ -448,12 +456,18 @@ export function createCrdtDatabase(client, db, opts = {}) {
           return db.store(parts, ...params)
         },
         async update(id, diff) {
-          await client.log.add(
-            Array.isArray(id)
-              ? { fields: diff, ids: id, type: `${plural}/changed` }
-              : { fields: diff, id, type: `${plural}/changed` },
-            { sync: true }
-          )
+          if (Array.isArray(id)) {
+            if (id.length === 0) return
+            await client.log.add(
+              { fields: diff, ids: id, type: `${plural}/changed` },
+              { sync: true }
+            )
+          } else {
+            await client.log.add(
+              { fields: diff, id, type: `${plural}/changed` },
+              { sync: true }
+            )
+          }
         }
       }
     }

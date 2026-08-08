@@ -347,6 +347,7 @@ it('ignores empty batch actions', async () => {
   await delay(10)
 
   expect(await loadList(user.select())).toEqual([])
+  expect(client.log.entries()).toEqual([])
 })
 
 it('passes raw select params to the driver', async () => {
