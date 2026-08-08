@@ -338,7 +338,7 @@ it('sends encrypted actions through binary protocol', async () => {
 
   // Protocol keeps compression flag in action type byte, not in the object
   expect(received).toEqual([
-    { d: BYTES, iv: BYTES, type: '0' },
+    { compressed: false, d: BYTES, iv: BYTES, type: '0' },
     { compressed: true, d: BYTES, iv: BYTES, type: '0' }
   ])
   expect(privateMethods(client2.log).actions()).toEqual([
