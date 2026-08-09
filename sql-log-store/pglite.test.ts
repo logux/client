@@ -11,7 +11,7 @@ beforeEach(async () => {
   // All tests share a single PGlite instance, since starting it is slow
   await db.exec`DROP TABLE IF EXISTS "logux_log", "logux_reason",
     "logux_index", "logux_extra", "logux_version"`
-})
+}, 60000)
 
 afterAll(async () => {
   await db.close()

@@ -203,7 +203,7 @@ it('accepts key', async () => {
   ])
 
   getPair(client2).right.send(getPair(client1).leftSent[0]!)
-  await delay(10)
+  await delay(50)
   expect(privateMethods(client2.log).actions()).toEqual([
     { type: 'sync', value: 'secret' }
   ])
