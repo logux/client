@@ -137,7 +137,7 @@ let renameUser = crdt.action(userRenamed, async (tx, action, meta) => {
 await renameUser({ id, name: 'New' })
 ```
 
-The same database can keep the Logux log itself instead of `IndexedDB`:
+The same database can keep the Logux log itself:
 
 ```js
 import { CrossTabClient } from '@logux/client'
@@ -148,9 +148,6 @@ const client = new CrossTabClient({
   store: new SqlLogStore(db)
 })
 ```
-
-Version of the tables format is kept in `logux_version` table. Database
-created by a newer version of the client will throw an error.
 
 [Nano Stores SQL]: https://github.com/nanostores/sql
 
