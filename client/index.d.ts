@@ -193,6 +193,8 @@ export class Client<
   /**
    * Unique tab ID. Can be used to add an action to the specific tab.
    *
+   * Without `localStorage` (React Native) there are it is an empty string.
+   *
    * ```js
    * client.log.add(action, { tab: client.tabId })
    * ```

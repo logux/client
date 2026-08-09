@@ -233,8 +233,8 @@ it('uses user ID in node ID', () => {
     subprotocol: 10,
     userId: '10'
   })
-  expect(client1.clientId).toMatch(/^10:[\w-]{8}$/)
-  expect(client1.tabId).toMatch(/^[\w-]{8}$/)
+  expect(client1.clientId).toMatch(/^10:[\w-]{6}$/)
+  expect(client1.tabId).toBe('1')
   expect(client1.nodeId).toEqual(client1.clientId + ':' + client1.tabId)
 
   let client2 = new Client({
@@ -242,7 +242,51 @@ it('uses user ID in node ID', () => {
     subprotocol: 10,
     userId: '10'
   })
+  expect(client2.tabId).toBe('2')
   expect(client2.nodeId).toEqual(client2.clientId + ':' + client2.tabId)
+})
+
+it('uses longer client ID for anonymous users', () => {
+  let client = new Client({
+    server: 'wss://localhost:1337',
+    subprotocol: 10,
+    userId: 'anonymous'
+  })
+  expect(client.clientId).toMatch(/^anonymous:[\w-]{12}$/)
+})
+
+it('does not use tab ID without localStorage', () => {
+  let origin = window.localStorage
+  // @ts-expect-error
+  delete window.localStorage
+  try {
+    let client = new Client({
+      server: 'wss://localhost:1337',
+      subprotocol: 10,
+      userId: '10'
+    })
+    expect(client.tabId).toBe('')
+    expect(client.nodeId).toBe(client.clientId)
+  } finally {
+    window.localStorage = origin
+  }
+})
+
+it('uses random tab ID if another tab was faster', () => {
+  let origin = localStorage.setItem.bind(localStorage)
+  let calls = 0
+  localStorage.setItem = (key: string, value: string) => {
+    origin(key, value)
+    // Another tab took the same number between our set and get
+    if (key === 'logux:tab-id' && calls++ === 0) origin(key, '1 other')
+  }
+  let client = new Client({
+    server: 'wss://localhost:1337',
+    subprotocol: 10,
+    userId: '10'
+  })
+  localStorage.setItem = origin
+  expect(client.tabId).toMatch(/^[\w-]{4}$/)
 })
 
 it('uses node ID in ID generator', () => {

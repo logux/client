@@ -96,13 +96,13 @@ export class Client {
 
     if (!this.options.time) {
       this.clientId = this.options.userId + ':' + this.getClientId()
-      this.tabId = nanoid(8)
+      this.tabId = this.getTabId()
     } else {
       this.tabId = this.options.time.lastId + 1 + ''
       this.clientId = this.options.userId + ':' + this.tabId
     }
 
-    this.nodeId = this.clientId + ':' + this.tabId
+    this.nodeId = this.tabId ? this.clientId + ':' + this.tabId : this.clientId
     let store = this.options.store || new MemoryStore()
 
     let log
@@ -325,7 +325,7 @@ export class Client {
     this.options.userId = userId
     this.options.token = token
     this.clientId = userId + ':' + this.getClientId()
-    this.nodeId = this.clientId + ':' + this.tabId
+    this.nodeId = toNodeId(this)
 
     this.log.nodeId = this.nodeId
     this.node.localNodeId = this.nodeId
@@ -364,7 +364,24 @@ export class Client {
   }
 
   getClientId() {
-    return nanoid(8)
+    // Client ID must be unique only inside the user, and it is a part
+    // of every action ID. But all guests share the same `anonymous` user,
+    // so there the client ID is the only difference between them.
+    return nanoid(this.options.userId === 'anonymous' ? 12 : 6)
+  }
+
+  getTabId() {
+    // Without localStorage (React Native) there are no tabs, and the client
+    // ID is already unique for the client instance
+    if (!this.isLocalStorage) return ''
+    // Tab ID must be unique only between the tabs of this client
+    let key = this.options.prefix + ':tab-id'
+    let next = parseInt(localStorage.getItem(key)) + 1 || 1
+    let value = next + ' ' + nanoid(4)
+    localStorage.setItem(key, value)
+    // Another tab could take the same number at the same moment
+    if (localStorage.getItem(key) === value) return '' + next
+    return nanoid(4)
   }
 
   on(event, listener) {
