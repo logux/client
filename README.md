@@ -117,6 +117,26 @@ await user.update(ids, { age: 20 })
 await user.delete(ids)
 ```
 
+Custom actions are applied to the database by your callback. Action types
+in the callback come from `defineAction()`:
+
+```ts
+import { defineAction } from '@logux/actions'
+
+let userRenamed = defineAction<{
+  id: string
+  name: string
+  type: 'user/renamed'
+}>('user/renamed')
+
+let renameUser = crdt.action(userRenamed, async (tx, action, meta) => {
+  // change() keeps per-field last write wins, unlike your own UPDATE
+  await user.change(tx, action.id, { name: action.name }, meta)
+})
+
+await renameUser({ id, name: 'New' })
+```
+
 The same database can keep the Logux log itself instead of `IndexedDB`:
 
 ```js

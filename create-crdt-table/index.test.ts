@@ -1,3 +1,4 @@
+import { defineAction } from '@logux/actions'
 import type { Action } from '@logux/core'
 import type { Database, Driver, SqlStore } from '@nanostores/sql'
 import { openDb } from '@nanostores/sql'
@@ -1138,4 +1139,147 @@ it('throws on column name reserved for fields meta', async () => {
   expect(() => {
     crdt.table('user', { name: string(), updatedAt_name: string() })
   }).toThrow('updatedAt_ prefix is reserved for fields meta')
+})
+
+it('applies custom actions to the database', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+
+  let userRenamed = defineAction<{
+    id: string
+    name: string
+    type: 'user/renamed'
+  }>('user/renamed')
+  let calls: string[] = []
+  let renameUser = crdt.action(userRenamed, async (tx, action, meta) => {
+    calls.push(action.name)
+    await user.change(tx, action.id, { name: action.name }, meta)
+    await tx.exec`
+      UPDATE "user" SET "isAdmin" = ${1} WHERE "id" = ${action.id}
+    `
+  })
+  await delay(10)
+
+  await user.create({ id: 'U1', name: 'Ann' })
+  await delay(10)
+
+  await renameUser({ id: 'U1', name: 'New' })
+  await delay(10)
+  expect(calls).toEqual(['New'])
+  let rows = await loadList(user.select())
+  expect(rows[0]!.name).toBe('New')
+  expect(rows[0]!.isAdmin).toBe(1)
+  expect(rows[0]!.updatedAt_name).toBeTypeOf('string')
+
+  let sent = await client.sent(async () => {
+    await renameUser({ id: 'U1', name: 'Sent' })
+    await delay(10)
+  })
+  expect(sent).toEqual([{ id: 'U1', name: 'Sent', type: 'user/renamed' }])
+})
+
+it('resolves conflicts of custom actions by action meta', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  let userRenamed = defineAction<{
+    id: string
+    name: string
+    type: 'user/renamed'
+  }>('user/renamed')
+  crdt.action(userRenamed, async (tx, action, meta) => {
+    await user.change(tx, action.id, { name: action.name }, meta)
+  })
+  await delay(10)
+
+  await client.log.add(
+    { fields: { name: 'Ann' }, id: 'U1', type: 'user/created' },
+    { id: '100 10:other 0', time: 100 }
+  )
+  await delay(10)
+
+  await client.log.add(
+    { id: 'U1', name: 'Older', type: 'user/renamed' },
+    { id: '10 10:other 0', time: 10 }
+  )
+  await client.log.add(
+    { id: 'U2', name: 'Unknown', type: 'user/renamed' },
+    { id: '200 10:other 0', time: 200 }
+  )
+  await delay(10)
+  expect((await loadList(user.select())).map(i => i.name)).toEqual(['Ann'])
+
+  await client.log.add(
+    { id: 'U1', name: 'Newer', type: 'user/renamed' },
+    { id: '300 10:other 0', time: 300 }
+  )
+  await delay(10)
+  expect((await loadList(user.select())).map(i => i.name)).toEqual(['Newer'])
+})
+
+it('replays custom actions on schema change', async () => {
+  let { client, db } = await setup()
+  let userRenamed = defineAction<{
+    id: string
+    name: string
+    type: 'user/renamed'
+  }>('user/renamed')
+  await client.log.add(
+    { fields: { name: 'Ann' }, id: 'U1', type: 'user/created' },
+    { reasons: ['test'] }
+  )
+  await client.log.add(
+    { id: 'U1', name: 'FromLog', type: 'user/renamed' },
+    { reasons: ['test'] }
+  )
+
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  crdt.action(userRenamed, async (tx, action, meta) => {
+    await user.change(tx, action.id, { name: action.name }, meta)
+  })
+  await delay(10)
+
+  expect((await loadList(user.select())).map(i => i.name)).toEqual(['FromLog'])
+  expect(localStorage.getItem('logux:db')).toContain('"user/renamed":null')
+})
+
+it('re-creates database on custom actions changes', async () => {
+  let { client, db } = await setup()
+  let userRenamed = defineAction<{ type: 'user/renamed' }>('user/renamed')
+
+  let crdt1 = createCrdtDatabase(client, db)
+  crdt1.table('user', USER_SCHEMA)
+  await delay(10)
+  let withoutActions = localStorage.getItem('logux:db')
+  crdt1.destroy()
+
+  let crdt2 = createCrdtDatabase(client, db)
+  crdt2.table('user', USER_SCHEMA)
+  crdt2.action(userRenamed, () => {})
+  await delay(10)
+  let withAction = localStorage.getItem('logux:db')
+  expect(withAction).not.toBe(withoutActions)
+  crdt2.destroy()
+
+  let crdt3 = createCrdtDatabase(client, db)
+  crdt3.table('user', USER_SCHEMA)
+  crdt3.action(userRenamed, () => {}, { version: 2 })
+  await delay(10)
+  expect(localStorage.getItem('logux:db')).not.toBe(withAction)
+})
+
+it('throws on action() call after initialization', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  crdt.table('user', USER_SCHEMA)
+  await delay(10)
+
+  expect(() => {
+    crdt.action(
+      defineAction<{ type: 'user/renamed' }>('user/renamed'),
+      () => {}
+    )
+  }).toThrow(/sync/)
 })

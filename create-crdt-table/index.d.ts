@@ -1,4 +1,4 @@
-import type { SyncMapTypes } from '@logux/actions'
+import type { AbstractActionCreator, SyncMapTypes } from '@logux/actions'
 import type { Action } from '@logux/core'
 import type { Database, SqlStore } from '@nanostores/sql'
 import type { ReadableAtom } from 'nanostores'
@@ -291,6 +291,35 @@ export interface CrdtTable<
   Dialect extends string = 'sqlite'
 > {
   /**
+   * Change row fields from a custom action of {@link CrdtDatabase#action}
+   * with the same per-field last write wins as {@link CrdtTable#update}.
+   *
+   * Unlike {@link CrdtTable#update}, it does not add an action to the log.
+   * Use it instead of your own `UPDATE` to not write `updatedAt_field`
+   * columns manually and to not lose conflict resolution: like
+   * {@link CrdtTable#update}, it ignores older changes and rows,
+   * which were not created yet or were deleted on another client.
+   *
+   * ```ts
+   * let renameUser = crdt.action(userRenamed, async (tx, action, meta) => {
+   *   await user.change(tx, action.id, { name: action.name }, meta)
+   * })
+   * ```
+   *
+   * @param tx Database from the action callback.
+   * @param id Row ID or an array of row IDs.
+   * @param fields Changed fields.
+   * @param meta Meta of the action from the callback.
+   * @returns Promise resolved when rows were changed.
+   */
+  change(
+    tx: Database,
+    id: string[] | string,
+    fields: Partial<CrdtRowFields<Schema>>,
+    meta: ClientMeta
+  ): Promise<void>
+
+  /**
    * Add `plural/created` action to the log. The table row will be inserted
    * by the reducer (in a single browser tab) when the action is processed.
    *
@@ -394,6 +423,16 @@ export interface CrdtTable<
   ): Promise<void>
 }
 
+export interface CrdtActionOptions {
+  /**
+   * Version of the callback’s logic. Adding or removing an action re-creates
+   * the database from the log automatically, but a change inside
+   * the callback is not visible to the library. Increase this number
+   * to re-create the database after such change.
+   */
+  version?: number
+}
+
 export interface CrdtDatabaseOptions<Dialect extends string = 'sqlite'> {
   /**
    * SQL dialect of the database: `'sqlite'` (default), `'pglite'`
@@ -449,6 +488,58 @@ export interface CrdtDatabaseOptions<Dialect extends string = 'sqlite'> {
 }
 
 export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
+  /**
+   * Define custom action, which will be applied to the database
+   * by your callback.
+   *
+   * The callback is called only in a single browser tab (like the reducer
+   * of {@link CrdtDatabase#table} actions), inside a transaction, and only
+   * after the database is ready. On schema changes the action will be
+   * replayed from the log with all other actions, so the callback must
+   * only work with the database: no `log.add()`, no HTTP requests,
+   * no `Date.now()`.
+   *
+   * All actions must be defined synchronously after
+   * {@link createCrdtDatabase} call, because the schema version
+   * is calculated from all tables and actions.
+   *
+   * Use {@link CrdtTable#change} to change rows of CRDT tables: it keeps
+   * per-field last write wins by `updatedAt_field` columns.
+   *
+   * ```ts
+   * import { defineAction } from '@logux/actions'
+   *
+   * let userRenamed = defineAction<{
+   *   id: string
+   *   name: string
+   *   type: 'user/renamed'
+   * }>('user/renamed')
+   *
+   * let renameUser = crdt.action(userRenamed, async (tx, action, meta) => {
+   *   await user.change(tx, action.id, { name: action.name }, meta)
+   *   await tx.exec`
+   *     UPDATE "user" SET "renames" = "renames" + 1 WHERE "id" = ${action.id}
+   *   `
+   * })
+   *
+   * await renameUser({ id, name: 'New' })
+   * ```
+   *
+   * @param creator Action creator from `defineAction()`.
+   * @param apply Callback to apply the action to the database.
+   * @param opts Action options.
+   * @returns Function to add the action to the log and send it to the server.
+   */
+  action<Creator extends AbstractActionCreator>(
+    creator: Creator,
+    apply: (
+      tx: Database,
+      action: ReturnType<Creator>,
+      meta: ClientMeta
+    ) => Promise<void> | void,
+    opts?: CrdtActionOptions
+  ): (...args: Parameters<Creator>) => Promise<void>
+
   /**
    * Stop the database: release the leader tab lock, unsubscribe from the log
    * and from other tabs’ schema changes.

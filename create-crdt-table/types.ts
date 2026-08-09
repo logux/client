@@ -1,4 +1,4 @@
-import { defineCrdtTableActions } from '@logux/actions'
+import { defineAction, defineCrdtTableActions } from '@logux/actions'
 import type { Database } from '@nanostores/sql'
 
 import { Client, type WithoutMeta, withoutMeta } from '../index.js'
@@ -178,6 +178,28 @@ console.log(
   deletedUser({ ids: ['U1', 'U2'] })
 )
 
+let userRenamed = defineAction<{
+  id: string
+  name: string
+  type: 'user/renamed'
+}>('user/renamed')
+
+let renameUser = crdt.action(
+  userRenamed,
+  async (tx, action, meta) => {
+    let name: string = action.name
+    await user.change(tx, action.id, { name }, meta)
+    await user.change(tx, [action.id], { age: 31 }, meta)
+    await tx.exec`UPDATE "user" SET "isAdmin" = ${1} WHERE "id" = ${action.id}`
+  },
+  { version: 2 }
+)
+
+async function rename(): Promise<void> {
+  await renameUser({ id: 'U1', name: 'New' })
+}
+
+void rename()
 test()
 console.log(user.plural satisfies string)
 

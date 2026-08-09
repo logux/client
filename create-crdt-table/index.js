@@ -119,6 +119,8 @@ export function createCrdtDatabase(client, db, opts = {}) {
 
   let status = atom('initializing')
   let tables = {}
+  let actions = Object.create(null)
+  let actionVersions = Object.create(null)
 
   let setReady
   let ready = new Promise(resolve => {
@@ -161,6 +163,15 @@ export function createCrdtDatabase(client, db, opts = {}) {
     queue = queue.then(() => applyAction(action, meta)).finally(endApplying)
   }
 
+  function checkDefine() {
+    if (started) {
+      throw new Error(
+        'All tables and actions must be defined sync' +
+          ' after createCrdtDatabase()'
+      )
+    }
+  }
+
   function parseType(type) {
     let slash = type.lastIndexOf('/')
     if (slash === -1) return undefined
@@ -173,12 +184,26 @@ export function createCrdtDatabase(client, db, opts = {}) {
     return RESULT
   }
 
+  function isKnown(type) {
+    return !!actions[type] || !!parseType(type)
+  }
+
   async function applyAction(action, meta, tx) {
+    let custom = actions[action.type]
+    if (custom) {
+      if (tx) {
+        await custom(tx, action, meta)
+      } else {
+        await db.transaction(newTx => custom(newTx, action, meta))
+      }
+      return
+    }
+
     let parsed = parseType(action.type)
     if (!parsed) return
     let [plural, verb] = parsed
     let schema = tables[plural]
-    let target = tx ?? driver
+    let target = tx ? tx.driver : driver
 
     if (verb === VERBS.deleted) {
       let ids = action.ids ?? [action.id]
@@ -296,7 +321,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
     if (tx || queries.length < 2) {
       await execAll(target, queries)
     } else {
-      await driver.transaction(newTx => execAll(newTx, queries))
+      await db.transaction(newTx => execAll(newTx.driver, queries))
     }
   }
 
@@ -313,6 +338,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
   void Promise.resolve().then(async () => {
     started = true
     hash = JSON.stringify({
+      actions: sortKeys(actionVersions),
       tables: sortKeys(tables, schema =>
         sortKeys(schema, col => ({
           sql:
@@ -369,13 +395,13 @@ export function createCrdtDatabase(client, db, opts = {}) {
       }
       let entries = []
       await client.log.each((action, meta) => {
-        if (parseType(action.type)) entries.unshift([action, meta])
+        if (isKnown(action.type)) entries.unshift([action, meta])
       })
       if (old !== null && opts.repeat) {
         entries = entries.concat(await opts.repeat())
       }
       if (entries.length > 0) {
-        await driver.transaction(async tx => {
+        await db.transaction(async tx => {
           for (let entry of entries) {
             await applyAction(entry[0], entry[1], tx)
           }
@@ -406,7 +432,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
 
   let unbindAdd = client.on('add', (action, meta) => {
     if (!isLeader || status.value === 'outdated') return
-    if (!parseType(action.type)) return
+    if (!isKnown(action.type)) return
     startApplying()
     if (status.value !== 'ready') {
       actionsWaiting.push([action, meta])
@@ -416,6 +442,14 @@ export function createCrdtDatabase(client, db, opts = {}) {
   })
 
   return {
+    action(creator, apply, actionOpts = {}) {
+      checkDefine()
+      actions[creator.type] = apply
+      actionVersions[creator.type] = actionOpts.version ?? null
+      return async (...args) => {
+        await client.log.add(creator(...args), { sync: true })
+      }
+    },
     destroy() {
       if (destroyed) return
       destroyed = true
@@ -430,11 +464,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
     ready,
     status,
     table(plural, schema) {
-      if (started) {
-        throw new Error(
-          'All tables must be defined sync after createCrdtDatabase()'
-        )
-      }
+      checkDefine()
       for (let name in schema) {
         if (schema[name].type === 'BOOLEAN' && dialect === 'sqlite') {
           throw new Error('sqlite does not support boolean')
@@ -458,6 +488,15 @@ export function createCrdtDatabase(client, db, opts = {}) {
       }
 
       return {
+        async change(tx, id, fields, meta) {
+          await applyAction(
+            Array.isArray(id)
+              ? { fields, ids: id, type: `${plural}/changed` }
+              : { fields, id, type: `${plural}/changed` },
+            meta,
+            tx
+          )
+        },
         async create(fields) {
           if (Array.isArray(fields)) {
             if (fields.length === 0) return []
