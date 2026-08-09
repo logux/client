@@ -79,7 +79,6 @@
     "oxlint-tsgolint": "^7.0.2001",
     "postcss": "^8.5.26",
     "preact": "^10.29.8",
-    "print-snapshots": "^0.4.2",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "size-limit": "^13.0.3",
