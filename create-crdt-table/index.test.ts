@@ -7,7 +7,13 @@ import { delay } from 'nanodelay'
 import { cleanStores } from 'nanostores'
 import { afterEach, beforeAll, beforeEach, expect, it } from 'vitest'
 
-import { type ClientMeta, loadValue, TestClient } from '../index.js'
+import {
+  Client,
+  type ClientMeta,
+  loadValue,
+  SqlLogStore,
+  TestClient
+} from '../index.js'
 import { setLocalStorage } from '../test/local-storage.js'
 import {
   bigint,
@@ -54,10 +60,10 @@ function emitStorage(key: string, newValue: string): void {
 }
 
 function manualLocks(): {
-  callbacks: (() => Promise<unknown>)[]
+  grant: () => Promise<void>
   names: string[]
 } {
-  let callbacks: (() => Promise<unknown>)[] = []
+  let waiting: (() => Promise<unknown>)[] = []
   let names: string[] = []
   Object.defineProperty(navigator, 'locks', {
     configurable: true,
@@ -68,8 +74,12 @@ function manualLocks(): {
         callback: () => Promise<unknown>
       ) {
         names.push(name)
-        callbacks.push(callback)
         return new Promise((resolve, reject) => {
+          waiting.push(() => {
+            // Browser doesn’t call the callback of the aborted request
+            if (opts.signal?.aborted) return Promise.resolve()
+            return Promise.resolve(callback()).then(resolve)
+          })
           opts.signal?.addEventListener('abort', () => {
             reject(new Error('AbortError'))
           })
@@ -77,7 +87,13 @@ function manualLocks(): {
       }
     }
   })
-  return { callbacks, names }
+  return {
+    async grant() {
+      let next = waiting.shift()
+      if (next) await next()
+    },
+    names
+  }
 }
 
 /**
@@ -321,7 +337,7 @@ it('applies batch actions in the smallest number of queries', async () => {
       ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),' +
       ' (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
   ])
-  expect(transactions).toBe(0)
+  expect(transactions).toBe(1)
 
   // Rows have different history now: U1’s name and U3’s age were changed
   // by other actions, so all three rows have different fields meta
@@ -339,13 +355,13 @@ it('applies batch actions in the smallest number of queries', async () => {
     'UPDATE "user" SET "isAdmin" = ?, "updatedAt_isAdmin" = ?' +
       ' WHERE "id" IN (?, ?, ?)'
   ])
-  expect(transactions).toBe(0)
+  expect(transactions).toBe(3)
 
   executed = []
   await user.delete(['U1', 'U2'])
   await delay(10)
   expect(executed).toEqual(['DELETE FROM "user" WHERE "id" IN (?, ?)'])
-  expect(transactions).toBe(0)
+  expect(transactions).toBe(4)
 
   expect((await loadList(user.select())).map(i => i.id)).toEqual(['U3'])
 })
@@ -673,15 +689,15 @@ it('becomes outdated on storage event with different hash', async () => {
   expect(await loadList($all)).toEqual([])
 })
 
-it('applies actions only in the leader tab', async () => {
-  let { callbacks: lockCallbacks, names: lockNames } = manualLocks()
+it('takes the lock only while applying actions', async () => {
+  let { grant, names } = manualLocks()
 
   let { client, db } = await setup()
   let crdt = createCrdtDatabase(client, db)
   let user = crdt.table('user', USER_SCHEMA)
   await delay(10)
   expect(crdt.status.get()).toBe('ready')
-  expect(lockNames).toEqual(['logux:db:lock'])
+  expect(names).toEqual([])
 
   await client.log.add({
     fields: { name: 'Ann' },
@@ -689,39 +705,37 @@ it('applies actions only in the leader tab', async () => {
     type: 'user/created'
   })
   await delay(10)
+  expect(names).toEqual(['logux:db:apply'])
   expect(await loadList(user.select())).toEqual([])
 
-  let lockReleased = false
-  void lockCallbacks[0]!().then(() => {
-    lockReleased = true
-  })
-  await delay(10)
-
-  await client.log.add({
-    fields: { name: 'Ann' },
-    id: 'U1',
-    type: 'user/created'
-  })
+  await grant()
   await delay(10)
   expect((await loadList(user.select())).map(i => i.id)).toEqual(['U1'])
-  expect(lockReleased).toBe(false)
-
-  emitStorage('logux:db', 'newer-hash')
-  await delay(10)
-  expect(lockReleased).toBe(true)
+  expect(names).toEqual(['logux:db:apply'])
 })
 
-it('does not become leader when lock is granted after outdate', async () => {
-  let { callbacks: lockCallbacks } = manualLocks()
+it('does not apply actions after outdate', async () => {
+  let { grant } = manualLocks()
 
   let { client, db } = await setup()
   let crdt = createCrdtDatabase(client, db)
   crdt.table('user', USER_SCHEMA)
   await delay(10)
 
+  await client.log.add({
+    fields: { name: 'Ann' },
+    id: 'U1',
+    type: 'user/created'
+  })
+  await delay(10)
+
   emitStorage('logux:db', 'newer-hash')
   expect(crdt.status.get()).toBe('outdated')
-  await lockCallbacks[0]!()
+
+  await grant()
+  await delay(10)
+  // Reactive stores are paused on outdated database
+  expect(await db.driver.select('SELECT "id" FROM "user"', [])).toEqual([])
 })
 
 it('unsubscribes from the log and from other tabs on destroy()', async () => {
@@ -755,86 +769,57 @@ it('unsubscribes from the log and from other tabs on destroy()', async () => {
   expect(stopCalled).toBe(0)
 })
 
-it('passes the leader lock to the next database after destroy()', async () => {
+it('applies actions of any database over the same log', async () => {
   queuedLocks()
 
   let { client, db } = await setup()
   let crdt1 = createCrdtDatabase(client, db)
-  crdt1.table('user', USER_SCHEMA)
+  let user1 = crdt1.table('user', USER_SCHEMA)
+  let crdt2 = createCrdtDatabase(client, db)
+  crdt2.table('user', USER_SCHEMA)
   await delay(10)
-
-  let client2 = new TestClient('10')
-  await client2.connect()
-  let db2 = openDb(nodeDriver(':memory:'))
-  let crdt2 = createCrdtDatabase(client2, db2)
-  let user2 = crdt2.table('user', USER_SCHEMA)
-  await delay(10)
-  expect(crdt2.status.get()).toBe('ready')
-
-  await client2.log.add({
-    fields: { name: 'Ann' },
-    id: 'U1',
-    type: 'user/created'
-  })
-  await delay(10)
-  expect(await loadList(user2.select())).toEqual([])
-
-  crdt1.destroy()
-  await delay(10)
-
-  await client2.log.add({
-    fields: { name: 'Ben' },
-    id: 'U2',
-    type: 'user/created'
-  })
-  await delay(10)
-  expect((await loadList(user2.select())).map(i => i.id)).toEqual(['U2'])
-})
-
-it('cancels not granted lock request on destroy()', async () => {
-  queuedLocks()
-
-  let { client, db } = await setup()
-  let crdt1 = createCrdtDatabase(client, db)
-  crdt1.table('user', USER_SCHEMA)
-  await delay(10)
-
-  let client2 = new TestClient('10')
-  await client2.connect()
-  let db2 = openDb(nodeDriver(':memory:'))
-  let crdt2 = createCrdtDatabase(client2, db2)
-  let user2 = crdt2.table('user', USER_SCHEMA)
-  crdt2.destroy()
-  await delay(10)
-
-  crdt1.destroy()
-  await delay(10)
-
-  await client2.log.add({
-    fields: { name: 'Ann' },
-    id: 'U1',
-    type: 'user/created'
-  })
-  await delay(10)
-  expect(await loadList(user2.select())).toEqual([])
-})
-
-it('does not become leader when lock is granted after destroy()', async () => {
-  let { callbacks: lockCallbacks } = manualLocks()
-
-  let { client, db } = await setup()
-  let crdt = createCrdtDatabase(client, db)
-  let user = crdt.table('user', USER_SCHEMA)
-  await delay(10)
-
-  crdt.destroy()
-  await lockCallbacks[0]!()
 
   await client.log.add({
     fields: { name: 'Ann' },
     id: 'U1',
     type: 'user/created'
   })
+  await delay(10)
+  expect((await loadList(user1.select())).map(i => i.id)).toEqual(['U1'])
+
+  crdt1.destroy()
+  await client.log.add({
+    fields: { name: 'Ben' },
+    id: 'U2',
+    type: 'user/created'
+  })
+  await delay(10)
+  expect((await loadList(user1.select())).map(i => i.id)).toEqual(['U1', 'U2'])
+
+  crdt2.destroy()
+})
+
+it('cancels not granted lock request on destroy()', async () => {
+  let { grant } = manualLocks()
+
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await delay(10)
+
+  await client.log.add({
+    fields: { name: 'Ann' },
+    id: 'U1',
+    type: 'user/created'
+  })
+  await delay(10)
+  expect(unloaders).toHaveLength(1)
+
+  crdt.destroy()
+  await delay(10)
+  expect(unloaders).toHaveLength(0)
+
+  await grant()
   await delay(10)
   expect(await loadList(user.select())).toEqual([])
 })
@@ -1282,4 +1267,286 @@ it('throws on action() call after initialization', async () => {
       () => {}
     )
   }).toThrow(/sync/)
+})
+
+it('applies many actions in a single transaction', async () => {
+  let { client, db } = await setup()
+  for (let i = 0; i < 1000; i++) {
+    await client.log.add(
+      { fields: { name: `User ${i}` }, id: `U${i}`, type: 'user/created' },
+      { reasons: ['test'] }
+    )
+  }
+
+  let transactions = 0
+  let origin = db.driver.transaction.bind(db.driver)
+  db.driver.transaction = (callback, opts) => {
+    transactions += 1
+    return origin(callback, opts)
+  }
+
+  let crdt = createCrdtDatabase(client, db)
+  crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+
+  expect(transactions).toBe(1)
+  expect(
+    await db.driver.select('SELECT count(*) AS "count" FROM "user"', [])
+  ).toEqual([{ count: 1000 }])
+})
+
+it('finishes applying, which was interrupted by tab closing', async () => {
+  let { client, db } = await setup()
+  let crdt1 = createCrdtDatabase(client, db)
+  crdt1.table('user', USER_SCHEMA)
+  await crdt1.ready
+
+  let broken = true
+  let origin = db.driver.transaction.bind(db.driver)
+  db.driver.transaction = (callback, opts) => {
+    return origin(tx => {
+      let originExec = tx.exec.bind(tx)
+      tx.exec = (sql, params) => {
+        if (broken && sql.startsWith('INSERT INTO "user"')) {
+          throw new Error('Tab was closed')
+        }
+        return originExec(sql, params)
+      }
+      return callback(tx)
+    }, opts)
+  }
+
+  await client.log.add({
+    fields: { name: 'Ann' },
+    id: 'U1',
+    type: 'user/created'
+  })
+  await delay(10)
+  expect(await db.driver.select('SELECT "id" FROM "user"', [])).toEqual([])
+
+  let kept: string[] = []
+  await client.log.each((action, actionMeta) => {
+    if (actionMeta.reasons.includes('applying-to-db')) kept.push(action.type)
+  })
+  expect(kept).toEqual(['user/created'])
+
+  crdt1.destroy()
+  broken = false
+
+  let crdt2 = createCrdtDatabase(client, db)
+  let user2 = crdt2.table('user', USER_SCHEMA)
+  await crdt2.ready
+  expect((await loadList(user2.select())).map(i => i.id)).toEqual(['U1'])
+
+  kept = []
+  await client.log.each((action, actionMeta) => {
+    if (actionMeta.reasons.includes('applying-to-db')) kept.push(action.type)
+  })
+  expect(kept).toEqual([])
+  crdt2.destroy()
+})
+
+it('applies repeated created and deleted actions', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+
+  for (let repeat of [1, 2]) {
+    await client.log.add(
+      { fields: { name: 'Ann' }, id: 'U1', type: 'user/created' },
+      { id: `10${repeat} 10:other 0`, time: 100 }
+    )
+    await client.log.add(
+      { id: 'U1', type: 'user/deleted' },
+      { id: `20${repeat} 10:other 0`, time: 200 }
+    )
+  }
+  await delay(10)
+
+  expect(await loadList(user.select())).toEqual([])
+})
+it('applies actions in the transaction of SQL log store', async () => {
+  let db = openDb(nodeDriver(':memory:'))
+  let store = new SqlLogStore(db)
+  let client = new Client({
+    server: 'ws://localhost',
+    store,
+    subprotocol: 1,
+    userId: '10'
+  })
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+
+  let id = await user.create({ name: 'Ann' })
+  // The row is in the database right after create(), without any delay
+  expect(await db.driver.select('SELECT "id" FROM "user"', [])).toEqual([
+    { id }
+  ])
+
+  await user.update(id, { name: 'New' })
+  expect(await db.driver.select('SELECT "name" FROM "user"', [])).toEqual([
+    { name: 'New' }
+  ])
+
+  await delay(10)
+  let kept: string[] = []
+  await client.log.each((action, meta) => {
+    if (meta.reasons.includes('applying-to-db')) kept.push(action.type)
+  })
+  expect(kept).toEqual([])
+
+  // Actions from the network are applied by batches in store’s transaction
+  store.onTransactionAdd(undefined)
+  await client.log.add({ id, type: 'user/deleted' })
+  await delay(10)
+  expect(await db.driver.select('SELECT "id" FROM "user"', [])).toEqual([])
+
+  crdt.destroy()
+  await db.close()
+})
+
+it('does not add action to the log if applying failed', async () => {
+  let db = openDb(nodeDriver(':memory:'))
+  let client = new Client({
+    server: 'ws://localhost',
+    store: new SqlLogStore(db),
+    subprotocol: 1,
+    userId: '10'
+  })
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+
+  await db.driver.exec('DROP TABLE "user"', [])
+
+  let error: Error | undefined
+  try {
+    await user.create({ name: 'Ann' })
+  } catch (e) {
+    error = e as Error
+  }
+  expect(error).toBeDefined()
+
+  let types: string[] = []
+  await client.log.each(action => {
+    types.push(action.type)
+  })
+  expect(types).toEqual([])
+
+  crdt.destroy()
+  await db.close()
+})
+
+it('resolves table methods only after applying to the database', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  let userRenamed = defineAction<{
+    id: string
+    name: string
+    type: 'user/renamed'
+  }>('user/renamed')
+  let renameUser = crdt.action(userRenamed, async (tx, action, meta) => {
+    await user.change(tx, action.id, { name: action.name }, meta)
+  })
+  await crdt.ready
+
+  async function names(): Promise<string[]> {
+    let rows = (await db.driver.select('SELECT "name" FROM "user"', [])) as {
+      name: string
+    }[]
+    return rows.map(i => i.name)
+  }
+
+  let id = await user.create({ name: 'Ann' })
+  expect(await names()).toEqual(['Ann'])
+
+  await user.update(id, { name: 'Updated' })
+  expect(await names()).toEqual(['Updated'])
+
+  await renameUser({ id, name: 'Renamed' })
+  expect(await names()).toEqual(['Renamed'])
+
+  let ids = await user.create([{ name: 'Ben' }, { name: 'Cat' }])
+  expect(await names()).toHaveLength(3)
+
+  await user.update(ids, { name: 'Both' })
+  expect(await names()).toEqual(['Renamed', 'Both', 'Both'])
+
+  await user.delete(ids)
+  expect(await names()).toEqual(['Renamed'])
+
+  await user.delete(id)
+  expect(await names()).toEqual([])
+})
+
+it('rejects table methods on database stop', async () => {
+  let { grant } = manualLocks()
+
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await delay(10)
+
+  let creating = user.create({ name: 'Ann' })
+  await delay(10)
+  crdt.destroy()
+  await expect(creating).rejects.toThrow(
+    'The database was stopped before the action was applied to it'
+  )
+
+  await grant()
+})
+
+it('rejects table methods if applying failed', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+
+  await db.driver.exec('DROP TABLE "user"', [])
+  await expect(user.create({ name: 'Ann' })).rejects.toThrow(/user/)
+
+  crdt.destroy()
+})
+
+it('removes reasons of applied actions by batches', async () => {
+  let db = openDb(nodeDriver(':memory:'))
+  let store = new SqlLogStore(db)
+  let client = new Client({
+    server: 'ws://localhost',
+    store,
+    subprotocol: 1,
+    userId: '10'
+  })
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+
+  let calls = 0
+  let origin = client.log.removeReason.bind(client.log)
+  client.log.removeReason = (reason, criteria) => {
+    calls += 1
+    return origin(reason, criteria)
+  }
+
+  await Promise.all([
+    user.create({ name: 'Ann' }),
+    user.create({ name: 'Ben' }),
+    user.create({ name: 'Cat' })
+  ])
+  await delay(10)
+  expect(calls).toBe(1)
+
+  let kept: string[] = []
+  await client.log.each((action, meta) => {
+    if (meta.reasons.includes('applying-to-db')) kept.push(action.type)
+  })
+  expect(kept).toEqual([])
+  expect(await loadList(user.select())).toHaveLength(3)
+
+  crdt.destroy()
+  await db.close()
 })

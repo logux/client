@@ -198,6 +198,7 @@ export class IndexedStore {
   }
 
   async removeReason(reason, criteria, callback) {
+    if (criteria.ids && criteria.ids.length === 0) return
     let store = await this.init()
     if (criteria.id) {
       let entry = await promisify(store.os('log').index('id').get(criteria.id))
@@ -215,6 +216,7 @@ export class IndexedStore {
         }
       }
     } else {
+      let ids = criteria.ids && new Set(criteria.ids)
       await new Promise((resolve, reject) => {
         let log = store.os('log', 'write')
         let request = log.index('reasons').openCursor(reason)
@@ -229,6 +231,10 @@ export class IndexedStore {
           let m = entry.meta
           let c = criteria
 
+          if (ids && !ids.has(m.id)) {
+            e.target.result.continue()
+            return
+          }
           if (isDefined(c.olderThan) && !isFirstOlder(m, c.olderThan)) {
             e.target.result.continue()
             return

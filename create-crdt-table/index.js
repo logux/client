@@ -75,6 +75,11 @@ function createTableSql(plural, schema, dialect) {
   )
 }
 
+/**
+ * How many actions to apply in a single transaction.
+ */
+const CHUNK_SIZE = 1000
+
 const VERBS = {
   changed: 1,
   created: 2,
@@ -129,38 +134,112 @@ export function createCrdtDatabase(client, db, opts = {}) {
 
   let started = false
   let hash
-  let actionsWaiting = []
-  let isLeader = false
-  let releaseLock = () => {}
-  let queue = Promise.resolve()
+  let pending = []
+  let pendingIds = new Set()
+  let waiting = new Map()
+  let inlined = new Set()
+  let removing = new Set()
+  let blocking = false
+  let draining = false
+  let sqlStore
   let destroyed = false
   let unbindStorage = () => {}
   let lockRequest = new AbortController()
-  let applying = 0
 
   function unblockClosing() {
-    applying = 0
-    if (hasWindow()) {
+    if (blocking && hasWindow()) {
       window.removeEventListener('beforeunload', blockClosing)
     }
+    blocking = false
   }
 
-  // Actions are already in the log, but the tab will lose their changes
-  // in the database if it will be closed before we apply them
-  function startApplying() {
-    applying += 1
-    if (applying === 1 && hasWindow()) {
+  // Actions are already in the log, so they will be applied on the next
+  // start. But the user will see the old data until the tab will be closed.
+  function pushToApply(action, meta) {
+    if (destroyed || status.value === 'outdated') return
+    if (pendingIds.has(meta.id)) return
+    if (!blocking && hasWindow()) {
       window.addEventListener('beforeunload', blockClosing)
+      blocking = true
+    }
+    pendingIds.add(meta.id)
+    pending.push([action, meta])
+  }
+
+  /**
+   * Promise for `table.create()`, `table.update()`, `table.delete()`
+   * and custom actions to resolve them only after the action was applied
+   * to the database, not after it was added to the log.
+   */
+  function applied(meta) {
+    if (!meta || !pendingIds.has(meta.id)) return undefined
+    return new Promise((resolve, reject) => {
+      waiting.set(meta.id, [resolve, reject])
+    })
+  }
+
+  function stopWaiting(ids, error) {
+    for (let id of ids) {
+      let callbacks = waiting.get(id)
+      if (!callbacks) continue
+      waiting.delete(id)
+      if (error) {
+        callbacks[1](error)
+      } else {
+        callbacks[0]()
+      }
     }
   }
 
-  function endApplying() {
-    applying -= 1
-    if (applying <= 0) unblockClosing()
+  function withApplyLock(callback) {
+    if (typeof navigator !== 'undefined' && navigator.locks) {
+      return navigator.locks.request(
+        `${storageKey}:apply`,
+        { signal: lockRequest.signal },
+        callback
+      )
+    } else {
+      return callback()
+    }
   }
 
-  function enqueue(action, meta) {
-    queue = queue.then(() => applyAction(action, meta)).finally(endApplying)
+  async function drain() {
+    if (draining) return
+    draining = true
+    try {
+      while (pending.length > 0) {
+        if (destroyed || status.value === 'outdated') break
+        let chunk = pending.splice(0, CHUNK_SIZE)
+        let ids = chunk.map(entry => entry[1].id)
+        try {
+          await withApplyLock(() => {
+            let apply = async tx => {
+              for (let entry of chunk) {
+                await applyAction(entry[0], entry[1], tx)
+              }
+            }
+            // Log store’s transaction to not open two transactions
+            // in the same database connection
+            return sqlStore ? sqlStore.write(apply) : db.transaction(apply)
+          })
+        } catch (e) {
+          // Actions still have the reason, so this or another tab
+          // will apply them on the next start
+          pending.unshift(...chunk)
+          stopWaiting(ids, e)
+          break
+        }
+        for (let id of ids) pendingIds.delete(id)
+        stopWaiting(ids)
+        // Reasons are removed by a single call after the commit: applying
+        // the action twice is safe, but losing it will keep the database
+        // incomplete forever
+        await client.log.removeReason('applying-to-db', { ids })
+      }
+    } finally {
+      draining = false
+      if (pending.length === 0) unblockClosing()
+    }
   }
 
   function checkDefine() {
@@ -191,11 +270,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
   async function applyAction(action, meta, tx) {
     let custom = actions[action.type]
     if (custom) {
-      if (tx) {
-        await custom(tx, action, meta)
-      } else {
-        await db.transaction(newTx => custom(newTx, action, meta))
-      }
+      await custom(tx, action, meta)
       return
     }
 
@@ -203,7 +278,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
     if (!parsed) return
     let [plural, verb] = parsed
     let schema = tables[plural]
-    let target = tx ? tx.driver : driver
+    let target = tx.driver
 
     if (verb === VERBS.deleted) {
       let ids = action.ids ?? [action.id]
@@ -318,18 +393,42 @@ export function createCrdtDatabase(client, db, opts = {}) {
       ])
     }
 
-    if (tx || queries.length < 2) {
-      await execAll(target, queries)
-    } else {
-      await db.transaction(newTx => execAll(newTx.driver, queries))
-    }
+    await execAll(target, queries)
+  }
+
+  // Actions, applied inside the log store transaction, still have
+  // the reason. Removing them by batches saves a store transaction
+  // on every action.
+  function removeApplied(id) {
+    removing.add(id)
+    if (removing.size > 1) return
+    // Timeout instead of microtask: it collects the whole burst
+    // of writes into a single log transaction
+    setTimeout(() => {
+      let ids = [...removing]
+      removing.clear()
+      client.log.removeReason('applying-to-db', { ids }).catch(() => {
+        // The actions will be applied again on the next start
+      })
+    })
+  }
+
+  async function applyInline(tx, action, meta) {
+    if (destroyed || status.value === 'outdated') return
+    if (!isKnown(action.type)) return
+    await applyAction(action, meta, tx)
+    inlined.add(meta.id)
   }
 
   function becomeReady() {
-    for (let entry of actionsWaiting) {
-      enqueue(entry[0], entry[1])
+    let store = client.log.store
+    // Actions of this tab will be applied in the same transaction,
+    // which writes them to the log, so `await table.update()` will mean
+    // that the row was already changed
+    if (!destroyed && store.onTransactionAdd && store.driver === db.driver) {
+      sqlStore = store
+      sqlStore.onTransactionAdd(applyInline)
     }
-    actionsWaiting = []
     status.set('ready')
     db.resume()
     setReady()
@@ -360,9 +459,16 @@ export function createCrdtDatabase(client, db, opts = {}) {
           status.set('outdated')
           db.pause()
           stop()
-          releaseLock()
           setReady()
-          actionsWaiting = []
+          stopWaiting(
+            [...waiting.keys()],
+            new Error(
+              'The database was stopped before the action was applied to it'
+            )
+          )
+          pending = []
+          pendingIds.clear()
+          lockRequest.abort()
           unblockClosing()
         }
       }
@@ -380,6 +486,15 @@ export function createCrdtDatabase(client, db, opts = {}) {
       for (let plural in tables) {
         await driver.exec(createTableSql(plural, tables[plural], dialect), [])
       }
+      // Actions, which were not applied before the last tab was closed
+      let unapplied = []
+      await client.log.each({ order: 'added' }, (action, meta) => {
+        if (meta.reasons.includes('applying-to-db')) {
+          unapplied.unshift([action, meta])
+        }
+      })
+      for (let entry of unapplied) pushToApply(entry[0], entry[1])
+      await drain()
       becomeReady()
     } else {
       if (old !== null) {
@@ -394,19 +509,17 @@ export function createCrdtDatabase(client, db, opts = {}) {
         await driver.exec(createTableSql(plural, tables[plural], dialect), [])
       }
       let entries = []
-      await client.log.each((action, meta) => {
+      await client.log.each({ order: 'added' }, (action, meta) => {
         if (isKnown(action.type)) entries.unshift([action, meta])
       })
       if (old !== null && opts.repeat) {
         entries = entries.concat(await opts.repeat())
       }
-      if (entries.length > 0) {
-        await db.transaction(async tx => {
-          for (let entry of entries) {
-            await applyAction(entry[0], entry[1], tx)
-          }
-        })
-      }
+      let added = pending
+      pending = []
+      pendingIds.clear()
+      for (let entry of entries.concat(added)) pushToApply(entry[0], entry[1])
+      await drain()
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem(storageKey, hash)
       }
@@ -414,31 +527,21 @@ export function createCrdtDatabase(client, db, opts = {}) {
     }
   })
 
-  if (typeof navigator !== 'undefined' && navigator.locks) {
-    navigator.locks
-      .request(`${storageKey}:lock`, { signal: lockRequest.signal }, () => {
-        if (status.get() === 'outdated' || destroyed) return Promise.resolve()
-        isLeader = true
-        return new Promise(resolve => {
-          releaseLock = resolve
-        })
-      })
-      .catch(() => {
-        // Lock request was aborted by destroy()
-      })
-  } else {
-    isLeader = true
-  }
+  // Reason keeps the action in the log until it will be applied,
+  // so any tab can find and finish the work of the crashed tab
+  let unbindPreadd = client.on('preadd', (action, meta) => {
+    if (isKnown(action.type)) meta.reasons.push('applying-to-db')
+  })
 
   let unbindAdd = client.on('add', (action, meta) => {
-    if (!isLeader || status.value === 'outdated') return
-    if (!isKnown(action.type)) return
-    startApplying()
-    if (status.value !== 'ready') {
-      actionsWaiting.push([action, meta])
-    } else {
-      enqueue(action, meta)
+    if (!meta.reasons.includes('applying-to-db')) return
+    if (inlined.has(meta.id)) {
+      inlined.delete(meta.id)
+      removeApplied(meta.id)
+      return
     }
+    pushToApply(action, meta)
+    if (status.value === 'ready') void drain()
   })
 
   return {
@@ -447,18 +550,27 @@ export function createCrdtDatabase(client, db, opts = {}) {
       actions[creator.type] = apply
       actionVersions[creator.type] = actionOpts.version ?? null
       return async (...args) => {
-        await client.log.add(creator(...args), { sync: true })
+        await applied(await client.log.add(creator(...args), { sync: true }))
       }
     },
     destroy() {
       if (destroyed) return
       destroyed = true
-      isLeader = false
+      unbindPreadd()
       unbindAdd()
       unbindStorage()
+      if (sqlStore && sqlStore.onAdd === applyInline) {
+        sqlStore.onTransactionAdd(undefined)
+      }
       lockRequest.abort()
-      releaseLock()
-      actionsWaiting = []
+      stopWaiting(
+        [...waiting.keys()],
+        new Error(
+          'The database was stopped before the action was applied to it'
+        )
+      )
+      pending = []
+      pendingIds.clear()
       unblockClosing()
     },
     ready,
@@ -506,31 +618,37 @@ export function createCrdtDatabase(client, db, opts = {}) {
               ids.push(id)
               return { id, ...values }
             })
-            await client.log.add(
+            let meta = await client.log.add(
               { records, type: `${plural}/created` },
               { sync: true }
             )
+            await applied(meta)
             return ids
           } else {
             let [id, values] = withDefaults(fields)
-            await client.log.add(
+            let meta = await client.log.add(
               { fields: values, id, type: `${plural}/created` },
               { sync: true }
             )
+            await applied(meta)
             return id
           }
         },
         async delete(id) {
           if (Array.isArray(id)) {
             if (id.length === 0) return
-            await client.log.add(
-              { ids: id, type: `${plural}/deleted` },
-              { sync: true }
+            await applied(
+              await client.log.add(
+                { ids: id, type: `${plural}/deleted` },
+                { sync: true }
+              )
             )
           } else {
-            await client.log.add(
-              { id, type: `${plural}/deleted` },
-              { sync: true }
+            await applied(
+              await client.log.add(
+                { id, type: `${plural}/deleted` },
+                { sync: true }
+              )
             )
           }
         },
@@ -545,14 +663,18 @@ export function createCrdtDatabase(client, db, opts = {}) {
         async update(id, diff) {
           if (Array.isArray(id)) {
             if (id.length === 0) return
-            await client.log.add(
-              { fields: diff, ids: id, type: `${plural}/changed` },
-              { sync: true }
+            await applied(
+              await client.log.add(
+                { fields: diff, ids: id, type: `${plural}/changed` },
+                { sync: true }
+              )
             )
           } else {
-            await client.log.add(
-              { fields: diff, id, type: `${plural}/changed` },
-              { sync: true }
+            await applied(
+              await client.log.add(
+                { fields: diff, id, type: `${plural}/changed` },
+                { sync: true }
+              )
             )
           }
         }

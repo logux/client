@@ -149,6 +149,9 @@ const client = new CrossTabClient({
 })
 ```
 
+Version of the tables format is kept in `logux_version` table. Database
+created by a newer version of the client will throw an error.
+
 [Nano Stores SQL]: https://github.com/nanostores/sql
 
 ## End-to-End Encryption

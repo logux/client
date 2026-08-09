@@ -37,9 +37,9 @@ const PAGE_SIZE = 1000
  */
 const RETRIES = 5
 
-async function addTags(tx, table, column, added, values) {
+async function addTags(target, table, column, added, values) {
   for (let value of values ?? []) {
-    await tx.exec(
+    await target.exec(
       `INSERT INTO "${table}" ("added", "${column}") VALUES (?, ?)`,
       [added, value]
     )
@@ -70,9 +70,9 @@ function parseJSONWithBinary(json) {
   })
 }
 
-async function removeEntries(tx, added) {
+async function removeEntries(target, added) {
   for (let table of ['logux_log', 'logux_reason', 'logux_index']) {
-    await tx.exec(
+    await target.exec(
       `DELETE FROM "${table}" WHERE "added" IN (${holders(added.length)})`,
       added
     )
@@ -99,13 +99,14 @@ function toNumber(value) {
 
 export class SqlLogStore {
   constructor(db) {
+    this.db = db
     this.driver = db.driver
     this.queue = Promise.resolve()
   }
 
   async add(action, meta) {
     return this.write(async tx => {
-      let [exist] = await tx.select(
+      let [exist] = await tx.driver.select(
         `SELECT "added" FROM "logux_log" WHERE "id" = ?`,
         [meta.id]
       )
@@ -113,14 +114,14 @@ export class SqlLogStore {
 
       // Next `added` is taken by SQL inside the immediate transaction
       // to be safe with other tabs writing to the same database
-      let [{ last }] = await tx.select(
+      let [{ last }] = await tx.driver.select(
         `SELECT coalesce(max("added"), 0) AS "last" FROM "logux_log"`,
         []
       )
       meta.added = Number(last) + 1
 
       let id = meta.id.split(' ')
-      await tx.exec(
+      await tx.driver.exec(
         `INSERT INTO "logux_log"` +
           ` ("added", "id", "time", "node", "counter", "nodeTime",` +
           ` "action", "meta") VALUES (${holders(8)})`,
@@ -135,8 +136,16 @@ export class SqlLogStore {
           serializeToJSONWithBinary(meta)
         ]
       )
-      await addTags(tx, 'logux_reason', 'reason', meta.added, meta.reasons)
-      await addTags(tx, 'logux_index', 'name', meta.added, meta.indexes)
+      await addTags(
+        tx.driver,
+        'logux_reason',
+        'reason',
+        meta.added,
+        meta.reasons
+      )
+      await addTags(tx.driver, 'logux_index', 'name', meta.added, meta.indexes)
+      // Materialized views commit together with the action
+      if (this.onAdd) await this.onAdd(tx, action, meta)
       return meta
     })
   }
@@ -152,7 +161,7 @@ export class SqlLogStore {
 
   async changeMeta(id, diff) {
     return this.write(async tx => {
-      let [row] = await tx.select(
+      let [row] = await tx.driver.select(
         `SELECT "added", "meta" FROM "logux_log" WHERE "id" = ?`,
         [id]
       )
@@ -160,15 +169,21 @@ export class SqlLogStore {
 
       let meta = parseJSONWithBinary(row.meta)
       for (let key in diff) meta[key] = diff[key]
-      await tx.exec(`UPDATE "logux_log" SET "meta" = ? WHERE "added" = ?`, [
-        serializeToJSONWithBinary(meta),
-        row.added
-      ])
+      await tx.driver.exec(
+        `UPDATE "logux_log" SET "meta" = ? WHERE "added" = ?`,
+        [serializeToJSONWithBinary(meta), row.added]
+      )
       if (diff.reasons) {
-        await tx.exec(`DELETE FROM "logux_reason" WHERE "added" = ?`, [
+        await tx.driver.exec(`DELETE FROM "logux_reason" WHERE "added" = ?`, [
           row.added
         ])
-        await addTags(tx, 'logux_reason', 'reason', row.added, diff.reasons)
+        await addTags(
+          tx.driver,
+          'logux_reason',
+          'reason',
+          row.added,
+          diff.reasons
+        )
       }
       return true
     })
@@ -177,7 +192,7 @@ export class SqlLogStore {
   async clean() {
     await this.write(async tx => {
       for (let table of TABLES) {
-        await tx.exec(`DELETE FROM "${table}"`, [])
+        await tx.driver.exec(`DELETE FROM "${table}"`, [])
       }
     })
   }
@@ -212,26 +227,26 @@ export class SqlLogStore {
       this.initing = this.transaction(async tx => {
         // Format of this table will never change, so we can read it
         // before we will know the version of other tables
-        await tx.exec(
+        await tx.driver.exec(
           `CREATE TABLE IF NOT EXISTS "logux_version" ("version" BIGINT)`,
           []
         )
-        let [row] = await tx.select(`SELECT "version" FROM "logux_version"`, [])
+        let [row] = await tx.driver.select(
+          `SELECT "version" FROM "logux_version"`,
+          []
+        )
         let version = row ? Number(row.version) : 0
         if (version > LOGUX_SQL_LOG_VERSION) {
           throw new Error('DB was created by a newer version of Logux Client')
         }
         if (version < LOGUX_SQL_LOG_VERSION) {
-          // Later we can replace re-creating with migrations
-          for (let table of TABLES) {
-            await tx.exec(`DROP TABLE IF EXISTS "${table}"`, [])
-          }
-          await tx.exec(`DELETE FROM "logux_version"`, [])
-          await tx.exec(`INSERT INTO "logux_version" ("version") VALUES (?)`, [
-            LOGUX_SQL_LOG_VERSION
-          ])
+          await tx.driver.exec(`DELETE FROM "logux_version"`, [])
+          await tx.driver.exec(
+            `INSERT INTO "logux_version" ("version") VALUES (?)`,
+            [LOGUX_SQL_LOG_VERSION]
+          )
         }
-        for (let sql of DDL) await tx.exec(sql, [])
+        for (let sql of DDL) await tx.driver.exec(sql, [])
       })
     }
     return this.initing
@@ -291,17 +306,18 @@ export class SqlLogStore {
 
   async remove(id) {
     return this.write(async tx => {
-      let [row] = await tx.select(
+      let [row] = await tx.driver.select(
         `SELECT "added", "action", "meta" FROM "logux_log" WHERE "id" = ?`,
         [id]
       )
       if (!row) return false
-      await removeEntries(tx, [row.added])
+      await removeEntries(tx.driver, [row.added])
       return toEntry(row)
     })
   }
 
   async removeReason(reason, criteria, callback) {
+    if (criteria.ids && criteria.ids.length === 0) return
     // Callbacks are called after the commit, so they will not see
     // the database in the middle of the changes
     let cleaned = await this.write(async tx => {
@@ -313,6 +329,10 @@ export class SqlLogStore {
         where.push('"id" = ?')
         params.push(criteria.id)
       }
+      if (criteria.ids !== undefined) {
+        where.push(`"id" IN (${holders(criteria.ids.length)})`)
+        params.push(...criteria.ids)
+      }
       if (criteria.minAdded !== undefined) {
         where.push('"added" >= ?')
         params.push(criteria.minAdded)
@@ -321,7 +341,7 @@ export class SqlLogStore {
         where.push('"added" <= ?')
         params.push(criteria.maxAdded)
       }
-      let rows = await tx.select(
+      let rows = await tx.driver.select(
         `SELECT "added", "action", "meta" FROM "logux_log"` +
           ` WHERE ${where.join(' AND ')} ORDER BY "added"`,
         params
@@ -338,11 +358,11 @@ export class SqlLogStore {
         if (meta.reasons.length === 0) {
           removed.push([action, meta])
         } else {
-          await tx.exec(`UPDATE "logux_log" SET "meta" = ? WHERE "added" = ?`, [
-            serializeToJSONWithBinary(meta),
-            meta.added
-          ])
-          await tx.exec(
+          await tx.driver.exec(
+            `UPDATE "logux_log" SET "meta" = ? WHERE "added" = ?`,
+            [serializeToJSONWithBinary(meta), meta.added]
+          )
+          await tx.driver.exec(
             `DELETE FROM "logux_reason" WHERE "added" = ? AND "reason" = ?`,
             [meta.added, reason]
           )
@@ -350,7 +370,7 @@ export class SqlLogStore {
       }
       if (removed.length > 0) {
         await removeEntries(
-          tx,
+          tx.driver,
           removed.map(entry => entry[1].added)
         )
       }
@@ -359,11 +379,15 @@ export class SqlLogStore {
     for (let [action, meta] of cleaned) callback(action, meta)
   }
 
+  onTransactionAdd(callback) {
+    this.onAdd = callback
+  }
+
   async setLastSynced(values) {
     await this.write(async tx => {
       for (let key of SYNCED) {
         if (values[key] !== undefined) {
-          await tx.exec(
+          await tx.driver.exec(
             `INSERT INTO "logux_extra" ("key", "value") VALUES (?, ?)` +
               ` ON CONFLICT ("key") DO UPDATE SET "value" = excluded."value"`,
             [key, values[key]]
@@ -378,7 +402,7 @@ export class SqlLogStore {
       try {
         // Immediate transaction takes the write lock before our `SELECT`,
         // so another tab can’t change the data before our `INSERT`
-        return await this.driver.transaction(callback, { immediate: true })
+        return await this.db.transaction(callback, { immediate: true })
       } catch (e) {
         if (i === RETRIES || !isLocked(e)) throw e
         // Give another tab a time to finish its transaction

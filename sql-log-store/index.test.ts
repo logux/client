@@ -27,6 +27,10 @@ afterEach(async () => {
   await db.close()
 })
 
+async function versions(): Promise<{ version: number }[]> {
+  return db.select`SELECT * FROM "logux_version"`
+}
+
 async function all(request: Promise<LogPage>): Promise<Entry[]> {
   let page = await request
   let entries = page.entries
@@ -35,10 +39,6 @@ async function all(request: Promise<LogPage>): Promise<Entry[]> {
     entries = page.entries.concat(entries)
   }
   return entries
-}
-
-async function versions(): Promise<{ version: number }[]> {
-  return db.select`SELECT * FROM "logux_version"`
 }
 
 /**
@@ -105,7 +105,7 @@ it('keeps the log on the same tables version', async () => {
   expect(await versions()).toEqual([{ version: 1 }])
 })
 
-it('re-creates the log on tables version change', async () => {
+it('writes new tables version without losing the log', async () => {
   let store = new SqlLogStore(db)
   await store.add({ type: 'A' }, {
     id: '1 n 0',
@@ -117,18 +117,11 @@ it('re-creates the log on tables version change', async () => {
 
   await db.exec`UPDATE "logux_version" SET "version" = ${0}`
   let next = new SqlLogStore(db)
-  expect(await all(next.get())).toEqual([])
-  expect(await all(next.get({ index: 'a' }))).toEqual([])
-  expect(await next.getLastAdded()).toBe(0)
-  expect(await next.getLastSynced()).toEqual({ received: 0, sent: 0 })
+  expect(await all(next.get())).toHaveLength(1)
+  expect(await next.getLastAdded()).toBe(1)
+  expect(await next.getLastSynced()).toEqual({ received: 1, sent: 2 })
   expect(await versions()).toEqual([{ version: 1 }])
-
-  await next.add({ type: 'B' }, { id: '2 n 0', time: 2 } as Meta)
-  expect(await all(next.get())).toEqual([
-    [{ type: 'B' }, { added: 1, id: '2 n 0', time: 2 }]
-  ])
 })
-
 it('does not work with the log from a newer client', async () => {
   let store = new SqlLogStore(db)
   await store.add({ type: 'A' }, { id: '1 n 0', time: 1 } as Meta)

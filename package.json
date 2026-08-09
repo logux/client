@@ -152,14 +152,14 @@
       "import": {
         "./create-crdt-table/index.js": "{ createCrdtDatabase }"
       },
-      "limit": "2.9 KB"
+      "limit": "3.5 KB"
     },
     {
       "name": "Log Store",
       "import": {
         "./sql-log-store/index.js": "{ SqlLogStore }"
       },
-      "limit": "2.2 KB"
+      "limit": "2.5 KB"
     },
     {
       "name": "React",
@@ -167,7 +167,7 @@
         "./index.js": "{ CrossTabClient, syncMapTemplate, changeSyncMap }",
         "./react/index.js": "{ ClientContext, useSync, ChannelErrors, useFilter, useAuth }"
       },
-      "limit": "11 KB"
+      "limit": "12 KB"
     },
     {
       "name": "Vue",

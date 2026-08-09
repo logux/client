@@ -1,4 +1,4 @@
-import type { LogStore } from '@logux/core'
+import type { AnyAction, LogStore, Meta } from '@logux/core'
 import type { Database } from '@nanostores/sql'
 
 /**
@@ -25,13 +25,33 @@ import type { Database } from '@nanostores/sql'
  * and `logux_extra` tables. They will be created on the first query.
  *
  * Version of the tables format is kept in `logux_version` table.
- * On format changes in the new version of the client, tables will be
- * re-created and the log will be lost. If the database was created
- * by a newer version of the client, all methods will throw an error.
+ * If the database was created by a newer version of the client,
+ * all methods will throw an error.
  */
 export class SqlLogStore extends LogStore {
   /**
    * @param db Database from `@nanostores/sql` `openDb()`.
    */
   constructor(db: Database)
+
+  /**
+   * Set the callback, which will be called inside the transaction writing
+   * the action to the log. It allows to apply the action to the tables
+   * of the same database atomically: the action and its result will be
+   * committed together, and `await` of `log.add()` will mean that
+   * the tables were already changed.
+   *
+   * {@link createCrdtDatabase} sets it automatically, if the log
+   * and the CRDT tables are in the same database.
+   *
+   * An error in the callback rolls back the whole transaction,
+   * so the action will not be added to the log.
+   *
+   * @param callback Callback or `undefined` to remove the previous one.
+   */
+  onTransactionAdd(
+    callback:
+      | ((tx: Database, action: AnyAction, meta: Meta) => Promise<void> | void)
+      | undefined
+  ): void
 }

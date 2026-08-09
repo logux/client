@@ -335,7 +335,7 @@ export interface CrdtTable<
    * @param fields Row fields or an array of rows for a batch action.
    *               `id` will be generated if omitted.
    * @returns Promise with row ID (or IDs of all rows in the batch)
-   *          resolved when action was added to the log.
+   *          resolved when the row was inserted into the table.
    */
   // Keep the single row overload the last one: TypeScript uses the last
   // overload to infer fields types in `defineCrdtTableActions()`
@@ -356,7 +356,7 @@ export interface CrdtTable<
    * ```
    *
    * @param id Row ID or an array of row IDs for a batch action.
-   * @returns Promise resolved when action was added to the log.
+   * @returns Promise resolved when the table was changed.
    */
   delete(id: string[] | string): Promise<void>
 
@@ -415,7 +415,7 @@ export interface CrdtTable<
    *
    * @param id Row ID or an array of row IDs for a batch action.
    * @param diff Changed fields.
-   * @returns Promise resolved when action was added to the log.
+   * @returns Promise resolved when the table was changed.
    */
   update(
     id: string[] | string,
@@ -528,7 +528,8 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
    * @param creator Action creator from `defineAction()`.
    * @param apply Callback to apply the action to the database.
    * @param opts Action options.
-   * @returns Function to add the action to the log and send it to the server.
+   * @returns Function to add the action to the log, send it to the server,
+   *          and wait for the callback to apply it to the database.
    */
   action<Creator extends AbstractActionCreator>(
     creator: Creator,
@@ -609,10 +610,18 @@ export type Dialects = 'sqlite' | 'pglite'
 /**
  * Create CRDT LWW Map tables on top of SQL database filled from Logux log.
  *
- * Tables are filled by reducing actions from the log in a single browser
- * tab (like {@link createReducer}). {@link CrdtTable#create},
- * {@link CrdtTable#update} and {@link CrdtTable#delete} only add actions
- * to the log; the reducer applies them to the database.
+ * Tables are filled by reducing actions from the log (like
+ * {@link createReducer}). {@link CrdtTable#create},
+ * {@link CrdtTable#update} and {@link CrdtTable#delete} add actions
+ * to the log, and the reducer applies them to the database. Their promises
+ * are resolved only after the tables were changed, so the next
+ * {@link CrdtTable#select} will already see the change. They are rejected
+ * if applying failed or if the database was stopped before it.
+ *
+ * Until the action is applied, it is kept in the log by the `key:crdt`
+ * reason. Any tab can take the `key:apply` lock, apply the actions
+ * in batches, and remove the reason. Actions of the tab, which was closed
+ * in the middle of the work, will be applied on the next start.
  *
  * Actions are the same as in {@link syncMapTemplate}
  * (`user/created`, `user/changed`, `user/deleted` from `@logux/actions`),
@@ -632,7 +641,9 @@ export type Dialects = 'sqlite' | 'pglite'
  * from the log and from the `repeat()` callback.
  *
  * While there are actions waiting to be applied to the database, the tab
- * asks the user to confirm closing to not lose their changes.
+ * asks the user to confirm closing. It only saves the user from waiting
+ * for the next start: it guarantees nothing, since the browser can close
+ * the tab without asking, and the actions are not lost anyway.
  *
  * ```ts
  * import { openDb, sqlocalDriver } from '@nanostores/sql'
