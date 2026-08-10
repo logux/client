@@ -229,9 +229,13 @@ export class Client<
   /**
    * Clear stored data. Removes action log from `IndexedDB` if you used it.
    *
+   * Databases, subscribed to the `cleaning` event, are cleaned before
+   * the log, so the log can’t fill them back.
+   *
    * ```js
-   * signout.addEventListener('click', () => {
-   *   client.clean()
+   * signout.addEventListener('click', async () => {
+   *   await client.clean()
+   *   location.reload()
    * })
    * ```
    *
@@ -252,12 +256,27 @@ export class Client<
 
   on(event: 'user', listener: (userId: string) => void): Unsubscribe
   /**
+   * Subscribe for {@link Client#clean} to clean your own storage.
+   * {@link Client#clean} waits for the returned promise before cleaning
+   * the log.
+   *
+   * ```js
+   * client.on('cleaning', () => crdt.clean())
+   * ```
+   *
+   * @param event The event name.
+   * @param listener The listener function.
+   * @returns Unbind listener from event.
+   */
+  on(event: 'cleaning', listener: () => Promise<void> | void): Unsubscribe
+  /**
    * Subscribe for synchronization events. It implements Nano Events API.
    * Supported events:
    *
    * * `preadd`: action is going to be added (in current tab).
    * * `add`: action has been added to log (by any tab).
    * * `clean`: action has been removed from log (by any tab).
+   * * `cleaning`: {@link Client#clean} is cleaning the storages.
    * * `user`: user ID was changed.
    *
    * Note, that `Log#type()` will work faster than `on` event with `if`.

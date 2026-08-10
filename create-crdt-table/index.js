@@ -140,7 +140,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
   let inlined = new Set()
   let removing = new Set()
   let blocking = false
-  let draining = false
+  let draining
   let sqlStore
   let destroyed = false
   let unbindStorage = () => {}
@@ -203,42 +203,50 @@ export function createCrdtDatabase(client, db, opts = {}) {
     }
   }
 
-  async function drain() {
-    if (draining) return
-    draining = true
-    try {
-      while (pending.length > 0) {
-        if (destroyed || status.value === 'outdated') break
-        let chunk = pending.splice(0, CHUNK_SIZE)
-        let ids = chunk.map(entry => entry[1].id)
-        try {
-          await withApplyLock(() => {
-            let apply = async tx => {
-              for (let entry of chunk) {
-                await applyAction(entry[0], entry[1], tx)
-              }
-            }
-            // Log store’s transaction to not open two transactions
-            // in the same database connection
-            return sqlStore ? sqlStore.write(apply) : db.transaction(apply)
-          })
-        } catch (e) {
-          // Actions still have the reason, so this or another tab
-          // will apply them on the next start
-          pending.unshift(...chunk)
-          stopWaiting(ids, e)
-          break
-        }
-        for (let id of ids) pendingIds.delete(id)
-        stopWaiting(ids)
-        // Reasons are removed by a single call after the commit: applying
-        // the action twice is safe, but losing it will keep the database
-        // incomplete forever
-        await client.log.removeReason('applying-to-db', { ids })
+  function writeToTables(callback) {
+    return withApplyLock(() => {
+      // Log store’s transaction to not open two transactions
+      // in the same database connection
+      return sqlStore ? sqlStore.write(callback) : db.transaction(callback)
+    })
+  }
+
+  // Returns the promise of the work, which is already in progress, so
+  // clean() could wait for the chunk, which is applied right now
+  function drain() {
+    if (!draining) {
+      draining = applyPending().finally(() => {
+        draining = undefined
+        if (pending.length === 0) unblockClosing()
+      })
+    }
+    return draining
+  }
+
+  async function applyPending() {
+    while (pending.length > 0) {
+      if (destroyed || status.value === 'outdated') break
+      let chunk = pending.splice(0, CHUNK_SIZE)
+      let ids = chunk.map(entry => entry[1].id)
+      try {
+        await writeToTables(async tx => {
+          for (let entry of chunk) {
+            await applyAction(entry[0], entry[1], tx)
+          }
+        })
+      } catch (e) {
+        // Actions still have the reason, so this or another tab
+        // will apply them on the next start
+        pending.unshift(...chunk)
+        stopWaiting(ids, e)
+        break
       }
-    } finally {
-      draining = false
-      if (pending.length === 0) unblockClosing()
+      for (let id of ids) pendingIds.delete(id)
+      stopWaiting(ids)
+      // Reasons are removed by a single call after the commit: applying
+      // the action twice is safe, but losing it will keep the database
+      // incomplete forever
+      await client.log.removeReason('applying-to-db', { ids })
     }
   }
 
@@ -547,6 +555,46 @@ export function createCrdtDatabase(client, db, opts = {}) {
     if (status.value === 'ready') void drain()
   })
 
+  let unbindCleaning = client.on('cleaning', cleanTables)
+
+  async function cleanTables() {
+    let outdated = status.value === 'outdated'
+    stopApplying('The database was cleaned')
+    await ready
+    // The chunk, which is applied right now, would fill the tables again
+    if (draining) await draining.catch(() => {})
+    if (!outdated) {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem(storageKey)
+      }
+      db.pause()
+      await writeToTables(async tx => {
+        for (let plural in tables) {
+          await tx.driver.exec(`DROP TABLE IF EXISTS "${plural}"`, [])
+        }
+      })
+    }
+    lockRequest.abort()
+  }
+
+  // Unsubscribe from the log to be sure that nothing will be applied
+  // to the tables anymore
+  function stopApplying(reason) {
+    if (destroyed) return
+    destroyed = true
+    unbindPreadd()
+    unbindAdd()
+    unbindStorage()
+    unbindCleaning()
+    if (sqlStore && sqlStore.onAdd === applyInline) {
+      sqlStore.onTransactionAdd(undefined)
+    }
+    stopWaiting([...waiting.keys()], new Error(reason))
+    pending = []
+    pendingIds.clear()
+    unblockClosing()
+  }
+
   return {
     action(creator, apply, actionOpts = {}) {
       checkDefine()
@@ -556,25 +604,10 @@ export function createCrdtDatabase(client, db, opts = {}) {
         await applied(await client.log.add(creator(...args), { sync: true }))
       }
     },
+    clean: cleanTables,
     destroy() {
-      if (destroyed) return
-      destroyed = true
-      unbindPreadd()
-      unbindAdd()
-      unbindStorage()
-      if (sqlStore && sqlStore.onAdd === applyInline) {
-        sqlStore.onTransactionAdd(undefined)
-      }
+      stopApplying('The database was stopped')
       lockRequest.abort()
-      stopWaiting(
-        [...waiting.keys()],
-        new Error(
-          'The database was stopped before the action was applied to it'
-        )
-      )
-      pending = []
-      pendingIds.clear()
-      unblockClosing()
     },
     ready,
     status,

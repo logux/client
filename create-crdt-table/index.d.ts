@@ -202,13 +202,17 @@ export type CrdtColumnType<Column extends CrdtColumn> =
  * (`undefined` fields are not changed, like in JSON).
  */
 export type CrdtRowFields<Schema extends CrdtTableSchema> = {
-  [Column in keyof Schema as undefined extends CrdtColumnType<Schema[Column]>
-    ? Column
-    : never]?: Exclude<CrdtColumnType<Schema[Column]>, undefined> | null
+  [
+    Column in keyof Schema as undefined extends CrdtColumnType<Schema[Column]>
+      ? Column
+      : never
+  ]?: Exclude<CrdtColumnType<Schema[Column]>, undefined> | null
 } & {
-  [Column in keyof Schema as undefined extends CrdtColumnType<Schema[Column]>
-    ? never
-    : Column]: CrdtColumnType<Schema[Column]>
+  [
+    Column in keyof Schema as undefined extends CrdtColumnType<Schema[Column]>
+      ? never
+      : Column
+  ]: CrdtColumnType<Schema[Column]>
 }
 
 /**
@@ -216,13 +220,17 @@ export type CrdtRowFields<Schema extends CrdtTableSchema> = {
  * {@link optional} or having `default` can be omitted.
  */
 export type CrdtCreateFields<Schema extends CrdtTableSchema> = {
-  [Column in keyof Schema as Schema[Column] extends CrdtColumn<any, false>
-    ? Column
-    : never]?: Exclude<CrdtColumnType<Schema[Column]>, undefined>
+  [
+    Column in keyof Schema as Schema[Column] extends CrdtColumn<any, false>
+      ? Column
+      : never
+  ]?: Exclude<CrdtColumnType<Schema[Column]>, undefined>
 } & {
-  [Column in keyof Schema as Schema[Column] extends CrdtColumn<any, false>
-    ? never
-    : Column]: CrdtColumnType<Schema[Column]>
+  [
+    Column in keyof Schema as Schema[Column] extends CrdtColumn<any, false>
+      ? never
+      : Column
+  ]: CrdtColumnType<Schema[Column]>
 }
 
 /**
@@ -264,9 +272,9 @@ export type CrdtTableRow<Schema extends CrdtTableSchema> = {
  * Row without conflict resolution data of every field.
  */
 export type WithoutMeta<Value> = {
-  [Key in keyof Value as Key extends `${typeof META}${string}`
-    ? never
-    : Key]: Value[Key]
+  [
+    Key in keyof Value as Key extends `${typeof META}${string}` ? never : Key
+  ]: Value[Key]
 }
 
 /**
@@ -540,6 +548,15 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
     ) => Promise<void> | void,
     opts?: CrdtActionOptions
   ): (...args: Parameters<Creator>) => Promise<void>
+
+  /**
+   * Drop all tables and stop the database like {@link CrdtDatabase#destroy}.
+   *
+   * It will be auto-called on {@link Client#clean}.
+   *
+   * @returns Promise resolved when all tables were dropped.
+   */
+  clean(): Promise<void>
 
   /**
    * Stop the database: release the leader tab lock, unsubscribe from the log

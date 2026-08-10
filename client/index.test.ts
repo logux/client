@@ -389,6 +389,46 @@ it('cleans everything', async () => {
   expect(clean.callCount).toEqual(1)
 })
 
+it('cleans databases before the log', async () => {
+  let client = createClient()
+  let calls: string[] = []
+  spyOn(client.log.store, 'clean', () => {
+    calls.push('log')
+    return Promise.resolve()
+  })
+
+  let cleaned: () => void = () => {}
+  client.on('cleaning', () => {
+    calls.push('database')
+    return new Promise<void>(resolve => {
+      cleaned = resolve
+    })
+  })
+  client.on('cleaning', () => {
+    calls.push('sync database')
+  })
+
+  let cleaning = client.clean()
+  await delay(10)
+  expect(calls).toEqual(['database', 'sync database'])
+
+  cleaned()
+  await cleaning
+  expect(calls).toEqual(['database', 'sync database', 'log'])
+})
+
+it('does not call unbound cleaning listeners', async () => {
+  let client = createClient()
+  let calls = 0
+  let unbind = client.on('cleaning', () => {
+    calls += 1
+  })
+  unbind()
+
+  await client.clean()
+  expect(calls).toEqual(0)
+})
+
 it('pings after tab-specific action', async () => {
   let client = createClient()
   let id = client.tabId

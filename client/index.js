@@ -346,9 +346,12 @@ export class Client {
     if (wasConnected) void this.node.connection.connect()
   }
 
-  clean() {
+  async clean() {
     this.destroy()
-    return this.log.store.clean ? this.log.store.clean() : Promise.resolve()
+    // Databases are cleaned before the log, since they are filled from it
+    let cleaning = this.emitter.events.cleaning ?? []
+    await Promise.all(cleaning.map(listener => listener()))
+    if (this.log.store.clean) await this.log.store.clean()
   }
 
   cleanPrevActions() {
@@ -398,7 +401,7 @@ export class Client {
   on(event, listener) {
     if (event === 'state') {
       return this.node.emitter.on(event, listener)
-    } else if (event === 'user') {
+    } else if (event === 'cleaning' || event === 'user') {
       return this.emitter.on(event, listener)
     } else {
       return this.log.emitter.on(event, listener)

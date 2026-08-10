@@ -66,6 +66,7 @@ export class CrossTabClient<
    * * `preadd`: action is going to be added (in current tab).
    * * `add`: action has been added to log (by any tab).
    * * `clean`: action has been removed from log (by any tab).
+   * * `cleaning`: {@link Client#clean} is cleaning the storages.
    * * `role`: tab role has been changed.
    * * `state`: leader tab synchronization state has been changed.
    * * `user`: user ID was changed.
@@ -82,4 +83,5 @@ export class CrossTabClient<
    */
   on(event: 'role' | 'state', listener: () => void): Unsubscribe
   on(event: 'user', listener: (userId: string) => void): Unsubscribe
+  on(event: 'cleaning', listener: () => Promise<void> | void): Unsubscribe
 }

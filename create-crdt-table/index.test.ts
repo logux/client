@@ -158,6 +158,14 @@ async function loadList<Row>(store: SqlStore<Row[]>): Promise<Row[]> {
   return value.value
 }
 
+async function tableNames(db: Database): Promise<string[]> {
+  let rows = (await db.driver.select(
+    'SELECT "name" FROM "sqlite_master" WHERE "type" = ? ORDER BY "name"',
+    ['table']
+  )) as { name: string }[]
+  return rows.map(i => i.name)
+}
+
 it('creates tables and applies create, update and delete actions', async () => {
   let { client, db } = await setup()
   let crdt = createCrdtDatabase(client, db)
@@ -1557,4 +1565,219 @@ it('removes reasons of applied actions by batches', async () => {
 
   crdt.destroy()
   await db.close()
+})
+
+it('drops all tables on clean()', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  let post = crdt.table('post', { title: string() })
+  await crdt.ready
+
+  await user.create({ id: 'U1', name: 'Ann' })
+  await post.create({ id: 'P1', title: 'About' })
+  let $all = user.select()
+  expect(await loadList($all)).toHaveLength(1)
+  cleanStores($all)
+  expect(await tableNames(db)).toEqual(['post', 'user'])
+
+  await crdt.clean()
+
+  expect(await tableNames(db)).toEqual([])
+})
+
+it('drops tables on client.clean()', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+  await user.create({ id: 'U1', name: 'Ann' })
+
+  await client.clean()
+
+  expect(await tableNames(db)).toEqual([])
+  expect(localStorage.getItem('logux:db')).toBeNull()
+})
+
+it('does not drop tables on client.clean() after destroy()', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+  await user.create({ id: 'U1', name: 'Ann' })
+
+  // Another database in this tab or another tab owns the tables now
+  crdt.destroy()
+  await client.clean()
+
+  expect(await tableNames(db)).toEqual(['user'])
+  expect(localStorage.getItem('logux:db')).toBeTypeOf('string')
+})
+
+it('pauses reactive stores on clean()', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+  await user.create({ id: 'U1', name: 'Ann' })
+
+  await crdt.clean()
+
+  // The page will be reloaded, but stores, mounted before the reload,
+  // should not ask the driver for the dropped tables
+  let $all = user.select()
+  $all.listen(() => {})
+  await delay(10)
+  expect($all.get()).toEqual({ isLoading: true })
+
+  cleanStores($all)
+})
+
+it('does not fill tables back by actions applied during clean()', async () => {
+  let { grant } = manualLocks()
+
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+
+  await client.log.add({
+    fields: { name: 'Ann' },
+    id: 'U1',
+    type: 'user/created'
+  })
+  await delay(10)
+  // The action is in the chunk, which waits for the lock
+  expect(await db.driver.select('SELECT "id" FROM "user"', [])).toEqual([])
+
+  let cleaning = crdt.clean()
+  await grant()
+  await delay(10)
+  // The chunk was applied, since it was already in the transaction
+  expect(await db.driver.select('SELECT "id" FROM "user"', [])).toEqual([
+    { id: 'U1' }
+  ])
+
+  await grant()
+  await cleaning
+  expect(await tableNames(db)).toEqual([])
+
+  await client.log.add({
+    fields: { name: 'Ben' },
+    id: 'U2',
+    type: 'user/created'
+  })
+  await delay(10)
+  expect(await tableNames(db)).toEqual([])
+})
+
+it('does not fill tables back by actions of SQL log store', async () => {
+  let db = openDb(nodeDriver(':memory:'))
+  let store = new SqlLogStore(db)
+  let client = new Client({
+    server: 'ws://localhost',
+    store,
+    subprotocol: 1,
+    userId: '10'
+  })
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+
+  await user.create({ id: 'U1', name: 'Ann' })
+  expect(await db.driver.select('SELECT "id" FROM "user"', [])).toEqual([
+    { id: 'U1' }
+  ])
+
+  // The action is added to the log in parallel with the cleaning
+  let creating = user.create({ id: 'U2', name: 'Ben' })
+  await crdt.clean()
+  await creating
+  await delay(10)
+
+  // Log store’s tables are not touched, the log is cleaned by client.clean()
+  let names = await tableNames(db)
+  expect(names).not.toContain('user')
+  expect(names).toContain('logux_log')
+  await db.close()
+})
+
+it('rejects table methods on clean()', async () => {
+  let { grant } = manualLocks()
+
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+
+  let creating = user.create({ id: 'U1', name: 'Ann' })
+  let updating = user.update('U1', { name: 'New' })
+  let deleting = user.delete('U1')
+  await delay(10)
+
+  let cleaning = crdt.clean()
+  let message = 'The database was cleaned'
+  await expect(creating).rejects.toThrow(message)
+  await expect(updating).rejects.toThrow(message)
+  await expect(deleting).rejects.toThrow(message)
+
+  await grant()
+  await delay(10)
+  await grant()
+  await cleaning
+  expect(await tableNames(db)).toEqual([])
+})
+
+it('forgets schema version to re-create tables from the log', async () => {
+  let { client, db } = await setup()
+  let crdt1 = createCrdtDatabase(client, db)
+  crdt1.table('user', USER_SCHEMA)
+  await crdt1.ready
+
+  await client.log.add(
+    { fields: { name: 'Ann' }, id: 'U1', type: 'user/created' },
+    { reasons: ['test'] }
+  )
+  await delay(10)
+  expect(await db.driver.select('SELECT "id" FROM "user"', [])).toEqual([
+    { id: 'U1' }
+  ])
+
+  await crdt1.clean()
+  expect(localStorage.getItem('logux:db')).toBeNull()
+  expect(await tableNames(db)).toEqual([])
+
+  let crdt2 = createCrdtDatabase(client, db)
+  let user2 = crdt2.table('user', USER_SCHEMA)
+  let statuses: string[] = []
+  crdt2.status.subscribe(state => {
+    statuses.push(state)
+  })
+  await crdt2.ready
+
+  expect(statuses).toEqual(['initializing', 'ready'])
+  expect((await loadList(user2.select())).map(i => i.id)).toEqual(['U1'])
+  expect(localStorage.getItem('logux:db')).toBeTypeOf('string')
+
+  crdt2.destroy()
+})
+
+it('deletes nothing on clean() of outdated database', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+
+  await user.create({ id: 'U1', name: 'Ann' })
+  let hash = localStorage.getItem('logux:db')
+
+  emitStorage('logux:db', 'newer-hash')
+  expect(crdt.status.get()).toBe('outdated')
+
+  // The tab with the newer schema owns the tables
+  await crdt.clean()
+  expect(await db.driver.select('SELECT "id" FROM "user"', [])).toEqual([
+    { id: 'U1' }
+  ])
+  expect(localStorage.getItem('logux:db')).toBe(hash)
 })
