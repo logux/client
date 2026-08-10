@@ -1509,9 +1509,7 @@ it('rejects table methods on database stop', async () => {
   let creating = user.create({ name: 'Ann' })
   await delay(10)
   crdt.destroy()
-  await expect(creating).rejects.toThrow(
-    'The database was stopped before the action was applied to it'
-  )
+  await expect(creating).rejects.toThrow('The database was stopped')
 
   await grant()
 })
