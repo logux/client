@@ -70,8 +70,8 @@ importers:
         specifier: ^3.5.41
         version: 3.5.41
       actions-up:
-        specifier: ^1.16.0
-        version: 1.16.0
+        specifier: ^1.17.0
+        version: 1.17.0
       check-dts:
         specifier: ^2.0.1
         version: 2.0.1(typescript@7.0.2)
@@ -975,8 +975,8 @@ packages:
     resolution: {integrity: sha512-6/mh1E2u2YgEsCHdY0Yx5oW+61gZU+1vXaoiHHrpKeuRNNgFvS+/jrwHiQhB5apAf5oB7UB7E19ol2R2LKH8hQ==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
 
-  actions-up@1.16.0:
-    resolution: {integrity: sha512-i/2cDk8Z5YUatx1atmxmZx5jCe0z6nwpDvBiqf4FB7cTuKXnEvpwLbwDGlvKkwA7n+SOHxlosGgOhBJXtHW3IA==}
+  actions-up@1.17.0:
+    resolution: {integrity: sha512-gdLr+nJY4v2/wwrxkUUsemfSl9VfmEraCOWSJDG24DDFJHCNWoC8GYRnL2aQEyM0G1gG5mTL71k4ZnI/8hxu1A==}
     engines: {node: ^18.3.0 || >=20.0.0}
     hasBin: true
 
@@ -2594,7 +2594,7 @@ snapshots:
 
   abbrev@2.0.0: {}
 
-  actions-up@1.16.0:
+  actions-up@1.17.0:
     dependencies:
       enquirer: 2.4.1
       nanospinner: 1.2.2
