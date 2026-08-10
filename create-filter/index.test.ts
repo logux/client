@@ -206,17 +206,17 @@ it('does not subscribe if server did it for client', async () => {
   await delay(2020)
   expect(client.log.actions()).toEqual([
     { channel: 'posts', filter: {}, type: 'logux/subscribe' },
-    { id: '1 10:2:2 0', type: 'logux/processed' },
+    { id: '2 10:2:2', type: 'logux/processed' },
     { channel: 'posts/1', type: 'logux/subscribed' },
     { channel: 'posts/2', type: 'logux/subscribed' },
     { fields: { title: 'A' }, id: '1', type: 'posts/created' },
     { fields: { title: 'B' }, id: '2', type: 'posts/changed' },
     { channel: 'posts', filter: {}, type: 'logux/unsubscribe' },
-    { id: '7 10:2:2 0', type: 'logux/processed' },
+    { id: '9 10:2:2', type: 'logux/processed' },
     { channel: 'posts/1', type: 'logux/unsubscribe' },
     { channel: 'posts/2', type: 'logux/unsubscribe' },
-    { id: '9 10:2:2 0', type: 'logux/processed' },
-    { id: '10 10:2:2 0', type: 'logux/processed' }
+    { id: 'B 10:2:2', type: 'logux/processed' },
+    { id: 'C 10:2:2', type: 'logux/processed' }
   ])
 })
 
@@ -293,7 +293,7 @@ it('does not send since when subscribing to remote stores', async () => {
 
   expect(client.log.actions()).toEqual([
     { channel: 'posts', filter: {}, type: 'logux/subscribe' },
-    { id: '1 10:2:2 0', type: 'logux/processed' }
+    { id: '2 10:2:2', type: 'logux/processed' }
   ])
 
   await createSyncMap(client, Post, {
@@ -314,7 +314,7 @@ it('does not send since when subscribing to remote stores', async () => {
   expect(client.log.actions()).toEqual([
     // first subscribe
     { channel: 'posts', filter: {}, type: 'logux/subscribe' },
-    { id: '1 10:2:2 0', type: 'logux/processed' },
+    { id: '2 10:2:2', type: 'logux/processed' },
 
     // create item
     {
@@ -323,8 +323,8 @@ it('does not send since when subscribing to remote stores', async () => {
       type: 'posts/create'
     },
     { channel: 'posts/ID', creating: true, type: 'logux/subscribe' },
-    { id: '3 10:2:2 0', type: 'logux/processed' },
-    { id: '4 10:2:2 0', type: 'logux/processed' },
+    { id: '5 10:2:2', type: 'logux/processed' },
+    { id: '7 10:2:2', type: 'logux/processed' },
 
     // second subscribe
     {
@@ -333,7 +333,7 @@ it('does not send since when subscribing to remote stores', async () => {
       type: 'logux/subscribe'
       // since is not set
     },
-    { id: '7 10:2:2 0', type: 'logux/processed' }
+    { id: 'A 10:2:2', type: 'logux/processed' }
   ])
 })
 
@@ -353,7 +353,7 @@ it('sends since when subscribing to filter if actions are cached for remote offl
   expect(client.log.actions()).toEqual([
     // subscription
     { channel: 'cached', filter: {}, type: 'logux/subscribe' },
-    { id: '1 10:2:2 0', type: 'logux/processed' }
+    { id: '2 10:2:2', type: 'logux/processed' }
   ])
 
   await createSyncMap(client, CachedPost, {
@@ -374,7 +374,7 @@ it('sends since when subscribing to filter if actions are cached for remote offl
   expect(client.log.actions()).toEqual([
     // first subscribe
     { channel: 'cached', filter: {}, type: 'logux/subscribe' },
-    { id: '1 10:2:2 0', type: 'logux/processed' },
+    { id: '2 10:2:2', type: 'logux/processed' },
 
     // create item
     {
@@ -383,17 +383,17 @@ it('sends since when subscribing to filter if actions are cached for remote offl
       type: 'cached/create'
     },
     { channel: 'cached/ID', creating: true, type: 'logux/subscribe' },
-    { id: '3 10:2:2 0', type: 'logux/processed' },
-    { id: '4 10:2:2 0', type: 'logux/processed' },
+    { id: '5 10:2:2', type: 'logux/processed' },
+    { id: '7 10:2:2', type: 'logux/processed' },
 
     // second subscribe
     {
       channel: 'cached',
       filter: { projectId: '10' },
-      since: { id: '3 10:2:2 0', time: 3 }, // since is set
+      since: { id: '5 10:2:2', time: 7 }, // since is set
       type: 'logux/subscribe'
     },
-    { id: '7 10:2:2 0', type: 'logux/processed' }
+    { id: 'A 10:2:2', type: 'logux/processed' }
   ])
 })
 

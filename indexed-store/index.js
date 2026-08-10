@@ -1,6 +1,13 @@
-import { isFirstOlder } from '@logux/core'
+import { isFirstOlder, toSorted } from '@logux/core'
 
-const VERSION = 2
+function byCreated(a, b) {
+  let first = toSorted(a[1])
+  let second = toSorted(b[1])
+  if (first === second) return 0
+  return first < second ? -1 : 1
+}
+
+const VERSION = 3
 
 function rejectify(request, reject) {
   request.onerror = e => {
@@ -29,10 +36,8 @@ export class IndexedStore {
   }
 
   async add(action, meta) {
-    let id = meta.id.split(' ')
     let entry = {
       action,
-      created: [meta.time, id[1], id[2], id[0]].join(' '),
       id: meta.id,
       indexes: meta.indexes || [],
       meta,
@@ -40,10 +45,10 @@ export class IndexedStore {
       time: meta.time
     }
 
-    if (this.adding[entry.created]) {
+    if (this.adding[entry.id]) {
       return false
     }
-    this.adding[entry.created] = true
+    this.adding[entry.id] = true
 
     let store = await this.init()
     let exist = await promisify(store.os('log').index('id').get(meta.id))
@@ -51,7 +56,7 @@ export class IndexedStore {
       return false
     } else {
       let added = await promisify(store.os('log', 'write').add(entry))
-      delete store.adding[entry.created]
+      delete store.adding[entry.id]
       meta.added = added
       return meta
     }
@@ -86,20 +91,19 @@ export class IndexedStore {
     await promisify(indexedDB.deleteDatabase(store.name))
   }
 
-  async get({ index, order }) {
+  async get({ index, order, reason }) {
     let store = await this.init()
     return new Promise((resolve, reject) => {
       let log = store.os('log')
       let request
       if (index) {
-        if (order === 'created') {
-          request = log.index('created').openCursor(null, 'prev')
-        } else {
-          let keyRange = IDBKeyRange.only(index)
-          request = log.index('indexes').openCursor(keyRange, 'prev')
-        }
-      } else if (order === 'created') {
-        request = log.index('created').openCursor(null, 'prev')
+        request = log
+          .index('indexes')
+          .openCursor(IDBKeyRange.only(index), 'prev')
+      } else if (reason) {
+        request = log
+          .index('reasons')
+          .openCursor(IDBKeyRange.only(reason), 'prev')
       } else {
         request = log.openCursor(null, 'prev')
       }
@@ -109,12 +113,18 @@ export class IndexedStore {
       request.onsuccess = function (e) {
         let cursor = e.target.result
         if (!cursor) {
+          // Cursors are ordered by `added`, so `created` order needs sorting
+          if (order === 'created') entries.sort(byCreated)
           resolve({ entries })
           return
         }
-        if (!index || cursor.value.indexes.includes(index)) {
-          cursor.value.meta.added = cursor.value.added
-          entries.unshift([cursor.value.action, cursor.value.meta])
+        let entry = cursor.value
+        if (
+          (!index || entry.indexes.includes(index)) &&
+          (!reason || entry.reasons.includes(reason))
+        ) {
+          entry.meta.added = entry.added
+          entries.unshift([entry.action, entry.meta])
         }
         cursor.continue()
       }
@@ -153,7 +163,6 @@ export class IndexedStore {
           keyPath: 'added'
         })
         log.createIndex('id', 'id', { unique: true })
-        log.createIndex('created', 'created', { unique: true })
         log.createIndex('reasons', 'reasons', { multiEntry: true })
         db.createObjectStore('extra', { keyPath: 'key' })
       }
@@ -163,6 +172,10 @@ export class IndexedStore {
           log = opening.transaction.objectStore('log')
         }
         log.createIndex('indexes', 'indexes', { multiEntry: true })
+      }
+      if (e.oldVersion > 0 && e.oldVersion < 3) {
+        // Actions are sorted in JS now, `created` index is not used
+        opening.transaction.objectStore('log').deleteIndex('created')
       }
     }
 

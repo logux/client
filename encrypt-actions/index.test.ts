@@ -150,7 +150,7 @@ it('encrypts and decrypts actions', async () => {
       'sync',
       1,
       { d: BYTES, iv: BYTES, type: '0' },
-      { id: 1, time: expect.any(Number) }
+      { id: '0', time: expect.any(Number) }
     ]
   ])
 
@@ -198,7 +198,7 @@ it('accepts key', async () => {
       'sync',
       1,
       { d: BYTES, iv: BYTES, type: '0' },
-      { id: 1, time: expect.any(Number) }
+      { id: '0', time: expect.any(Number) }
     ]
   ])
 
@@ -230,9 +230,9 @@ it('ignores specific actions', async () => {
       'sync',
       1,
       { d: BYTES, iv: BYTES, type: '0' },
-      { id: 1, time: expect.any(Number) }
+      { id: '0', time: expect.any(Number) }
     ],
-    ['sync', 2, { type: 'server' }, { id: 2, time: expect.any(Number) }]
+    ['sync', 2, { type: 'server' }, { id: '1', time: expect.any(Number) }]
   ])
 
   getPair(client2).right.send(getPair(client1).leftSent[0]!)
@@ -262,7 +262,7 @@ it('cleans actions on server', async () => {
       'sync',
       2,
       { id: meta.id, type: '0/clean' },
-      { id: 2, time: expect.any(Number) }
+      { id: '1', time: expect.any(Number) }
     ]
   ])
 })

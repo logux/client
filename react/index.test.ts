@@ -325,7 +325,7 @@ it('throws an error on ChannelErrors with missed argument', () => {
   )
 })
 
-it('does not throw on ChannelErrors with 404 and 403', () => {
+it('does not throw on ChannelErrors with 5J and', () => {
   spyOn(console, 'error', () => {})
   expect(
     getText(

@@ -1,4 +1,4 @@
-import { eachStoreCheck, type Meta } from '@logux/core'
+import { eachStoreCheck, type Meta, toSorted } from '@logux/core'
 import { openDb } from '@nanostores/sql'
 import { pgliteDriver } from '@nanostores/sql/pglite'
 import { afterAll, beforeEach, expect, it } from 'vitest'
@@ -28,7 +28,7 @@ eachStoreCheck((desc, creator) => {
 it('keeps big numbers', { timeout: 60000 }, async () => {
   let store = new SqlLogStore(db)
   await store.add({ type: 'A' }, {
-    id: '1764021600000 10:client:uuid 0',
+    id: 'OersMw- 10:client:uuid',
     time: 1764021600000
   } as Meta)
   await store.setLastSynced({ received: 1, sent: 2 })
@@ -39,7 +39,11 @@ it('keeps big numbers', { timeout: 60000 }, async () => {
   expect(page.entries).toEqual([
     [
       { type: 'A' },
-      { added: 1, id: '1764021600000 10:client:uuid 0', time: 1764021600000 }
+      {
+        added: 1,
+        id: 'OersMw- 10:client:uuid',
+        time: 1764021600000
+      }
     ]
   ])
 })
@@ -51,22 +55,19 @@ it('loads log by pages', { timeout: 60000 }, async () => {
   let rows = []
   let params = []
   for (let i = 1; i <= 1001; i++) {
-    let id = `${i} 10:1 0`
-    rows.push(`(${Array(8).fill('?').join(', ')})`)
+    let id = `${i} 10:1`
+    rows.push(`(${Array(5).fill('?').join(', ')})`)
     params.push(
       i,
       id,
-      i,
-      '10:1',
-      0,
-      i,
+      toSorted({ id, time: i } as Meta),
       JSON.stringify({ type: `A${i}` }),
       JSON.stringify({ added: i, id, time: i })
     )
   }
   await db.driver.exec(
-    `INSERT INTO "logux_log" ("added", "id", "time", "node", "counter",` +
-      ` "nodeTime", "action", "meta") VALUES ${rows.join(', ')}`,
+    `INSERT INTO "logux_log" ("added", "id", "sorted",` +
+      ` "action", "meta") VALUES ${rows.join(', ')}`,
     params
   )
 
@@ -78,7 +79,7 @@ it('loads log by pages', { timeout: 60000 }, async () => {
 
     let last = await page.next!()
     expect(last.entries).toEqual([
-      [{ type: 'A1' }, { added: 1, id: '1 10:1 0', time: 1 }]
+      [{ type: 'A1' }, { added: 1, id: '1 10:1', time: 1 }]
     ])
     expect(last.next).toBeUndefined()
   }

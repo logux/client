@@ -297,7 +297,7 @@ it('uses node ID in ID generator', () => {
     userId: '10'
   })
   let id = client.log.generateId()
-  expect(id).toContain('1 10:1:1 0')
+  expect(id).toContain('0 10:1:1')
 })
 
 it('uses custom store', () => {
@@ -347,7 +347,7 @@ it('sends options to node', () => {
 
 it('uses test time', () => {
   let client = createClient()
-  expect(client.log.generateId()).toBe('1 10:1:1 0')
+  expect(client.log.generateId()).toBe('0 10:1:1')
 })
 
 it('connects by default', () => {
@@ -458,7 +458,7 @@ it('adds current subprotocol only to own actions', async () => {
   let client = createClient()
   await client.log.add(
     { type: 'A' },
-    { id: '1 0:client:other 0', reasons: ['test'] }
+    { id: '0 0:client:other', reasons: ['test'] }
   )
   expect(client.log.entries()[0]![1].subprotocol).toBeUndefined()
 })
@@ -474,14 +474,14 @@ it('sends only special actions', async () => {
   let pair = getPair(client)
   pair.clear()
   await Promise.all([
-    client.log.add({ type: 'a' }, { id: '1 10:client:uuid 0', sync: true }),
-    client.log.add({ type: 'c' }, { id: '2 10:client:uuid 0' })
+    client.log.add({ type: 'a' }, { id: '0 10:client:uuid', sync: true }),
+    client.log.add({ type: 'c' }, { id: '1 10:client:uuid' })
   ])
   pair.right.send(['synced', 1])
   await client.node.waitFor('synchronized')
   await delay(10)
   expect(pair.leftSent).toEqual([
-    ['sync', 1, { type: 'a' }, { id: [1, '10:client:uuid', 0], time: 1 }]
+    ['sync', 1, { type: 'a' }, { id: '0 10:client:uuid', time: 1 }]
   ])
 })
 
@@ -496,7 +496,7 @@ it('filters data before sending', async () => {
         channels: ['user:0'],
         clients: ['0:client'],
         custom: 1,
-        id: '1 a:client:uuid 0',
+        id: '0 a:client:uuid',
         nodes: ['0:client:uuid'],
         reasons: ['test'],
         sync: true,
@@ -507,7 +507,7 @@ it('filters data before sending', async () => {
     client.log.add(
       { type: 'c' },
       {
-        id: '1 0:client:uuid 0',
+        id: '0 0:client:uuid',
         reasons: ['test'],
         sync: true
       }
@@ -517,7 +517,7 @@ it('filters data before sending', async () => {
   await client.node.waitFor('synchronized')
   await delay(10)
   expect(pair.leftSent).toEqual([
-    ['sync', 1, { type: 'a' }, { id: [1, 'a:client:uuid', 0], time: 1 }]
+    ['sync', 1, { type: 'a' }, { id: '0 a:client:uuid', time: 1 }]
   ])
 })
 
@@ -529,7 +529,7 @@ it('compresses subprotocol', async () => {
     client.log.add(
       { type: 'a' },
       {
-        id: '1 10:client:id 0',
+        id: '0 10:client:id',
         reasons: ['test'],
         subprotocol: 10,
         sync: true
@@ -538,7 +538,7 @@ it('compresses subprotocol', async () => {
     client.log.add(
       { type: 'a' },
       {
-        id: '2 10:client:id 0',
+        id: '1 10:client:id',
         reasons: ['test'],
         subprotocol: 11,
         sync: true
@@ -550,13 +550,13 @@ it('compresses subprotocol', async () => {
   await client.node.waitFor('synchronized')
   await delay(10)
   expect(pair.leftSent).toEqual([
-    ['sync', 1, { type: 'a' }, { id: [1, '10:client:id', 0], time: 1 }],
+    ['sync', 1, { type: 'a' }, { id: '0 10:client:id', time: 1 }],
     [
       'sync',
       2,
       { type: 'a' },
       {
-        id: [2, '10:client:id', 0],
+        id: '1 10:client:id',
         subprotocol: 11,
         time: 2
       }
@@ -572,8 +572,8 @@ it('keeps synced actions before synchronization', async () => {
   ])
   expect(client.log.actions()).toEqual([{ type: 'A' }, { type: 'B' }])
   await Promise.all([
-    client.log.add({ id: '1 10:1:1 0', type: 'logux/processed' }),
-    client.log.add({ id: '2 10:1:1 0', type: 'logux/undo' })
+    client.log.add({ id: '0 10:1:1', type: 'logux/processed' }),
+    client.log.add({ id: '1 10:1:1', type: 'logux/undo' })
   ])
   expect(client.log.actions()).toHaveLength(0)
 })
@@ -613,13 +613,13 @@ it('resubscribes to previous subscriptions', async () => {
   ])
   added = []
 
-  client.log.add({ id: '1 10:1:1 0', type: 'logux/processed' })
-  client.log.add({ id: '2 10:1:1 0', type: 'logux/processed' })
-  client.log.add({ id: '3 10:1:1 0', type: 'logux/processed' })
-  client.log.add({ id: '4 10:1:1 0', type: 'logux/processed' })
-  client.log.add({ id: '5 10:1:1 0', type: 'logux/processed' })
-  client.log.add({ id: '6 10:1:1 0', type: 'logux/processed' })
-  client.log.add({ id: '7 10:1:1 0', type: 'logux/processed' })
+  client.log.add({ id: '0 10:1:1', type: 'logux/processed' })
+  client.log.add({ id: '1 10:1:1', type: 'logux/processed' })
+  client.log.add({ id: '2 10:1:1', type: 'logux/processed' })
+  client.log.add({ id: '3 10:1:1', type: 'logux/processed' })
+  client.log.add({ id: '4 10:1:1', type: 'logux/processed' })
+  client.log.add({ id: '5 10:1:1', type: 'logux/processed' })
+  client.log.add({ id: '6 10:1:1', type: 'logux/processed' })
   await delay(1)
   expect(client.log.actions()).toHaveLength(0)
 
@@ -633,13 +633,13 @@ it('resubscribes to previous subscriptions', async () => {
   expect(added).toEqual([
     {
       channel: 'a',
-      since: { id: '9 10:1:1 0', time: 9 },
+      since: { id: '8 10:1:1', time: 9 },
       type: 'logux/subscribe'
     },
     {
       b: 2,
       channel: 'b',
-      since: { id: '12 10:1:1 0', time: 12 },
+      since: { id: 'B 10:1:1', time: 12 },
       type: 'logux/subscribe'
     }
   ])
@@ -681,11 +681,11 @@ it('tells last action time during resubscription', async () => {
   ])
   added = []
   await Promise.all([
-    client.log.add({ id: '1 10:1:1 0', type: 'logux/processed' }),
-    client.log.add({ id: '2 10:1:1 0', type: 'logux/processed' }),
-    client.log.add({ type: 'A' }, { channels: ['a'], id: '8 10:2:1 0' }),
-    client.log.add({ type: 'B' }, { channels: ['b'], id: '0 10:2:1 0' }),
-    client.log.add({ type: 'A' }, { channels: ['a'], id: '9 10:1:1 0' })
+    client.log.add({ id: '0 10:1:1', type: 'logux/processed' }),
+    client.log.add({ id: '1 10:1:1', type: 'logux/processed' }),
+    client.log.add({ type: 'A' }, { channels: ['a'], id: '7 10:2:1' }),
+    client.log.add({ type: 'B' }, { channels: ['b'], id: '- 10:2:1' }),
+    client.log.add({ type: 'A' }, { channels: ['a'], id: '8 10:1:1' })
   ])
   setState(client, 'disconnected')
   setState(client, 'connecting')
@@ -693,12 +693,12 @@ it('tells last action time during resubscription', async () => {
   expect(added).toEqual([
     {
       channel: 'a',
-      since: { id: '8 10:2:1 0', time: 8 },
+      since: { id: '7 10:2:1', time: 5 },
       type: 'logux/subscribe'
     },
     {
       channel: 'b',
-      since: { id: '4 10:1:1 0', time: 4 },
+      since: { id: '- 10:2:1', time: 6 },
       type: 'logux/subscribe'
     }
   ])
@@ -727,7 +727,7 @@ it('changes user ID of disconnected node', async () => {
   expect(client.node.state).toBe('disconnected')
   let meta = await client.log.add({ type: 'test' })
   if (meta === false) throw new Error('Action was not found')
-  expect(meta.id).toContain(` 20:${clientId}:1 `)
+  expect(meta.id).toContain(` 20:${clientId}:1`)
 })
 
 it('checks user ID during changing', async () => {
@@ -830,7 +830,7 @@ it('tracks server error of action', async () => {
 
   let result = 'none'
   client
-    .sync({ type: 'A' }, { id: '2 10:1:1 0', reasons: ['test'] })
+    .sync({ type: 'A' }, { id: 'zz 10:1:1', reasons: ['test'] })
     .then(() => {
       result = 'processed'
     })
@@ -842,7 +842,7 @@ it('tracks server error of action', async () => {
     })
 
   expect(result).toBe('none')
-  client.log.add({ id: '2 10:1:1 0', reason: 'test', type: 'logux/undo' })
+  client.log.add({ id: 'zz 10:1:1', reason: 'test', type: 'logux/undo' })
   await delay(10)
 
   expect(result).toBe('error')
@@ -897,9 +897,9 @@ it('works with unsubscribe in offline', async () => {
   await subscribe('B', { id: 2 })
 
   await delay(1)
-  await client.log.add({ id: '1 10:1:1 0', type: 'logux/processed' })
-  await client.log.add({ id: '2 10:1:1 0', type: 'logux/processed' })
-  await client.log.add({ id: '3 10:1:1 0', type: 'logux/processed' })
+  await client.log.add({ id: '0 10:1:1', type: 'logux/processed' })
+  await client.log.add({ id: '1 10:1:1', type: 'logux/processed' })
+  await client.log.add({ id: '2 10:1:1', type: 'logux/processed' })
   client.node.connection.disconnect()
 
   await subscribe('C')
@@ -933,12 +933,12 @@ it('works with unsubscribe in offline', async () => {
       {
         channel: 'A',
         since: {
-          id: '4 10:1:1 0',
+          id: '3 10:1:1',
           time: 4
         },
         type: 'logux/subscribe'
       },
-      { id: 13, time: 13 }
+      { id: 'C', time: 13 }
     ],
     [
       'sync',
@@ -947,20 +947,20 @@ it('works with unsubscribe in offline', async () => {
         channel: 'B',
         filter: { id: 1 },
         since: {
-          id: '6 10:1:1 0',
+          id: '5 10:1:1',
           time: 6
         },
         type: 'logux/subscribe'
       },
-      { id: 14, time: 14 }
+      { id: 'D', time: 14 }
     ],
     [
       'sync',
       6,
       { channel: 'D', filter: undefined, type: 'logux/subscribe' },
-      { id: 8, time: 8 },
+      { id: '7', time: 8 },
       { channel: 'B', filter: { id: 3 }, type: 'logux/subscribe' },
-      { id: 9, time: 9 }
+      { id: '8', time: 9 }
     ]
   ])
 })

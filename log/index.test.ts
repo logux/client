@@ -125,16 +125,16 @@ it('prints log', async () => {
   await client.node.log.add(
     {
       action: { type: 'A' },
-      id: '1 10:1:1 0',
+      id: '0 10:1:1',
       reason: 'error',
       type: 'logux/undo'
     },
-    { id: '1 server:uuid 0' }
+    { id: '0 server:uuid' }
   )
 
   await client.node.log.add(
     { channel: 'users', type: 'logux/subscribe' },
-    { sync: true }
+    { id: 'zy 10:1:1', sync: true }
   )
   setState(client, 'sending')
   setState(client, 'synchronized')
@@ -142,16 +142,13 @@ it('prints log', async () => {
     { channel: 'users/1', type: 'logux/subscribed' },
     { sync: true }
   )
-  await client.node.log.add(
-    { type: 'A' },
-    { id: '2 server:uuid 1', sync: true }
-  )
+  await client.node.log.add({ type: 'A' }, { id: '1 server:uuid', sync: true })
   await client.node.log.add(
     {
-      id: '2 10:1:1 0',
+      id: 'zy 10:1:1',
       type: 'logux/processed'
     },
-    { id: '2 server:uuid 0' }
+    { id: '6 server:uuid' }
   )
 
   client.node.connected = false
@@ -170,12 +167,12 @@ it('prints log', async () => {
   await client.node.log.add(
     {
       action: { channel: 'users', since: 1, type: 'logux/subscribe' },
-      id: '3 10:1:1 0',
+      id: '2 10:1:1',
       reason: 'error',
       type: 'logux/undo',
       wrongProp: 'sync'
     },
-    { id: '3 server:uuid 0' }
+    { id: '2 server:uuid' }
   )
   await client.node.log.add(
     { channel: 'users', type: 'logux/unsubscribe' },
@@ -190,33 +187,33 @@ it('prints log', async () => {
     { sync: true }
   )
 
-  await client.node.log.add({ type: 'B' }, { sync: true })
+  await client.node.log.add({ type: 'B' }, { id: '6 10:1:1', sync: true })
   setState(client, 'sending')
   setState(client, 'synchronized')
   await client.node.log.add(
     {
-      id: '7 10:1:1 0',
+      id: '6 10:1:1',
       type: 'logux/processed'
     },
-    { id: ' server:uuid 0' }
+    { id: '5 server:uuid' }
   )
 
   await client.node.log.add(
     {
-      id: '200 10:1:1 0',
+      id: '27 10:1:1',
       type: 'logux/processed'
     },
-    { id: '4 server:uuid 0' }
+    { id: '3 server:uuid' }
   )
 
   await client.node.log.add(
     {
       action: { type: 'B' },
-      id: '201 10:1:1 0',
+      id: '28 10:1:1',
       reason: 'error',
       type: 'logux/undo'
     },
-    { id: '5 server:uuid 0' }
+    { id: '4 server:uuid' }
   )
 
   client.nodeId = '20:2:2'

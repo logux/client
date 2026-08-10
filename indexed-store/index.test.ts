@@ -127,3 +127,47 @@ it('updates reasons cache', async () => {
     [{ type: 'A' }, { added: 1, id: '1', reasons: ['a', 'c'], time: 1 }]
   ])
 })
+
+it('removes created index from old databases', async () => {
+  await new Promise<void>((resolve, reject) => {
+    let opening = indexedDB.open('logux', 2)
+    opening.onerror = reject
+    opening.onupgradeneeded = e => {
+      let db = (e.target as any).result as IDBDatabase
+      let log = db.createObjectStore('log', {
+        autoIncrement: true,
+        keyPath: 'added'
+      })
+      log.createIndex('id', 'id', { unique: true })
+      log.createIndex('created', 'created', { unique: true })
+      log.createIndex('reasons', 'reasons', { multiEntry: true })
+      log.createIndex('indexes', 'indexes', { multiEntry: true })
+      db.createObjectStore('extra', { keyPath: 'key' })
+    }
+    opening.onsuccess = e => {
+      ;(e.target as any).result.close()
+      resolve()
+    }
+  })
+
+  store = new IndexedStore()
+  await store.add(
+    { type: 'A' },
+    {
+      added: 0,
+      id: '1 n',
+      reasons: ['test'],
+      time: 1
+    }
+  )
+  let entries = await all(store.get({ order: 'created' }))
+  expect(entries).toHaveLength(1)
+
+  let db = privateMethods(await privateMethods(store).init()).db
+  expect(db.version).toBe(3)
+  expect([...db.transaction('log').objectStore('log').indexNames]).toEqual([
+    'id',
+    'indexes',
+    'reasons'
+  ])
+})

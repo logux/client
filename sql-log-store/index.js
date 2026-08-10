@@ -1,4 +1,4 @@
-import { isFirstOlder } from '@logux/core'
+import { isFirstOlder, toSorted } from '@logux/core'
 
 /**
  * Version of the internal tables format to re-create the log on changes.
@@ -10,8 +10,7 @@ const TABLES = ['logux_log', 'logux_reason', 'logux_index', 'logux_extra']
 
 const DDL = [
   `CREATE TABLE IF NOT EXISTS "logux_log" (` +
-    `"added" BIGINT PRIMARY KEY, "id" TEXT UNIQUE, "time" BIGINT,` +
-    ` "node" TEXT, "counter" BIGINT, "nodeTime" BIGINT,` +
+    `"added" BIGINT PRIMARY KEY, "id" TEXT UNIQUE, "sorted" TEXT,` +
     ` "action" TEXT, "meta" TEXT)`,
   `CREATE TABLE IF NOT EXISTS "logux_reason" (` +
     `"added" BIGINT, "reason" TEXT, PRIMARY KEY ("added", "reason"))`,
@@ -92,11 +91,6 @@ function toEntry(row) {
   return [parseJSONWithBinary(row.action), meta]
 }
 
-function toNumber(value) {
-  let number = parseInt(value)
-  return Number.isNaN(number) ? 0 : number
-}
-
 export class SqlLogStore {
   constructor(db) {
     this.db = db
@@ -120,18 +114,14 @@ export class SqlLogStore {
       )
       meta.added = Number(last) + 1
 
-      let id = meta.id.split(' ')
       await tx.driver.exec(
         `INSERT INTO "logux_log"` +
-          ` ("added", "id", "time", "node", "counter", "nodeTime",` +
-          ` "action", "meta") VALUES (${holders(8)})`,
+          ` ("added", "id", "sorted", "action", "meta")` +
+          ` VALUES (${holders(5)})`,
         [
           meta.added,
           meta.id,
-          toNumber(meta.time),
-          id[1] ?? '',
-          toNumber(id[2]),
-          toNumber(id[0]),
+          toSorted(meta),
           serializeToJSONWithBinary(action),
           serializeToJSONWithBinary(meta)
         ]
@@ -266,19 +256,19 @@ export class SqlLogStore {
       )
       params.push(opts.index)
     }
+    if (opts.reason) {
+      where.push(
+        `"added" IN (SELECT "added" FROM "logux_reason" WHERE "reason" = ?)`
+      )
+      params.push(opts.reason)
+    }
     if (cursor) {
       where.push(
-        created
-          ? `("time", "node", "counter", "nodeTime", "added")` +
-              ` < (${holders(5)})`
-          : `"added" < ?`
+        created ? `("sorted", "added") < (${holders(2)})` : `"added" < ?`
       )
       params.push(...cursor)
     }
-    let order = created
-      ? `"time" DESC, "node" DESC, "counter" DESC, "nodeTime" DESC,` +
-        ` "added" DESC`
-      : `"added" DESC`
+    let order = created ? `"sorted" DESC, "added" DESC` : `"added" DESC`
     let rows = await this.driver.select(
       `SELECT * FROM "logux_log"` +
         (where.length > 0 ? ` WHERE ${where.join(' AND ')}` : '') +
@@ -290,15 +280,7 @@ export class SqlLogStore {
     let page = { entries: rows.map(toEntry) }
     if (rows.length === PAGE_SIZE) {
       let oldest = rows[0]
-      let next = created
-        ? [
-            oldest.time,
-            oldest.node,
-            oldest.counter,
-            oldest.nodeTime,
-            oldest.added
-          ]
-        : [oldest.added]
+      let next = created ? [oldest.sorted, oldest.added] : [oldest.added]
       page.next = () => this.page(opts, next)
     }
     return page

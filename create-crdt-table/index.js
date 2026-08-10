@@ -1,4 +1,4 @@
-import { isFirstOlder } from '@logux/core'
+import { toSorted } from '@logux/core'
 import { nanoid } from 'nanoid'
 import { atom } from 'nanostores'
 
@@ -32,7 +32,7 @@ export function optional(col) {
 }
 
 /**
- * Prefix of columns with Logux Meta ID of the last change of every field
+ * Prefix of columns with sortable meta of the last change of every field
  * for CRDT LWW.
  */
 const META = 'updatedAt_'
@@ -277,6 +277,8 @@ export function createCrdtDatabase(client, db, opts = {}) {
     let parsed = parseType(action.type)
     if (!parsed) return
     let [plural, verb] = parsed
+    // Sortable meta can be compared by SQL and by JS strings
+    let sorted = toSorted(meta)
     let schema = tables[plural]
     let target = tx.driver
 
@@ -332,15 +334,16 @@ export function createCrdtDatabase(client, db, opts = {}) {
       let keys = []
       let values = []
       for (let key in fields) {
+        let last = row[`${META}${key}`]
         if (
           schema[key] &&
           fields[key] !== undefined &&
-          isFirstOlder(row[`${META}${key}`], meta)
+          (!last || last < sorted)
         ) {
           keys.push(key)
           values.push(fields[key])
           // Keep meta for the next record with the same ID in this batch
-          row[`${META}${key}`] = meta.id
+          row[`${META}${key}`] = sorted
         }
       }
       if (keys.length === 0) continue
@@ -374,7 +377,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
         let indexes = all.map(key => keys.indexOf(key))
         params.push(id)
         for (let i of indexes) params.push(i === -1 ? null : values[i])
-        for (let i of indexes) params.push(i === -1 ? null : meta.id)
+        for (let i of indexes) params.push(i === -1 ? null : sorted)
       }
       queries.push([
         `INSERT INTO "${plural}" (${names.join(', ')})` +
@@ -389,7 +392,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
       queries.push([
         `UPDATE "${plural}" SET ${sets.join(', ')}` +
           ` WHERE "id" IN (${holders(group.ids.length)})`,
-        [...group.values, ...group.keys.map(() => meta.id), ...group.ids]
+        [...group.values, ...group.keys.map(() => sorted), ...group.ids]
       ])
     }
 

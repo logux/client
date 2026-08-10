@@ -89,7 +89,7 @@ it('shows synchronized state', async () => {
   setState(test.leftNode, 'synchronized')
   expect(badgeStyle().display).toBe('block')
   expect(badgeStyle().backgroundColor).toBe('#000')
-  test.leftNode.log.add({ id: '1 1:1:1 0', type: 'logux/processed' })
+  test.leftNode.log.add({ id: '0 1:1:1', type: 'logux/processed' })
   await delay(1)
 
   expect(getBadgeMessage()).toEqual(badgeEn.synchronized)

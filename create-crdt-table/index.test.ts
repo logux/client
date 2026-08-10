@@ -1,5 +1,5 @@
 import { defineAction } from '@logux/actions'
-import type { Action } from '@logux/core'
+import { type Action, type Meta, toSorted } from '@logux/core'
 import type { Database, Driver, SqlStore } from '@nanostores/sql'
 import { openDb } from '@nanostores/sql'
 import { nodeDriver } from '@nanostores/sql/node'
@@ -255,13 +255,13 @@ it('resolves conflicts of batch actions with per-field last write wins', async (
       ],
       type: 'user/created'
     },
-    { id: '50 10:other 0', time: 50 }
+    { id: 'm 10:other', time: 50 }
   )
   await delay(10)
 
   await client.log.add(
     { fields: { name: 'Older' }, ids: ['U1', 'U2'], type: 'user/changed' },
-    { id: '10 10:other 0', time: 10 }
+    { id: '9 10:other', time: 10 }
   )
   await client.log.add(
     {
@@ -269,7 +269,7 @@ it('resolves conflicts of batch actions with per-field last write wins', async (
       ids: ['U1', 'U2', 'U3'],
       type: 'user/changed'
     },
-    { id: '100 10:other 0', time: 100 }
+    { id: '0Z 10:other', time: 100 }
   )
   await delay(10)
 
@@ -278,7 +278,9 @@ it('resolves conflicts of batch actions with per-field last write wins', async (
   expect(rows.map(i => i.name)).toEqual(['Newer', 'Newer'])
   expect(rows.map(i => i.age)).toEqual([30, 30])
   expect(rows.map(i => i.role)).toEqual([null, 'admin'])
-  expect(rows[0]!.updatedAt_name).toBe('100 10:other 0')
+  expect(rows[0]!.updatedAt_name).toBe(
+    toSorted({ id: '0Z 10:other', time: 100 } as Meta)
+  )
 
   await client.log.add(
     {
@@ -288,7 +290,7 @@ it('resolves conflicts of batch actions with per-field last write wins', async (
       ],
       type: 'user/created'
     },
-    { id: '200 10:other 0', time: 200 }
+    { id: '27 10:other', time: 200 }
   )
   await delay(10)
   let mixed = await loadList(user.select`ORDER BY "id"`)
@@ -424,19 +426,19 @@ it('resolves conflicts with per-field last write wins', async () => {
       id: 'U1',
       type: 'user/created'
     },
-    { id: '10 10:other 0', time: 10 }
+    { id: '9 10:other', time: 10 }
   )
   await delay(10)
 
   await client.log.add(
     { fields: { name: 'New' }, id: 'U1', type: 'user/changed' },
-    { id: '100 10:other 0', time: 100 }
+    { id: '0Z 10:other', time: 100 }
   )
   await delay(10)
 
   await client.log.add(
     { fields: { age: 20, name: 'Old' }, id: 'U1', type: 'user/changed' },
-    { id: '50 10:other 0', time: 50 }
+    { id: 'm 10:other', time: 50 }
   )
   await delay(10)
 
@@ -445,17 +447,23 @@ it('resolves conflicts with per-field last write wins', async () => {
   expect(rows[0]!.name).toBe('New')
   expect(rows[0]!.age).toBe(20)
   expect(rows[0]!.role).toBe('admin')
-  expect(rows[0]!.updatedAt_name).toBe('100 10:other 0')
-  expect(rows[0]!.updatedAt_age).toBe('50 10:other 0')
+  expect(rows[0]!.updatedAt_name).toBe(
+    toSorted({ id: '0Z 10:other', time: 100 } as Meta)
+  )
+  expect(rows[0]!.updatedAt_age).toBe(
+    toSorted({ id: 'm 10:other', time: 50 } as Meta)
+  )
 
   await client.log.add(
     { fields: { name: 'New' }, id: 'U1', type: 'user/changed' },
-    { id: '100 10:other 0', time: 100 }
+    { id: '0Z 10:other', time: 100 }
   )
   await delay(10)
   let same = await loadList(user.select())
   expect(same[0]!.name).toBe('New')
-  expect(same[0]!.updatedAt_name).toBe('100 10:other 0')
+  expect(same[0]!.updatedAt_name).toBe(
+    toSorted({ id: '0Z 10:other', time: 100 } as Meta)
+  )
 })
 
 it('ignores changes of deleted rows', async () => {
@@ -471,7 +479,7 @@ it('ignores changes of deleted rows', async () => {
 
   await client.log.add(
     { fields: { name: 'New' }, id, type: 'user/changed' },
-    { id: '200 10:other 0', time: 200 }
+    { id: '27 10:other', time: 200 }
   )
   await delay(10)
 
@@ -527,7 +535,7 @@ it('rebuilds database on schema change and replays repeat() entries', async () =
   let entries: [CreatedAction, ClientMeta][] = [
     [
       { fields: { name: 'FromRepeat' }, id: 'U2', type: 'user/created' },
-      { added: 0, id: '10 10:other 0', reasons: [], time: 10 }
+      { added: 0, id: '9 10:other', reasons: [], time: 10 }
     ]
   ]
 
@@ -1180,24 +1188,24 @@ it('resolves conflicts of custom actions by action meta', async () => {
 
   await client.log.add(
     { fields: { name: 'Ann' }, id: 'U1', type: 'user/created' },
-    { id: '100 10:other 0', time: 100 }
+    { id: '0Z 10:other', time: 100 }
   )
   await delay(10)
 
   await client.log.add(
     { id: 'U1', name: 'Older', type: 'user/renamed' },
-    { id: '10 10:other 0', time: 10 }
+    { id: '9 10:other', time: 10 }
   )
   await client.log.add(
     { id: 'U2', name: 'Unknown', type: 'user/renamed' },
-    { id: '200 10:other 0', time: 200 }
+    { id: '27 10:other', time: 200 }
   )
   await delay(10)
   expect((await loadList(user.select())).map(i => i.name)).toEqual(['Ann'])
 
   await client.log.add(
     { id: 'U1', name: 'Newer', type: 'user/renamed' },
-    { id: '300 10:other 0', time: 300 }
+    { id: '3g 10:other', time: 300 }
   )
   await delay(10)
   expect((await loadList(user.select())).map(i => i.name)).toEqual(['Newer'])

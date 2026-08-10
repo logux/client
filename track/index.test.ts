@@ -30,7 +30,7 @@ it('tracks action processing', async () => {
     await client.log.add({ id: meta1.id, type: 'logux/processed' })
   }
   await delay(10)
-  expect(results).toEqual(['processed 1 10:1:1 0'])
+  expect(results).toEqual(['processed 0 10:1:1'])
 
   results = []
   let meta2 = await client.log.add({ type: 'A' })

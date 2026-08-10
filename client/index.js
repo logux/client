@@ -3,7 +3,6 @@ import {
   isFirstOlder,
   Log,
   MemoryStore,
-  parseId,
   Reconnect,
   WsConnection
 } from '@logux/core'
@@ -14,6 +13,18 @@ import { LoguxUndoError } from '../logux-undo-error/index.js'
 import { track } from '../track/index.js'
 
 const ALLOWED_META = ['id', 'time', 'subprotocol']
+
+// Action ID is `<time> <nodeId>`, so the node, client or user ID can be
+// compared without parsing the whole ID into an object
+function fromNode(id, node) {
+  let start = id.indexOf(' ') + 1
+  let end = start + node.length
+  return id.startsWith(node, start) && (id.length === end || id[end] === ':')
+}
+
+function toNodeId(client) {
+  return client.tabId ? client.clientId + ':' + client.tabId : client.clientId
+}
 
 function tabPing(c) {
   localStorage.setItem(c.options.prefix + ':tab:' + c.tabId, Date.now())
@@ -102,7 +113,7 @@ export class Client {
       this.clientId = this.options.userId + ':' + this.tabId
     }
 
-    this.nodeId = this.tabId ? this.clientId + ':' + this.tabId : this.clientId
+    this.nodeId = toNodeId(this)
     let store = this.options.store || new MemoryStore()
 
     let log
@@ -119,7 +130,7 @@ export class Client {
     let unsubscribing = {}
 
     log.on('preadd', (action, meta) => {
-      if (parseId(meta.id).nodeId === this.nodeId && !meta.subprotocol) {
+      if (fromNode(meta.id, this.nodeId) && !meta.subprotocol) {
         meta.subprotocol = this.options.subprotocol
       }
 
@@ -193,7 +204,7 @@ export class Client {
         delete subscribing[action.id]
         delete unsubscribing[action.id]
       } else if (meta.channels) {
-        if (!meta.id.includes(' ' + this.clientId + ':')) {
+        if (!fromNode(meta.id, this.clientId)) {
           meta.channels.forEach(channel => {
             last = this.last[channel]
             if (!last || isFirstOlder(last, meta)) {
@@ -232,7 +243,7 @@ export class Client {
     }
 
     let onSend = async (action, meta) => {
-      if (!!meta.sync && parseId(meta.id).userId === this.options.userId) {
+      if (!!meta.sync && fromNode(meta.id, this.options.userId)) {
         let filtered = {}
         for (let i in meta) {
           if (i === 'subprotocol') {

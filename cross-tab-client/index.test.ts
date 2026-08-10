@@ -230,7 +230,7 @@ it('synchronizes actions from follower tabs', async () => {
   let action = JSON.stringify({ type: 'A' })
   let meta = JSON.stringify({
     added: 1,
-    id: '1 10:other 0',
+    id: '0 10:other',
     reasons: [],
     sync: true,
     time: 1
@@ -238,7 +238,7 @@ it('synchronizes actions from follower tabs', async () => {
   emitStorage('logux:10:add', `["other",${action},${meta}]`)
   await delay(50)
   expect(pair.leftSent).toEqual([
-    ['sync', 1, { type: 'A' }, { id: [1, '10:other', 0], time: 1 }]
+    ['sync', 1, { type: 'A' }, { id: '0 10:other', time: 1 }]
   ])
 })
 
@@ -256,7 +256,7 @@ it('synchronizes bytes in actions from follower tabs', async () => {
   let action = JSON.stringify({ d: '\0AQID', type: '0' })
   let meta = JSON.stringify({
     added: 1,
-    id: '1 10:other 0',
+    id: '0 10:other',
     reasons: [],
     sync: true,
     time: 1
@@ -268,7 +268,7 @@ it('synchronizes bytes in actions from follower tabs', async () => {
       'sync',
       1,
       { d: new Uint8Array([1, 2, 3]), type: '0' },
-      { id: [1, '10:other', 0], time: 1 }
+      { id: '0 10:other', time: 1 }
     ]
   ])
 })
@@ -450,13 +450,13 @@ it('detects subscriptions from different tabs', () => {
     'logux:10:add',
     '["other",' +
       '{"type":"logux/subscribe","name":"a"},' +
-      '{"sync":true,"id":"0 A 0","reasons":["syncing"]}' +
+      '{"sync":true,"id":"- A","reasons":["syncing"]}' +
       ']'
   )
   emitStorage(
     'logux:10:add',
     '["other",' +
-      '{"type":"logux/processed","id":"0 A 0"},{"id":"1 A 0","reasons":[]}' +
+      '{"type":"logux/processed","id":"- A"},{"id":"0 A","reasons":[]}' +
       ']'
   )
   expect(privateMethods(client).subscriptions).toEqual({
@@ -468,7 +468,7 @@ it('copies actions on memory store', () => {
   client = createClient()
   emitStorage(
     'logux:10:add',
-    '["other",{"type":"A"},{"id":"1 A 0","reasons":[]}]'
+    '["other",{"type":"A"},{"id":"0 A","reasons":[]}]'
   )
   expect(client.log.actions()).toEqual([{ type: 'A' }])
 })
@@ -531,7 +531,7 @@ it('ignores subprotocols from server', () => {
   emitStorage(
     'logux:10:add',
     '["other",{"type":"A"},' +
-      '{"id":"1 10:other 0","reasons":[],"subprotocol":20}]'
+      '{"id":"0 10:other","reasons":[],"subprotocol":20}]'
   )
   expect(error).toBeUndefined()
 })

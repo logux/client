@@ -31,7 +31,7 @@ export class TestClient extends Client {
   async sent(test) {
     let actions = []
     let unbind = this.log.on('add', (action, meta) => {
-      if (meta.sync && meta.id.includes(` ${this.nodeId} `)) {
+      if (meta.sync && meta.id.endsWith(' ' + this.nodeId)) {
         actions.push(action)
       }
     })

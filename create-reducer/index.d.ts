@@ -34,7 +34,11 @@ interface ReducerInitCallbacks {
   stop?(): void
 }
 
-type ReducerMigrationStatus = 'initializing' | 'migrating' | 'outdated' | 'ready'
+type ReducerMigrationStatus =
+  | 'initializing'
+  | 'migrating'
+  | 'outdated'
+  | 'ready'
 
 interface Reducer {
   /**

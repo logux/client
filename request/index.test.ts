@@ -19,7 +19,7 @@ async function createTest(
     pair: new TestPair(),
     async response(answer) {
       test.pair.right.send(['synced', 1])
-      test.pair.right.send(['sync', 2, answer, { id: 2, time: 2 }])
+      test.pair.right.send(['sync', 2, answer, { id: '1', time: 2 }])
       await delay(15)
     }
   }
@@ -48,7 +48,7 @@ async function connectTest(
 ): Promise<Test> {
   let test = await createTest(action, opts)
   await test.pair.wait()
-  test.pair.right.send(['connected', 5, 'server:uuid', [0, 0]])
+  test.pair.right.send(['connected', 6, 'server:uuid', [0, 0]])
   await delay(15)
   return test
 }
@@ -58,8 +58,8 @@ it('sends action to the server and wait for response', async () => {
   await delay(1)
   expect(test.answer).toBeUndefined()
   expect(test.pair.leftSent).toEqual([
-    ['connect', 5, 'anonymous:1:1', 0, { subprotocol: 10 }],
-    ['sync', 1, { type: 'test' }, { id: 1, time: 1 }]
+    ['connect', 6, 'anonymous:1:1', 0, { subprotocol: 10 }],
+    ['sync', 1, { type: 'test' }, { id: '0', time: 1 }]
   ])
 
   await test.response({ type: 'response' })
@@ -71,11 +71,11 @@ it('waits for logux/undo', async () => {
 
   expect(test.answer).toBeUndefined()
   expect(test.pair.leftSent).toEqual([
-    ['connect', 5, '10:1:1', 0, { subprotocol: 10 }],
-    ['sync', 1, { type: 'test' }, { id: 1, time: 1 }]
+    ['connect', 6, '10:1:1', 0, { subprotocol: 10 }],
+    ['sync', 1, { type: 'test' }, { id: '0', time: 1 }]
   ])
 
-  await test.response({ id: '1 10:1:1 0', reason: 'test', type: 'logux/undo' })
+  await test.response({ id: '0 10:1:1', reason: 'test', type: 'logux/undo' })
   expect(test.answer?.message).toBe('Server undid action because of test')
 })
 

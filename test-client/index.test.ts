@@ -54,14 +54,14 @@ it('connects, sends, and processes actions', async () => {
   await client.connect()
   expect(client.server.log.actions()).toEqual([
     { type: 'offline1' },
-    { id: '2 10:2:2 0', type: 'logux/processed' }
+    { id: '1 10:2:2', type: 'logux/processed' }
   ])
 
   await delay(10)
   expect(client.log.actions()).toEqual([
     { type: 'local' },
     { type: 'offline1' },
-    { id: '2 10:2:2 0', type: 'logux/processed' }
+    { id: '1 10:2:2', type: 'logux/processed' }
   ])
   expect(client.log.entries()[2]![1].nodes).toBeUndefined()
 
@@ -70,7 +70,7 @@ it('connects, sends, and processes actions', async () => {
   await client.server.sendAll({ type: 'offline2' })
   expect(client.server.log.actions()).toEqual([
     { type: 'offline1' },
-    { id: '2 10:2:2 0', type: 'logux/processed' },
+    { id: '1 10:2:2', type: 'logux/processed' },
     { type: 'offline2' }
   ])
 
@@ -82,7 +82,7 @@ it('connects, sends, and processes actions', async () => {
   expect(client.log.actions()).toEqual([
     { type: 'local' },
     { type: 'offline1' },
-    { id: '2 10:2:2 0', type: 'logux/processed' },
+    { id: '1 10:2:2', type: 'logux/processed' },
     { type: 'offline2' }
   ])
 })
@@ -118,16 +118,16 @@ it('supports channels', async () => {
 
   expect(client.subscribed('users/1')).toBe(true)
   expect(client.log.actions()).toEqual([
-    { channel: 'users/1', type: 'logux/subscribe' },
     { name: 'C', type: 'name', userId: '3' },
+    { channel: 'users/1', type: 'logux/subscribe' },
     { name: 'A', type: 'name', userId: '1' },
-    { id: '1 10:2:2 0', type: 'logux/processed' },
+    { id: '2 10:2:2', type: 'logux/processed' },
     { channel: 'users/2', type: 'logux/subscribe' },
     { name: 'B1', type: 'name', userId: '2' },
     { name: 'B2', type: 'name', userId: '2' },
-    { id: '4 10:2:2 0', type: 'logux/processed' },
+    { id: '6 10:2:2', type: 'logux/processed' },
     { channel: 'users/3', type: 'logux/subscribe' },
-    { id: '8 10:2:2 0', type: 'logux/processed' }
+    { id: 'B 10:2:2', type: 'logux/processed' }
   ])
 
   await client.sync(
@@ -193,28 +193,28 @@ it('supports multiple clients with same server', async () => {
   await client2.sync({ channel: 'users/1', type: 'logux/subscribe' })
   expect(client1.log.actions()).toEqual([
     { type: 'default' },
-    { id: '1 10:2:2 0', type: 'logux/processed' }
+    { id: '4 10:2:2', type: 'logux/processed' }
   ])
   expect(client2.log.actions()).toEqual([
     { type: 'default' },
     { channel: 'users/1', type: 'logux/subscribe' },
     { name: 'A', type: 'name', userId: '1' },
-    { id: '3 20:3:3 0', type: 'logux/processed' }
+    { id: '7 20:3:3', type: 'logux/processed' }
   ])
 
   await client1.sync({ name: 'B', type: 'name', userId: '1' })
   await delay(10)
   expect(client1.log.actions()).toEqual([
     { type: 'default' },
-    { id: '1 10:2:2 0', type: 'logux/processed' },
+    { id: '4 10:2:2', type: 'logux/processed' },
     { name: 'B', type: 'name', userId: '1' },
-    { id: '6 10:2:2 0', type: 'logux/processed' }
+    { id: 'B 10:2:2', type: 'logux/processed' }
   ])
   expect(client2.log.actions()).toEqual([
     { type: 'default' },
     { channel: 'users/1', type: 'logux/subscribe' },
     { name: 'A', type: 'name', userId: '1' },
-    { id: '3 20:3:3 0', type: 'logux/processed' },
+    { id: '7 20:3:3', type: 'logux/processed' },
     { name: 'B', type: 'name', userId: '1' }
   ])
   expect(client2.log.entries()[3]![1].channels).toBeUndefined()
@@ -229,15 +229,15 @@ it('supports multiple clients with same server', async () => {
 
   expect(client1.log.actions()).toEqual([
     { type: 'default' },
-    { id: '1 10:2:2 0', type: 'logux/processed' },
+    { id: '4 10:2:2', type: 'logux/processed' },
     { name: 'B', type: 'name', userId: '1' },
-    { id: '6 10:2:2 0', type: 'logux/processed' },
+    { id: 'B 10:2:2', type: 'logux/processed' },
     { name: 'C', type: 'name', userId: '1' },
-    { id: '10 10:2:2 0', type: 'logux/processed' },
+    { id: 'H 10:2:2', type: 'logux/processed' },
     { name: 'D', type: 'name', userId: '1' },
     {
       action: { name: 'D', type: 'name', userId: '1' },
-      id: '12 10:2:2 0',
+      id: 'K 10:2:2',
       reason: 'error',
       type: 'logux/undo'
     }
@@ -246,10 +246,10 @@ it('supports multiple clients with same server', async () => {
     { type: 'default' },
     { channel: 'users/1', type: 'logux/subscribe' },
     { name: 'A', type: 'name', userId: '1' },
-    { id: '3 20:3:3 0', type: 'logux/processed' },
+    { id: '7 20:3:3', type: 'logux/processed' },
     { name: 'B', type: 'name', userId: '1' },
     { channel: 'users/1', type: 'logux/unsubscribe' },
-    { id: '8 20:3:3 0', type: 'logux/processed' }
+    { id: 'E 20:3:3', type: 'logux/processed' }
   ])
 })
 
@@ -269,7 +269,7 @@ it('supports subprotocols', async () => {
 
   expect(client1.log.actions()).toEqual([
     { type: 'client1' },
-    { id: '1 10:2:2 0', type: 'logux/processed' },
+    { id: '4 10:2:2', type: 'logux/processed' },
     { type: 'client2' }
   ])
   expect(client1.log.entries()[2]![1].subprotocol).toBe(10)
@@ -277,7 +277,7 @@ it('supports subprotocols', async () => {
   expect(client2.log.actions()).toEqual([
     { type: 'client1' },
     { type: 'client2' },
-    { id: '3 20:3:3 0', type: 'logux/processed' }
+    { id: '7 20:3:3', type: 'logux/processed' }
   ])
   expect(client2.log.entries()[0]![1].subprotocol).toBe(0)
 })
@@ -293,7 +293,7 @@ it('freezes processing', async () => {
   })
   expect(client.log.actions()).toEqual([
     { type: 'test' },
-    { id: '1 10:2:2 0', type: 'logux/processed' }
+    { id: '2 10:2:2', type: 'logux/processed' }
   ])
 })
 
@@ -345,7 +345,7 @@ it('allows subscribing to the same channel with multiple filters', async () => {
       type: 'logux/unsubscribe'
     },
     {
-      id: '5 10:2:2 0',
+      id: '8 10:2:2',
       type: 'logux/processed'
     },
     {
@@ -356,7 +356,7 @@ it('allows subscribing to the same channel with multiple filters', async () => {
       type: 'logux/unsubscribe'
     },
     {
-      id: '7 10:2:2 0',
+      id: 'B 10:2:2',
       type: 'logux/processed'
     }
   ])

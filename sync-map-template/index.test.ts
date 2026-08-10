@@ -292,7 +292,7 @@ it('reverts changes for multiple actions case', async () => {
   await client.server.freezeProcessing(async () => {
     changeSyncMap(post, 'title', 'Bad').catch(() => {})
     await delay(10)
-    await client.log.add(changedAction({ title: 'Good 2' }), { time: 4 })
+    await client.log.add(changedAction({ title: 'Good 2' }), { time: 100 })
   })
 
   expect(post.get()).toEqual({
@@ -465,7 +465,7 @@ it('should not send since when subscribing to a offline remote store for the fir
   expect(client.log.actions()).toEqual([
     // since is not sent
     { channel: 'cachedPosts/ID', type: 'logux/subscribe' },
-    { id: '1 10:2:2 0', type: 'logux/processed' }
+    { id: '2 10:2:2', type: 'logux/processed' }
   ])
 })
 
@@ -480,7 +480,7 @@ it('could cache specific stores and use server', async () => {
 
   expect(client.log.actions()).toEqual([
     { channel: 'cachedPosts/ID', type: 'logux/subscribe' },
-    { id: '1 10:2:2 0', type: 'logux/processed' }
+    { id: '2 10:2:2', type: 'logux/processed' }
   ])
 
   await changeSyncMap(post, 'title', 'The post')
@@ -489,12 +489,12 @@ it('could cache specific stores and use server', async () => {
 
   expect(client.log.actions()).toEqual([
     { channel: 'cachedPosts/ID', type: 'logux/subscribe' },
-    { id: '1 10:2:2 0', type: 'logux/processed' },
+    { id: '2 10:2:2', type: 'logux/processed' },
 
     { fields: { title: 'The post' }, id: 'ID', type: 'cachedPosts/change' },
     { fields: { title: 'The post' }, id: 'ID', type: 'cachedPosts/changed' },
 
-    { id: '3 10:2:2 0', type: 'logux/processed' }
+    { id: '5 10:2:2', type: 'logux/processed' }
   ])
 
   let restored = CachedPost('ID', client)
@@ -680,8 +680,8 @@ it('allows to send create action and return instance', async () => {
         isLoading: false,
         title: 'Test'
       })
-      expect(post.createdAt?.id).toBe('1 10:2:2 0')
-      expect(post.createdAt?.time).toBe(1)
+      expect(post.createdAt?.id).toBe('2 10:2:2')
+      expect(post.createdAt?.time).toBe(2)
     })
   ).toEqual([
     {

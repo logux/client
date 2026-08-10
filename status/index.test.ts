@@ -91,7 +91,7 @@ it('notifies only about wait for sync actions', async () => {
     'connectingAfterWait',
     'sendingAfterWait'
   ])
-  test.client.node.log.add({ id: '3 10:1:1 0', type: 'logux/undo' })
+  test.client.node.log.add({ id: '2 10:1:1', type: 'logux/undo' })
   await delay(1)
   expect(test.calls).toEqual([
     'disconnected',
@@ -101,7 +101,7 @@ it('notifies only about wait for sync actions', async () => {
     'connectingAfterWait',
     'sendingAfterWait'
   ])
-  test.client.node.log.add({ id: '4 10:1:1 0', type: 'logux/processed' })
+  test.client.node.log.add({ id: '3 10:1:1', type: 'logux/processed' })
   await delay(1)
   expect(test.calls).toEqual([
     'disconnected',

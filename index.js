@@ -6,10 +6,7 @@ export { createAuth } from './create-auth/index.js'
 export { createClientStore } from './create-client-store/index.js'
 export { withoutMeta } from './create-crdt-table/index.js'
 export { createFilter } from './create-filter/index.js'
-export {
-  createReducer,
-  createStorageReducer
-} from './create-reducer/index.js'
+export { createReducer, createStorageReducer } from './create-reducer/index.js'
 export { CrossTabClient } from './cross-tab-client/index.js'
 export { encryptActions } from './encrypt-actions/index.js'
 export { favicon } from './favicon/index.js'
