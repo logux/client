@@ -65,7 +65,6 @@
     "@types/ws": "^8.18.1",
     "@vitest/coverage-v8": "^4.1.10",
     "@vue/compiler-sfc": "^3.5.41",
-    "actions-up": "^1.17.0",
     "check-dts": "^2.0.1",
     "eslint-plugin-prefer-let": "^4.2.2",
     "fake-indexeddb": "^6.2.5",
