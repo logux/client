@@ -60,6 +60,13 @@ async function test(): Promise<void> {
     role: 'admin'
   })
 
+  await user.create({
+    age: null,
+    email: 'a@b.c',
+    name: 'Ann',
+    publishedAt: null
+  })
+
   let ids: string[] = await user.create([
     { email: 'a@b.c', name: 'Ann' },
     { email: 'b@b.c', id: 'U2', name: 'Ben', role: 'admin' }
@@ -109,6 +116,11 @@ async function test(): Promise<void> {
     let cleanAge: null | number = clean[0]!.age
     let cleanRole: 'admin' | 'guest' | 'user' = clean[0]!.role
     console.log(cleanId, cleanName, cleanAge, cleanRole)
+
+    // Rows with `null` in optional columns can be inserted back
+    let restored: string[] = await user.create(clean)
+    let copy: string = await user.create({ ...clean[0]!, id: undefined })
+    console.log(restored, copy)
   }
   await $admins.loading
 

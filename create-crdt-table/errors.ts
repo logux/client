@@ -38,6 +38,10 @@ async function test(): Promise<void> {
   await user.create({ name: 'Ann', role: 'guest' })
   // THROWS No overload matches this call.
   await user.create([{ age: 30 }])
+  // THROWS No overload matches this call.
+  await user.create({ name: null, role: 'user' })
+  // THROWS No overload matches this call.
+  await user.create({ createdAt: null, name: 'Ann', role: 'user' })
   // THROWS Type 'string' is not assignable to type 'number'.
   await user.update(['id'], { createdAt: '2026-01-01' })
   // THROWS Type 'number' is not assignable to type 'string'.

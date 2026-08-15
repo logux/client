@@ -165,8 +165,8 @@ export function bigint<Type extends number = number>(
 ): { type: 'BIGINT' } & CrdtColumn<Type, false>
 
 /**
- * Mark column as optional. The field can be omitted in
- * {@link CrdtTable#create}, can be set to `null`
+ * Mark column as optional. The field can be omitted or set to `null`
+ * in {@link CrdtTable#create}, can be set to `null`
  * in {@link CrdtTable#update} to clear the value, and is `null`
  * (SQL `NULL`) in rows when missing.
  *
@@ -224,7 +224,9 @@ export type CrdtCreateFields<Schema extends CrdtTableSchema> = {
     Column in keyof Schema as Schema[Column] extends CrdtColumn<any, false>
       ? Column
       : never
-  ]?: Exclude<CrdtColumnType<Schema[Column]>, undefined>
+  ]?: undefined extends CrdtColumnType<Schema[Column]>
+    ? Exclude<CrdtColumnType<Schema[Column]>, undefined> | null
+    : CrdtColumnType<Schema[Column]>
 } & {
   [
     Column in keyof Schema as Schema[Column] extends CrdtColumn<any, false>

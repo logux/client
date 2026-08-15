@@ -249,6 +249,88 @@ it('creates, updates and deletes many rows by batch actions', async () => {
   cleanStores($all)
 })
 
+it('takes null in create() as a missing field', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await delay(10)
+
+  let id = ''
+  let sent = await client.sent(async () => {
+    id = await user.create({ age: null, name: 'Ann', publishedAt: null })
+    await delay(10)
+  })
+
+  expect(sent).toEqual([
+    {
+      fields: {
+        createdAt: new Date(2026, 0, 1).getTime(),
+        isAdmin: 0,
+        name: 'Ann',
+        role: 'user'
+      },
+      id,
+      type: 'user/created'
+    }
+  ])
+
+  let $all = user.select`ORDER BY "name"`
+  let rows = await loadList($all)
+  expect(rows[0]!.age).toBeNull()
+  expect(rows[0]!.publishedAt).toBeNull()
+  expect(rows[0]!.updatedAt_age).toBeNull()
+  expect(rows[0]!.updatedAt_publishedAt).toBeNull()
+  expect(rows[0]!.createdAt).toBe(new Date(2026, 0, 1).getTime())
+  expect(rows[0]!.isAdmin).toBe(0)
+  expect(rows[0]!.role).toBe('user')
+
+  cleanStores($all)
+})
+
+it('creates rows again from selected rows', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await delay(10)
+
+  await user.create([
+    { id: 'U1', name: 'Ann' },
+    { age: 20, id: 'U2', name: 'Ben', publishedAt: 100 }
+  ])
+  await delay(10)
+
+  let $all = user.select`ORDER BY "name"`
+  let backup = withoutMeta(await loadList($all))
+  await user.delete(['U1', 'U2'])
+  await delay(10)
+  expect(await loadList($all)).toEqual([])
+
+  await user.create(backup)
+  await delay(10)
+  expect(withoutMeta(await loadList($all))).toEqual(backup)
+
+  let copies = await user.create(backup.map(row => ({ ...row, id: undefined })))
+  await delay(10)
+  expect((await loadList($all)).map(i => i.name)).toEqual([
+    'Ann',
+    'Ann',
+    'Ben',
+    'Ben'
+  ])
+
+  let $copies = user.select`
+    WHERE "id" IN (${copies[0]!}, ${copies[1]!}) ORDER BY "name"
+  `
+  let rows = await loadList($copies)
+  expect(withoutMeta(rows).map(row => ({ ...row, id: 'ID' }))).toEqual(
+    backup.map(row => ({ ...row, id: 'ID' }))
+  )
+  expect(rows[0]!.updatedAt_age).toBeNull()
+  expect(rows[1]!.updatedAt_age).toBeTypeOf('string')
+
+  cleanStores($all, $copies)
+})
+
 it('resolves conflicts of batch actions with per-field last write wins', async () => {
   let { client, db } = await setup()
   let crdt = createCrdtDatabase(client, db)

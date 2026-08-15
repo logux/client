@@ -626,6 +626,9 @@ export function createCrdtDatabase(client, db, opts = {}) {
       function withDefaults(fields) {
         let { id = nanoid(), ...values } = fields
         for (let key in schema) {
+          // `null` means the same as a missing field, so rows from select(),
+          // where missing values are SQL NULL, can be passed back to create()
+          if (values[key] === null) delete values[key]
           if (values[key] === undefined && 'default' in schema[key]) {
             let byDefault = schema[key].default
             values[key] =
