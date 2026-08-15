@@ -1199,9 +1199,9 @@ it('removes fields meta from rows', async () => {
   ])
   expect(withoutMeta([])).toEqual([])
 
-  expect(Object.keys(withMeta<UserValue>(withoutMeta(rows)[0]!)).sort()).toEqual(
-    Object.keys(rows[0]!).sort()
-  )
+  expect(
+    Object.keys(withMeta<UserValue>(withoutMeta(rows)[0]!)).sort()
+  ).toEqual(Object.keys(rows[0]!).sort())
 })
 
 it('adds empty fields meta to rows', () => {
