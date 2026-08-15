@@ -18,11 +18,13 @@ import { setLocalStorage } from '../test/local-storage.js'
 import {
   bigint,
   boolean,
+  type CrdtTableRow,
   createCrdtDatabase,
   number,
   oneOf,
   optional,
   string,
+  withMeta,
   withoutMeta
 } from './index.js'
 
@@ -142,6 +144,8 @@ const USER_SCHEMA = {
   publishedAt: optional(bigint()),
   role: oneOf(['admin', 'guest', 'user'], { default: 'user' })
 }
+
+type UserValue = CrdtTableRow<typeof USER_SCHEMA>
 
 async function setup(): Promise<{
   client: TestClient
@@ -1194,6 +1198,38 @@ it('removes fields meta from rows', async () => {
     }
   ])
   expect(withoutMeta([])).toEqual([])
+
+  expect(Object.keys(withMeta<UserValue>(withoutMeta(rows)[0]!)).sort()).toEqual(
+    Object.keys(rows[0]!).sort()
+  )
+})
+
+it('adds empty fields meta to rows', () => {
+  expect(
+    withMeta<UserValue>({
+      age: null,
+      createdAt: 1000,
+      id: 'U1',
+      isAdmin: 0,
+      name: 'Ann',
+      publishedAt: null,
+      role: 'user'
+    })
+  ).toEqual({
+    age: null,
+    createdAt: 1000,
+    id: 'U1',
+    isAdmin: 0,
+    name: 'Ann',
+    publishedAt: null,
+    role: 'user',
+    updatedAt_age: null,
+    updatedAt_createdAt: null,
+    updatedAt_isAdmin: null,
+    updatedAt_name: null,
+    updatedAt_publishedAt: null,
+    updatedAt_role: null
+  })
 })
 
 it('throws on table() call after initialization', async () => {
