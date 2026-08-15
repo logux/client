@@ -236,6 +236,14 @@ export type CrdtCreateFields<Schema extends CrdtTableSchema> = {
 }
 
 /**
+ * Row accepted by {@link CrdtTable#create}: {@link CrdtCreateFields}
+ * with optional `id`, which will be generated if omitted.
+ */
+export type NewCrdtRow<Schema extends CrdtTableSchema> = {
+  id?: string
+} & CrdtCreateFields<Schema>
+
+/**
  * Values for SQL template parameters of {@link CrdtTable#select}.
  * Parameters are passed to the database driver as-is, without any
  * conversion. Booleans are allowed only in dialects
@@ -296,6 +304,21 @@ export function withoutMeta<Value extends object>(
   rows: Value[]
 ): WithoutMeta<Value>[]
 
+/**
+ * Add empty conflict resolution data to a row built in tests, so it could
+ * be compared with rows from {@link CrdtTable#select}.
+ *
+ * ```ts
+ * expect(await loadList(user.select())).toEqual([
+ *   withMeta<UserValue>({ id: 'U1', name: 'Ann' })
+ * ])
+ * ```
+ *
+ * @param row Row without `updatedAt_field` columns.
+ * @returns Row with `null` in `updatedAt_field` column of every field.
+ */
+export function withMeta<Value>(row: WithoutMeta<Value>): Value
+
 export interface CrdtTable<
   Schema extends CrdtTableSchema = CrdtTableSchema,
   Dialect extends string = 'sqlite'
@@ -347,12 +370,11 @@ export interface CrdtTable<
    * @returns Promise with row ID (or IDs of all rows in the batch)
    *          resolved when the row was inserted into the table.
    */
-  // Keep the single row overload the last one: TypeScript uses the last
-  // overload to infer fields types in `defineCrdtTableActions()`
+  create(rows: NewCrdtRow<Schema>[]): Promise<string[]>
+  create(fields: NewCrdtRow<Schema>): Promise<string>
   create(
-    rows: ({ id?: string } & CrdtCreateFields<Schema>)[]
-  ): Promise<string[]>
-  create(fields: { id?: string } & CrdtCreateFields<Schema>): Promise<string>
+    fields: NewCrdtRow<Schema> | NewCrdtRow<Schema>[]
+  ): Promise<string[] | string>
 
   /**
    * Add `plural/deleted` action to the log to remove the row.

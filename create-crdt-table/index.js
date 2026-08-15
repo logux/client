@@ -45,6 +45,14 @@ export function withoutMeta(rows) {
   })
 }
 
+export function withMeta(row) {
+  let meta = {}
+  for (let key of Object.keys(row)) {
+    if (key !== 'id') meta[`${META}${key}`] = null
+  }
+  return { ...row, ...meta }
+}
+
 /**
  * Version of the internal database format to update database on changes.
  */
