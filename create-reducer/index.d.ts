@@ -42,6 +42,14 @@ type ReducerMigrationStatus =
 
 interface Reducer {
   /**
+   * Stop the reducer: unsubscribe from the client, release the leader lock
+   * and stop tracking `storage` events. Call it before creating a reducer
+   * with the same name for another client, otherwise the new reducer will
+   * wait for the lock forever and will never reduce anything.
+   */
+  destroy(): void
+
+  /**
    * Promise resolved when the data was prepared and all actions
    * from the log were reduced.
    *
@@ -137,7 +145,22 @@ interface Convertor<Value> {
 }
 
 interface StorageReducer<Value> {
+  /**
+   * The reduced value.
+   *
+   * Reduce will use value compare function from it:
+   *
+   * ```js
+   * users.value.eq = (prev, next) => prev.join() === next.join()
+   * ```
+   */
   value: ReadableAtom<Value>
+
+  /**
+   * Stop the reducer: unsubscribe from the client, release the leader lock
+   * and stop tracking `storage` events. The value is kept in `localStorage`.
+   */
+  destroy(): void
 
   /**
    * Promise resolved when the value was loaded and all actions

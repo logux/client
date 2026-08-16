@@ -1,6 +1,6 @@
 import { defineAction } from '@logux/actions'
 import { delay } from 'nanodelay'
-import { afterEach, beforeAll, beforeEach, expect, it, describe } from 'vitest'
+import { afterEach, beforeEach, expect, it, describe } from 'vitest'
 
 import {
   type ClientMeta,
@@ -10,12 +10,8 @@ import {
 } from '../index.js'
 import { setLocalStorage } from '../test/local-storage.js'
 
-beforeAll(() => {
-  setLocalStorage()
-})
-
 beforeEach(() => {
-  localStorage.clear()
+  setLocalStorage()
 })
 
 afterEach(() => {
@@ -27,6 +23,55 @@ afterEach(() => {
 
 function emitStorage(key: string, newValue: string): void {
   window.dispatchEvent(new StorageEvent('storage', { key, newValue }))
+}
+
+interface LockRequest {
+  aborted: boolean
+
+  /**
+   * Give the lock to the request. Returns the promise resolved
+   * when the lock was released.
+   */
+  grant(): Promise<void>
+}
+
+/**
+ * Emulate Web Locks API: requests are queued until the test grants them
+ * and aborted requests are never granted.
+ */
+function mockLocks(): LockRequest[] {
+  let requests: LockRequest[] = []
+  Object.defineProperty(navigator, 'locks', {
+    configurable: true,
+    value: {
+      request(
+        _name: string,
+        opts: { signal: AbortSignal },
+        callback: () => Promise<unknown>
+      ) {
+        return new Promise((resolve, reject) => {
+          let granted = false
+          let request: LockRequest = {
+            aborted: false,
+            grant() {
+              if (request.aborted) throw new Error('Lock request was aborted')
+              granted = true
+              let released = Promise.resolve(callback()).then(() => {})
+              void released.then(resolve)
+              return released
+            }
+          }
+          opts.signal.addEventListener('abort', () => {
+            if (granted) return
+            request.aborted = true
+            reject(new Error('AbortError'))
+          })
+          requests.push(request)
+        })
+      }
+    }
+  })
+  return requests
 }
 
 describe('createReducer', () => {
@@ -438,15 +483,7 @@ describe('createReducer', () => {
   })
 
   it('runs reducer only in leader tab and releases lock on new version', async () => {
-    let lockCallbacks: (() => Promise<unknown>)[] = []
-    Object.defineProperty(navigator, 'locks', {
-      configurable: true,
-      value: {
-        request(_name: string, fn: () => Promise<unknown>) {
-          lockCallbacks.push(fn)
-        }
-      }
-    })
+    let locks = mockLocks()
 
     let client = new TestClient('10')
     await client.connect()
@@ -469,7 +506,7 @@ describe('createReducer', () => {
     expect(received).toEqual([])
 
     let lockReleased = false
-    void lockCallbacks[0]!().then(() => {
+    void locks[0]!.grant().then(() => {
       lockReleased = true
     })
     await delay(1)
@@ -484,6 +521,202 @@ describe('createReducer', () => {
     expect(reducer.status.get()).toBe('outdated')
     expect(stopCalled).toBe(1)
     expect(lockReleased).toBe(true)
+
+    await client.log.add({ type: 'users/create' })
+    await delay(1)
+    expect(received).toEqual(['users/create'])
+  })
+
+  it('stops reducing actions and storage tracking on destroy', async () => {
+    let client = new TestClient('10')
+    await client.connect()
+
+    let stopCalled = 0
+    let reducer = createReducer(client, 'db', 1, {
+      clean() {},
+      stop() {
+        stopCalled += 1
+      }
+    })
+    let received: string[] = []
+    reducer.type('users/create', action => {
+      received.push(action.type)
+    })
+
+    await reducer.ready
+    await client.log.add({ type: 'users/create' })
+    await delay(1)
+    expect(received).toEqual(['users/create'])
+
+    reducer.destroy()
+
+    await client.log.add({ type: 'users/create' })
+    await delay(1)
+    expect(received).toEqual(['users/create'])
+
+    emitStorage('logux:reducer:db', '2')
+    expect(stopCalled).toBe(0)
+    expect(reducer.status.get()).toBe('ready')
+  })
+
+  it('resolves ready on destroy and ignores second destroy', async () => {
+    let client = new TestClient('10')
+
+    let resolveInit: () => void = () => {}
+    let reducer = createReducer(client, 'db', 1, {
+      clean() {},
+      init() {
+        return new Promise<void>(resolve => {
+          resolveInit = resolve
+        })
+      }
+    })
+    expect(reducer.status.get()).toBe('initializing')
+
+    reducer.destroy()
+    reducer.destroy()
+    await reducer.ready
+
+    resolveInit()
+    await delay(1)
+    expect(reducer.status.get()).toBe('initializing')
+  })
+
+  it('stops migration on destroy', async () => {
+    let client = new TestClient('10')
+    await client.connect()
+    localStorage.setItem('logux:reducer:db', '1')
+
+    let calls: string[] = []
+    let resolveClean!: (
+      entries: [{ type: 'users/create' }, ClientMeta][]
+    ) => void
+    let reducer = createReducer(client, 'db', 2, {
+      clean() {
+        calls.push('clean')
+        return new Promise<[{ type: 'users/create' }, ClientMeta][]>(
+          resolve => {
+            resolveClean = resolve
+          }
+        )
+      },
+      init() {
+        calls.push('init')
+      }
+    })
+    reducer.type('users/create', () => {
+      calls.push('action')
+    })
+
+    await delay(1)
+    expect(calls).toEqual(['clean'])
+
+    reducer.destroy()
+    resolveClean([
+      [{ type: 'users/create' }, { id: 'a', time: 0, added: 0, reasons: [] }]
+    ])
+    await delay(1)
+    expect(calls).toEqual(['clean'])
+    expect(reducer.status.get()).toBe('migrating')
+    expect(localStorage.getItem('logux:reducer:db')).toBe('1')
+  })
+
+  it('stops replaying migration entries on destroy', async () => {
+    let client = new TestClient('10')
+    await client.connect()
+    localStorage.setItem('logux:reducer:db', '1')
+
+    type UserAction = { id: string; type: 'users/create' }
+
+    let calls: string[] = []
+    let resolveListener: Record<string, () => void> = {}
+    let reducer = createReducer(client, 'db', 2, {
+      clean() {
+        return [
+          [
+            { id: 'a', type: 'users/create' },
+            { id: 'a', time: 0, added: 0, reasons: [] }
+          ],
+          [
+            { id: 'b', type: 'users/create' },
+            { id: 'b', time: 1, added: 0, reasons: [] }
+          ]
+        ] satisfies [UserAction, ClientMeta][]
+      }
+    })
+    reducer.type<UserAction>('users/create', action => {
+      calls.push(action.id)
+      return new Promise<void>(resolve => {
+        resolveListener[action.id] = resolve
+      })
+    })
+
+    await delay(1)
+    expect(calls).toEqual(['a'])
+
+    reducer.destroy()
+    resolveListener['a']!()
+    await delay(1)
+    expect(calls).toEqual(['a'])
+    expect(reducer.status.get()).toBe('migrating')
+    expect(localStorage.getItem('logux:reducer:db')).toBe('1')
+  })
+
+  it('releases the lock on destroy', async () => {
+    let locks = mockLocks()
+
+    let client = new TestClient('10')
+    await client.connect()
+
+    let reducer = createReducer(client, 'db', 1, { clean() {} })
+    let received: string[] = []
+    reducer.type('users/create', action => {
+      received.push(action.type)
+    })
+
+    await delay(1)
+    let lockReleased = false
+    void locks[0]!.grant().then(() => {
+      lockReleased = true
+    })
+    await delay(1)
+
+    await client.log.add({ type: 'users/create' })
+    await delay(1)
+    expect(received).toEqual(['users/create'])
+    expect(lockReleased).toBe(false)
+
+    reducer.destroy()
+    await delay(1)
+    expect(lockReleased).toBe(true)
+  })
+
+  it('cancels lock request on destroy in non-leader tab', async () => {
+    let locks = mockLocks()
+
+    let client = new TestClient('10')
+    await client.connect()
+
+    let reducer = createReducer(client, 'db', 1, { clean() {} })
+    let received: string[] = []
+    reducer.type('users/create', action => {
+      received.push(action.type)
+    })
+
+    await delay(1)
+    expect(locks[0]!.aborted).toBe(false)
+
+    reducer.destroy()
+    await delay(1)
+    expect(locks[0]!.aborted).toBe(true)
+
+    let next = createReducer(client, 'db', 1, { clean() {} })
+    next.type('users/create', action => {
+      received.push(action.type)
+    })
+    await delay(1)
+    void locks[1]!.grant()
+    await delay(1)
 
     await client.log.add({ type: 'users/create' })
     await delay(1)
@@ -622,5 +855,150 @@ describe('createStorageReducer', () => {
 
     expect(reducer.value.get()).toBe('hello')
     expect(localStorage.getItem('msg')).toBe('hello')
+  })
+
+  it('does not save the value when the listener returns the same value', async () => {
+    let client = new TestClient('10')
+    await client.connect()
+
+    let reducer = createStorageReducer(
+      client,
+      'counter',
+      1,
+      0,
+      counterCallbacks()
+    )
+    reducer.type<IncAction>('inc', (prev, action) => prev + action.amount)
+    await delay(1)
+
+    let changes: number[] = []
+    reducer.value.listen(newValue => {
+      changes.push(newValue)
+    })
+
+    await client.log.add({ amount: 0, type: 'inc' })
+    await delay(1)
+    expect(changes).toEqual([])
+    expect(localStorage.getItem('counter')).toBeNull()
+
+    await client.log.add({ amount: 2, type: 'inc' })
+    await delay(1)
+    expect(changes).toEqual([2])
+    expect(localStorage.getItem('counter')).toBe('2')
+  })
+
+  it('uses value.eq to compare the value', async () => {
+    let client = new TestClient('10')
+    await client.connect()
+
+    let encoded = 0
+    let reducer = createStorageReducer<string[]>(client, 'ids', 1, [], {
+      decode: str => str.split(','),
+      encode(value) {
+        encoded += 1
+        return value.join(',')
+      },
+      repeat: () => []
+    })
+    reducer.value.eq = (prev, next) => prev.join(',') === next.join(',')
+    reducer.type<{ id: string; type: 'add' }>('add', (prev, action) => {
+      return prev.includes(action.id) ? [...prev] : [...prev, action.id]
+    })
+    await delay(1)
+
+    await client.log.add({ id: '1', type: 'add' })
+    await delay(1)
+    expect(reducer.value.get()).toEqual(['1'])
+    expect(localStorage.getItem('ids')).toBe('1')
+    expect(encoded).toBe(1)
+
+    await client.log.add({ id: '1', type: 'add' })
+    await delay(1)
+    expect(reducer.value.get()).toEqual(['1'])
+    expect(encoded).toBe(1)
+  })
+
+  it('stops reducing and syncing on destroy, but keeps the value', async () => {
+    let client = new TestClient('10')
+    await client.connect()
+
+    let reducer = createStorageReducer(
+      client,
+      'counter',
+      1,
+      0,
+      counterCallbacks()
+    )
+    reducer.type<IncAction>('inc', (prev, action) => prev + action.amount)
+
+    await client.log.add({ amount: 3, type: 'inc' })
+    await delay(1)
+    expect(reducer.value.get()).toBe(3)
+    expect(localStorage.getItem('counter')).toBe('3')
+
+    reducer.destroy()
+
+    emitStorage('counter', '7')
+    expect(reducer.value.get()).toBe(3)
+
+    await client.log.add({ amount: 1, type: 'inc' })
+    await delay(1)
+    expect(reducer.value.get()).toBe(3)
+    expect(localStorage.getItem('counter')).toBe('3')
+  })
+})
+
+describe('without localStorage', () => {
+  beforeEach(() => {
+    // @ts-expect-error Emulate server-side rendering
+    window.localStorage = undefined
+  })
+
+  it('reduces actions without localStorage', async () => {
+    let client = new TestClient('10')
+    await client.connect()
+
+    let calls: string[] = []
+    let reducer = createReducer(client, 'db', 1, {
+      clean() {
+        calls.push('clean')
+      },
+      init() {
+        calls.push('init')
+      }
+    })
+    let received: string[] = []
+    reducer.type('users/create', action => {
+      received.push(action.type)
+    })
+
+    await reducer.ready
+    expect(reducer.status.get()).toBe('ready')
+    expect(calls).toEqual(['init'])
+
+    await client.log.add({ type: 'users/create' })
+    await delay(1)
+    expect(received).toEqual(['users/create'])
+  })
+
+  it('keeps the value in memory without localStorage', async () => {
+    let client = new TestClient('10')
+    await client.connect()
+
+    let reducer = createStorageReducer(
+      client,
+      'counter',
+      1,
+      0,
+      counterCallbacks()
+    )
+    reducer.type<IncAction>('inc', (prev, action) => prev + action.amount)
+
+    await reducer.ready
+    expect(reducer.value.get()).toBe(0)
+
+    await client.log.add({ amount: 2, type: 'inc' })
+    await delay(1)
+    expect(reducer.value.get()).toBe(2)
   })
 })

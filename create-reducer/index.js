@@ -3,6 +3,18 @@ import { atom } from 'nanostores'
 let storageTracking = false
 let storageListeners = {}
 
+function getStorage(key) {
+  return typeof localStorage !== 'undefined' ? localStorage.getItem(key) : null
+}
+
+function setStorage(key, value) {
+  if (typeof localStorage !== 'undefined') localStorage.setItem(key, value)
+}
+
+function removeStorage(key) {
+  if (typeof localStorage !== 'undefined') localStorage.removeItem(key)
+}
+
 function startStorageTracking(key, callback) {
   storageListeners[key] = callback
   if (!storageTracking) {
@@ -16,6 +28,10 @@ function startStorageTracking(key, callback) {
       })
     }
   }
+}
+
+function stopStorageTracking(key) {
+  delete storageListeners[key]
 }
 
 export function createReducer(client, name, version, callbacks) {
@@ -33,11 +49,14 @@ export function createReducer(client, name, version, callbacks) {
   let actionsWaiting = []
   let actionListeners = {}
 
+  let destroyed = false
   let isLeader = false
+  let lockRequest = new AbortController()
   let releaseLock = () => {}
 
   let promise = Promise.resolve()
   function becomeReady() {
+    if (destroyed) return
     for (let entry of actionsWaiting) {
       let listener = actionListeners[entry[0].type]
       if (listener) {
@@ -50,12 +69,12 @@ export function createReducer(client, name, version, callbacks) {
   }
 
   let key = `logux:reducer:${name}`
-  let oldStorage = localStorage.getItem(key)
+  let oldStorage = getStorage(key)
   if (!oldStorage) {
     let initializing = init() ?? Promise.resolve()
     initializing
       .then(() => {
-        localStorage.setItem(key, String(version))
+        setStorage(key, String(version))
       })
       .then(becomeReady)
   } else {
@@ -64,12 +83,14 @@ export function createReducer(client, name, version, callbacks) {
       status.set('migrating')
       if (callbacks.migrating) callbacks.migrating(ready)
       void Promise.resolve(clean(oldVersion)).then(async entries => {
+        if (destroyed) return
         await init()
         for (let entry of entries ?? []) {
+          if (destroyed) return
           let listener = actionListeners[entry[0].type]
           if (listener) await listener(entry[0], entry[1])
         }
-        localStorage.setItem(key, String(version))
+        setStorage(key, String(version))
         becomeReady()
       })
     } else if (oldVersion > version) {
@@ -82,13 +103,15 @@ export function createReducer(client, name, version, callbacks) {
   }
 
   if (typeof navigator !== 'undefined' && navigator.locks) {
-    void navigator.locks.request(`${key}:lock`, () => {
-      if (status.get() === 'outdated') return Promise.resolve()
-      isLeader = true
-      return new Promise(resolve => {
-        releaseLock = resolve
+    navigator.locks
+      .request(`${key}:lock`, { signal: lockRequest.signal }, () => {
+        if (destroyed || status.get() === 'outdated') return Promise.resolve()
+        isLeader = true
+        return new Promise(resolve => {
+          releaseLock = resolve
+        })
       })
-    })
+      .catch(() => {})
   } else {
     isLeader = true
   }
@@ -102,7 +125,7 @@ export function createReducer(client, name, version, callbacks) {
     }
   })
 
-  client.on('add', (action, meta) => {
+  let unbindAdd = client.on('add', (action, meta) => {
     let listener = actionListeners[action.type]
     if (listener && isLeader) {
       if (status.get() !== 'ready') {
@@ -114,6 +137,16 @@ export function createReducer(client, name, version, callbacks) {
   })
 
   let reducer = {
+    destroy() {
+      if (destroyed) return
+      destroyed = true
+      unbindAdd()
+      stopStorageTracking(key)
+      lockRequest.abort()
+      releaseLock()
+      actionsWaiting = []
+      setReady()
+    },
     ready,
     status,
     type(type, listener) {
@@ -137,7 +170,7 @@ export function createStorageReducer(
 
   let value = atom(initialValue)
 
-  let stored = localStorage.getItem(name)
+  let stored = getStorage(name)
   if (stored !== null) {
     value.set(decode(stored))
   }
@@ -145,7 +178,7 @@ export function createStorageReducer(
   let reducer = createReducer(client, name, version, {
     clean() {
       value.set(initialValue)
-      localStorage.removeItem(name)
+      removeStorage(name)
       return callbacks.repeat()
     },
     migrating: callbacks.migrating
@@ -156,13 +189,20 @@ export function createStorageReducer(
   })
 
   return {
+    destroy() {
+      stopStorageTracking(name)
+      reducer.destroy()
+    },
     ready: reducer.ready,
     status: reducer.status,
     type(type, listener) {
       reducer.type(type, async (action, meta) => {
-        let newValue = await listener(value.get(), action, meta)
-        value.set(newValue)
-        localStorage.setItem(name, encode(newValue))
+        let prevValue = value.get()
+        let newValue = await listener(prevValue, action, meta)
+        if (!value.eq(prevValue, newValue)) {
+          value.set(newValue)
+          setStorage(name, encode(newValue))
+        }
       })
     },
     value
