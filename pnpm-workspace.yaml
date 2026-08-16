@@ -3,3 +3,4 @@ allowBuilds:
 minimumReleaseAgeExclude:
   - '@logux/actions'
   - '@nanostores/sql'
+  - nanostores

@@ -10,7 +10,7 @@ importers:
     dependencies:
       '@logux/actions':
         specifier: github:logux/actions#next
-        version: git+https://github.com/logux/actions.git#db3da8eadf00f2a1c78886bd4033aebb7eaa4310(@logux/core@git+https://github.com/logux/core.git#573f28b54a99540135304140b69bdb9d6cf68a69)
+        version: git+https://github.com/logux/actions.git#1af6802df1be40acbec99e1a342d09c1254767a7(@logux/core@git+https://github.com/logux/core.git#573f28b54a99540135304140b69bdb9d6cf68a69)
       '@logux/core':
         specifier: github:logux/core#next
         version: git+https://github.com/logux/core.git#573f28b54a99540135304140b69bdb9d6cf68a69
@@ -29,16 +29,16 @@ importers:
         version: 1.1.0(oxlint-tsgolint@7.0.2001)(oxlint@1.78.0(oxlint-tsgolint@7.0.2001))(typescript@7.0.2)
       '@nanostores/preact':
         specifier: ^1.1.0
-        version: 1.1.0(nanostores@1.4.2)(preact@10.29.8)
+        version: 1.1.0(nanostores@1.5.0)(preact@10.29.8)
       '@nanostores/react':
         specifier: ^1.1.0
-        version: 1.1.0(nanostores@1.4.2)(react@19.2.8)
+        version: 1.1.0(nanostores@1.5.0)(react@19.2.8)
       '@nanostores/sql':
         specifier: ^0.4.1
-        version: 0.4.1(@electric-sql/pglite@0.5.5)(nanostores@1.4.2)
+        version: 0.4.1(@electric-sql/pglite@0.5.5)(nanostores@1.5.0)
       '@nanostores/vue':
         specifier: ^1.1.0
-        version: 1.1.0(nanostores@1.4.2)(vue@3.5.41(typescript@7.0.2))
+        version: 1.1.0(nanostores@1.5.0)(vue@3.5.41(typescript@7.0.2))
       '@size-limit/preset-small-lib':
         specifier: ^13.0.3
         version: 13.0.3(size-limit@13.0.3)
@@ -94,8 +94,8 @@ importers:
         specifier: ^2.0.2
         version: 2.0.2
       nanostores:
-        specifier: ^1.4.2
-        version: 1.4.2
+        specifier: ^1.5.0
+        version: 1.5.0
       oxlint:
         specifier: ^1.78.0
         version: 1.78.0(oxlint-tsgolint@7.0.2001)
@@ -343,8 +343,8 @@ packages:
     peerDependencies:
       '@logux/core': ^0.10.0
 
-  '@logux/actions@git+https://github.com/logux/actions.git#db3da8eadf00f2a1c78886bd4033aebb7eaa4310':
-    resolution: {commit: db3da8eadf00f2a1c78886bd4033aebb7eaa4310, repo: https://github.com/logux/actions.git, type: git}
+  '@logux/actions@git+https://github.com/logux/actions.git#1af6802df1be40acbec99e1a342d09c1254767a7':
+    resolution: {commit: 1af6802df1be40acbec99e1a342d09c1254767a7, repo: https://github.com/logux/actions.git, type: git}
     version: 0.5.0
     engines: {node: ^22.0.0 || ^24.0.0 || >=26.0.0}
     peerDependencies:
@@ -1575,8 +1575,8 @@ packages:
     resolution: {integrity: sha512-AvkslkHQavd4abp7clE0xsv4afGpBpnWUqWY23V3o4ljdyi/YIOpLiiWtrlLh1oR7kWC4GT7iBN5M2SjL5I5yw==}
     engines: {node: ^8.0.0 || ^10.0.0 || ^12.0.0 || ^14.0.0 || ^16.0.0 || ^18.0.0 || ^20.0.0 || ^22.0.0 || ^24.0.0 || >=26.0.0}
 
-  nanostores@1.4.2:
-    resolution: {integrity: sha512-Wxv8Roefr2nqtiRG0bnaFlpYqpIVtOEeJZHaH+4nGgOK1/7n6OHOuHCb/bhqrNQgZM8fyd0s1PqhdrJc9Ib44g==}
+  nanostores@1.5.0:
+    resolution: {integrity: sha512-E0SrU7uLV/k4E6YbBIpQNDnRj00vgE5wlutM1sYVSAXDtHQosiRCGS9eKMKyiGg4ChXfDiJmTB+NCR3yXr6UAw==}
     engines: {node: ^20.0.0 || >=22.0.0}
 
   nopt@1.0.10:
@@ -1911,8 +1911,8 @@ packages:
       jsdom:
         optional: true
 
-  vue-component-type-helpers@3.3.9:
-    resolution: {integrity: sha512-3c/UfMe0SqyEfcGTyH7mfshHagJ9QTCbppCb0/uGpHZpFug7+If3GeGZN7I0YheKEExemx3xldQPoO7PQSOLQg==}
+  vue-component-type-helpers@3.3.10:
+    resolution: {integrity: sha512-t7IQivQ3oD4D01b7s7a9AWzHAcr3DGBIa/1jZREsFQJcFgSL92gqUkqNiHTYgzTt7QDuJa0I9wCeDwEtZICoBQ==}
 
   vue@3.5.41:
     resolution: {integrity: sha512-2laE0p+aK+/AOPG/XL/WepOs/GlK755LJ1XECi9kDUrz1FKNw8rb2Xzlw9JS1rqEV55nb0ttsKxVlTCcd+R5cg==}
@@ -2104,7 +2104,7 @@ snapshots:
     dependencies:
       '@logux/core': git+https://github.com/logux/core.git#573f28b54a99540135304140b69bdb9d6cf68a69
 
-  '@logux/actions@git+https://github.com/logux/actions.git#db3da8eadf00f2a1c78886bd4033aebb7eaa4310(@logux/core@git+https://github.com/logux/core.git#573f28b54a99540135304140b69bdb9d6cf68a69)':
+  '@logux/actions@git+https://github.com/logux/actions.git#1af6802df1be40acbec99e1a342d09c1254767a7(@logux/core@git+https://github.com/logux/core.git#573f28b54a99540135304140b69bdb9d6cf68a69)':
     dependencies:
       '@logux/core': git+https://github.com/logux/core.git#573f28b54a99540135304140b69bdb9d6cf68a69
 
@@ -2138,25 +2138,25 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@nanostores/preact@1.1.0(nanostores@1.4.2)(preact@10.29.8)':
+  '@nanostores/preact@1.1.0(nanostores@1.5.0)(preact@10.29.8)':
     dependencies:
-      nanostores: 1.4.2
+      nanostores: 1.5.0
       preact: 10.29.8
 
-  '@nanostores/react@1.1.0(nanostores@1.4.2)(react@19.2.8)':
+  '@nanostores/react@1.1.0(nanostores@1.5.0)(react@19.2.8)':
     dependencies:
-      nanostores: 1.4.2
+      nanostores: 1.5.0
       react: 19.2.8
 
-  '@nanostores/sql@0.4.1(@electric-sql/pglite@0.5.5)(nanostores@1.4.2)':
+  '@nanostores/sql@0.4.1(@electric-sql/pglite@0.5.5)(nanostores@1.5.0)':
     dependencies:
-      nanostores: 1.4.2
+      nanostores: 1.5.0
     optionalDependencies:
       '@electric-sql/pglite': 0.5.5
 
-  '@nanostores/vue@1.1.0(nanostores@1.4.2)(vue@3.5.41(typescript@7.0.2))':
+  '@nanostores/vue@1.1.0(nanostores@1.5.0)(vue@3.5.41(typescript@7.0.2))':
     dependencies:
-      nanostores: 1.4.2
+      nanostores: 1.5.0
       vue: 3.5.41(typescript@7.0.2)
 
   '@one-ini/wasm@0.1.1': {}
@@ -2573,7 +2573,7 @@ snapshots:
       '@vue/compiler-dom': 3.5.41
       js-beautify: 1.15.4
       vue: 3.5.41(typescript@7.0.2)
-      vue-component-type-helpers: 3.3.9
+      vue-component-type-helpers: 3.3.10
     optionalDependencies:
       '@vue/server-renderer': 3.5.41
 
@@ -3166,7 +3166,7 @@ snapshots:
       dompurify: 3.4.13
       highlight.js: 11.12.0
       marked: 18.0.9
-      nanostores: 1.4.2
+      nanostores: 1.5.0
       yaml: 2.9.0
     transitivePeerDependencies:
       - '@logux/core'
@@ -3191,7 +3191,7 @@ snapshots:
 
   nanospy@2.0.2: {}
 
-  nanostores@1.4.2: {}
+  nanostores@1.5.0: {}
 
   nopt@1.0.10:
     dependencies:
@@ -3529,7 +3529,7 @@ snapshots:
     transitivePeerDependencies:
       - msw
 
-  vue-component-type-helpers@3.3.9: {}
+  vue-component-type-helpers@3.3.10: {}
 
   vue@3.5.41(typescript@7.0.2):
     dependencies:
