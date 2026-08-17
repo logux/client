@@ -648,6 +648,19 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
   destroy(): void
 
   /**
+   * Delete all rows from all tables, but keep the database ready to use.
+   *
+   * ```js
+   * afterEach(async () => {
+   *   await crdt.empty()
+   * })
+   * ```
+   *
+   * @returns Promise resolved when all tables became empty.
+   */
+  empty(): Promise<void>
+
+  /**
    * Promise resolved when the database was prepared and tables can be used.
    *
    * It is also resolved when the database became `outdated`, so awaiting it

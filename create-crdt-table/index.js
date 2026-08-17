@@ -180,6 +180,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
   let removing = new Set()
   let blocking = false
   let draining
+  let writing = Promise.resolve()
   let sqlStore
   let destroyed = false
   let unbindStorage = () => {}
@@ -243,11 +244,15 @@ export function createCrdtDatabase(client, db, opts = {}) {
   }
 
   function writeToTables(callback) {
-    return withApplyLock(() => {
-      // Log store’s transaction to not open two transactions
-      // in the same database connection
-      return sqlStore ? sqlStore.write(callback) : db.transaction(callback)
-    })
+    // Writes are queued, because there is no `navigator.locks`
+    // in Node.js and in tests to serialize them
+    let result = writing.then(() =>
+      withApplyLock(() => {
+        return sqlStore ? sqlStore.write(callback) : db.transaction(callback)
+      })
+    )
+    writing = result.catch(() => {})
+    return result
   }
 
   // Returns the promise of the work, which is already in progress, so
@@ -660,6 +665,16 @@ export function createCrdtDatabase(client, db, opts = {}) {
     destroy() {
       stopApplying('The database was stopped')
       lockRequest.abort()
+    },
+    async empty() {
+      await ready
+      // Empty pending list before cleaning tables
+      await drain()
+      await writeToTables(async tx => {
+        for (let plural in tables) {
+          await tx.driver.exec(`DELETE FROM "${plural}"`, [])
+        }
+      })
     },
     ready,
     status,

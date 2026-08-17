@@ -1824,6 +1824,38 @@ it('removes reasons of applied actions by batches', async () => {
   await db.close()
 })
 
+it('empties all tables keeping the database ready', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA, ['name'])
+  let post = crdt.table('post', { title: string() })
+  await crdt.ready
+
+  await user.create({ id: 'U1', name: 'Ann' })
+  await post.create({ id: 'P1', title: 'About' })
+  let $users = user.select()
+  expect(await loadList($users)).toHaveLength(1)
+
+  // Actions from the queue must be applied before the tables were emptied
+  await client.log.add(
+    { fields: { name: 'Ben' }, id: 'U2', type: 'user/created' },
+    { sync: true }
+  )
+  await crdt.empty()
+
+  expect(await loadList($users)).toEqual([])
+  expect(await loadList(post.select())).toEqual([])
+  expect(await tableNames(db)).toEqual(['post', 'user'])
+  expect(await indexSqls(db)).toEqual([
+    'CREATE INDEX "user_name" ON "user" ("name")'
+  ])
+  expect(localStorage.getItem('logux:db')).toBeTypeOf('string')
+  cleanStores($users)
+
+  await user.create({ id: 'U3', name: 'Cat' })
+  expect((await loadList(user.select())).map(i => i.id)).toEqual(['U3'])
+})
+
 it('drops all tables on clean()', async () => {
   let { client, db } = await setup()
   let crdt = createCrdtDatabase(client, db)
