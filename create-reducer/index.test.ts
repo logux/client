@@ -6,6 +6,7 @@ import {
   type ClientMeta,
   createReducer,
   createStorageReducer,
+  type PersistentStorage,
   TestClient
 } from '../index.js'
 import { setLocalStorage } from '../test/local-storage.js'
@@ -945,6 +946,142 @@ describe('createStorageReducer', () => {
     await delay(1)
     expect(reducer.value.get()).toBe(3)
     expect(localStorage.getItem('counter')).toBe('3')
+  })
+})
+
+describe('custom storage', () => {
+  it('keeps the reducer version in custom storage', async () => {
+    let client = new TestClient('10')
+    await client.connect()
+    let storage: PersistentStorage = {}
+
+    let stopCalled = 0
+    let reducer = createReducer(client, 'db', 1, {
+      clean() {},
+      stop() {
+        stopCalled += 1
+      },
+      storage
+    })
+    let received: string[] = []
+    reducer.type('users/create', action => {
+      received.push(action.type)
+    })
+
+    await reducer.ready
+    expect(reducer.status.get()).toBe('ready')
+    expect(storage['logux:reducer:db']).toBe('1')
+    expect(localStorage.getItem('logux:reducer:db')).toBeNull()
+
+    await client.log.add({ type: 'users/create' })
+    await delay(1)
+    expect(received).toEqual(['users/create'])
+
+    // Custom storage has no `storage` events
+    emitStorage('logux:reducer:db', '2')
+    expect(reducer.status.get()).toBe('ready')
+    expect(stopCalled).toBe(0)
+  })
+
+  it('migrates the reducer by the version from custom storage', async () => {
+    let client = new TestClient('10')
+    await client.connect()
+    let storage: PersistentStorage = { 'logux:reducer:db': '1' }
+
+    let calls: string[] = []
+    let reducer = createReducer(client, 'db', 2, {
+      clean(oldVersion) {
+        calls.push(`clean:${oldVersion}`)
+      },
+      init() {
+        calls.push('init')
+      },
+      storage
+    })
+
+    await reducer.ready
+    expect(calls).toEqual(['clean:1', 'init'])
+    expect(reducer.status.get()).toBe('ready')
+    expect(storage['logux:reducer:db']).toBe('2')
+  })
+
+  it('keeps the value in custom storage', async () => {
+    let client = new TestClient('10')
+    await client.connect()
+    let storage: PersistentStorage = { counter: '10' }
+
+    let reducer = createStorageReducer(client, 'counter', 1, 0, {
+      ...counterCallbacks(),
+      storage
+    })
+    reducer.type<IncAction>('inc', (prev, action) => prev + action.amount)
+    expect(reducer.value.get()).toBe(10)
+
+    await reducer.ready
+    expect(storage['logux:reducer:counter']).toBe('1')
+    expect(localStorage.getItem('counter')).toBeNull()
+
+    await client.log.add({ amount: 2, type: 'inc' })
+    await delay(1)
+    expect(reducer.value.get()).toBe(12)
+    expect(storage.counter).toBe('12')
+
+    // Custom storage has no `storage` events
+    emitStorage('counter', '7')
+    expect(reducer.value.get()).toBe(12)
+  })
+
+  it('tracks storage events when localStorage was passed explicitly', async () => {
+    let client = new TestClient('10')
+    await client.connect()
+
+    let stopCalled = 0
+    let reducer = createReducer(client, 'db', 1, {
+      clean() {},
+      stop() {
+        stopCalled += 1
+      },
+      storage: localStorage
+    })
+    let value = createStorageReducer(client, 'counter', 1, 0, {
+      ...counterCallbacks(),
+      storage: localStorage
+    })
+    await reducer.ready
+    expect(localStorage.getItem('logux:reducer:db')).toBe('1')
+
+    emitStorage('counter', '7')
+    expect(value.value.get()).toBe(7)
+
+    emitStorage('logux:reducer:db', '2')
+    expect(reducer.status.get()).toBe('outdated')
+    expect(stopCalled).toBe(1)
+  })
+
+  it('cleans the value in custom storage on migration', async () => {
+    let client = new TestClient('10')
+    await client.connect()
+    let storage: PersistentStorage = {
+      counter: '100',
+      'logux:reducer:counter': '1'
+    }
+    let entries: [IncAction, ClientMeta][] = [
+      [
+        { amount: 4, type: 'inc' },
+        { added: 0, id: 'a', reasons: [], time: 0 }
+      ]
+    ]
+
+    let reducer = createStorageReducer(client, 'counter', 2, 0, {
+      ...counterCallbacks(entries),
+      storage
+    })
+    reducer.type<IncAction>('inc', (prev, action) => prev + action.amount)
+
+    expect(reducer.status.get()).toBe('migrating')
+    await reducer.ready
+    expect(reducer.value.get()).toBe(4)
+    expect(storage.counter).toBe('4')
   })
 })
 

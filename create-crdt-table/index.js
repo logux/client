@@ -156,6 +156,9 @@ export function createCrdtDatabase(client, db, opts = {}) {
   let dialect = opts.dialect ?? 'sqlite'
   let storageKey = opts.key ?? 'logux:db'
   let stop = opts.stop ?? (() => {})
+  // Without localStorage (SSR, React Native) the schema is kept in memory
+  let storage =
+    opts.storage ?? (typeof localStorage === 'undefined' ? {} : localStorage)
   let driver = db.driver
   db.pause()
 
@@ -510,7 +513,8 @@ export function createCrdtDatabase(client, db, opts = {}) {
       version: LOGUX_CRDT_TABLE_VERSION
     })
 
-    if (typeof window !== 'undefined' && !destroyed) {
+    // Only localStorage sends `storage` events to sync other tabs
+    if (hasWindow() && storage === window.localStorage && !destroyed) {
       let onOutdated = event => {
         if (event.key !== storageKey || event.newValue === null) return
         if (event.newValue !== hash) {
@@ -537,10 +541,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
       }
     }
 
-    let old =
-      typeof localStorage === 'undefined'
-        ? null
-        : localStorage.getItem(storageKey)
+    let old = storage[storageKey]
     if (old === hash) {
       for (let plural in tables) {
         await driver.exec(createTableSql(plural, tables[plural], dialect), [])
@@ -557,7 +558,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
       await drain()
       becomeReady()
     } else {
-      if (old !== null) {
+      if (old) {
         status.set('migrating')
         if (opts.migrating) opts.migrating(ready)
         for (let oldTable in JSON.parse(old).tables) {
@@ -572,7 +573,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
       await client.log.each({ order: 'added' }, (action, meta) => {
         if (isKnown(action.type)) entries.unshift([action, meta])
       })
-      if (old !== null && opts.repeat) {
+      if (old && opts.repeat) {
         entries = entries.concat(await opts.repeat())
       }
       let added = pending
@@ -585,9 +586,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
       for (let plural in tables) {
         await createIndexes(plural)
       }
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem(storageKey, hash)
-      }
+      storage[storageKey] = hash
       becomeReady()
     }
   })
@@ -618,9 +617,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
     // The chunk, which is applied right now, would fill the tables again
     if (draining) await draining.catch(() => {})
     if (!outdated) {
-      if (typeof localStorage !== 'undefined') {
-        localStorage.removeItem(storageKey)
-      }
+      delete storage[storageKey]
       db.pause()
       await writeToTables(async tx => {
         for (let plural in tables) {

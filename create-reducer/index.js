@@ -3,16 +3,14 @@ import { atom } from 'nanostores'
 let storageTracking = false
 let storageListeners = {}
 
-function getStorage(key) {
-  return typeof localStorage !== 'undefined' ? localStorage.getItem(key) : null
+function defaultStorage() {
+  // Without localStorage (SSR, React Native) the version is kept in memory
+  return typeof localStorage === 'undefined' ? {} : localStorage
 }
 
-function setStorage(key, value) {
-  if (typeof localStorage !== 'undefined') localStorage.setItem(key, value)
-}
-
-function removeStorage(key) {
-  if (typeof localStorage !== 'undefined') localStorage.removeItem(key)
+// Only localStorage sends `storage` events to sync other tabs
+function hasStorageEvents(storage) {
+  return typeof window !== 'undefined' && storage === window.localStorage
 }
 
 function startStorageTracking(key, callback) {
@@ -38,6 +36,7 @@ export function createReducer(client, name, version, callbacks) {
   let clean = callbacks.clean ?? (() => {})
   let init = callbacks.init ?? (() => {})
   let stop = callbacks.stop ?? (() => {})
+  let storage = callbacks.storage ?? defaultStorage()
 
   let status = atom('initializing')
 
@@ -69,12 +68,12 @@ export function createReducer(client, name, version, callbacks) {
   }
 
   let key = `logux:reducer:${name}`
-  let oldStorage = getStorage(key)
+  let oldStorage = storage[key]
   if (!oldStorage) {
     let initializing = init() ?? Promise.resolve()
     initializing
       .then(() => {
-        setStorage(key, String(version))
+        storage[key] = String(version)
       })
       .then(becomeReady)
   } else {
@@ -90,7 +89,7 @@ export function createReducer(client, name, version, callbacks) {
           let listener = actionListeners[entry[0].type]
           if (listener) await listener(entry[0], entry[1])
         }
-        setStorage(key, String(version))
+        storage[key] = String(version)
         becomeReady()
       })
     } else if (oldVersion > version) {
@@ -116,14 +115,16 @@ export function createReducer(client, name, version, callbacks) {
     isLeader = true
   }
 
-  startStorageTracking(key, newValue => {
-    if (parseInt(newValue, 10) > version) {
-      status.set('outdated')
-      stop()
-      releaseLock()
-      setReady()
-    }
-  })
+  if (hasStorageEvents(storage)) {
+    startStorageTracking(key, newValue => {
+      if (parseInt(newValue, 10) > version) {
+        status.set('outdated')
+        stop()
+        releaseLock()
+        setReady()
+      }
+    })
+  }
 
   let unbindAdd = client.on('add', (action, meta) => {
     let listener = actionListeners[action.type]
@@ -167,26 +168,30 @@ export function createStorageReducer(
 ) {
   let encode = callbacks.encode ?? (v => v)
   let decode = callbacks.decode ?? (s => s)
+  let storage = callbacks.storage ?? defaultStorage()
 
   let value = atom(initialValue)
 
-  let stored = getStorage(name)
-  if (stored !== null) {
+  let stored = storage[name]
+  if (typeof stored === 'string') {
     value.set(decode(stored))
   }
 
   let reducer = createReducer(client, name, version, {
     clean() {
       value.set(initialValue)
-      removeStorage(name)
+      delete storage[name]
       return callbacks.repeat()
     },
-    migrating: callbacks.migrating
+    migrating: callbacks.migrating,
+    storage
   })
 
-  startStorageTracking(name, newValue => {
-    value.set(decode(newValue))
-  })
+  if (hasStorageEvents(storage)) {
+    startStorageTracking(name, newValue => {
+      value.set(decode(newValue))
+    })
+  }
 
   return {
     destroy() {
@@ -201,7 +206,7 @@ export function createStorageReducer(
         let newValue = await listener(prevValue, action, meta)
         if (!value.eq(prevValue, newValue)) {
           value.set(newValue)
-          setStorage(name, encode(newValue))
+          storage[name] = encode(newValue)
         }
       })
     },

@@ -25,6 +25,7 @@ export {
 export {
   createReducer,
   createStorageReducer,
+  PersistentStorage,
   ReducerMigrationStatus,
   Reducer,
   StorageReducer

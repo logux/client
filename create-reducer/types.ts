@@ -1,7 +1,12 @@
 import { defineAction } from '@logux/actions'
 import type { Action } from '@logux/core'
 
-import { Client, createReducer, createStorageReducer } from '../index.js'
+import {
+  Client,
+  createReducer,
+  createStorageReducer,
+  type PersistentStorage
+} from '../index.js'
 
 let client = new Client({
   server: 'ws://localhost',
@@ -113,3 +118,21 @@ objectReducer.type<{ theme: string; type: 'theme' }>(
 )
 let objectValue: Settings = objectReducer.value.get()
 console.log(objectValue)
+
+let memoryStorage: PersistentStorage = {}
+
+let memoryReducer = createReducer(client, 'memory', 1, {
+  clean() {},
+  storage: memoryStorage
+})
+memoryReducer.type('users/create', action => {
+  document.title = action.type
+})
+
+let memoryValue = createStorageReducer(client, 'memory-value', 1, '', {
+  repeat() {
+    return []
+  },
+  storage: localStorage
+})
+console.log(memoryValue.value.get())

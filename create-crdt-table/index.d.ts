@@ -4,6 +4,9 @@ import type { Database, SqlStore } from '@nanostores/sql'
 import type { ReadableAtom } from 'nanostores'
 
 import type { Client, ClientMeta } from '../client/index.js'
+import type { PersistentStorage } from '../create-reducer/index.js'
+
+export type { PersistentStorage }
 
 type CrdtMigrationStatus = 'initializing' | 'migrating' | 'outdated' | 'ready'
 
@@ -527,7 +530,7 @@ export interface CrdtDatabaseOptions<Dialect extends string = 'sqlite'> {
   dialect?: Dialect
 
   /**
-   * `localStorage` key to store the schema version
+   * Storage key to store the schema version
    * (also used as the prefix of the leader tab lock name).
    * Change it when the database is used in a third-party widget
    * to avoid conflicts with the website’s own Logux database.
@@ -560,6 +563,19 @@ export interface CrdtDatabaseOptions<Dialect extends string = 'sqlite'> {
    * automatically.
    */
   repeat?(): [Action, ClientMeta][] | Promise<[Action, ClientMeta][]>
+
+  /**
+   * Storage to keep the tables schema instead of `localStorage`
+   * (for instance, for React Native or tests).
+   *
+   * Schema changes in other tabs are tracked by `storage` events
+   * only if the storage is `localStorage` itself.
+   *
+   * ```js
+   * let crdt = createCrdtDatabase(client, db, { storage: memoryStorage })
+   * ```
+   */
+  storage?: PersistentStorage
 
   /**
    * Called when another browser tab has a newer table schema and this tab
@@ -760,7 +776,8 @@ export type Dialects = 'sqlite' | 'pglite'
  * edit conflicts with per-field last write wins strategy.
  *
  * The schema version — serialized schemas and indexes of all tables — is kept
- * in `localStorage`. On any schema change all tables (including tables
+ * in `localStorage` (or in {@link CrdtDatabaseOptions#storage}).
+ * On any schema change all tables (including tables
  * removed from the schema) are dropped and refilled by replaying actions
  * from the log and from the `repeat()` callback.
  *

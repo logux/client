@@ -29,6 +29,7 @@ let crdt = createCrdtDatabase(client, db, {
   repeat() {
     return []
   },
+  storage: {},
   stop() {}
 })
 
@@ -179,7 +180,10 @@ async function test(): Promise<void> {
   }
 }
 
-let pg = createCrdtDatabase(client, db, { dialect: 'pglite' })
+let pg = createCrdtDatabase(client, db, {
+  dialect: 'pglite',
+  storage: localStorage
+})
 let pgUser = pg.table('user', {
   createdAt: bigint({ default: () => Date.now() }),
   isAdmin: boolean({ default: false }),

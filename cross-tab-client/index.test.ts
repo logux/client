@@ -475,7 +475,7 @@ it('copies actions on memory store', () => {
 
 it('detects higher subprotocol from other tab', () => {
   client = createClient()
-  expect(localStorage.storage['logux:10:subprotocol']).toBe('10')
+  expect(localStorage.getItem('logux:10:subprotocol')).toBe('10')
 
   let error: Error | undefined
   client.node.on('error', e => {
@@ -490,13 +490,13 @@ it('detects higher subprotocol from other tab', () => {
 it('detects lower subprotocol from other tab', () => {
   client = createClient()
   emitStorage('logux:10:subprotocol', '9')
-  expect(localStorage.storage['logux:10:subprotocol']).toBe('10')
+  expect(localStorage.getItem('logux:10:subprotocol')).toBe('10')
 })
 
 it('detects the same subprotocol from other tab', () => {
   client = createClient()
   emitStorage('logux:10:subprotocol', '10')
-  expect(localStorage.storage['logux:10:subprotocol']).toBe('10')
+  expect(localStorage.getItem('logux:10:subprotocol')).toBe('10')
 })
 
 it('does not show alert on higher subprotocol', () => {

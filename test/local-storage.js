@@ -1,29 +1,34 @@
 let errorOnSet = new Error()
 
+// Like the real `Storage`: values are own enumerable keys of the object
+// and the methods are hidden from `for … in`
+let methods = {
+  clear() {
+    for (let key in this) delete this[key]
+  },
+  getItem(key) {
+    let value = this[key]
+    return typeof value === 'string' ? value : null
+  },
+  removeItem(key) {
+    delete this[key]
+  },
+  setItem(key, value) {
+    if (errorOnSet) throw errorOnSet
+    this[key] = String(value)
+  }
+}
+
 export function setLocalStorage() {
   errorOnSet = undefined
-  window.localStorage = {
-    clear() {
-      this.storage = {}
-    },
-    getItem(key) {
-      if (key in this.storage) {
-        return this.storage[key]
-      } else {
-        return null
-      }
-    },
-    removeItem(key) {
-      delete this[key]
-      delete this.storage[key]
-    },
-    setItem(key, value) {
-      if (errorOnSet) throw errorOnSet
-      this[key] = value
-      this.storage[key] = value
-    },
-    storage: {}
+  let storage = {}
+  for (let name in methods) {
+    Object.defineProperty(storage, name, {
+      value: methods[name],
+      writable: true
+    })
   }
+  window.localStorage = storage
 }
 
 export function breakLocalStorage(error) {

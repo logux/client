@@ -12,6 +12,8 @@ interface ActionListener<ListenAction extends Action> {
   (action: ListenAction, meta: ClientMeta): void | Promise<void>
 }
 
+export type PersistentStorage = Record<string, string | undefined>
+
 interface ReducerInitCallbacks {
   init?(): void | Promise<void>
   clean(
@@ -31,6 +33,22 @@ interface ReducerInitCallbacks {
    *             (the same as {@link Reducer#ready}).
    */
   migrating?(done: Promise<void>): void
+
+  /**
+   * Storage to keep the reducer’s version instead of `localStorage`
+   * (for instance, for React Native or tests).
+   *
+   * Cross-tab `storage` events are used only if the storage
+   * is `localStorage` itself.
+   *
+   * ```js
+   * createReducer(client, 'db', 1, {
+   *   storage: memoryStorage,
+   *   clean() { … }
+   * })
+   * ```
+   */
+  storage?: PersistentStorage
   stop?(): void
 }
 
@@ -107,7 +125,7 @@ interface Reducer {
  * ```
  *
  * @param client Logux client.
- * @param name The name of the reducer to use in localStorage version key.
+ * @param name The name of the reducer to use in the storage version key.
  * @param version The current version to call migrations on new version.
  * @param callbacks The data migrations callbacks.
  */
@@ -137,6 +155,22 @@ interface StorageCallbacks {
   migrating?(done: Promise<void>): void
 
   repeat(): [Action, ClientMeta][] | Promise<[Action, ClientMeta][]>
+
+  /**
+   * Storage to keep the value and the reducer’s version instead
+   * of `localStorage` (for instance, for React Native or tests).
+   *
+   * The value is synchronized with other tabs by `storage` events
+   * only if the storage is `localStorage` itself.
+   *
+   * ```js
+   * createStorageReducer(client, 'counter', 1, 0, {
+   *   storage: memoryStorage,
+   *   repeat() { … }
+   * })
+   * ```
+   */
+  storage?: PersistentStorage
 }
 
 interface Convertor<Value> {
@@ -158,7 +192,7 @@ interface StorageReducer<Value> {
 
   /**
    * Stop the reducer: unsubscribe from the client, release the leader lock
-   * and stop tracking `storage` events. The value is kept in `localStorage`.
+   * and stop tracking `storage` events. The value is kept in the storage.
    */
   destroy(): void
 
@@ -183,8 +217,8 @@ interface StorageReducer<Value> {
 
 /**
  * Create a reducer that reduces actions into a single value stored in
- * `localStorage`. The value is loaded on first run and kept in sync across
- * tabs via `storage` events.
+ * `localStorage` (or in {@link StorageCallbacks#storage}). The value
+ * is loaded on first run and kept in sync across tabs via `storage` events.
  *
  * ```ts
  * import { createStorageReducer } from '@logux/client'

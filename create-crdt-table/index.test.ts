@@ -1246,6 +1246,55 @@ it('allows to replace localStorage key for third-party widgets', async () => {
   expect(stopCalled).toBe(1)
 })
 
+it('allows to replace localStorage with custom storage', async () => {
+  let { client, db } = await setup()
+  let storage: Record<string, string | undefined> = {}
+  let stopCalled = 0
+  let crdt = createCrdtDatabase(client, db, {
+    stop() {
+      stopCalled += 1
+    },
+    storage
+  })
+  let user = crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+  expect(crdt.status.get()).toBe('ready')
+  expect(storage['logux:db']).toContain('"user":')
+  expect(localStorage.getItem('logux:db')).toBeNull()
+
+  await user.create({ name: 'Ann' })
+  expect((await loadList(user.select())).map(i => i.name)).toEqual(['Ann'])
+
+  // Custom storage has no `storage` events
+  emitStorage('logux:db', 'newer-hash')
+  expect(crdt.status.get()).toBe('ready')
+  expect(stopCalled).toBe(0)
+
+  await crdt.clean()
+  expect(storage['logux:db']).toBeUndefined()
+})
+
+it('rebuilds database on schema change in custom storage', async () => {
+  let { client, db } = await setup()
+  let storage: Record<string, string | undefined> = { 'logux:db': '{}' }
+  await client.log.add(
+    { fields: { name: 'Ann' }, id: 'U1', type: 'user/created' },
+    { reasons: ['test'] }
+  )
+
+  let crdt = createCrdtDatabase(client, db, { storage })
+  let user = crdt.table('user', USER_SCHEMA)
+  let statuses: string[] = []
+  crdt.status.subscribe(state => {
+    statuses.push(state)
+  })
+  await crdt.ready
+
+  expect(statuses).toEqual(['initializing', 'migrating', 'ready'])
+  expect((await loadList(user.select())).map(i => i.name)).toEqual(['Ann'])
+  expect(storage['logux:db']).toContain('"user":')
+})
+
 it('filters rows by JOIN with another table in select()', async () => {
   let { client, db } = await setup()
   let crdt = createCrdtDatabase(client, db)
