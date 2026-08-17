@@ -83,6 +83,13 @@ async function test(): Promise<void> {
 // THROWS type: "BOOLEAN"; } & CrdtColumn<boolean, false>' is not assignable
 crdt.table('bad', { isAdmin: boolean({ default: false }) })
 
+// THROWS Type '"missing"' is not assignable to type
+crdt.table('post', { title: string() }, ['missing'])
+// THROWS Type '"updatedAt_missing"' is not assignable to type
+crdt.table('post', { title: string() }, [['title', 'updatedAt_missing']])
+// THROWS Object literal may only specify known properties
+crdt.table('post', { title: string() }, [{ columns: ['title'], where: '1' }])
+
 let pg = createCrdtDatabase(client, db, { dialect: 'pglite' })
 let pgUser = pg.table('user', {
   isAdmin: boolean({ default: false }),

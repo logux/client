@@ -83,6 +83,35 @@ function createTableSql(plural, schema, dialect) {
   )
 }
 
+function indexSql(plural, schema, index, names) {
+  if (index.sql) return index.sql
+  let columns = index.columns ?? index
+  if (typeof columns === 'string') columns = [columns]
+  let name = plural
+  let parts = []
+  for (let col of columns) {
+    // Everything after the column name (`DESC`, `COLLATE`, operator class)
+    // is passed to the database as is
+    let space = col.indexOf(' ')
+    let head = space === -1 ? col : col.slice(0, space)
+    let field = head.startsWith(META) ? head.slice(META.length) : head
+    if (head !== 'id' && !schema[field]) {
+      throw new Error(`Unknown column "${head}" in "${plural}" index`)
+    }
+    name += `_${head}`
+    parts.push(`"${head}"${space === -1 ? '' : col.slice(space)}`)
+  }
+  // `IF NOT EXISTS` would silently skip the second index with the same name
+  if (names.has(name)) {
+    throw new Error(`Duplicate index name "${name}"`)
+  }
+  names.add(name)
+  return (
+    `CREATE ${index.unique ? 'UNIQUE ' : ''}INDEX IF NOT EXISTS "${name}"` +
+    ` ON "${plural}" (${parts.join(', ')})`
+  )
+}
+
 /**
  * How many actions to apply in a single transaction.
  */
@@ -118,7 +147,7 @@ function hasWindow() {
 function sortKeys(object, map) {
   let sorted = {}
   for (let key of Object.keys(object).sort()) {
-    sorted[key] = map ? map(object[key]) : object[key]
+    sorted[key] = map ? map(object[key], key) : object[key]
   }
   return sorted
 }
@@ -132,6 +161,8 @@ export function createCrdtDatabase(client, db, opts = {}) {
 
   let status = atom('initializing')
   let tables = {}
+  let tableIndexes = {}
+  let indexNames = new Set()
   let actions = Object.create(null)
   let actionVersions = Object.create(null)
 
@@ -453,20 +484,27 @@ export function createCrdtDatabase(client, db, opts = {}) {
     setReady()
   }
 
+  async function createIndexes(plural) {
+    for (let sql of tableIndexes[plural]) {
+      await driver.exec(sql, [])
+    }
+  }
+
   void Promise.resolve().then(async () => {
     started = true
     hash = JSON.stringify({
       actions: sortKeys(actionVersions),
-      tables: sortKeys(tables, schema =>
-        sortKeys(schema, col => ({
+      tables: sortKeys(tables, (schema, plural) => ({
+        columns: sortKeys(schema, col => ({
           sql:
             col.sql && typeof col.sql === 'object'
               ? sortKeys(col.sql)
               : col.sql,
           type: col.type,
           values: col.values
-        }))
-      ),
+        })),
+        indexes: tableIndexes[plural]
+      })),
       version: LOGUX_CRDT_TABLE_VERSION
     })
 
@@ -504,6 +542,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
     if (old === hash) {
       for (let plural in tables) {
         await driver.exec(createTableSql(plural, tables[plural], dialect), [])
+        await createIndexes(plural)
       }
       // Actions, which were not applied before the last tab was closed
       let unapplied = []
@@ -539,6 +578,11 @@ export function createCrdtDatabase(client, db, opts = {}) {
       pendingIds.clear()
       for (let entry of entries.concat(added)) pushToApply(entry[0], entry[1])
       await drain()
+      // Indexes are created after the replay: filling the table
+      // without them is much faster
+      for (let plural in tables) {
+        await createIndexes(plural)
+      }
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem(storageKey, hash)
       }
@@ -619,7 +663,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
     },
     ready,
     status,
-    table(plural, schema) {
+    table(plural, schema, indexes = []) {
       checkDefine()
       for (let name in schema) {
         if (schema[name].type === 'BOOLEAN' && dialect === 'sqlite') {
@@ -629,6 +673,9 @@ export function createCrdtDatabase(client, db, opts = {}) {
           throw new Error(`${META} prefix is reserved for fields meta`)
         }
       }
+      tableIndexes[plural] = indexes
+        .map(index => indexSql(plural, schema, index, indexNames))
+        .sort((a, b) => (a < b ? -1 : 1))
       tables[plural] = schema
 
       function withDefaults(fields) {

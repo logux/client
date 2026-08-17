@@ -1,6 +1,12 @@
 import { defineAction } from '@logux/actions'
 import { type Action, type Meta, toSorted } from '@logux/core'
-import type { Database, Driver, SqlStore } from '@nanostores/sql'
+import type {
+  Database,
+  Driver,
+  DriverTransaction,
+  SqlParam,
+  SqlStore
+} from '@nanostores/sql'
 import { openDb } from '@nanostores/sql'
 import { nodeDriver } from '@nanostores/sql/node'
 import { delay } from 'nanodelay'
@@ -168,6 +174,15 @@ async function tableNames(db: Database): Promise<string[]> {
     ['table']
   )) as { name: string }[]
   return rows.map(i => i.name)
+}
+
+async function indexSqls(db: Database): Promise<string[]> {
+  let rows = (await db.driver.select(
+    'SELECT "sql" FROM "sqlite_master"' +
+      ' WHERE "type" = ? AND "sql" IS NOT NULL ORDER BY "name"',
+    ['index']
+  )) as { sql: string }[]
+  return rows.map(i => i.sql)
 }
 
 it('creates tables and applies create, update and delete actions', async () => {
@@ -675,6 +690,108 @@ it('rebuilds database on schema change without repeat()', async () => {
   await delay(10)
   expect(statuses).toEqual(['initializing', 'migrating', 'ready'])
   expect(await loadList(user.select())).toEqual([])
+})
+
+it('creates indexes of all definition forms', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA, [
+    'name',
+    'createdAt DESC',
+    'updatedAt_name',
+    ['isAdmin', 'name'],
+    { columns: ['age', 'name COLLATE NOCASE'], unique: true },
+    {
+      sql:
+        'CREATE INDEX IF NOT EXISTS "user_admins" ON "user" ("name")' +
+        ' WHERE "isAdmin" = 1'
+    }
+  ])
+  await crdt.ready
+
+  expect(await indexSqls(db)).toEqual([
+    'CREATE INDEX "user_admins" ON "user" ("name") WHERE "isAdmin" = 1',
+    'CREATE UNIQUE INDEX "user_age_name" ON "user"' +
+      ' ("age", "name" COLLATE NOCASE)',
+    'CREATE INDEX "user_createdAt" ON "user" ("createdAt" DESC)',
+    'CREATE INDEX "user_isAdmin_name" ON "user" ("isAdmin", "name")',
+    'CREATE INDEX "user_name" ON "user" ("name")',
+    'CREATE INDEX "user_updatedAt_name" ON "user" ("updatedAt_name")'
+  ])
+
+  await user.create({ age: 30, name: 'Ann' })
+  await delay(10)
+  expect((await loadList(user.select())).map(i => i.name)).toEqual(['Ann'])
+})
+
+it('creates indexes after replaying the log on migration', async () => {
+  let client = new TestClient('10')
+  await client.connect()
+  let sqls: string[] = []
+  function record<Tx extends DriverTransaction>(origin: Tx): Tx {
+    return {
+      ...origin,
+      exec(query: string, params: SqlParam[]) {
+        sqls.push(query)
+        return origin.exec(query, params)
+      }
+    }
+  }
+  let origin = nodeDriver(':memory:')
+  let db = openDb({
+    ...record(origin),
+    transaction(callback, opts) {
+      return origin.transaction(tx => callback(record(tx)), opts)
+    }
+  })
+  await client.log.add(
+    { fields: { name: 'Ann' }, id: 'U1', type: 'user/created' },
+    { reasons: ['test'] }
+  )
+
+  let crdt = createCrdtDatabase(client, db)
+  crdt.table('user', USER_SCHEMA, ['name'])
+  await crdt.ready
+
+  let types = sqls
+    .map(sql => sql.split(' ').slice(0, 2).join(' '))
+    .filter(type => type !== 'SELECT "id",')
+  expect(types).toEqual([
+    'DROP TABLE',
+    'CREATE TABLE',
+    'INSERT INTO',
+    'CREATE INDEX'
+  ])
+})
+
+it('re-creates the database only when index SQL changed', async () => {
+  let { client, db } = await setup()
+  let crdt1 = createCrdtDatabase(client, db)
+  crdt1.table('user', USER_SCHEMA, ['name', 'createdAt DESC'])
+  await crdt1.ready
+  crdt1.destroy()
+
+  let crdt2 = createCrdtDatabase(client, db)
+  crdt2.table('user', USER_SCHEMA, ['createdAt DESC', 'name'])
+  let reordered: string[] = []
+  crdt2.status.subscribe(state => {
+    reordered.push(state)
+  })
+  await crdt2.ready
+  expect(reordered).toEqual(['initializing', 'ready'])
+  crdt2.destroy()
+
+  let crdt3 = createCrdtDatabase(client, db)
+  crdt3.table('user', USER_SCHEMA, ['name'])
+  let changed: string[] = []
+  crdt3.status.subscribe(state => {
+    changed.push(state)
+  })
+  await crdt3.ready
+  expect(changed).toEqual(['initializing', 'migrating', 'ready'])
+  expect(await indexSqls(db)).toEqual([
+    'CREATE INDEX "user_name" ON "user" ("name")'
+  ])
 })
 
 it('resolves ready promise on ready and on outdated', async () => {
@@ -1241,6 +1358,30 @@ it('throws on table() call after initialization', async () => {
   expect(() => {
     crdt.table('post', { title: string() })
   }).toThrow(/sync/)
+})
+
+it('throws on unknown column in index', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  expect(() => {
+    // @ts-expect-error
+    crdt.table('user', USER_SCHEMA, ['missing'])
+  }).toThrow('Unknown column "missing" in "user" index')
+  expect(() => {
+    // @ts-expect-error
+    crdt.table('user', USER_SCHEMA, [['name', 'updatedAt_missing DESC']])
+  }).toThrow('Unknown column "updatedAt_missing" in "user" index')
+})
+
+it('throws on two indexes with the same name', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  expect(() => {
+    crdt.table('user', USER_SCHEMA, [
+      'name',
+      { columns: ['name'], unique: true }
+    ])
+  }).toThrow('Duplicate index name "user_name"')
 })
 
 it('throws on column type unsupported by dialect', async () => {

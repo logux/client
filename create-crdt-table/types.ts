@@ -32,16 +32,34 @@ let crdt = createCrdtDatabase(client, db, {
   stop() {}
 })
 
-let user = crdt.table('user', {
-  age: optional(number()),
-  createdAt: bigint({ default: () => Date.now() }),
-  email: string('COLLATE NOCASE'),
-  isAdmin: number({ default: 0 }),
-  name: string(),
-  publishedAt: optional(bigint()),
-  role: oneOf(['admin', 'guest', 'user'], { default: 'user' }),
-  theme: string<'dark' | 'light'>({ default: 'dark' })
-})
+let user = crdt.table(
+  'user',
+  {
+    age: optional(number()),
+    createdAt: bigint({ default: () => Date.now() }),
+    email: string('COLLATE NOCASE'),
+    isAdmin: number({ default: 0 }),
+    name: string(),
+    publishedAt: optional(bigint()),
+    role: oneOf(['admin', 'guest', 'user'], { default: 'user' }),
+    theme: string<'dark' | 'light'>({ default: 'dark' })
+  },
+  [
+    'name',
+    'createdAt DESC',
+    'email COLLATE NOCASE',
+    'id',
+    'updatedAt_name',
+    ['isAdmin', 'name'],
+    { columns: ['age', 'role'] },
+    { columns: ['email'], unique: true },
+    {
+      sql:
+        'CREATE INDEX IF NOT EXISTS "user_admins" ON "user" ("name")' +
+        ' WHERE "isAdmin" = 1'
+    }
+  ]
+)
 
 async function test(): Promise<void> {
   await crdt.ready

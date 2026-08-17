@@ -32,14 +32,40 @@ it('uses real BOOLEAN columns in PGlite', { timeout: 60000 }, async () => {
   await client.connect()
   let db = openDb(pgliteDriver('memory://'))
   let crdt = createCrdtDatabase(client, db, { dialect: 'pglite' })
-  let user = crdt.table('user', {
-    createdAt: bigint({ default: () => new Date(2026, 0, 1).getTime() }),
-    isAdmin: boolean({ default: false }),
-    name: string(),
-    publishedAt: optional(bigint())
-  })
+  let user = crdt.table(
+    'user',
+    {
+      createdAt: bigint({ default: () => new Date(2026, 0, 1).getTime() }),
+      isAdmin: boolean({ default: false }),
+      name: string(),
+      publishedAt: optional(bigint())
+    },
+    [
+      'name',
+      ['isAdmin', 'createdAt DESC'],
+      { columns: ['createdAt', 'name'], unique: true },
+      {
+        sql:
+          'CREATE INDEX IF NOT EXISTS "user_published" ON "user"' +
+          ' ("publishedAt" DESC NULLS LAST) WHERE "publishedAt" IS NOT NULL'
+      }
+    ]
+  )
 
   await crdt.ready
+
+  let indexes = (await db.driver.select(
+    'SELECT "indexname" FROM "pg_indexes"' +
+      ' WHERE "tablename" = $1 ORDER BY "indexname"',
+    ['user']
+  )) as { indexname: string }[]
+  expect(indexes.map(i => i.indexname)).toEqual([
+    'user_createdAt_name',
+    'user_isAdmin_createdAt',
+    'user_name',
+    'user_pkey',
+    'user_published'
+  ])
 
   await user.create({
     id: 'U1',

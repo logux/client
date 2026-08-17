@@ -98,11 +98,17 @@ let crdt = createCrdtDatabase(client, db, {
   }
 })
 
-let user = crdt.table('user', {
-  age: optional(number()),
-  createdAt: bigint({ default: () => Date.now() }),
-  name: string()
-})
+// The third argument defines indexes: a column, an array of columns,
+// `{ columns, unique }`, or the whole `CREATE INDEX` statement in `{ sql }`
+let user = crdt.table(
+  'user',
+  {
+    age: optional(number()),
+    createdAt: bigint({ default: () => Date.now() }),
+    name: string()
+  },
+  ['name', ['age', 'createdAt DESC']]
+)
 
 await crdt.ready
 

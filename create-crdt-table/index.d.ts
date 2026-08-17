@@ -193,6 +193,56 @@ export interface CrdtTableSchema<
   [column: string]: { type: Types } & CrdtColumn
 }
 
+type CrdtIndexName<Schema extends CrdtTableSchema> =
+  | 'id'
+  | `updatedAt_${keyof Schema & string}`
+  | (keyof Schema & string)
+
+/**
+ * Column in {@link CrdtIndex}: a column name from the table schema,
+ * `id`, or an `updatedAt_field` column.
+ *
+ * Everything after the column name is passed to the database as is,
+ * so it can contain `DESC`, `COLLATE` or an operator class:
+ *
+ * ```ts
+ * let post = crdt.table('post', schema, [
+ *   'publishedAt DESC',
+ *   'title COLLATE NOCASE'
+ * ])
+ * ```
+ */
+export type CrdtIndexColumn<Schema extends CrdtTableSchema> =
+  | `${CrdtIndexName<Schema>} ${string}`
+  | CrdtIndexName<Schema>
+
+/**
+ * Index definition for {@link CrdtDatabase#table}. It can be:
+ *
+ * - a column name for a single-column index;
+ * - an array of columns for a multi-column index;
+ * - an object with `columns` and `unique`;
+ * - an object with the whole `CREATE INDEX` statement in `sql`
+ *   for partial indexes, expressions and dialect-specific features.
+ *
+ * ```ts
+ * let user = crdt.table('user', schema, [
+ *   'email',
+ *   ['teamId', 'name'],
+ *   { columns: ['email'], unique: true },
+ *   {
+ *     sql: `CREATE INDEX IF NOT EXISTS "user_active" ON "user" ("name")` +
+ *       ` WHERE "role" = 'admin'`
+ *   }
+ * ])
+ * ```
+ */
+export type CrdtIndex<Schema extends CrdtTableSchema> =
+  | { columns: CrdtIndexColumn<Schema>[]; unique?: boolean }
+  | { sql: string }
+  | CrdtIndexColumn<Schema>
+  | CrdtIndexColumn<Schema>[]
+
 export type CrdtColumnType<Column extends CrdtColumn> =
   Column extends CrdtColumn<infer Type, boolean> ? Type : never
 
@@ -628,11 +678,30 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
    * {@link createCrdtDatabase} call, because the schema version
    * is calculated from all tables.
    *
+   * ```ts
+   * let user = crdt.table(
+   *   'user',
+   *   {
+   *     email: string('COLLATE NOCASE'),
+   *     name: string(),
+   *     teamId: optional(string())
+   *   },
+   *   ['email', ['teamId', 'name']]
+   * )
+   * ```
+   *
+   * Indexes have no names in the API and are compared by their SQL:
+   * any change in them re-creates the database, since tables are dropped
+   * and refilled from the log with their indexes.
+   *
    * @param plural Table name and actions type prefix.
    * @param schema Columns definition from {@link string}, {@link number},
    *               {@link bigint}, {@link boolean}, {@link oneOf},
    *               {@link optional} builders. {@link boolean} is not
    *               allowed with `'sqlite'` dialect.
+   * @param indexes Indexes to create for the table. The dialect is known
+   *                here, so use a condition to define an index
+   *                for a specific database.
    */
   table<
     Schema extends CrdtTableSchema<
@@ -642,7 +711,8 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
     >
   >(
     plural: string,
-    schema: Schema
+    schema: Schema,
+    indexes?: CrdtIndex<NoInfer<Schema>>[]
   ): CrdtTable<Schema, Dialect>
 }
 
@@ -676,8 +746,8 @@ export type Dialects = 'sqlite' | 'pglite'
  * for every field with the Logux Meta ID of its last change, to resolve
  * edit conflicts with per-field last write wins strategy.
  *
- * The schema version — serialized schemas of all tables — is kept in
- * `localStorage`. On any schema change all tables (including tables
+ * The schema version — serialized schemas and indexes of all tables — is kept
+ * in `localStorage`. On any schema change all tables (including tables
  * removed from the schema) are dropped and refilled by replaying actions
  * from the log and from the `repeat()` callback.
  *
@@ -707,14 +777,18 @@ export type Dialects = 'sqlite' | 'pglite'
  *
  * showLoader('Loading data', crdt.ready)
  *
- * let user = crdt.table('user', {
- *   age: optional(number()),
- *   createdAt: bigint({ default: () => Date.now() }),
- *   email: string('COLLATE NOCASE'),
- *   isAdmin: number({ default: 0 }),
- *   name: string(),
- *   theme: oneOf(['dark', 'light'], { default: 'dark' })
- * })
+ * let user = crdt.table(
+ *   'user',
+ *   {
+ *     age: optional(number()),
+ *     createdAt: bigint({ default: () => Date.now() }),
+ *     email: string('COLLATE NOCASE'),
+ *     isAdmin: number({ default: 0 }),
+ *     name: string(),
+ *     theme: oneOf(['dark', 'light'], { default: 'dark' })
+ *   },
+ *   [{ columns: ['email'], unique: true }, ['isAdmin', 'name']]
+ * )
  *
  * let id = await user.create({ email: 'ann@example.com', name: 'Ann' })
  * await user.update(id, { age: 30 })
