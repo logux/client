@@ -900,7 +900,7 @@ describe('createStorageReducer', () => {
       },
       repeat: () => []
     })
-    reducer.value.eq = (prev, next) => prev.join(',') === next.join(',')
+    reducer.value.eq = (prev, next) => prev?.join(',') === next.join(',')
     reducer.type<{ id: string; type: 'add' }>('add', (prev, action) => {
       return prev.includes(action.id) ? [...prev] : [...prev, action.id]
     })

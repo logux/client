@@ -448,7 +448,7 @@ it('updates list on store create/deleted/change', async () => {
     authorId: '1',
     projectId: '1'
   })
-  let changes: string[] = []
+  let changes: (string | undefined)[] = []
   posts.listen((value, old, key) => {
     changes.push(key)
   })
