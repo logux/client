@@ -24,6 +24,7 @@ import { setLocalStorage } from '../test/local-storage.js'
 import {
   bigint,
   boolean,
+  type CrdtTable,
   type CrdtTableRow,
   createCrdtDatabase,
   number,
@@ -762,6 +763,33 @@ it('creates indexes after replaying the log on migration', async () => {
     'INSERT INTO',
     'CREATE INDEX'
   ])
+})
+
+it('applies actions added while the tables were prepared', async () => {
+  let client = new TestClient('10')
+  await client.connect()
+  let origin = nodeDriver(':memory:')
+  let user: CrdtTable<typeof USER_SCHEMA>
+  let created: Promise<string> | undefined
+  let db = openDb({
+    ...origin,
+    async exec(query: string, params: SqlParam[]) {
+      // The last step before the database is ready, so the action will be
+      // added to the log after the log was replayed to the tables
+      if (query.startsWith('CREATE INDEX') && !created) {
+        created = user.create({ name: 'Ann' })
+        await delay(10)
+      }
+      return origin.exec(query, params)
+    }
+  })
+
+  let crdt = createCrdtDatabase(client, db)
+  user = crdt.table('user', USER_SCHEMA, ['name'])
+  await crdt.ready
+
+  await created
+  expect((await loadList(user.select())).map(i => i.name)).toEqual(['Ann'])
 })
 
 it('re-creates the database only when index SQL changed', async () => {

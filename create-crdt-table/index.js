@@ -483,6 +483,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
     status.set('ready')
     db.resume()
     setReady()
+    if (pending.length > 0) void drain()
   }
 
   async function createIndexes(plural) {
