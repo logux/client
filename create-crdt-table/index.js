@@ -244,8 +244,6 @@ export function createCrdtDatabase(client, db, opts = {}) {
   }
 
   function writeToTables(callback) {
-    // Writes are queued, because there is no `navigator.locks`
-    // in Node.js and in tests to serialize them
     let result = writing.then(() =>
       withApplyLock(() => {
         return sqlStore ? sqlStore.write(callback) : db.transaction(callback)
@@ -255,8 +253,6 @@ export function createCrdtDatabase(client, db, opts = {}) {
     return result
   }
 
-  // Returns the promise of the work, which is already in progress, so
-  // clean() could wait for the chunk, which is applied right now
   function drain() {
     if (!draining) {
       draining = applyPending().finally(() => {
