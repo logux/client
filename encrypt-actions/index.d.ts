@@ -17,15 +17,21 @@ import type { Client } from '../client/index.js'
  *
  * @param client Observed Client instance.
  * @param secret Password for encryption, or a CryptoKey AES key.
- * @param opts Encryption options -- can pass in strings
- * to *not* encrypt.
+ * @param opts Encryption options.
  * @returns Unbind listener.
  */
 export function encryptActions(
   client: Client,
   secret: CryptoKey | string,
   opts?: {
-    ignore: string[]
+    /**
+     * Do not send `0/clean` action automatically on action cleaning.
+     */
+    clean?: boolean
+    /**
+     * List of `action.type` to not be encrypted.
+     */
+    ignore?: string[]
   }
 ): void
 

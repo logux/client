@@ -267,6 +267,22 @@ it('cleans actions on server', async () => {
   ])
 })
 
+it('allows to disable cleaning actions on server', async () => {
+  let client = createClient()
+  encryptActions(client, 'password', { clean: false })
+  await connect(client)
+
+  let meta = await client.log.add({ type: 'sync' }, { sync: true })
+  if (meta === false) throw new Error('Action was no inserted')
+  await delay(10)
+  getPair(client).clear()
+
+  await client.log.removeReason('test')
+  await client.log.removeReason('syncing')
+  await delay(10)
+  expect(getPair(client).leftSent).toEqual([])
+})
+
 it('has normal distribution of random spaces', () => {
   let sizes: Record<number, number> = {}
   let symbols: Record<string, number> = {}
