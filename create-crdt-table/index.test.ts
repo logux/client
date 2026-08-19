@@ -1863,6 +1863,38 @@ it('rejects table methods if applying failed', async () => {
 })
 
 it('removes reasons of applied actions by batches', async () => {
+  let { client, db } = await setup()
+  for (let id of ['U1', 'U2', 'U3']) {
+    await client.log.add(
+      { fields: { name: id }, id, type: 'user/created' },
+      { reasons: ['applying-to-db'] }
+    )
+  }
+
+  let calls = 0
+  let origin = client.log.removeReason.bind(client.log)
+  client.log.removeReason = (reason, criteria) => {
+    calls += 1
+    return origin(reason, criteria)
+  }
+
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+  await delay(10)
+
+  expect(calls).toBe(1)
+  let kept: string[] = []
+  await client.log.each((action, meta) => {
+    if (meta.reasons.includes('applying-to-db')) kept.push(action.type)
+  })
+  expect(kept).toEqual([])
+  expect(await loadList(user.select())).toHaveLength(3)
+
+  crdt.destroy()
+})
+
+it('does not put applied actions from the server to the log', async () => {
   let db = openDb(nodeDriver(':memory:'))
   let store = new SqlLogStore(db)
   let client = new Client({
@@ -1882,20 +1914,92 @@ it('removes reasons of applied actions by batches', async () => {
     return origin(reason, criteria)
   }
 
+  // Actions from the server have no reason to be kept in the log,
+  // so they are applied by batches without touching the log tables
   await Promise.all([
-    user.create({ name: 'Ann' }),
-    user.create({ name: 'Ben' }),
-    user.create({ name: 'Cat' })
+    client.log.add({ fields: { name: 'Ann' }, id: 'U1', type: 'user/created' }),
+    client.log.add({ fields: { name: 'Ben' }, id: 'U2', type: 'user/created' })
   ])
   await delay(10)
-  expect(calls).toBe(1)
+  expect(await loadList(user.select())).toHaveLength(2)
+  expect(calls).toBe(0)
+
+  let types: string[] = []
+  await client.log.each(action => {
+    types.push(action.type)
+  })
+  expect(types).toEqual([])
+
+  crdt.destroy()
+  await db.close()
+})
+
+it('does not add reason to actions applied in the log transaction', async () => {
+  let db = openDb(nodeDriver(':memory:'))
+  let store = new SqlLogStore(db)
+  let client = new Client({
+    server: 'ws://localhost',
+    store,
+    subprotocol: 1,
+    userId: '10'
+  })
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+
+  let calls = 0
+  let origin = client.log.removeReason.bind(client.log)
+  client.log.removeReason = (reason, criteria) => {
+    calls += 1
+    return origin(reason, criteria)
+  }
+
+  // Other tabs receive the meta from the `add` event, so they will not
+  // apply the action to the same database for the second time
+  let added: string[][] = []
+  client.on('add', (action, meta) => {
+    if (action.type === 'user/created') added.push([...meta.reasons])
+  })
+
+  let id = await user.create({ name: 'Ann' })
+  await delay(10)
+  expect(added).toEqual([['syncing']])
+  expect(calls).toBe(0)
+  expect(await db.driver.select('SELECT "id" FROM "user"', [])).toEqual([
+    { id }
+  ])
+
+  crdt.destroy()
+  await db.close()
+})
+
+it('keeps reason on actions of outdated database', async () => {
+  let db = openDb(nodeDriver(':memory:'))
+  let store = new SqlLogStore(db)
+  let client = new Client({
+    server: 'ws://localhost',
+    store,
+    subprotocol: 1,
+    userId: '10'
+  })
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+
+  emitStorage('logux:db', 'newer-hash')
+  expect(crdt.status.get()).toBe('outdated')
+
+  // The action was not applied here, so the tab with the new schema
+  // should be able to find it in the log
+  await user.create({ id: 'U1', name: 'Ann' })
+  await delay(10)
+  expect(await db.driver.select('SELECT "id" FROM "user"', [])).toEqual([])
 
   let kept: string[] = []
   await client.log.each((action, meta) => {
     if (meta.reasons.includes('applying-to-db')) kept.push(action.type)
   })
-  expect(kept).toEqual([])
-  expect(await loadList(user.select())).toHaveLength(3)
+  expect(kept).toEqual(['user/created'])
 
   crdt.destroy()
   await db.close()

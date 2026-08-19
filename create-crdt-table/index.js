@@ -180,7 +180,6 @@ export function createCrdtDatabase(client, db, opts = {}) {
   let pendingIds = new Set()
   let waiting = new Map()
   let inlined = new Set()
-  let removing = new Set()
   let blocking = false
   let draining
   let writing = Promise.resolve()
@@ -288,8 +287,11 @@ export function createCrdtDatabase(client, db, opts = {}) {
       stopWaiting(ids)
       // Reasons are removed by a single call after the commit: applying
       // the action twice is safe, but losing it will keep the database
-      // incomplete forever
-      await client.log.removeReason('applying-to-db', { ids })
+      // incomplete forever. Actions, which were never written to the log,
+      // have no reason to remove.
+      if (chunk.some(entry => entry[1].reasons.includes('applying-to-db'))) {
+        await client.log.removeReason('applying-to-db', { ids })
+      }
     }
   }
 
@@ -450,25 +452,11 @@ export function createCrdtDatabase(client, db, opts = {}) {
     await execAll(target, queries)
   }
 
-  // Actions, applied inside the log store transaction, still have
-  // the reason. Removing them by batches saves a store transaction
-  // on every action.
-  function removeApplied(id) {
-    removing.add(id)
-    if (removing.size > 1) return
-    // Timeout instead of microtask: it collects the whole burst
-    // of writes into a single log transaction
-    setTimeout(() => {
-      let ids = [...removing]
-      removing.clear()
-      client.log.removeReason('applying-to-db', { ids }).catch(() => {
-        // The actions will be applied again on the next start
-      })
-    })
-  }
-
   async function applyInline(tx, action, meta) {
     if (destroyed || status.value === 'outdated') return
+    // Actions with the reason are applied by batches, which remove
+    // the reasons of the whole batch by a single call
+    if (meta.reasons.includes('applying-to-db')) return
     if (!isKnown(action.type)) return
     await applyAction(action, meta, tx)
     inlined.add(meta.id)
@@ -594,16 +582,18 @@ export function createCrdtDatabase(client, db, opts = {}) {
   // Reason keeps the action in the log until it will be applied,
   // so any tab can find and finish the work of the crashed tab
   let unbindPreadd = client.on('preadd', (action, meta) => {
-    if (isKnown(action.type)) meta.reasons.push('applying-to-db')
+    if (!isKnown(action.type)) return
+    // Actions with another reason are applied in the same transaction,
+    // which writes them to the log. Actions without any reason are not
+    // written to the log at all and are applied by batches.
+    if (sqlStore && status.value === 'ready') return
+    meta.reasons.push('applying-to-db')
   })
 
   let unbindAdd = client.on('add', (action, meta) => {
-    if (!meta.reasons.includes('applying-to-db')) return
-    if (inlined.has(meta.id)) {
-      inlined.delete(meta.id)
-      removeApplied(meta.id)
-      return
-    }
+    // Actions were already applied in the log store transaction
+    if (inlined.delete(meta.id)) return
+    if (!isKnown(action.type)) return
     pushToApply(action, meta)
     if (status.value === 'ready') void drain()
   })
