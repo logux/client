@@ -571,11 +571,20 @@ export interface CrdtDatabaseOptions<Dialect extends string = 'sqlite'> {
    * their callback runs in the same transaction and
    * {@link CrdtTable#change} returns the won cells.
    *
+   * Do not `await` log writes here: when the log is stored in the same
+   * database, the log store is waiting for this transaction to commit,
+   * so awaiting it will deadlock. Call them without `await` — they will
+   * be executed right after the commit. Only removing a reason is safe
+   * there: add reasons in the `preadd` event, so they will be written
+   * together with the action.
+   *
    * ```js
    * let crdt = createCrdtDatabase(client, db, {
-   *   async applied(tx, action, meta, won) {
+   *   applied(tx, action, meta, won) {
+   *     // Metas restored from the tables have no reasons to change
+   *     if (!('reasons' in meta)) return
    *     for (let [table, id, field] of won) {
-   *       await client.log.removeReason(`${table}/${id}/${field}`, {
+   *       void client.log.removeReason(`${table}/${id}/${field}`, {
    *         olderThan: meta
    *       })
    *     }
@@ -585,13 +594,14 @@ export interface CrdtDatabaseOptions<Dialect extends string = 'sqlite'> {
    *
    * @param tx Database of the applying transaction.
    * @param action Applied action.
-   * @param meta Meta of the action.
+   * @param meta Meta of the action. Actions restored from the tables
+   *             on the migration replay have only `id` and `time`.
    * @param won Cells written by the action (empty for `deleted` actions).
    */
   applied?(
     tx: Database,
     action: Action,
-    meta: ClientMeta,
+    meta: ClientMeta | Pick<ClientMeta, 'id' | 'time'>,
     won: CrdtWonCell[]
   ): Promise<void> | void
 

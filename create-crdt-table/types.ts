@@ -29,14 +29,16 @@ let client = new Client({
 declare let db: Database
 
 let crdt = createCrdtDatabase(client, db, {
-  async applied(tx, action, meta, won) {
+  applied(tx, action, meta, won) {
     let cells: CrdtWonCell[] = won
-    for (let [table, id, field] of cells) {
-      await client.log.removeReason(`${table}/${id}/${field}`, {
-        olderThan: meta
-      })
+    if ('reasons' in meta) {
+      for (let [table, id, field] of cells) {
+        void client.log.removeReason(`${table}/${id}/${field}`, {
+          olderThan: meta
+        })
+      }
     }
-    console.log(tx, action.type)
+    console.log(tx, action.type, meta.id, meta.time)
   },
   dialect: 'sqlite',
   key: 'widget:db',

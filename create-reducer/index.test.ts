@@ -765,6 +765,32 @@ describe('createStorageReducer', () => {
     expect(localStorage.getItem('counter')).toBe('5')
   })
 
+  it('replays actions restored from the data without reasons', async () => {
+    let client = new TestClient('10')
+    await client.connect()
+    localStorage.setItem('logux:reducer:counter', '1')
+
+    // Metas of actions restored by crdtTableToActions() have only ID and time
+    let entries: [IncAction, Pick<ClientMeta, 'id' | 'time'>][] = [
+      [{ amount: 3, type: 'inc' }, { id: 'a', time: 0 }]
+    ]
+
+    let ids: string[] = []
+    let reducer = createStorageReducer(client, 'counter', 2, 0, {
+      decode: s => parseInt(s, 10),
+      encode: v => String(v),
+      repeat: () => entries
+    })
+    reducer.type<IncAction>('inc', (prev, action, meta) => {
+      ids.push(meta.id)
+      return prev + action.amount
+    })
+
+    await reducer.ready
+    expect(ids).toEqual(['a'])
+    expect(reducer.value.get()).toBe(3)
+  })
+
   it('loads value from localStorage on startup', () => {
     let client = new TestClient('10')
     localStorage.setItem('logux:reducer:counter', '1')

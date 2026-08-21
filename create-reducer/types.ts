@@ -136,3 +136,24 @@ let memoryValue = createStorageReducer(client, 'memory-value', 1, '', {
   storage: localStorage
 })
 console.log(memoryValue.value.get())
+
+let snapshot: [Action, { id: string; time: number }][] = [
+  [{ type: 'inc' }, { id: '1 10:1:1 0', time: 1 }]
+]
+
+let restoredReducer = createStorageReducer(client, 'restored', 1, 0, {
+  decode: s => parseInt(s, 10),
+  encode: v => String(v),
+  repeat: () => snapshot
+})
+restoredReducer.type<{ type: 'inc' }>('inc', (prev, action, meta) => {
+  console.log(action.type, meta.time)
+  return 'reasons' in meta ? prev + meta.reasons.length : prev + 1
+})
+
+let restoredCleaner = createReducer(client, 'restored-clean', 1, {
+  clean: () => snapshot
+})
+restoredCleaner.type('inc', (action, meta) => {
+  document.title = action.type + meta.id
+})

@@ -9,20 +9,28 @@ import type {
 } from '../client/index.js'
 
 interface ActionListener<ListenAction extends Action> {
-  (action: ListenAction, meta: ClientMeta): void | Promise<void>
+  (
+    action: ListenAction,
+    meta: ClientMeta | Pick<ClientMeta, 'id' | 'time'>
+  ): void | Promise<void>
 }
 
 export type PersistentStorage = Record<string, string | undefined>
 
 interface ReducerInitCallbacks {
   init?(): void | Promise<void>
+
+  /**
+   * Called when the stored data has an older version. Clean the data here
+   * and return the actions to reduce it again.
+   */
   clean(
     oldVersion: number
   ):
     | void
     | Promise<void>
-    | [Action, ClientMeta][]
-    | Promise<[Action, ClientMeta][]>
+    | [Action, Pick<ClientMeta, 'id' | 'time'>][]
+    | Promise<[Action, Pick<ClientMeta, 'id' | 'time'>][]>
 
   /**
    * Called when the stored data has an older version and is being cleaned
@@ -140,7 +148,7 @@ interface StorageActionListener<ListenAction extends Action, Value> {
   (
     prevValue: Value,
     action: ListenAction,
-    meta: ClientMeta
+    meta: ClientMeta | Pick<ClientMeta, 'id' | 'time'>
   ): Value | Promise<Value>
 }
 
@@ -154,7 +162,23 @@ interface StorageCallbacks {
    */
   migrating?(done: Promise<void>): void
 
-  repeat(): [Action, ClientMeta][] | Promise<[Action, ClientMeta][]>
+  /**
+   * Actions to reduce the value again after the version change.
+   *
+   * Metas need only `id` and `time`, so the same actions snapshot
+   * can be passed to {@link CrdtDatabaseOptions#repeat} and reduced here,
+   * even when the actions were restored from the tables
+   * by {@link crdtTableToActions} and are not in the log anymore.
+   *
+   * ```js
+   * createStorageReducer(client, 'menu', 1, [], {
+   *   repeat: () => getSnapshot()
+   * })
+   * ```
+   */
+  repeat():
+    | [Action, Pick<ClientMeta, 'id' | 'time'>][]
+    | Promise<[Action, Pick<ClientMeta, 'id' | 'time'>][]>
 
   /**
    * Storage to keep the value and the reducer’s version instead
