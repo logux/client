@@ -557,10 +557,15 @@ export interface CrdtDatabaseOptions<Dialect extends string = 'sqlite'> {
   migrating?(done: Promise<void>): void
 
   /**
-   * Called after the database was dropped on schema change to get old
-   * actions missing from the log (for instance, from the server or
-   * from a compacted snapshot). Actions from the log will be replayed
-   * automatically.
+   * Called on schema change to get old actions missing from the log
+   * (for instance, from the server or restored from the tables themselves).
+   * The old tables are dropped only after the callback, so it can still
+   * read them.
+   *
+   * Actions from the log will be replayed automatically.
+   *
+   * The log is read in parallel with the callback, possibly on the same
+   * database connection, so the callback must not open SQL transactions.
    */
   repeat?(): [Action, ClientMeta][] | Promise<[Action, ClientMeta][]>
 

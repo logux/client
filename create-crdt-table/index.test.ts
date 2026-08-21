@@ -650,11 +650,15 @@ it('rebuilds database on schema change and replays repeat() entries', async () =
   ]
 
   let migratings: Promise<void>[] = []
+  let oldRows: unknown
   let crdt = createCrdtDatabase(client, db, {
     migrating(done) {
       migratings.push(done)
     },
-    repeat: () => entries
+    async repeat() {
+      oldRows = await db.driver.select('SELECT "id" FROM "user"', [])
+      return entries
+    }
   })
   let user = crdt.table('user', USER_SCHEMA)
   let statuses: string[] = []
@@ -664,6 +668,7 @@ it('rebuilds database on schema change and replays repeat() entries', async () =
   await delay(10)
   expect(statuses).toEqual(['initializing', 'migrating', 'ready'])
   expect(migratings).toEqual([crdt.ready])
+  expect(oldRows).toEqual([{ id: 'garbage' }])
   await crdt.ready
 
   let rows = await loadList(user.select`ORDER BY "id"`)

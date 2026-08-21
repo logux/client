@@ -546,9 +546,22 @@ export function createCrdtDatabase(client, db, opts = {}) {
       await drain()
       becomeReady()
     } else {
+      // The log and the tables are only read here, so the log entries
+      // are collected in parallel with the repeat() callback
+      let entries = []
+      let reading = client.log.each({ order: 'added' }, (action, meta) => {
+        if (isKnown(action.type)) entries.unshift([action, meta])
+      })
+      let repeated = []
       if (old) {
         status.set('migrating')
         if (opts.migrating) opts.migrating(ready)
+        // Tables are dropped after the callback, so actions missing
+        // from the log can be restored from the tables themselves
+        if (opts.repeat) repeated = await opts.repeat()
+      }
+      await reading
+      if (old) {
         for (let oldTable in JSON.parse(old).tables) {
           await driver.exec(`DROP TABLE IF EXISTS "${oldTable}"`, [])
         }
@@ -557,13 +570,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
         await driver.exec(`DROP TABLE IF EXISTS "${plural}"`, [])
         await driver.exec(createTableSql(plural, tables[plural], dialect), [])
       }
-      let entries = []
-      await client.log.each({ order: 'added' }, (action, meta) => {
-        if (isKnown(action.type)) entries.unshift([action, meta])
-      })
-      if (old && opts.repeat) {
-        entries = entries.concat(await opts.repeat())
-      }
+      entries = entries.concat(repeated)
       let added = pending
       pending = []
       pendingIds.clear()
