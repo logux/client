@@ -43,6 +43,7 @@ export {
   LoguxUndoError
 } from './logux-undo-error/index.js'
 export { emptyInTest, prepareForTest } from './prepare-for-test/index.js'
+export { replaceWithShadow } from './replace-with-shadow/index.js'
 export { request, RequestOptions } from './request/index.js'
 export { SqlLogStore } from './sql-log-store/index.js'
 export { status, StatusValue } from './status/index.js'
