@@ -815,6 +815,97 @@ it('replays restored actions into the same tables', async () => {
   ).toEqual(rows)
 })
 
+it('reports won cells to applied()', async () => {
+  let { client, db } = await setup()
+  let applied: [string, string, [string, string, string][]][] = []
+  let crdt = createCrdtDatabase(client, db, {
+    async applied(tx, action, meta, won) {
+      // The hook can use the applying transaction
+      await tx.driver.select('SELECT 1', [])
+      applied.push([action.type, meta.id, won])
+    }
+  })
+  let user = crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+
+  let metas: ClientMeta[] = []
+  client.on('add', (action, meta) => {
+    metas.push(meta)
+  })
+
+  await user.create({ id: 'U1', name: 'Ann' })
+  await user.create({ id: 'U2', name: 'Ben' })
+  await user.update(['U1', 'U2'], { role: 'admin' })
+  await user.delete('U2')
+  // The change is older than every cell of U1, so it wins nothing
+  await client.log.add(
+    { fields: { name: 'Old' }, id: 'U1', type: 'user/changed' },
+    { id: '0 10:other', reasons: ['test'], time: 0 }
+  )
+  await delay(10)
+
+  let createdAt = new Date(2026, 0, 1).getTime()
+  expect(applied).toEqual([
+    [
+      'user/created',
+      metas[0]!.id,
+      [
+        ['user', 'U1', 'name'],
+        ['user', 'U1', 'createdAt'],
+        ['user', 'U1', 'isAdmin'],
+        ['user', 'U1', 'role']
+      ]
+    ],
+    [
+      'user/created',
+      metas[1]!.id,
+      [
+        ['user', 'U2', 'name'],
+        ['user', 'U2', 'createdAt'],
+        ['user', 'U2', 'isAdmin'],
+        ['user', 'U2', 'role']
+      ]
+    ],
+    [
+      'user/changed',
+      metas[2]!.id,
+      [
+        ['user', 'U1', 'role'],
+        ['user', 'U2', 'role']
+      ]
+    ],
+    ['user/deleted', metas[3]!.id, []],
+    ['user/changed', '0 10:other', []]
+  ])
+  expect(withoutMeta(await loadList(user.select()))[0]).toMatchObject({
+    createdAt,
+    name: 'Ann'
+  })
+})
+
+it('returns won cells from change() without applied() call', async () => {
+  let { client, db } = await setup()
+  let applied: string[] = []
+  let crdt = createCrdtDatabase(client, db, {
+    applied(tx, action) {
+      applied.push(action.type)
+    }
+  })
+  let user = crdt.table('user', USER_SCHEMA)
+  let renamed = defineAction<{ name: string; type: 'renamed' }>('renamed')
+  let won: unknown
+  let rename = crdt.action(renamed, async (tx, action, meta) => {
+    won = await user.change(tx, 'U1', { name: action.name }, meta)
+  })
+  await crdt.ready
+
+  await user.create({ id: 'U1', name: 'Ann' })
+  await rename({ name: 'New' })
+
+  expect(won).toEqual([['user', 'U1', 'name']])
+  expect(applied).toEqual(['user/created'])
+})
+
 it('restores cells of custom actions as table actions', async () => {
   let { client, db } = await setup()
   let crdt = createCrdtDatabase(client, db)
@@ -1891,7 +1982,12 @@ it('applies actions in the transaction of SQL log store', async () => {
     subprotocol: 1,
     userId: '10'
   })
-  let crdt = createCrdtDatabase(client, db)
+  let applied: string[] = []
+  let crdt = createCrdtDatabase(client, db, {
+    applied(tx, action) {
+      applied.push(action.type)
+    }
+  })
   let user = crdt.table('user', USER_SCHEMA)
   await crdt.ready
 
@@ -1918,6 +2014,7 @@ it('applies actions in the transaction of SQL log store', async () => {
   await client.log.add({ id, type: 'user/deleted' })
   await delay(10)
   expect(await db.driver.select('SELECT "id" FROM "user"', [])).toEqual([])
+  expect(applied).toEqual(['user/created', 'user/changed', 'user/deleted'])
 
   crdt.destroy()
   await db.close()

@@ -345,7 +345,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
       try {
         await writeToTables(async tx => {
           for (let entry of chunk) {
-            await applyAction(entry[0], entry[1], tx)
+            await applyWithHook(tx, entry[0], entry[1])
           }
         })
       } catch (e) {
@@ -410,12 +410,12 @@ export function createCrdtDatabase(client, db, opts = {}) {
 
     if (verb === VERBS.deleted) {
       let ids = action.ids ?? [action.id]
-      if (ids.length === 0) return
+      if (ids.length === 0) return []
       await target.exec(
         `DELETE FROM "${plural}" WHERE "id" IN (${holders(ids.length)})`,
         ids
       )
-      return
+      return []
     }
 
     let records
@@ -426,7 +426,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
     } else {
       records = [[action.id, action.fields]]
     }
-    if (records.length === 0) return
+    if (records.length === 0) return []
 
     let touched = new Set()
     for (let record of records) {
@@ -434,7 +434,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
         if (schema[key]) touched.add(key)
       }
     }
-    if (touched.size === 0) return
+    if (touched.size === 0) return []
 
     // Only meta of the fields from the action is necessary to resolve conflicts
     let columns = ['"id"']
@@ -447,6 +447,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
     let known = new Map()
     for (let row of rows) known.set(row.id, row)
 
+    let won = []
     let inserts = []
     let updates = new Map()
     for (let [id, fields] of records) {
@@ -473,6 +474,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
         }
       }
       if (keys.length === 0) continue
+      for (let key of keys) won.push([plural, id, key])
       if (insert) {
         inserts.push([id, keys, values])
       } else {
@@ -523,6 +525,12 @@ export function createCrdtDatabase(client, db, opts = {}) {
     }
 
     await execAll(target, queries)
+    return won
+  }
+
+  async function applyWithHook(tx, action, meta) {
+    let won = await applyAction(action, meta, tx)
+    if (won && opts.applied) await opts.applied(tx, action, meta, won)
   }
 
   async function applyInline(tx, action, meta) {
@@ -531,7 +539,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
     // the reasons of the whole batch by a single call
     if (meta.reasons.includes('applying-to-db')) return
     if (!isKnown(action.type)) return
-    await applyAction(action, meta, tx)
+    await applyWithHook(tx, action, meta)
     inlined.add(meta.id)
   }
 
@@ -774,7 +782,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
 
       return {
         async change(tx, id, fields, meta) {
-          await applyAction(
+          return applyAction(
             Array.isArray(id)
               ? { fields, ids: id, type: `${plural}/changed` }
               : { fields, id, type: `${plural}/changed` },

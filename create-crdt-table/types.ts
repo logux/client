@@ -13,6 +13,7 @@ import {
   boolean,
   createCrdtDatabase,
   crdtTableToActions,
+  type CrdtWonCell,
   number,
   oneOf,
   optional,
@@ -28,6 +29,15 @@ let client = new Client({
 declare let db: Database
 
 let crdt = createCrdtDatabase(client, db, {
+  async applied(tx, action, meta, won) {
+    let cells: CrdtWonCell[] = won
+    for (let [table, id, field] of cells) {
+      await client.log.removeReason(`${table}/${id}/${field}`, {
+        olderThan: meta
+      })
+    }
+    console.log(tx, action.type)
+  },
   dialect: 'sqlite',
   key: 'widget:db',
   migrating(done) {
@@ -229,7 +239,8 @@ let renameUser = crdt.action(
   userRenamed,
   async (tx, action, meta) => {
     let name: string = action.name
-    await user.change(tx, action.id, { name }, meta)
+    let won: CrdtWonCell[] = await user.change(tx, action.id, { name }, meta)
+    console.log(won)
     await user.change(tx, [action.id], { age: 31 }, meta)
     await tx.exec`UPDATE "user" SET "isAdmin" = ${1} WHERE "id" = ${action.id}`
   },

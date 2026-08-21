@@ -395,6 +395,12 @@ export function crdtTableToActions(
   >[]
 ): Promise<[Action, Pick<ClientMeta, 'id' | 'time'>][]>
 
+/**
+ * Cell written to a table by an action: older values of the cell lost
+ * per-field last write wins to this action.
+ */
+export type CrdtWonCell = [table: string, id: string, field: string]
+
 export interface CrdtTable<
   Schema extends CrdtTableSchema = CrdtTableSchema,
   Dialect extends string = 'sqlite'
@@ -419,14 +425,15 @@ export interface CrdtTable<
    * @param id Row ID or an array of row IDs.
    * @param fields Changed fields.
    * @param meta Meta of the action from the callback.
-   * @returns Promise resolved when rows were changed.
+   * @returns Cells written by the change: older values lost
+   *          last write wins to it.
    */
   change(
     tx: Database,
     id: string[] | string,
     fields: Partial<CrdtRowFields<Schema>>,
     meta: ClientMeta
-  ): Promise<void>
+  ): Promise<CrdtWonCell[]>
 
   /**
    * Add `plural/created` action to the log. The table row will be inserted
@@ -553,6 +560,41 @@ export interface CrdtActionOptions {
 }
 
 export interface CrdtDatabaseOptions<Dialect extends string = 'sqlite'> {
+  /**
+   * Called after a table action was applied to the tables — inside
+   * the applying transaction and only in the applying browser tab.
+   * `won` lists the cells written by the action: older values lost
+   * per-field last write wins to it. A good place for the log
+   * bookkeeping like per-cell reasons or shadows.
+   *
+   * It is not called for custom actions of {@link CrdtDatabase#action}:
+   * their callback runs in the same transaction and
+   * {@link CrdtTable#change} returns the won cells.
+   *
+   * ```js
+   * let crdt = createCrdtDatabase(client, db, {
+   *   async applied(tx, action, meta, won) {
+   *     for (let [table, id, field] of won) {
+   *       await client.log.removeReason(`${table}/${id}/${field}`, {
+   *         olderThan: meta
+   *       })
+   *     }
+   *   }
+   * })
+   * ```
+   *
+   * @param tx Database of the applying transaction.
+   * @param action Applied action.
+   * @param meta Meta of the action.
+   * @param won Cells written by the action (empty for `deleted` actions).
+   */
+  applied?(
+    tx: Database,
+    action: Action,
+    meta: ClientMeta,
+    won: CrdtWonCell[]
+  ): Promise<void> | void
+
   /**
    * SQL dialect of the database: `'sqlite'` (default), `'pglite'`
    * or any other name for your own dialect. The dialect selects
