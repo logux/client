@@ -1,11 +1,18 @@
 import { defineAction, defineCrdtTableActions } from '@logux/actions'
+import type { Action } from '@logux/core'
 import type { Database } from '@nanostores/sql'
 
-import { Client, type WithoutMeta, withoutMeta } from '../index.js'
+import {
+  Client,
+  type ClientMeta,
+  type WithoutMeta,
+  withoutMeta
+} from '../index.js'
 import {
   bigint,
   boolean,
   createCrdtDatabase,
+  crdtTableToActions,
   number,
   oneOf,
   optional,
@@ -233,9 +240,17 @@ async function rename(): Promise<void> {
   await renameUser({ id: 'U1', name: 'New' })
 }
 
+async function repeatAll(): Promise<void> {
+  let entries: [Action, Pick<ClientMeta, 'id' | 'time'>][] =
+    await crdtTableToActions([user, pgUser])
+  console.log(entries[0]![0].type, entries[0]![1].id)
+}
+
+void repeatAll()
 void rename()
 test()
 console.log(user.plural satisfies string)
+console.log(user.schema.name.type satisfies 'TEXT')
 
 crdt.destroy()
 pg.destroy()

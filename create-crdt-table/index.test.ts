@@ -27,6 +27,7 @@ import {
   type CrdtTable,
   type CrdtTableRow,
   createCrdtDatabase,
+  crdtTableToActions,
   number,
   oneOf,
   optional,
@@ -36,6 +37,10 @@ import {
 } from './index.js'
 
 let unloaders: ((event: { returnValue: string }) => string)[] = []
+
+function restored(meta: ClientMeta): Pick<ClientMeta, 'id' | 'time'> {
+  return { id: meta.id, time: meta.time }
+}
 
 beforeAll(() => {
   setLocalStorage()
@@ -696,6 +701,160 @@ it('rebuilds database on schema change without repeat()', async () => {
   await delay(10)
   expect(statuses).toEqual(['initializing', 'migrating', 'ready'])
   expect(await loadList(user.select())).toEqual([])
+})
+
+it('restores actions from tables', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  let post = crdt.table('post', { title: string() })
+  let empty = crdt.table('empty', { title: string() })
+  await crdt.ready
+
+  let metas: ClientMeta[] = []
+  client.on('add', (action, meta) => {
+    if (/^(user|post)\//.test(action.type)) metas.push(meta)
+  })
+
+  await user.create([
+    { id: 'U1', name: 'Ann' },
+    { id: 'U2', name: 'Ben' }
+  ])
+  await user.create({ age: 30, id: 'U3', name: 'Jim' })
+  await user.update(['U1', 'U2'], { role: 'admin' })
+  await user.update('U3', { publishedAt: null })
+  await post.create({ id: 'P1', title: 'Hello' })
+
+  let createdAt = new Date(2026, 0, 1).getTime()
+  expect(await crdtTableToActions([user, post, empty])).toEqual([
+    [
+      {
+        // The role cells were overwritten by the changed action below,
+        // so the restored created action does not have them
+        records: [
+          { createdAt, id: 'U1', isAdmin: 0, name: 'Ann' },
+          { createdAt, id: 'U2', isAdmin: 0, name: 'Ben' }
+        ],
+        type: 'user/created'
+      },
+      restored(metas[0]!)
+    ],
+    [
+      {
+        fields: { age: 30, createdAt, isAdmin: 0, name: 'Jim', role: 'user' },
+        id: 'U3',
+        type: 'user/created'
+      },
+      restored(metas[1]!)
+    ],
+    [
+      { fields: { role: 'admin' }, ids: ['U1', 'U2'], type: 'user/changed' },
+      restored(metas[2]!)
+    ],
+    [
+      { fields: { publishedAt: null }, id: 'U3', type: 'user/changed' },
+      restored(metas[3]!)
+    ],
+    [
+      { fields: { title: 'Hello' }, id: 'P1', type: 'post/created' },
+      restored(metas[4]!)
+    ]
+  ])
+})
+
+it('replays restored actions into the same tables', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+
+  await user.create([
+    { id: 'U1', name: 'Ann' },
+    { id: 'U2', name: 'Ben' }
+  ])
+  await user.update(['U1', 'U2'], { name: 'Renamed' })
+  await user.update('U2', { age: 30, isAdmin: 1, role: 'admin' })
+  await user.update('U2', { createdAt: 200 })
+
+  let entries = await crdtTableToActions([user])
+  // U2 kept no cells of its created action, so its oldest left action
+  // is the rename: it is restored as created and the replay applies it
+  // to the already created U1 as a change
+  expect(entries.map(i => i[0].type)).toEqual([
+    'user/created',
+    'user/created',
+    'user/changed',
+    'user/changed'
+  ])
+  expect(entries[1]![0]).toEqual({
+    records: [
+      { id: 'U1', name: 'Renamed' },
+      { id: 'U2', name: 'Renamed' }
+    ],
+    type: 'user/created'
+  })
+
+  let rows = await db.driver.select('SELECT * FROM "user" ORDER BY "id"', [])
+
+  let client2 = new TestClient('10')
+  await client2.connect()
+  for (let [action, meta] of entries) {
+    await client2.log.add(action, {
+      id: meta.id,
+      reasons: ['test'],
+      time: meta.time
+    })
+  }
+  let db2 = openDb(nodeDriver(':memory:'))
+  let crdt2 = createCrdtDatabase(client2, db2, { key: 'logux:db2' })
+  crdt2.table('user', USER_SCHEMA)
+  await crdt2.ready
+
+  expect(
+    await db2.driver.select('SELECT * FROM "user" ORDER BY "id"', [])
+  ).toEqual(rows)
+})
+
+it('restores cells of custom actions as table actions', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  let post = crdt.table('post', { title: string() })
+  let renamed = defineAction<{ name: string; type: 'renamed' }>('renamed')
+  let rename = crdt.action(renamed, async (tx, action, meta) => {
+    await user.change(tx, 'U1', { name: action.name }, meta)
+    await post.change(tx, 'P1', { title: action.name }, meta)
+  })
+  await crdt.ready
+
+  let metas: ClientMeta[] = []
+  client.on('add', (action, meta) => {
+    metas.push(meta)
+  })
+
+  await user.create({ id: 'U1', name: 'Ann' })
+  await post.create({ id: 'P1', title: 'Old' })
+  await rename({ name: 'New' })
+
+  let createdAt = new Date(2026, 0, 1).getTime()
+  expect(await crdtTableToActions([user, post])).toEqual([
+    [
+      {
+        fields: { createdAt, isAdmin: 0, role: 'user' },
+        id: 'U1',
+        type: 'user/created'
+      },
+      restored(metas[0]!)
+    ],
+    [
+      { fields: { name: 'New' }, id: 'U1', type: 'user/changed' },
+      restored(metas[2]!)
+    ],
+    [
+      { fields: { title: 'New' }, id: 'P1', type: 'post/created' },
+      restored(metas[2]!)
+    ]
+  ])
 })
 
 it('creates indexes of all definition forms', async () => {

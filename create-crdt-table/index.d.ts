@@ -1,6 +1,6 @@
 import type { AbstractActionCreator, SyncMapTypes } from '@logux/actions'
 import type { Action } from '@logux/core'
-import type { Database, SqlStore } from '@nanostores/sql'
+import type { Database, Driver, SqlStore } from '@nanostores/sql'
 import type { ReadableAtom } from 'nanostores'
 
 import type { Client, ClientMeta } from '../client/index.js'
@@ -372,6 +372,29 @@ export function withoutMeta<Value extends object>(
  */
 export function withMeta<Value>(row: WithoutMeta<Value>): Value
 
+/**
+ * Restore actions from the tables.
+ *
+ * The oldest restored action of a row is `plural/created`, the rest are
+ * `plural/changed`. Rows changed by one batch action are restored
+ * as a single batch action.
+ *
+ * ```ts
+ * let crdt = createCrdtDatabase(client, db, {
+ *   repeat: () => crdtTableToActions([user, post])
+ * })
+ * ```
+ *
+ * @param tables Tables of {@link CrdtDatabase#table} to read.
+ * @returns Actions with restored meta `id` and `time`, oldest first.
+ */
+export function crdtTableToActions(
+  tables: Pick<
+    CrdtTable<CrdtTableSchema, string>,
+    'driver' | 'plural' | 'schema'
+  >[]
+): Promise<[Action, Pick<ClientMeta, 'id' | 'time'>][]>
+
 export interface CrdtTable<
   Schema extends CrdtTableSchema = CrdtTableSchema,
   Dialect extends string = 'sqlite'
@@ -446,10 +469,21 @@ export interface CrdtTable<
   delete(id: string[] | string): Promise<void>
 
   /**
+   * Database driver for raw queries to the table,
+   * like in {@link crdtTableToActions}.
+   */
+  readonly driver: Driver
+
+  /**
    * Table name. It is used as SQL table name and as prefix
    * of action types (`user/created`, `user/changed`, `user/deleted`).
    */
   readonly plural: string
+
+  /**
+   * Column definitions of the table.
+   */
+  readonly schema: Schema
 
   /**
    * Reactive SQL query to the table. Use it as a template string tag
@@ -558,16 +592,18 @@ export interface CrdtDatabaseOptions<Dialect extends string = 'sqlite'> {
 
   /**
    * Called on schema change to get old actions missing from the log
-   * (for instance, from the server or restored from the tables themselves).
-   * The old tables are dropped only after the callback, so it can still
-   * read them.
+   * (for instance, from the server or restored from the tables themselves
+   * with {@link crdtTableToActions}). The old tables are dropped only
+   * after the callback, so it can still read them.
    *
    * Actions from the log will be replayed automatically.
    *
    * The log is read in parallel with the callback, possibly on the same
    * database connection, so the callback must not open SQL transactions.
    */
-  repeat?(): [Action, ClientMeta][] | Promise<[Action, ClientMeta][]>
+  repeat?():
+    | [Action, Pick<ClientMeta, 'id' | 'time'>][]
+    | Promise<[Action, Pick<ClientMeta, 'id' | 'time'>][]>
 
   /**
    * Storage to keep the tables schema instead of `localStorage`

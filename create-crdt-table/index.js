@@ -1,4 +1,4 @@
-import { toSorted } from '@logux/core'
+import { sortedToMeta, toSorted } from '@logux/core'
 import { nanoid } from 'nanoid'
 import { atom } from 'nanostores'
 
@@ -51,6 +51,78 @@ export function withMeta(row) {
     if (key !== 'id') meta[`${META}${key}`] = null
   }
   return { ...row, ...meta }
+}
+
+export async function crdtTableToActions(tables) {
+  let all = []
+  for (let { driver, plural, schema } of tables) {
+    let rows = await driver.select(
+      `SELECT * FROM "${plural}" ORDER BY "id"`,
+      []
+    )
+    // Cells of all rows grouped by the meta of their last change
+    let cells = new Map()
+    // The oldest meta of every row becomes its created action
+    let oldest = new Map()
+    for (let row of rows) {
+      for (let key in schema) {
+        let sorted = row[`${META}${key}`]
+        if (!sorted) continue
+        let metaRows = cells.get(sorted)
+        if (!metaRows) {
+          metaRows = new Map()
+          cells.set(sorted, metaRows)
+        }
+        let fields = metaRows.get(row.id)
+        if (!fields) {
+          fields = {}
+          metaRows.set(row.id, fields)
+        }
+        fields[key] = row[key]
+        let min = oldest.get(row.id)
+        if (!min || sorted < min) oldest.set(row.id, sorted)
+      }
+    }
+    for (let [sorted, metaRows] of cells) {
+      let created = false
+      for (let id of metaRows.keys()) {
+        if (oldest.get(id) === sorted) created = true
+      }
+      let action
+      if (metaRows.size === 1) {
+        let [id, fields] = metaRows.entries().next().value
+        action = {
+          fields,
+          id,
+          type: `${plural}/${created ? 'created' : 'changed'}`
+        }
+      } else if (created) {
+        // Rows with older cells already exist on the replay,
+        // so the created action only updates them
+        let records = []
+        for (let [id, fields] of metaRows) records.push({ id, ...fields })
+        action = { records, type: `${plural}/created` }
+      } else {
+        // A changed batch wrote the same values to every row, so the union
+        // of the survived cells restores the original fields
+        let fields = {}
+        let ids = []
+        for (let [id, survived] of metaRows) {
+          ids.push(id)
+          Object.assign(fields, survived)
+        }
+        action = { fields, ids, type: `${plural}/changed` }
+      }
+      all.push([sorted, action])
+    }
+  }
+  // The replay must create the row before applying its changed actions
+  all.sort((a, b) => {
+    if (a[0] < b[0]) return -1
+    if (a[0] > b[0]) return 1
+    return 0
+  })
+  return all.map(([sorted, action]) => [action, sortedToMeta(sorted)])
 }
 
 /**
@@ -289,7 +361,8 @@ export function createCrdtDatabase(client, db, opts = {}) {
       // the action twice is safe, but losing it will keep the database
       // incomplete forever. Actions, which were never written to the log,
       // have no reason to remove.
-      if (chunk.some(entry => entry[1].reasons.includes('applying-to-db'))) {
+      // Metas of restored actions from repeat() have no reasons at all
+      if (chunk.some(entry => entry[1].reasons?.includes('applying-to-db'))) {
         await client.log.removeReason('applying-to-db', { ids })
       }
     }
@@ -752,7 +825,9 @@ export function createCrdtDatabase(client, db, opts = {}) {
             )
           }
         },
+        driver,
         plural,
+        schema,
         select(template, ...params) {
           let prefix = `SELECT "${plural}".* FROM "${plural}"`
           let parts = template
