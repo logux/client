@@ -173,7 +173,7 @@ export class CrossTabClient extends Client {
           }
           actionEvents(this.emitter, 'add', action, meta)
           if (this.role === 'leader') {
-            this.node.onAdd(action, meta)
+            void this.node.onAdd([[action, meta]])
           }
         }
       }
