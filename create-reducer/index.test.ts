@@ -723,6 +723,30 @@ describe('createReducer', () => {
     await delay(1)
     expect(received).toEqual(['users/create'])
   })
+
+  it('removes the version on client clean', async () => {
+    let client = new TestClient('10')
+    await client.connect()
+
+    let reducer = createReducer(client, 'db', 1, { clean() {} })
+    await reducer.ready
+    expect(localStorage.getItem('logux:reducer:db')).toBe('1')
+
+    await client.clean()
+    expect(localStorage.getItem('logux:reducer:db')).toBeNull()
+  })
+
+  it('does not remove the version on client clean after destroy', async () => {
+    let client = new TestClient('10')
+    await client.connect()
+
+    let reducer = createReducer(client, 'db', 1, { clean() {} })
+    await reducer.ready
+    reducer.destroy()
+
+    await client.clean()
+    expect(localStorage.getItem('logux:reducer:db')).toBe('1')
+  })
 })
 
 type IncAction = { amount: number; type: 'inc' }
@@ -973,6 +997,54 @@ describe('createStorageReducer', () => {
     expect(reducer.value.get()).toBe(3)
     expect(localStorage.getItem('counter')).toBe('3')
   })
+
+  it('removes the value and the version on client clean', async () => {
+    let client = new TestClient('10')
+    await client.connect()
+
+    let reducer = createStorageReducer(
+      client,
+      'counter',
+      1,
+      0,
+      counterCallbacks()
+    )
+    reducer.type<IncAction>('inc', (prev, action) => prev + action.amount)
+
+    await client.log.add({ amount: 3, type: 'inc' })
+    await delay(1)
+    expect(reducer.value.get()).toBe(3)
+    expect(localStorage.getItem('counter')).toBe('3')
+    expect(localStorage.getItem('logux:reducer:counter')).toBe('1')
+
+    await client.clean()
+    expect(reducer.value.get()).toBe(0)
+    expect(localStorage.getItem('counter')).toBeNull()
+    expect(localStorage.getItem('logux:reducer:counter')).toBeNull()
+  })
+
+  it('keeps the value on client clean after destroy', async () => {
+    let client = new TestClient('10')
+    await client.connect()
+
+    let reducer = createStorageReducer(
+      client,
+      'counter',
+      1,
+      0,
+      counterCallbacks()
+    )
+    reducer.type<IncAction>('inc', (prev, action) => prev + action.amount)
+
+    await client.log.add({ amount: 3, type: 'inc' })
+    await delay(1)
+    reducer.destroy()
+
+    await client.clean()
+    expect(reducer.value.get()).toBe(3)
+    expect(localStorage.getItem('counter')).toBe('3')
+    expect(localStorage.getItem('logux:reducer:counter')).toBe('1')
+  })
 })
 
 describe('custom storage', () => {
@@ -1108,6 +1180,28 @@ describe('custom storage', () => {
     await reducer.ready
     expect(reducer.value.get()).toBe(4)
     expect(storage.counter).toBe('4')
+  })
+
+  it('cleans the value in custom storage on client clean', async () => {
+    let client = new TestClient('10')
+    await client.connect()
+    let storage: PersistentStorage = {}
+
+    let reducer = createStorageReducer(client, 'counter', 1, 0, {
+      ...counterCallbacks(),
+      storage
+    })
+    reducer.type<IncAction>('inc', (prev, action) => prev + action.amount)
+
+    await client.log.add({ amount: 2, type: 'inc' })
+    await delay(1)
+    expect(storage.counter).toBe('2')
+    expect(storage['logux:reducer:counter']).toBe('1')
+
+    await client.clean()
+    expect(reducer.value.get()).toBe(0)
+    expect(storage.counter).toBeUndefined()
+    expect(storage['logux:reducer:counter']).toBeUndefined()
   })
 })
 

@@ -137,11 +137,16 @@ export function createReducer(client, name, version, callbacks) {
     }
   })
 
+  let unbindCleaning = client.on('cleaning', () => {
+    delete storage[key]
+  })
+
   let reducer = {
     destroy() {
       if (destroyed) return
       destroyed = true
       unbindAdd()
+      unbindCleaning()
       stopStorageTracking(key)
       lockRequest.abort()
       releaseLock()
@@ -187,6 +192,11 @@ export function createStorageReducer(
     storage
   })
 
+  let unbindCleaning = client.on('cleaning', () => {
+    value.set(initialValue)
+    delete storage[name]
+  })
+
   if (hasStorageEvents(storage)) {
     startStorageTracking(name, newValue => {
       value.set(decode(newValue))
@@ -195,6 +205,7 @@ export function createStorageReducer(
 
   return {
     destroy() {
+      unbindCleaning()
       stopStorageTracking(name)
       reducer.destroy()
     },

@@ -107,6 +107,10 @@ interface Reducer {
  *
  * Only one browser tab will reduce the log.
  *
+ * The reducer’s version is removed on {@link Client#clean}, since the value
+ * is not re-created from the log on the next start. Reducers with their own
+ * storage should subscribe to the `cleaning` event to remove the data itself.
+ *
  * ```ts
  * import { createReducer } from '@logux/client'
  *
@@ -243,6 +247,8 @@ interface StorageReducer<Value> {
  * Create a reducer that reduces actions into a single value stored in
  * `localStorage` (or in {@link StorageCallbacks#storage}). The value
  * is loaded on first run and kept in sync across tabs via `storage` events.
+ *
+ * The value is removed on {@link Client#clean} together with the log.
  *
  * ```ts
  * import { createStorageReducer } from '@logux/client'
