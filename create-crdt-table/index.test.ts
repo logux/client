@@ -1,5 +1,5 @@
 import { defineAction } from '@logux/actions'
-import { type Action, type Meta, toSorted } from '@logux/core'
+import { type Action, toSorted, type MetaTime } from '@logux/core'
 import type {
   Database,
   Driver,
@@ -38,7 +38,7 @@ import {
 
 let unloaders: ((event: { returnValue: string }) => string)[] = []
 
-function restored(meta: ClientMeta): Pick<ClientMeta, 'id' | 'time'> {
+function restored(meta: ClientMeta): MetaTime {
   return { id: meta.id, time: meta.time }
 }
 
@@ -413,7 +413,7 @@ it('resolves conflicts of batch actions with per-field last write wins', async (
   expect(rows.map(i => i.age)).toEqual([30, 30])
   expect(rows.map(i => i.role)).toEqual([null, 'admin'])
   expect(rows[0]!.updatedAt_name).toBe(
-    toSorted({ id: '0Z 10:other', time: 100 } as Meta)
+    toSorted({ id: '0Z 10:other', time: 100 })
   )
 
   await client.log.add(
@@ -582,11 +582,9 @@ it('resolves conflicts with per-field last write wins', async () => {
   expect(rows[0]!.age).toBe(20)
   expect(rows[0]!.role).toBe('admin')
   expect(rows[0]!.updatedAt_name).toBe(
-    toSorted({ id: '0Z 10:other', time: 100 } as Meta)
+    toSorted({ id: '0Z 10:other', time: 100 })
   )
-  expect(rows[0]!.updatedAt_age).toBe(
-    toSorted({ id: 'm 10:other', time: 50 } as Meta)
-  )
+  expect(rows[0]!.updatedAt_age).toBe(toSorted({ id: 'm 10:other', time: 50 }))
 
   await client.log.add(
     { fields: { name: 'New' }, id: 'U1', type: 'user/changed' },
@@ -596,7 +594,7 @@ it('resolves conflicts with per-field last write wins', async () => {
   let same = await loadList(user.select())
   expect(same[0]!.name).toBe('New')
   expect(same[0]!.updatedAt_name).toBe(
-    toSorted({ id: '0Z 10:other', time: 100 } as Meta)
+    toSorted({ id: '0Z 10:other', time: 100 })
   )
 })
 

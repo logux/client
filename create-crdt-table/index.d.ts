@@ -1,5 +1,5 @@
 import type { AbstractActionCreator, SyncMapTypes } from '@logux/actions'
-import type { Action } from '@logux/core'
+import type { Action, MetaTime } from '@logux/core'
 import type { Database, Driver, SqlStore } from '@nanostores/sql'
 import type { ReadableAtom } from 'nanostores'
 
@@ -398,7 +398,7 @@ export function crdtTableToActions(
     CrdtTable<CrdtTableSchema, string>,
     'driver' | 'plural' | 'schema'
   >[]
-): Promise<[Action, Pick<ClientMeta, 'id' | 'time'>][]>
+): Promise<[Action, MetaTime][]>
 
 /**
  * Cell written to a table by an action: older values of the cell lost
@@ -606,7 +606,7 @@ export interface CrdtDatabaseOptions<Dialect extends string = 'sqlite'> {
   applied?(
     tx: Database,
     action: Action,
-    meta: ClientMeta | Pick<ClientMeta, 'id' | 'time'>,
+    meta: ClientMeta | MetaTime,
     won: CrdtWonCell[]
   ): Promise<void> | void
 
@@ -679,9 +679,7 @@ export interface CrdtDatabaseOptions<Dialect extends string = 'sqlite'> {
    * The log is read in parallel with the callback, possibly on the same
    * database connection, so the callback must not open SQL transactions.
    */
-  repeat?():
-    | [Action, Pick<ClientMeta, 'id' | 'time'>][]
-    | Promise<[Action, Pick<ClientMeta, 'id' | 'time'>][]>
+  repeat?(): [Action, MetaTime][] | Promise<[Action, MetaTime][]>
 
   /**
    * Storage to keep the tables schema instead of `localStorage`

@@ -1,4 +1,4 @@
-import type { Action } from '@logux/core'
+import type { Action, MetaTime } from '@logux/core'
 import type { ReadableAtom } from 'nanostores'
 
 import type {
@@ -9,10 +9,7 @@ import type {
 } from '../client/index.js'
 
 interface ActionListener<ListenAction extends Action> {
-  (
-    action: ListenAction,
-    meta: ClientMeta | Pick<ClientMeta, 'id' | 'time'>
-  ): void | Promise<void>
+  (action: ListenAction, meta: ClientMeta | MetaTime): void | Promise<void>
 }
 
 export type PersistentStorage = Record<string, string | undefined>
@@ -26,11 +23,7 @@ interface ReducerInitCallbacks {
    */
   clean(
     oldVersion: number
-  ):
-    | void
-    | Promise<void>
-    | [Action, Pick<ClientMeta, 'id' | 'time'>][]
-    | Promise<[Action, Pick<ClientMeta, 'id' | 'time'>][]>
+  ): void | Promise<void> | [Action, MetaTime][] | Promise<[Action, MetaTime][]>
 
   /**
    * Called when the stored data has an older version and is being cleaned
@@ -152,7 +145,7 @@ interface StorageActionListener<ListenAction extends Action, Value> {
   (
     prevValue: Value,
     action: ListenAction,
-    meta: ClientMeta | Pick<ClientMeta, 'id' | 'time'>
+    meta: ClientMeta | MetaTime
   ): Value | Promise<Value>
 }
 
@@ -180,9 +173,7 @@ interface StorageCallbacks {
    * })
    * ```
    */
-  repeat():
-    | [Action, Pick<ClientMeta, 'id' | 'time'>][]
-    | Promise<[Action, Pick<ClientMeta, 'id' | 'time'>][]>
+  repeat(): [Action, MetaTime][] | Promise<[Action, MetaTime][]>
 
   /**
    * Storage to keep the value and the reducer’s version instead

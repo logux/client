@@ -1,4 +1,5 @@
 import { defineAction } from '@logux/actions'
+import type { MetaTime } from '@logux/core'
 import { delay } from 'nanodelay'
 import { afterEach, beforeEach, expect, it, describe } from 'vitest'
 
@@ -795,8 +796,11 @@ describe('createStorageReducer', () => {
     localStorage.setItem('logux:reducer:counter', '1')
 
     // Metas of actions restored by crdtTableToActions() have only ID and time
-    let entries: [IncAction, Pick<ClientMeta, 'id' | 'time'>][] = [
-      [{ amount: 3, type: 'inc' }, { id: 'a', time: 0 }]
+    let entries: [IncAction, MetaTime][] = [
+      [
+        { amount: 3, type: 'inc' },
+        { id: 'a', time: 0 }
+      ]
     ]
 
     let ids: string[] = []
@@ -1160,7 +1164,7 @@ describe('custom storage', () => {
     let client = new TestClient('10')
     await client.connect()
     let storage: PersistentStorage = {
-      counter: '100',
+      'counter': '100',
       'logux:reducer:counter': '1'
     }
     let entries: [IncAction, ClientMeta][] = [

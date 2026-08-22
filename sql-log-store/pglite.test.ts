@@ -60,7 +60,7 @@ it('loads log by pages', { timeout: 60000 }, async () => {
     params.push(
       i,
       id,
-      toSorted({ id, time: i } as Meta),
+      toSorted({ id, time: i }),
       JSON.stringify({ type: `A${i}` }),
       JSON.stringify({ added: i, id, time: i })
     )

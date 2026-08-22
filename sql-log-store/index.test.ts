@@ -55,7 +55,7 @@ async function fill(count: number): Promise<void> {
       params.push(
         i,
         id,
-        toSorted({ id, time: i } as Meta),
+        toSorted({ id, time: i }),
         JSON.stringify({ type: `A${i}` }),
         JSON.stringify({ added: i, id, time: i })
       )
