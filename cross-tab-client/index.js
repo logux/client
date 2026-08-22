@@ -237,6 +237,7 @@ export class CrossTabClient extends Client {
   }
 
   type(type, listener, opts = {}) {
+    if (typeof type === 'function') type = type.type
     if (opts.event === 'preadd') {
       return this.log.type(type, listener, opts)
     } else {

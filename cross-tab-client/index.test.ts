@@ -1,3 +1,4 @@
+import { defineAction } from '@logux/actions'
 import { type Action, type TestLog, TestPair, TestTime } from '@logux/core'
 import { delay } from 'nanodelay'
 import { restoreAll, spyOn } from 'nanospy'
@@ -140,6 +141,32 @@ it('supports nanoevents API', async () => {
   expect(c).toEqual(['C', 'C'])
   expect(preaddC).toEqual(['C', 'C', 'C'])
   expect(id).toEqual(['D'])
+})
+
+it('supports action creators in type()', async () => {
+  client = createClient()
+
+  let cAction = defineAction('C')
+  let c: string[] = []
+  let preaddC: string[] = []
+  client.type(
+    cAction,
+    action => {
+      preaddC.push(action.type)
+    },
+    { event: 'preadd' }
+  )
+  let unbindType = client.type(cAction, action => {
+    c.push(action.type)
+  })
+
+  await client.log.add({ type: 'A' })
+  await client.log.add({ type: 'C' })
+  await client.log.add({ type: 'C' })
+  unbindType()
+  await client.log.add({ type: 'C' })
+  expect(c).toEqual(['C', 'C'])
+  expect(preaddC).toEqual(['C', 'C', 'C'])
 })
 
 it('cleans everything', async () => {
