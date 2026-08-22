@@ -182,6 +182,25 @@ async function tableNames(db: Database): Promise<string[]> {
   return rows.map(i => i.name)
 }
 
+function brokenDriver(error: Error, wait = 0): Driver {
+  return {
+    close() {},
+    async exec() {
+      if (wait) await delay(wait)
+      throw error
+    },
+    select() {
+      return Promise.resolve([])
+    },
+    subscribe() {
+      return () => {}
+    },
+    transaction() {
+      throw new Error('Unsupported')
+    }
+  }
+}
+
 async function indexSqls(db: Database): Promise<string[]> {
   let rows = (await db.driver.select(
     'SELECT "sql" FROM "sqlite_master"' +
@@ -1125,6 +1144,137 @@ it('resolves ready promise on ready and on outdated', async () => {
   await crdt2.ready
   expect(crdt2.status.get()).toBe('outdated')
   crdt2.destroy()
+})
+
+it('becomes broken when the database can not be prepared', async () => {
+  let client = new TestClient('10')
+  await client.connect()
+  let error = new Error('No disk space')
+
+  let errors: unknown[] = []
+  let crdt = createCrdtDatabase(client, openDb(brokenDriver(error)), {
+    broken(e) {
+      errors.push(e)
+    }
+  })
+  crdt.table('user', USER_SCHEMA)
+  let states: string[] = []
+  crdt.status.subscribe(state => {
+    states.push(state)
+  })
+
+  await crdt.ready
+  expect(states).toEqual(['initializing', 'broken'])
+  expect(errors).toEqual([error])
+  expect(localStorage.getItem('logux:db')).toBeNull()
+})
+
+it('becomes broken when the migration failed', async () => {
+  let client = new TestClient('10')
+  await client.connect()
+  let db = openDb(nodeDriver(':memory:'))
+  let crdt1 = createCrdtDatabase(client, db)
+  crdt1.table('user', USER_SCHEMA)
+  await crdt1.ready
+  crdt1.destroy()
+
+  let error = new Error('No disk space')
+  let client2 = new TestClient('10')
+  await client2.connect()
+  let crdt2 = createCrdtDatabase(client2, openDb(brokenDriver(error)), {
+    broken() {}
+  })
+  crdt2.table('user', USER_SCHEMA, ['name'])
+  let states: string[] = []
+  crdt2.status.subscribe(state => {
+    states.push(state)
+  })
+
+  await crdt2.ready
+  expect(states).toEqual(['initializing', 'migrating', 'broken'])
+})
+
+it('rejects pending changes on broken database', async () => {
+  let client = new TestClient('10')
+  await client.connect()
+  let error = new Error('No disk space')
+  let crdt = createCrdtDatabase(client, openDb(brokenDriver(error, 10)), {
+    broken() {}
+  })
+  let user = crdt.table('user', USER_SCHEMA)
+
+  let creating = user.create({ name: 'Ann' })
+  await delay(1)
+  expect(crdt.status.get()).toBe('initializing')
+
+  await crdt.ready
+  expect(crdt.status.get()).toBe('broken')
+  await expect(creating).rejects.toThrow('The database is broken')
+})
+
+it('re-throws the database error without broken callback', async () => {
+  let client = new TestClient('10')
+  await client.connect()
+  let error = new Error('No disk space')
+
+  let unhandled: unknown[] = []
+  let origin = process.listeners('unhandledRejection')
+  process.removeAllListeners('unhandledRejection')
+  process.on('unhandledRejection', reason => {
+    unhandled.push(reason)
+  })
+
+  let crdt = createCrdtDatabase(client, openDb(brokenDriver(error)))
+  crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+  await delay(10)
+
+  process.removeAllListeners('unhandledRejection')
+  for (let listener of origin) process.on('unhandledRejection', listener)
+
+  expect(crdt.status.get()).toBe('broken')
+  expect(unhandled).toEqual([error])
+})
+
+it('keeps the tables, but drops the schema on clean() of broken database', async () => {
+  let client = new TestClient('10')
+  await client.connect()
+  let origin = nodeDriver(':memory:')
+  let failing = false
+  let db = openDb({
+    ...origin,
+    exec(query: string, params: SqlParam[]) {
+      if (failing && query.startsWith('CREATE TABLE')) {
+        return Promise.reject(new Error('No disk space'))
+      }
+      return origin.exec(query, params)
+    }
+  })
+
+  let crdt1 = createCrdtDatabase(client, db)
+  let user1 = crdt1.table('user', USER_SCHEMA)
+  await crdt1.ready
+  await user1.create({ id: 'U1', name: 'Ann' })
+  await delay(10)
+  crdt1.destroy()
+  expect(localStorage.getItem('logux:db')).toBeTypeOf('string')
+
+  failing = true
+  let client2 = new TestClient('10')
+  await client2.connect()
+  let crdt2 = createCrdtDatabase(client2, db, {
+    broken() {}
+  })
+  crdt2.table('user', USER_SCHEMA)
+  await crdt2.ready
+  expect(crdt2.status.get()).toBe('broken')
+
+  // The tables can not be changed, but they must be re-created on restart
+  await crdt2.clean()
+  expect(await db.driver.select('SELECT "id" FROM "user"', [])).toEqual([
+    { id: 'U1' }
+  ])
+  expect(localStorage.getItem('logux:db')).toBeNull()
 })
 
 it('keeps database when schema hash matches', async () => {

@@ -228,6 +228,11 @@ export function createCrdtDatabase(client, db, opts = {}) {
   let dialect = opts.dialect ?? 'sqlite'
   let storageKey = opts.key ?? 'logux:db'
   let stop = opts.stop ?? (() => {})
+  let broken =
+    opts.broken ??
+    (error => {
+      throw error
+    })
   // Without localStorage (SSR, React Native) the schema is kept in memory
   let storage =
     opts.storage ?? (typeof localStorage === 'undefined' ? {} : localStorage)
@@ -564,7 +569,16 @@ export function createCrdtDatabase(client, db, opts = {}) {
     }
   }
 
-  void Promise.resolve().then(async () => {
+  function breakDatabase(error) {
+    if (destroyed) return
+    status.set('broken')
+    stopApplying('The database is broken')
+    lockRequest.abort()
+    setReady()
+    broken(error)
+  }
+
+  let preparing = Promise.resolve().then(async () => {
     started = true
     hash = JSON.stringify({
       actions: sortKeys(actionVersions),
@@ -666,6 +680,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
       becomeReady()
     }
   })
+  void preparing.catch(breakDatabase)
 
   // Reason keeps the action in the log until it will be applied,
   // so any tab can find and finish the work of the crashed tab
@@ -690,18 +705,21 @@ export function createCrdtDatabase(client, db, opts = {}) {
 
   async function cleanTables() {
     let outdated = status.value === 'outdated'
+    let isBroken = status.value === 'broken'
     stopApplying('The database was cleaned')
     await ready
     // The chunk, which is applied right now, would fill the tables again
     if (draining) await draining.catch(() => {})
     if (!outdated) {
       delete storage[storageKey]
-      db.pause()
-      await writeToTables(async tx => {
-        for (let plural in tables) {
-          await tx.driver.exec(`DROP TABLE IF EXISTS "${plural}"`, [])
-        }
-      })
+      if (!isBroken) {
+        db.pause()
+        await writeToTables(async tx => {
+          for (let plural in tables) {
+            await tx.driver.exec(`DROP TABLE IF EXISTS "${plural}"`, [])
+          }
+        })
+      }
     }
     lockRequest.abort()
   }

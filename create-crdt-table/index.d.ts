@@ -8,7 +8,12 @@ import type { PersistentStorage } from '../create-reducer/index.js'
 
 export type { PersistentStorage }
 
-type CrdtMigrationStatus = 'initializing' | 'migrating' | 'outdated' | 'ready'
+type CrdtMigrationStatus =
+  | 'broken'
+  | 'initializing'
+  | 'migrating'
+  | 'outdated'
+  | 'ready'
 
 /**
  * Prefix of columns with Logux Meta ID of the last change of every field
@@ -606,6 +611,27 @@ export interface CrdtDatabaseOptions<Dialect extends string = 'sqlite'> {
   ): Promise<void> | void
 
   /**
+   * Called when the database can not be opened or prepared. The tables will
+   * never be filled, so {@link CrdtDatabase#status} becomes `broken`,
+   * {@link CrdtDatabase#ready} is resolved and all pending changes
+   * are rejected.
+   *
+   * ```js
+   * let crdt = createCrdtDatabase(client, db, {
+   *   broken(error) {
+   *     reportToSentry(error)
+   *     showBrokenDatabaseScreen()
+   *   }
+   * })
+   * ```
+   *
+   * By default, the error is re-thrown as an unhandled rejection.
+   *
+   * @param error Error from the database.
+   */
+  broken?(error: unknown): void
+
+  /**
    * SQL dialect of the database: `'sqlite'` (default), `'pglite'`
    * or any other name for your own dialect. The dialect selects
    * per-dialect extra column SQL in {@link CrdtColumnOptions#sql}
@@ -772,9 +798,9 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
   /**
    * Promise resolved when the database was prepared and tables can be used.
    *
-   * It is also resolved when the database became `outdated`, so awaiting it
-   * will never hang. Check {@link CrdtDatabase#status} if you need to know
-   * which of them happened.
+   * It is also resolved when the database became `outdated` or `broken`,
+   * so awaiting it will never hang. Check {@link CrdtDatabase#status}
+   * if you need to know which of them happened.
    *
    * ```js
    * showLoaderUntil(crdt.ready, 'Loading data')
@@ -790,6 +816,7 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
    *   from the log and {@link CrdtDatabaseOptions#repeat}.
    * - `ready`: tables can be used.
    * - `outdated`: another tab has a newer schema, this tab must be reloaded.
+   * - `broken`: the database can not be opened or prepared.
    */
   status: ReadableAtom<CrdtMigrationStatus>
 

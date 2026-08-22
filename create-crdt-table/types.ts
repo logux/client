@@ -83,7 +83,7 @@ let user = crdt.table(
 
 async function test(): Promise<void> {
   await crdt.ready
-  let status: 'initializing' | 'migrating' | 'outdated' | 'ready' =
+  let status: 'broken' | 'initializing' | 'migrating' | 'outdated' | 'ready' =
     crdt.status.get()
   console.log(status)
 
