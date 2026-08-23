@@ -189,6 +189,12 @@ function indexSql(plural, schema, index, names) {
  */
 const CHUNK_SIZE = 1000
 
+/**
+ * How long to keep the apply lock after the last write before another tab
+ * can take it.
+ */
+const APPLY_LOCK_IDLE = 300
+
 const VERBS = {
   changed: 1,
   created: 2,
@@ -264,6 +270,9 @@ export function createCrdtDatabase(client, db, opts = {}) {
   let destroyed = false
   let unbindStorage = () => {}
   let lockRequest = new AbortController()
+  let applyLock
+  let applyLockRelease
+  let applyLockTimer
 
   function unblockClosing() {
     if (blocking && hasWindow()) {
@@ -310,13 +319,50 @@ export function createCrdtDatabase(client, db, opts = {}) {
     }
   }
 
+  function takeApplyLock() {
+    applyLock ??= new Promise((taken, failed) => {
+      navigator.locks
+        .request(`${storageKey}:apply`, { signal: lockRequest.signal }, () => {
+          // The lock is kept until `releaseApplyLock()` resolves this promise
+          return new Promise(release => {
+            applyLockRelease = release
+            taken()
+          })
+        })
+        .catch(error => {
+          applyLock = undefined
+          failed(error)
+        })
+    })
+    return applyLock
+  }
+
+  function releaseApplyLock() {
+    clearTimeout(applyLockTimer)
+    applyLockTimer = undefined
+    // The request, which was not granted yet, will be released after
+    // the write or aborted by `lockRequest`. Forgetting it here will take
+    // the second lock with the same name and will block the tab forever.
+    if (applyLockRelease) {
+      applyLock = undefined
+      applyLockRelease()
+      applyLockRelease = undefined
+    }
+  }
+
+  function releaseApplyLockLater() {
+    clearTimeout(applyLockTimer)
+    applyLockTimer = setTimeout(releaseApplyLock, APPLY_LOCK_IDLE)
+  }
+
+  // Taking the Web Lock costs a round trip to the browser process, and
+  // the app writes to the tables action by action, so the lock is taken
+  // once for the whole burst and is released a little after the last write
   function withApplyLock(callback) {
     if (typeof navigator !== 'undefined' && navigator.locks) {
-      return navigator.locks.request(
-        `${storageKey}:apply`,
-        { signal: lockRequest.signal },
-        callback
-      )
+      clearTimeout(applyLockTimer)
+      applyLockTimer = undefined
+      return takeApplyLock().then(callback).finally(releaseApplyLockLater)
     } else {
       return callback()
     }
@@ -729,6 +775,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
   function stopApplying(reason) {
     if (destroyed) return
     destroyed = true
+    releaseApplyLock()
     unbindPreadd()
     unbindAdd()
     unbindStorage()

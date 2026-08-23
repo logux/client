@@ -104,7 +104,12 @@ function manualLocks(): {
   return {
     async grant() {
       let next = waiting.shift()
-      if (next) await next()
+      // The lock can be kept after the write, so we wait only for the grant,
+      // not for the callback’s promise
+      if (next) {
+        void next()
+        await delay(10)
+      }
     },
     names
   }
@@ -2513,7 +2518,7 @@ it('pauses reactive stores on clean()', async () => {
 })
 
 it('does not fill tables back by actions applied during clean()', async () => {
-  let { grant } = manualLocks()
+  let { grant, names } = manualLocks()
 
   let { client, db } = await setup()
   let crdt = createCrdtDatabase(client, db)
@@ -2531,14 +2536,10 @@ it('does not fill tables back by actions applied during clean()', async () => {
 
   let cleaning = crdt.clean()
   await grant()
-  await delay(10)
-  // The chunk was applied, since it was already in the transaction
-  expect(await db.driver.select('SELECT "id" FROM "user"', [])).toEqual([
-    { id: 'U1' }
-  ])
-
-  await grant()
   await cleaning
+  // The chunk was applied, since it was already in the transaction,
+  // and the tables were dropped under the same lock
+  expect(names).toEqual(['logux:db:apply'])
   expect(await tableNames(db)).toEqual([])
 
   await client.log.add({
@@ -2600,8 +2601,6 @@ it('rejects table methods on clean()', async () => {
   await expect(updating).rejects.toThrow(message)
   await expect(deleting).rejects.toThrow(message)
 
-  await grant()
-  await delay(10)
   await grant()
   await cleaning
   expect(await tableNames(db)).toEqual([])
