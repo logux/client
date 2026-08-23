@@ -701,6 +701,26 @@ export interface CrdtDatabaseOptions<Dialect extends string = 'sqlite'> {
    * Sugar for a single `stop` listener of {@link CrdtDatabase#on}.
    */
   stop?(): void
+
+  /**
+   * Should table actions be sent to the server. Default is `true`.
+   *
+   * ```js
+   * let crdt = createCrdtDatabase(client, db, { sync: hasPassword.get() })
+   * ```
+   *
+   * It is not a mode, just the answer to “does this table action go
+   * to the server”. Actions of a local-only app get no `sync` in their meta,
+   * so Logux does not keep them in the log by the `syncing` reason waiting
+   * for the server, which will never confirm them. With {@link SqlLogStore}
+   * in the same database, such an action is not written to the log at all:
+   * it is applied to the tables in the next batch and the tables become
+   * the only state, until some policy adds its own reasons in `preadd`.
+   *
+   * Actions received from other devices are not marked as `sync`
+   * in any case: they are already on the server.
+   */
+  sync?: boolean
 }
 
 export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
@@ -961,9 +981,9 @@ export type Dialects = 'sqlite' | 'pglite'
  * {@link CrdtTable#select} will already see the change. They are rejected
  * if applying failed or if the database was stopped before it.
  *
- * Until the action is applied, it is kept in the log by the `key:crdt`
- * reason. Any tab can take the `key:apply` lock, apply the actions
- * in batches, and remove the reason. Actions of the tab, which was closed
+ * Until the action is applied, it is kept in the log by
+ * the `applying-to-db` reason. Any tab can take the `key:apply` lock,
+ * apply the actions in batches, and remove the reason. Actions of the tab, which was closed
  * in the middle of the work, will be applied on the next start.
  *
  * Actions are the same as in {@link syncMapTemplate}

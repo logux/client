@@ -48,7 +48,8 @@ let crdt = createCrdtDatabase(client, db, {
     return []
   },
   storage: {},
-  stop() {}
+  stop() {},
+  sync: false
 })
 
 let user = crdt.table(

@@ -1,6 +1,6 @@
 import { sortedToMeta, toSorted } from '@logux/core'
-import { nanoid } from 'nanoid'
 import { createNanoEvents } from 'nanoevents'
+import { nanoid } from 'nanoid'
 import { atom } from 'nanostores'
 
 function column(type, opts = {}) {
@@ -234,6 +234,7 @@ function sortKeys(object, map) {
 export function createCrdtDatabase(client, db, opts = {}) {
   let dialect = opts.dialect ?? 'sqlite'
   let storageKey = opts.key ?? 'logux:db'
+  let sync = opts.sync ?? true
   let emitter = createNanoEvents()
   // Options are just a sugar for the events with a single listener
   for (let event of ['applied', 'broken', 'migrating', 'stop']) {
@@ -292,6 +293,10 @@ export function createCrdtDatabase(client, db, opts = {}) {
     }
     pendingIds.add(meta.id)
     pending.push([action, meta])
+  }
+
+  function newMeta() {
+    return sync ? { sync: true } : {}
   }
 
   /**
@@ -809,7 +814,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
       actions[creator.type] = apply
       actionVersions[creator.type] = actionOpts.version ?? null
       return async (...args) => {
-        await applied(await client.log.add(creator(...args), { sync: true }))
+        await applied(await client.log.add(creator(...args), newMeta()))
       }
     },
     clean: cleanTables,
@@ -884,7 +889,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
             })
             let meta = await client.log.add(
               { records, type: `${plural}/created` },
-              { sync: true }
+              newMeta()
             )
             await applied(meta)
             return ids
@@ -892,7 +897,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
             let [id, values] = withDefaults(fields)
             let meta = await client.log.add(
               { fields: values, id, type: `${plural}/created` },
-              { sync: true }
+              newMeta()
             )
             await applied(meta)
             return id
@@ -904,15 +909,12 @@ export function createCrdtDatabase(client, db, opts = {}) {
             await applied(
               await client.log.add(
                 { ids: id, type: `${plural}/deleted` },
-                { sync: true }
+                newMeta()
               )
             )
           } else {
             await applied(
-              await client.log.add(
-                { id, type: `${plural}/deleted` },
-                { sync: true }
-              )
+              await client.log.add({ id, type: `${plural}/deleted` }, newMeta())
             )
           }
         },
@@ -932,14 +934,14 @@ export function createCrdtDatabase(client, db, opts = {}) {
             await applied(
               await client.log.add(
                 { fields: diff, ids: id, type: `${plural}/changed` },
-                { sync: true }
+                newMeta()
               )
             )
           } else {
             await applied(
               await client.log.add(
                 { fields: diff, id, type: `${plural}/changed` },
-                { sync: true }
+                newMeta()
               )
             )
           }

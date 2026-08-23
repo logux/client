@@ -2469,6 +2469,49 @@ it('removes reasons of applied actions by batches', async () => {
   crdt.destroy()
 })
 
+it('does not send table actions to the server with sync: false', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db, { sync: false })
+  let user = crdt.table('user', USER_SCHEMA)
+  let userRenamed = defineAction<{
+    id: string
+    name: string
+    type: 'user/renamed'
+  }>('user/renamed')
+  let rename = crdt.action(userRenamed, async (tx, action, meta) => {
+    await user.change(tx, action.id, { name: action.name }, meta)
+  })
+  await crdt.ready
+
+  let synced: (boolean | undefined)[] = []
+  let reasons: string[][] = []
+  client.on('add', (action, meta) => {
+    synced.push(meta.sync)
+    reasons.push([...meta.reasons])
+  })
+
+  let sent = await client.sent(async () => {
+    await user.create({ id: 'U1', name: 'Ann' })
+    await user.update('U1', { age: 30 })
+    await rename({ id: 'U1', name: 'New' })
+    await user.delete('U1')
+    await delay(10)
+  })
+
+  expect(sent).toEqual([])
+  expect(synced).toEqual([undefined, undefined, undefined, undefined])
+  // Without `sync` Logux adds no `syncing` reason, so the action is kept
+  // only until it will be applied to the tables
+  expect(reasons).toEqual([
+    ['applying-to-db'],
+    ['applying-to-db'],
+    ['applying-to-db'],
+    ['applying-to-db']
+  ])
+  expect(client.log.entries()).toEqual([])
+  expect(await db.driver.select('SELECT "id" FROM "user"', [])).toEqual([])
+})
+
 it('does not put applied actions from the server to the log', async () => {
   let db = openDb(nodeDriver(':memory:'))
   let store = new SqlLogStore(db)
@@ -2543,6 +2586,42 @@ it('does not add reason to actions applied in the log transaction', async () => 
   expect(await db.driver.select('SELECT "id" FROM "user"', [])).toEqual([
     { id }
   ])
+
+  crdt.destroy()
+  await db.close()
+})
+
+it('does not write local-only actions to the log in the same database', async () => {
+  let db = openDb(nodeDriver(':memory:'))
+  let store = new SqlLogStore(db)
+  let client = new Client({
+    server: 'ws://localhost',
+    store,
+    subprotocol: 1,
+    userId: '10'
+  })
+  let crdt = createCrdtDatabase(client, db, { sync: false })
+  let user = crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+
+  let added: string[][] = []
+  client.on('add', (action, meta) => {
+    if (action.type === 'user/created') added.push([...meta.reasons])
+  })
+
+  // Nothing waits for the action: the tables are the only state
+  let id = await user.create({ name: 'Ann' })
+  await delay(10)
+  expect(added).toEqual([[]])
+  expect(await db.driver.select('SELECT "id" FROM "user"', [])).toEqual([
+    { id }
+  ])
+
+  let types: string[] = []
+  await client.log.each(action => {
+    types.push(action.type)
+  })
+  expect(types).toEqual([])
 
   crdt.destroy()
   await db.close()
