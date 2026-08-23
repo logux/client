@@ -233,7 +233,7 @@ export function parseCrdtAction(action, tables) {
 }
 
 function holders(count) {
-  return Array(count).fill('?').join(', ')
+  return '?, '.repeat(count - 1) + '?'
 }
 
 async function execAll(target, queries) {
@@ -337,15 +337,16 @@ export function createCrdtDatabase(client, db, opts = {}) {
 
   // Actions are already in the log, so they will be applied on the next
   // start. But the user will see the old data until the tab will be closed.
-  function pushToApply(action, meta) {
+  function pushToApply(entry) {
     if (destroyed || status.value === 'outdated') return
-    if (pendingIds.has(meta.id)) return
+    let id = entry[1].id
+    if (pendingIds.has(id)) return
     if (!blocking && hasWindow()) {
       window.addEventListener('beforeunload', blockClosing)
       blocking = true
     }
-    pendingIds.add(meta.id)
-    pending.push([action, meta])
+    pendingIds.add(id)
+    pending.push(entry)
   }
 
   function newMeta() {
@@ -489,10 +490,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
 
   function checkDefine() {
     if (started) {
-      throw new Error(
-        'All tables and actions must be defined sync' +
-          ' after createCrdtDatabase()'
-      )
+      throw new Error('Defined tables sync')
     }
   }
 
@@ -587,7 +585,10 @@ export function createCrdtDatabase(client, db, opts = {}) {
       if (keys.length === 0) continue
       for (let key of keys) won.push([plural, id, key])
       if (insert) {
-        inserts.push([id, keys, values])
+        // The row is built by the column list of the whole action below
+        let record = Object.create(null)
+        for (let i = 0; i < keys.length; i++) record[keys[i]] = values[i]
+        inserts.push([id, record])
       } else {
         // Rows with the same changes are updated by a single query,
         // since all of them get the same action’s meta ID
@@ -612,11 +613,10 @@ export function createCrdtDatabase(client, db, opts = {}) {
       for (let key of all) names.push(`"${META}${key}"`)
       let row = `(${holders(names.length)})`
       let params = []
-      for (let [id, keys, values] of inserts) {
-        let indexes = all.map(key => keys.indexOf(key))
+      for (let [id, record] of inserts) {
         params.push(id)
-        for (let i of indexes) params.push(i === -1 ? null : values[i])
-        for (let i of indexes) params.push(i === -1 ? null : sorted)
+        for (let key of all) params.push(key in record ? record[key] : null)
+        for (let key of all) params.push(key in record ? sorted : null)
       }
       queries.push([
         `INSERT INTO "${plural}" (${names.join(', ')})` +
@@ -642,10 +642,19 @@ export function createCrdtDatabase(client, db, opts = {}) {
   async function applyAndEmit(tx, action, meta) {
     let cells = await applyAction(action, meta, tx)
     if (!cells) return
-    await trackFilled(tx.driver, action, cells[0])
+    // The marker of the detector follows the rows: it is set on the first
+    // written row and is cleared when the actions deleted the last one
+    if (cells[0].length > 0) {
+      if (!storage[filledKey]) storage[filledKey] = '1'
+    } else if (storage[filledKey] && isDeleting(action)) {
+      await checkTables(tx.driver)
+    }
     // Listeners write to the applying transaction, so they can not be parallel
-    for (let listener of emitter.events.applied ?? []) {
-      await listener(tx, action, meta, cells[0], cells[1])
+    let listeners = emitter.events.applied
+    if (listeners) {
+      for (let listener of listeners) {
+        await listener(tx, action, meta, cells[0], cells[1])
+      }
     }
   }
 
@@ -664,7 +673,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
     // Actions of this tab will be applied in the same transaction,
     // which writes them to the log, so `await table.update()` will mean
     // that the row was already changed
-    if (!destroyed && store.onTransactionAdd && store.driver === db.driver) {
+    if (!destroyed && store.onTransactionAdd && store.driver === driver) {
       sqlStore = store
       sqlStore.onTransactionAdd(applyInline)
     }
@@ -686,31 +695,19 @@ export function createCrdtDatabase(client, db, opts = {}) {
    * the data of the origin.
    */
   async function checkTables(target = driver) {
-    let empty = true
-    for (let plural in tables) {
-      let rows = await target.select(`SELECT 1 FROM "${plural}" LIMIT 1`, [])
-      if (rows.length > 0) {
-        empty = false
-        break
-      }
-    }
-    if (!empty) {
+    let checks = []
+    for (let plural in tables) checks.push(`EXISTS(SELECT 1 FROM "${plural}")`)
+    if (checks.length === 0) return
+    // A single query, since every statement costs a round trip
+    let rows = await target.select(
+      `SELECT ${checks.join(' OR ')} AS "filled"`,
+      []
+    )
+    if (rows[0]?.filled) {
       storage[filledKey] = '1'
     } else if (storage[filledKey]) {
       delete storage[filledKey]
       corrupted('empty-tables')
-    }
-  }
-
-  /**
-   * The marker of the detector follows the rows: it is set on the first
-   * written row and is cleared when the actions deleted the last one.
-   */
-  async function trackFilled(target, action, won) {
-    if (won.length > 0) {
-      if (!storage[filledKey]) storage[filledKey] = '1'
-    } else if (storage[filledKey] && isDeleting(action)) {
-      await checkTables(target)
     }
   }
 
@@ -746,7 +743,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
       let onOutdated = event => {
         if (event.key !== storageKey || event.newValue === null) return
         if (event.newValue !== hash) {
-          if (status.get() === 'outdated') return
+          if (status.value === 'outdated') return
           status.set('outdated')
           db.pause()
           emitter.emit('stop')
@@ -793,10 +790,12 @@ export function createCrdtDatabase(client, db, opts = {}) {
       let unapplied = []
       await client.log.each({ order: 'added' }, (action, meta) => {
         if (meta.reasons.includes('applying-to-db')) {
-          unapplied.unshift([action, meta])
+          unapplied.push([action, meta])
         }
       })
-      for (let entry of unapplied) pushToApply(entry[0], entry[1])
+      // The log is read from the newest action to the oldest
+      unapplied.reverse()
+      unapplied.forEach(pushToApply)
       await drain()
       await checkTables()
       becomeReady()
@@ -805,7 +804,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
       // are collected in parallel with the repeat() callback
       let entries = []
       let reading = client.log.each({ order: 'added' }, (action, meta) => {
-        if (isKnown(action.type)) entries.unshift([action, meta])
+        if (isKnown(action.type)) entries.push([action, meta])
       })
       let repeated = []
       if (old) {
@@ -816,6 +815,8 @@ export function createCrdtDatabase(client, db, opts = {}) {
         if (opts.repeat) repeated = await opts.repeat()
       }
       await reading
+      // The log is read from the newest action to the oldest
+      entries.reverse()
       if (old) storage[migratingKey] = '1'
       // Tables, which were removed from the schema, are dropped too.
       // A single transaction both saves the write for every statement
@@ -834,11 +835,11 @@ export function createCrdtDatabase(client, db, opts = {}) {
           )
         }
       })
-      entries = entries.concat(repeated)
       let added = pending
       pending = []
       pendingIds.clear()
-      for (let entry of entries.concat(added)) pushToApply(entry[0], entry[1])
+      // The lists are not merged: a copy of the whole log costs the memory
+      for (let list of [entries, repeated, added]) list.forEach(pushToApply)
       await drain()
       // Indexes are created after the replay: filling the table
       // without them is much faster
@@ -870,7 +871,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
     // Actions were already applied in the log store transaction
     if (inlined.delete(meta.id)) return
     if (!isKnown(action.type)) return
-    pushToApply(action, meta)
+    pushToApply([action, meta])
     if (status.value === 'ready') void drain()
   })
 
@@ -932,10 +933,12 @@ export function createCrdtDatabase(client, db, opts = {}) {
       lockRequest.abort()
     },
     async empty() {
-      delete storage[filledKey]
       await ready
       // Empty pending list before cleaning tables
       await drain()
+      // The marker is cleaned after the last apply, which could set it back,
+      // and before the tables, so a crash between them only re-checks them
+      delete storage[filledKey]
       await writeToTables(async tx => {
         for (let plural in tables) {
           await tx.driver.exec(`DELETE FROM "${plural}"`, [])
@@ -989,44 +992,36 @@ export function createCrdtDatabase(client, db, opts = {}) {
           return cells[0]
         },
         async create(fields) {
+          let action
+          let created
           if (Array.isArray(fields)) {
             if (fields.length === 0) return []
-            let ids = []
+            created = []
             let records = fields.map(i => {
               let [id, values] = withDefaults(i)
-              ids.push(id)
+              created.push(id)
               return { id, ...values }
             })
-            let meta = await client.log.add(
-              { records, type: `${plural}/created` },
-              newMeta()
-            )
-            await applied(meta)
-            return ids
+            action = { records, type: `${plural}/created` }
           } else {
             let [id, values] = withDefaults(fields)
-            let meta = await client.log.add(
-              { fields: values, id, type: `${plural}/created` },
-              newMeta()
-            )
-            await applied(meta)
-            return id
+            created = id
+            action = { fields: values, id, type: `${plural}/created` }
           }
+          await applied(await client.log.add(action, newMeta()))
+          return created
         },
         async delete(id) {
-          if (Array.isArray(id)) {
-            if (id.length === 0) return
-            await applied(
-              await client.log.add(
-                { ids: id, type: `${plural}/deleted` },
-                newMeta()
-              )
+          let batch = Array.isArray(id)
+          if (batch && id.length === 0) return
+          await applied(
+            await client.log.add(
+              batch
+                ? { ids: id, type: `${plural}/deleted` }
+                : { id, type: `${plural}/deleted` },
+              newMeta()
             )
-          } else {
-            await applied(
-              await client.log.add({ id, type: `${plural}/deleted` }, newMeta())
-            )
-          }
+          )
         },
         driver,
         plural,
@@ -1039,22 +1034,16 @@ export function createCrdtDatabase(client, db, opts = {}) {
           return db.store(parts, ...params)
         },
         async update(id, diff) {
-          if (Array.isArray(id)) {
-            if (id.length === 0) return
-            await applied(
-              await client.log.add(
-                { fields: diff, ids: id, type: `${plural}/changed` },
-                newMeta()
-              )
+          let batch = Array.isArray(id)
+          if (batch && id.length === 0) return
+          await applied(
+            await client.log.add(
+              batch
+                ? { fields: diff, ids: id, type: `${plural}/changed` }
+                : { fields: diff, id, type: `${plural}/changed` },
+              newMeta()
             )
-          } else {
-            await applied(
-              await client.log.add(
-                { fields: diff, id, type: `${plural}/changed` },
-                newMeta()
-              )
-            )
-          }
+          )
         }
       }
     },

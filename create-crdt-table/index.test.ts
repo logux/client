@@ -2920,6 +2920,36 @@ it('keeps reason on actions of outdated database', async () => {
   await db.close()
 })
 
+it('does not report the corruption of the tables after empty()', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+
+  await user.create({ id: 'U1', name: 'Ann' })
+  // The action is applied by the drain inside empty(), so the applier
+  // marks the tables as filled during the call
+  await client.log.add(
+    { fields: { name: 'Ben' }, id: 'U2', type: 'user/created' },
+    { reasons: ['test'] }
+  )
+  await crdt.empty()
+  crdt.destroy()
+
+  let client2 = new TestClient('10')
+  await client2.connect()
+  let crdt2 = createCrdtDatabase(client2, db)
+  crdt2.table('user', USER_SCHEMA)
+  let reasons: CrdtCorruption[] = []
+  crdt2.on('corrupted', reason => {
+    reasons.push(reason)
+  })
+
+  await crdt2.ready
+  expect(reasons).toEqual([])
+  crdt2.destroy()
+})
+
 it('empties all tables keeping the database ready', async () => {
   let { client, db } = await setup()
   let crdt = createCrdtDatabase(client, db)
