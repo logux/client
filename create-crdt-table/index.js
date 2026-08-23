@@ -210,6 +210,28 @@ const VERBS = {
 
 const RESULT = ['', 0]
 
+export function parseCrdtAction(action, plurals) {
+  let slash = action.type.lastIndexOf('/')
+  if (slash === -1) return false
+  let plural = action.type.slice(0, slash)
+  if (!plurals.includes(plural)) return false
+  let verb = action.type.slice(slash + 1)
+  if (!Object.hasOwn(VERBS, verb)) return false
+  let rows
+  if (action.records) {
+    rows = action.records.map(record => [
+      record.id,
+      Object.keys(record).filter(key => key !== 'id')
+    ])
+  } else {
+    // A `deleted` action has no fields, a batch of `created` or `changed`
+    // writes the same fields to every row
+    let fields = action.fields ? Object.keys(action.fields) : []
+    rows = (action.ids ?? [action.id]).map(id => [id, fields])
+  }
+  return { plural, rows, verb }
+}
+
 function holders(count) {
   return Array(count).fill('?').join(', ')
 }
@@ -391,7 +413,10 @@ export function createCrdtDatabase(client, db, opts = {}) {
     if (store.write && store.driver === driver) return store.write(callback)
     let previous = WRITES.get(driver) ?? Promise.resolve()
     let result = previous.then(() => db.transaction(callback))
-    WRITES.set(driver, result.catch(() => {}))
+    WRITES.set(
+      driver,
+      result.catch(() => {})
+    )
     return result
   }
 

@@ -1,5 +1,10 @@
 import { defineAction } from '@logux/actions'
-import { type Action, toSorted, type MetaTime } from '@logux/core'
+import {
+  type Action,
+  type AnyAction,
+  toSorted,
+  type MetaTime
+} from '@logux/core'
 import type {
   Database,
   Driver,
@@ -32,6 +37,7 @@ import {
   number,
   oneOf,
   optional,
+  parseCrdtAction,
   string,
   withMeta,
   withoutMeta
@@ -1117,6 +1123,152 @@ it('sends the newer schema in another tab to stop listeners', async () => {
   expect(stopped).toEqual(['option', 'event'])
 
   unbind()
+})
+
+/**
+ * Table actions have extra keys, which `Action` does not allow in a literal.
+ */
+function tableAction(action: AnyAction): Action {
+  return action
+}
+
+it('parses every shape of table actions', () => {
+  let plurals = ['user', 'post']
+
+  expect(
+    parseCrdtAction(
+      tableAction({ fields: { name: 'Ann' }, id: 'U1', type: 'user/created' }),
+      plurals
+    )
+  ).toEqual({ plural: 'user', rows: [['U1', ['name']]], verb: 'created' })
+
+  expect(
+    parseCrdtAction(
+      tableAction({
+        records: [
+          { id: 'U1', name: 'Ann' },
+          { age: 30, id: 'U2', name: 'Ben' }
+        ],
+        type: 'user/created'
+      }),
+      plurals
+    )
+  ).toEqual({
+    plural: 'user',
+    rows: [
+      ['U1', ['name']],
+      ['U2', ['age', 'name']]
+    ],
+    verb: 'created'
+  })
+
+  expect(
+    parseCrdtAction(
+      tableAction({ fields: { age: 30 }, id: 'U1', type: 'user/changed' }),
+      plurals
+    )
+  ).toEqual({ plural: 'user', rows: [['U1', ['age']]], verb: 'changed' })
+
+  expect(
+    parseCrdtAction(
+      tableAction({
+        fields: { age: 30, name: 'Ann' },
+        ids: ['U1', 'U2'],
+        type: 'user/changed'
+      }),
+      plurals
+    )
+  ).toEqual({
+    plural: 'user',
+    rows: [
+      ['U1', ['age', 'name']],
+      ['U2', ['age', 'name']]
+    ],
+    verb: 'changed'
+  })
+
+  expect(
+    parseCrdtAction(tableAction({ id: 'U1', type: 'user/deleted' }), plurals)
+  ).toEqual({ plural: 'user', rows: [['U1', []]], verb: 'deleted' })
+
+  expect(
+    parseCrdtAction(
+      tableAction({ ids: ['U1', 'U2'], type: 'user/deleted' }),
+      plurals
+    )
+  ).toEqual({
+    plural: 'user',
+    rows: [
+      ['U1', []],
+      ['U2', []]
+    ],
+    verb: 'deleted'
+  })
+
+  // Empty batches are added to the log, but change nothing
+  expect(
+    parseCrdtAction(tableAction({ records: [], type: 'user/created' }), plurals)
+  ).toEqual({ plural: 'user', rows: [], verb: 'created' })
+  expect(
+    parseCrdtAction(tableAction({ ids: [], type: 'user/deleted' }), plurals)
+  ).toEqual({ plural: 'user', rows: [], verb: 'deleted' })
+})
+
+it('ignores actions of other tables and types', () => {
+  let plurals = ['user']
+  let ignored = [
+    { type: 'logux/processed' },
+    { type: 'rename' },
+    { fields: {}, id: 'P1', type: 'post/created' },
+    { id: 'U1', type: 'user/renamed' },
+    { id: 'U1', type: 'user/toString' },
+    { id: 'U1', type: 'user/' }
+  ]
+  for (let action of ignored) {
+    expect(parseCrdtAction(tableAction(action), plurals)).toBe(false)
+  }
+
+  // The verb is taken after the last slash, like in the database itself
+  expect(
+    parseCrdtAction(
+      tableAction({ fields: {}, id: 'U1', type: 'my/user/created' }),
+      ['my/user']
+    )
+  ).toEqual({ plural: 'my/user', rows: [['U1', []]], verb: 'created' })
+})
+
+it('parses the same cells as the database applies', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+
+  let cells: string[] = []
+  crdt.on('applied', (tx, action, meta, won, touched) => {
+    let parsed = parseCrdtAction(action, ['user'])
+    if (!parsed) throw new Error(`Unknown action ${action.type}`)
+    let parsedCells: string[] = []
+    for (let [id, fields] of parsed.rows) {
+      for (let field of fields) parsedCells.push(`${parsed.plural}/${id}/${field}`)
+    }
+    expect(parsedCells).toEqual(touched.map(cell => cell.join('/')))
+    cells.push(...touched.map(cell => cell.join('/')))
+  })
+
+  await user.create({ id: 'U1', name: 'Ann' })
+  await user.create([
+    { id: 'U2', name: 'Ben' },
+    { age: 30, id: 'U3', name: 'Cat' }
+  ])
+  await user.update('U1', { age: 31 })
+  await user.update(['U2', 'U3'], { role: 'admin' })
+  await user.delete('U1')
+  await user.delete(['U2', 'U3'])
+  await delay(10)
+
+  // 4 cells of U1, 4 of U2 and 5 of U3, 1 update, 2 in the batch update,
+  // and nothing for the deletes
+  expect(cells).toHaveLength(16)
 })
 
 it('restores cells of custom actions as table actions', async () => {

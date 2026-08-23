@@ -406,6 +406,55 @@ export function crdtTableToActions(
  */
 export type CrdtCell = [table: string, id: string, field: string]
 
+export interface CrdtParsedAction {
+  /**
+   * Table name from the action type.
+   */
+  plural: string
+
+  /**
+   * Rows of the action with the names of the fields it writes to them.
+   * A `plural/deleted` action writes no fields.
+   */
+  rows: [id: string, fields: string[]][]
+
+  /**
+   * Verb from the action type.
+   */
+  verb: 'changed' | 'created' | 'deleted'
+}
+
+/**
+ * Read the rows and fields of a table action, whatever batch shape it uses
+ * (`records`, `ids` or a single `id`).
+ *
+ * Policies on the `applied` event and on the log events need it to know,
+ * which rows the action is about, before it was applied. Re-implementing
+ * the shapes in the app will break on the next shape added here.
+ *
+ * ```ts
+ * import { parseCrdtAction } from '@logux/client/db'
+ *
+ * client.on('preadd', (action, meta) => {
+ *   let parsed = parseCrdtAction(action, ['feeds', 'posts'])
+ *   if (!parsed) return
+ *   for (let [id, fields] of parsed.rows) {
+ *     for (let field of fields) {
+ *       meta.reasons.push(`${parsed.plural}/${id}/${field}`)
+ *     }
+ *   }
+ * })
+ * ```
+ *
+ * @param action Any action from the log.
+ * @param plurals Table names of {@link CrdtDatabase#table} to accept.
+ * @returns Parsed action or `false` if it is not an action of these tables.
+ */
+export function parseCrdtAction(
+  action: Action,
+  plurals: string[]
+): CrdtParsedAction | false
+
 /**
  * Listener of the `applied` event.
  *

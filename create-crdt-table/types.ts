@@ -12,6 +12,7 @@ import {
   number,
   oneOf,
   optional,
+  parseCrdtAction,
   string
 } from './index.js'
 
@@ -252,6 +253,18 @@ let renameUser = crdt.action(
 async function rename(): Promise<void> {
   await renameUser({ id: 'U1', name: 'New' })
 }
+
+client.on('preadd', (action, meta) => {
+  let parsed = parseCrdtAction(action, [user.plural, pgUser.plural])
+  if (!parsed) return
+  let verb: 'changed' | 'created' | 'deleted' = parsed.verb
+  console.log(verb)
+  for (let [id, fields] of parsed.rows) {
+    for (let field of fields) {
+      meta.reasons.push(`${parsed.plural}/${id}/${field}`)
+    }
+  }
+})
 
 async function repeatAll(): Promise<void> {
   let entries: [Action, MetaTime][] = await crdtTableToActions([user, pgUser])
