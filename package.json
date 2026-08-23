@@ -150,7 +150,7 @@
       "import": {
         "./create-crdt-table/index.js": "{ createCrdtDatabase }"
       },
-      "limit": "3.8 KB"
+      "limit": "4 KB"
     },
     {
       "name": "Log Store",

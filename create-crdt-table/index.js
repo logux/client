@@ -1,5 +1,6 @@
 import { sortedToMeta, toSorted } from '@logux/core'
 import { nanoid } from 'nanoid'
+import { createNanoEvents } from 'nanoevents'
 import { atom } from 'nanostores'
 
 function column(type, opts = {}) {
@@ -233,12 +234,11 @@ function sortKeys(object, map) {
 export function createCrdtDatabase(client, db, opts = {}) {
   let dialect = opts.dialect ?? 'sqlite'
   let storageKey = opts.key ?? 'logux:db'
-  let stop = opts.stop ?? (() => {})
-  let broken =
-    opts.broken ??
-    (error => {
-      throw error
-    })
+  let emitter = createNanoEvents()
+  // Options are just a sugar for the events with a single listener
+  for (let event of ['applied', 'broken', 'migrating', 'stop']) {
+    if (opts[event]) emitter.on(event, opts[event])
+  }
   // Without localStorage (SSR, React Native) the schema is kept in memory
   let storage =
     opts.storage ?? (typeof localStorage === 'undefined' ? {} : localStorage)
@@ -396,7 +396,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
       try {
         await writeToTables(async tx => {
           for (let entry of chunk) {
-            await applyWithHook(tx, entry[0], entry[1])
+            await applyAndEmit(tx, entry[0], entry[1])
           }
         })
       } catch (e) {
@@ -461,12 +461,12 @@ export function createCrdtDatabase(client, db, opts = {}) {
 
     if (verb === VERBS.deleted) {
       let ids = action.ids ?? [action.id]
-      if (ids.length === 0) return []
+      if (ids.length === 0) return [[], []]
       await target.exec(
         `DELETE FROM "${plural}" WHERE "id" IN (${holders(ids.length)})`,
         ids
       )
-      return []
+      return [[], []]
     }
 
     let records
@@ -477,21 +477,27 @@ export function createCrdtDatabase(client, db, opts = {}) {
     } else {
       records = [[action.id, action.fields]]
     }
-    if (records.length === 0) return []
+    if (records.length === 0) return [[], []]
 
-    let touched = new Set()
-    for (let record of records) {
-      for (let key in record[1]) {
-        if (schema[key]) touched.add(key)
+    // Cells addressed by the action: the cells it lost are `touched`
+    // without `won`
+    let touched = []
+    let columns = new Set()
+    for (let [id, fields] of records) {
+      for (let key in fields) {
+        if (schema[key] && fields[key] !== undefined) {
+          touched.push([plural, id, key])
+          columns.add(key)
+        }
       }
     }
-    if (touched.size === 0) return []
+    if (columns.size === 0) return [[], []]
 
     // Only meta of the fields from the action is necessary to resolve conflicts
-    let columns = ['"id"']
-    for (let key of touched) columns.push(`"${META}${key}"`)
+    let metaColumns = ['"id"']
+    for (let key of columns) metaColumns.push(`"${META}${key}"`)
     let rows = await target.select(
-      `SELECT ${columns.join(', ')} FROM "${plural}"` +
+      `SELECT ${metaColumns.join(', ')} FROM "${plural}"` +
         ` WHERE "id" IN (${holders(records.length)})`,
       records.map(record => record[0])
     )
@@ -546,7 +552,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
       // All fields of the action are used as columns and fields missing
       // in the record are inserted as NULL, so records with different
       // fields still fit into a single query
-      let all = [...touched]
+      let all = [...columns]
       let names = ['"id"']
       for (let key of all) names.push(`"${key}"`)
       for (let key of all) names.push(`"${META}${key}"`)
@@ -576,12 +582,16 @@ export function createCrdtDatabase(client, db, opts = {}) {
     }
 
     await execAll(target, queries)
-    return won
+    return [won, touched]
   }
 
-  async function applyWithHook(tx, action, meta) {
-    let won = await applyAction(action, meta, tx)
-    if (won && opts.applied) await opts.applied(tx, action, meta, won)
+  async function applyAndEmit(tx, action, meta) {
+    let cells = await applyAction(action, meta, tx)
+    if (!cells) return
+    // Listeners write to the applying transaction, so they can not be parallel
+    for (let listener of emitter.events.applied ?? []) {
+      await listener(tx, action, meta, cells[0], cells[1])
+    }
   }
 
   async function applyInline(tx, action, meta) {
@@ -590,7 +600,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
     // the reasons of the whole batch by a single call
     if (meta.reasons.includes('applying-to-db')) return
     if (!isKnown(action.type)) return
-    await applyWithHook(tx, action, meta)
+    await applyAndEmit(tx, action, meta)
     inlined.add(meta.id)
   }
 
@@ -621,7 +631,11 @@ export function createCrdtDatabase(client, db, opts = {}) {
     stopApplying('The database is broken')
     lockRequest.abort()
     setReady()
-    broken(error)
+    if (emitter.events.broken?.length) {
+      emitter.emit('broken', error)
+    } else {
+      throw error
+    }
   }
 
   let preparing = Promise.resolve().then(async () => {
@@ -650,7 +664,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
           if (status.get() === 'outdated') return
           status.set('outdated')
           db.pause()
-          stop()
+          emitter.emit('stop')
           setReady()
           stopWaiting(
             [...waiting.keys()],
@@ -696,7 +710,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
       let repeated = []
       if (old) {
         status.set('migrating')
-        if (opts.migrating) opts.migrating(ready)
+        emitter.emit('migrating', ready)
         // Tables are dropped after the callback, so actions missing
         // from the log can be restored from the tables themselves
         if (opts.repeat) repeated = await opts.repeat()
@@ -813,6 +827,9 @@ export function createCrdtDatabase(client, db, opts = {}) {
         }
       })
     },
+    on(event, listener) {
+      return emitter.on(event, listener)
+    },
     ready,
     status,
     table(plural, schema, indexes = []) {
@@ -847,13 +864,14 @@ export function createCrdtDatabase(client, db, opts = {}) {
 
       return {
         async change(tx, id, fields, meta) {
-          return applyAction(
+          let cells = await applyAction(
             Array.isArray(id)
               ? { fields, ids: id, type: `${plural}/changed` }
               : { fields, id, type: `${plural}/changed` },
             meta,
             tx
           )
+          return cells[0]
         },
         async create(fields) {
           if (Array.isArray(fields)) {

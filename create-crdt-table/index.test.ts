@@ -24,6 +24,7 @@ import { setLocalStorage } from '../test/local-storage.js'
 import {
   bigint,
   boolean,
+  type CrdtCell,
   type CrdtTable,
   type CrdtTableRow,
   createCrdtDatabase,
@@ -926,6 +927,166 @@ it('returns won cells from change() without applied() call', async () => {
 
   expect(won).toEqual([['user', 'U1', 'name']])
   expect(applied).toEqual(['user/created'])
+})
+
+it('reports touched cells to applied listeners', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+
+  let cells: [string, CrdtCell[], CrdtCell[]][] = []
+  crdt.on('applied', (tx, action, meta, won, touched) => {
+    cells.push([action.type, won, touched])
+  })
+
+  await client.log.add(
+    { fields: { name: 'Ann' }, id: 'U1', type: 'user/created' },
+    { reasons: ['test'] }
+  )
+  await user.update('U1', { age: 30 })
+  // The change is older than the name cell, so it wins nothing
+  await client.log.add(
+    { fields: { name: 'Old' }, id: 'U1', type: 'user/changed' },
+    { id: '0 10:other', reasons: ['test'], time: 0 }
+  )
+  await client.log.add(
+    { fields: { name: 'Ben' }, ids: ['U1', 'U404'], type: 'user/changed' },
+    { reasons: ['test'] }
+  )
+  await user.delete('U1')
+  await delay(10)
+
+  expect(cells).toEqual([
+    ['user/created', [['user', 'U1', 'name']], [['user', 'U1', 'name']]],
+    ['user/changed', [['user', 'U1', 'age']], [['user', 'U1', 'age']]],
+    ['user/changed', [], [['user', 'U1', 'name']]],
+    [
+      'user/changed',
+      [['user', 'U1', 'name']],
+      [
+        ['user', 'U1', 'name'],
+        ['user', 'U404', 'name']
+      ]
+    ],
+    ['user/deleted', [], []]
+  ])
+})
+
+it('supports many applied listeners', async () => {
+  let { client, db } = await setup()
+  let calls: string[] = []
+  let crdt = createCrdtDatabase(client, db, {
+    async applied(tx, action) {
+      await delay(1)
+      calls.push(`option ${action.type}`)
+    }
+  })
+  let user = crdt.table('user', USER_SCHEMA)
+  let unbind = crdt.on('applied', async (tx, action) => {
+    // Listeners share the applying transaction, so they are called one by one
+    await tx.driver.select('SELECT 1', [])
+    calls.push(`first ${action.type}`)
+  })
+  crdt.on('applied', (tx, action) => {
+    calls.push(`second ${action.type}`)
+  })
+  await crdt.ready
+
+  await user.create({ id: 'U1', name: 'Ann' })
+  expect(calls).toEqual([
+    'option user/created',
+    'first user/created',
+    'second user/created'
+  ])
+
+  unbind()
+  calls = []
+  await user.update('U1', { name: 'Ben' })
+  expect(calls).toEqual(['option user/changed', 'second user/changed'])
+})
+
+it('sends the database error to broken listeners', async () => {
+  let client = new TestClient('10')
+  await client.connect()
+  let error = new Error('No disk space')
+
+  let unhandled: unknown[] = []
+  let origin = process.listeners('unhandledRejection')
+  process.removeAllListeners('unhandledRejection')
+  process.on('unhandledRejection', reason => {
+    unhandled.push(reason)
+  })
+
+  let errors: string[] = []
+  let crdt = createCrdtDatabase(client, openDb(brokenDriver(error)), {
+    broken(e) {
+      errors.push(`option ${(e as Error).message}`)
+    }
+  })
+  crdt.table('user', USER_SCHEMA)
+  crdt.on('broken', e => {
+    errors.push(`event ${(e as Error).message}`)
+  })
+
+  await crdt.ready
+  await delay(10)
+
+  process.removeAllListeners('unhandledRejection')
+  for (let listener of origin) process.on('unhandledRejection', listener)
+
+  expect(errors).toEqual(['option No disk space', 'event No disk space'])
+  expect(unhandled).toEqual([])
+})
+
+it('sends the migration to migrating listeners', async () => {
+  let { client, db } = await setup()
+  let crdt1 = createCrdtDatabase(client, db)
+  crdt1.table('user', USER_SCHEMA)
+  await crdt1.ready
+  crdt1.destroy()
+
+  let events: string[] = []
+  let crdt2 = createCrdtDatabase(client, db, {
+    migrating(done) {
+      events.push('option')
+      void done.then(() => {
+        events.push('option done')
+      })
+    }
+  })
+  crdt2.table('user', USER_SCHEMA, ['name'])
+  crdt2.on('migrating', done => {
+    events.push('event')
+    void done.then(() => {
+      events.push('event done')
+    })
+  })
+
+  await crdt2.ready
+  await delay(10)
+  expect(events).toEqual(['option', 'event', 'option done', 'event done'])
+})
+
+it('sends the newer schema in another tab to stop listeners', async () => {
+  let { client, db } = await setup()
+  let stopped: string[] = []
+  let crdt = createCrdtDatabase(client, db, {
+    stop() {
+      stopped.push('option')
+    }
+  })
+  crdt.table('user', USER_SCHEMA)
+  let unbind = crdt.on('stop', () => {
+    stopped.push('event')
+  })
+  await crdt.ready
+
+  emitStorage('logux:db', 'newer-hash')
+  expect(crdt.status.get()).toBe('outdated')
+  expect(stopped).toEqual(['option', 'event'])
+
+  unbind()
 })
 
 it('restores cells of custom actions as table actions', async () => {

@@ -8,7 +8,7 @@ import {
   boolean,
   createCrdtDatabase,
   crdtTableToActions,
-  type CrdtWonCell,
+  type CrdtCell,
   number,
   oneOf,
   optional,
@@ -24,13 +24,17 @@ let client = new Client({
 declare let db: Database
 
 let crdt = createCrdtDatabase(client, db, {
-  applied(tx, action, meta, won) {
-    let cells: CrdtWonCell[] = won
+  applied(tx, action, meta, won, touched) {
+    let cells: CrdtCell[] = won
+    let lost: CrdtCell[] = touched
     if ('reasons' in meta) {
       for (let [table, id, field] of cells) {
         void client.log.removeReason(`${table}/${id}/${field}`, {
           olderThan: meta
         })
+      }
+      for (let cell of lost) {
+        void client.log.removeReason(cell.join('/'), { id: meta.id })
       }
     }
     console.log(tx, action.type, meta.id, meta.time)
@@ -236,7 +240,7 @@ let renameUser = crdt.action(
   userRenamed,
   async (tx, action, meta) => {
     let name: string = action.name
-    let won: CrdtWonCell[] = await user.change(tx, action.id, { name }, meta)
+    let won: CrdtCell[] = await user.change(tx, action.id, { name }, meta)
     console.log(won)
     await user.change(tx, [action.id], { age: 31 }, meta)
     await tx.exec`UPDATE "user" SET "isAdmin" = ${1} WHERE "id" = ${action.id}`
@@ -258,6 +262,21 @@ void rename()
 test()
 console.log(user.plural satisfies string)
 console.log(user.schema.name.type satisfies 'TEXT')
+
+let unbinds: (() => void)[] = [
+  crdt.on('applied', async (tx, action, meta, won, touched) => {
+    await tx.driver.select('SELECT 1', [])
+    console.log(action.type, meta.id, won.length, touched.length)
+  }),
+  crdt.on('broken', error => {
+    console.log(error)
+  }),
+  crdt.on('migrating', done => {
+    void done.then(() => {})
+  }),
+  crdt.on('stop', () => {})
+]
+for (let unbind of unbinds) unbind()
 
 crdt.destroy()
 pg.destroy()

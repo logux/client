@@ -1,6 +1,7 @@
 import type { AbstractActionCreator, SyncMapTypes } from '@logux/actions'
 import type { Action, MetaTime } from '@logux/core'
 import type { Database, Driver, SqlStore } from '@nanostores/sql'
+import type { Unsubscribe } from 'nanoevents'
 import type { ReadableAtom } from 'nanostores'
 
 import type { Client, ClientMeta } from '../client/index.js'
@@ -401,10 +402,28 @@ export function crdtTableToActions(
 ): Promise<[Action, MetaTime][]>
 
 /**
- * Cell written to a table by an action: older values of the cell lost
- * per-field last write wins to this action.
+ * Single field of a single row: `[table, id, field]`.
  */
-export type CrdtWonCell = [table: string, id: string, field: string]
+export type CrdtCell = [table: string, id: string, field: string]
+
+/**
+ * Listener of the `applied` event.
+ *
+ * @param tx Database of the applying transaction.
+ * @param action Applied action.
+ * @param meta Meta of the action. Actions restored from the tables
+ *             on the migration replay have only `id` and `time`.
+ * @param won Cells written by the action (empty for `deleted` actions).
+ * @param touched Every cell addressed by the action: the cells it lost
+ *                to a newer change are `touched` without `won`.
+ */
+export type CrdtAppliedListener = (
+  tx: Database,
+  action: Action,
+  meta: ClientMeta | MetaTime,
+  won: CrdtCell[],
+  touched: CrdtCell[]
+) => Promise<void> | void
 
 export interface CrdtTable<
   Schema extends CrdtTableSchema = CrdtTableSchema,
@@ -438,7 +457,7 @@ export interface CrdtTable<
     id: string[] | string,
     fields: Partial<CrdtRowFields<Schema>>,
     meta: ClientMeta
-  ): Promise<CrdtWonCell[]>
+  ): Promise<CrdtCell[]>
 
   /**
    * Add `plural/created` action to the log. The table row will be inserted
@@ -568,47 +587,23 @@ export interface CrdtDatabaseOptions<Dialect extends string = 'sqlite'> {
   /**
    * Called after a table action was applied to the tables — inside
    * the applying transaction and only in the applying browser tab.
-   * `won` lists the cells written by the action: older values lost
-   * per-field last write wins to it. A good place for the log
-   * bookkeeping like per-cell reasons or shadows.
-   *
-   * It is not called for custom actions of {@link CrdtDatabase#action}:
-   * their callback runs in the same transaction and
-   * {@link CrdtTable#change} returns the won cells.
-   *
-   * Do not `await` log writes here: when the log is stored in the same
-   * database, the log store is waiting for this transaction to commit,
-   * so awaiting it will deadlock. Call them without `await` — they will
-   * be executed right after the commit. Only removing a reason is safe
-   * there: add reasons in the `preadd` event, so they will be written
-   * together with the action.
+   * A good place for the log bookkeeping like per-cell reasons
+   * or shadows. See the `applied` event of {@link CrdtDatabase#on}
+   * for the rules and for installing more than one listener.
    *
    * ```js
    * let crdt = createCrdtDatabase(client, db, {
    *   applied(tx, action, meta, won) {
    *     // Metas restored from the tables have no reasons to change
    *     if (!('reasons' in meta)) return
-   *     for (let [table, id, field] of won) {
-   *       void client.log.removeReason(`${table}/${id}/${field}`, {
-   *         olderThan: meta
-   *       })
+   *     for (let cell of won) {
+   *       void client.log.removeReason(cell.join('/'), { olderThan: meta })
    *     }
    *   }
    * })
    * ```
-   *
-   * @param tx Database of the applying transaction.
-   * @param action Applied action.
-   * @param meta Meta of the action. Actions restored from the tables
-   *             on the migration replay have only `id` and `time`.
-   * @param won Cells written by the action (empty for `deleted` actions).
    */
-  applied?(
-    tx: Database,
-    action: Action,
-    meta: ClientMeta | MetaTime,
-    won: CrdtWonCell[]
-  ): Promise<void> | void
+  applied?: CrdtAppliedListener
 
   /**
    * Called when the database can not be opened or prepared. The tables will
@@ -625,7 +620,9 @@ export interface CrdtDatabaseOptions<Dialect extends string = 'sqlite'> {
    * })
    * ```
    *
-   * By default, the error is re-thrown as an unhandled rejection.
+   * Sugar for a single `broken` listener of {@link CrdtDatabase#on}.
+   * Without this option and without any `broken` listener the error
+   * is re-thrown as an unhandled rejection.
    *
    * @param error Error from the database.
    */
@@ -663,6 +660,8 @@ export interface CrdtDatabaseOptions<Dialect extends string = 'sqlite'> {
    * })
    * ```
    *
+   * Sugar for a single `migrating` listener of {@link CrdtDatabase#on}.
+   *
    * @param done Promise resolved when the database is ready
    *             (the same as {@link CrdtDatabase#ready}).
    */
@@ -698,6 +697,8 @@ export interface CrdtDatabaseOptions<Dialect extends string = 'sqlite'> {
    * Called when another browser tab has a newer table schema and this tab
    * must stop touching the database (good place to show “reload the page”
    * warning).
+   *
+   * Sugar for a single `stop` listener of {@link CrdtDatabase#on}.
    */
   stop?(): void
 }
@@ -792,6 +793,90 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
    * @returns Promise resolved when all tables became empty.
    */
   empty(): Promise<void>
+
+  /**
+   * `applied` event is called after a table action was applied to the tables —
+   * inside the applying transaction and only in the applying browser tab.
+   *
+   * It is not called for custom actions of {@link CrdtDatabase#action}:
+   * their callback runs in the same transaction and
+   * {@link CrdtTable#change} returns the won cells.
+   *
+   * Do not `await` log writes here: when the log is stored in the same
+   * database, the log store is waiting for this transaction to commit,
+   * so awaiting it will deadlock. Call them without `await` — they will
+   * be executed right after the commit. Only removing a reason is safe
+   * there: add reasons in the `preadd` event, so they will be written
+   * together with the action.
+   *
+   * ```js
+   * crdt.on('applied', (tx, action, meta, won, touched) => {
+   *   // Metas restored from the tables have no reasons to change
+   *   if (!('reasons' in meta)) return
+   *   for (let cell of won) {
+   *     void client.log.removeReason(cell.join('/'), { olderThan: meta })
+   *   }
+   * })
+   * ```
+   *
+   * @param event The event name.
+   * @param listener The listener function.
+   * @returns Unbind listener from event.
+   */
+  on(event: 'applied', listener: CrdtAppliedListener): Unsubscribe
+
+  /**
+   * `broken` event is called when the database can not be opened or prepared.
+   *
+   * Without any `broken` listener the error is re-thrown
+   * as an unhandled rejection.
+   *
+   * ```js
+   * crdt.on('broken', error => {
+   *   reportToSentry(error)
+   *   showBrokenDatabaseScreen()
+   * })
+   * ```
+   *
+   * @param event The event name.
+   * @param listener The listener function.
+   * @returns Unbind listener from event.
+   */
+  on(event: 'broken', listener: (error: unknown) => void): Unsubscribe
+
+  /**
+   * `migrating` is called when the table schema was changed and tables
+   * are being dropped and refilled from the log. A good place to show
+   * a “migrating database” loader until the passed promise is resolved.
+   *
+   * ```js
+   * crdt.on('migrating', done => {
+   *   showLoader('Migrating database', done)
+   * })
+   * ```
+   *
+   * @param event The event name.
+   * @param listener The listener function.
+   * @returns Unbind listener from event.
+   */
+  on(event: 'migrating', listener: (done: Promise<void>) => void): Unsubscribe
+
+  /**
+   * `stop` is called when another browser tab has a newer table schema
+   * and this tab must stop touching the database (good place to show
+   * “reload the page” warning).
+   *
+   * ```js
+   * crdt.on('stop', () => {
+   *   updateAppWarning.show()
+   * })
+   * ```
+   *
+   * @param event The event name.
+   * @param listener The listener function.
+   * @returns Unbind listener from event.
+   */
+  on(event: 'stop', listener: () => void): Unsubscribe
 
   /**
    * Promise resolved when the database was prepared and tables can be used.
