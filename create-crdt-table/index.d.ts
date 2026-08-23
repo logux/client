@@ -406,37 +406,103 @@ export function crdtTableToActions(
  */
 export type CrdtCell = [table: string, id: string, field: string]
 
-export interface CrdtParsedAction {
+/**
+ * Schemas of the tables by their plural, like {@link CrdtDatabase#tables}.
+ */
+export type CrdtTables = Record<string, CrdtTableSchema>
+
+export type CrdtVerb = 'changed' | 'created' | 'deleted'
+
+export interface CrdtParsedType {
   /**
    * Table name from the action type.
    */
   plural: string
 
   /**
-   * Rows of the action with the names of the fields it writes to them.
-   * A `plural/deleted` action writes no fields.
-   */
-  rows: [id: string, fields: string[]][]
-
-  /**
    * Verb from the action type.
    */
-  verb: 'changed' | 'created' | 'deleted'
+  verb: CrdtVerb
 }
+
+export interface CrdtParsedAction extends CrdtParsedType {
+  /**
+   * Rows of the action with the names of the fields it writes to them.
+   * A `plural/deleted` action writes no fields.
+   *
+   * The fields are filtered by the table schema, so they are the same cells
+   * as in `won` and `touched` of the `applied` event.
+   */
+  rows: [id: string, fields: string[]][]
+}
+
+/**
+ * Read the table and the verb of the action type, if the action belongs
+ * to one of the tables.
+ *
+ * Use it when the rows are not necessary, for instance, to find the actions
+ * of deleted rows in the log.
+ *
+ * ```ts
+ * import { parseCrdtType } from '@logux/client/db'
+ *
+ * client.log.on('clean', action => {
+ *   let parsed = parseCrdtType(action.type, crdt.tables)
+ *   if (parsed?.verb === 'deleted') cleaned.add(parsed.plural)
+ * })
+ * ```
+ *
+ * @param type Type of any action from the log.
+ * @param tables Schemas of the tables to accept
+ *               ({@link CrdtDatabase#tables}).
+ * @returns Table and verb or `false` if it is not an action of these tables.
+ */
+export function parseCrdtType(
+  type: string,
+  tables: CrdtTables
+): CrdtParsedType | false
+
+/**
+ * Split a table action into rows, whatever batch shape it uses
+ * (`records`, `ids` or a single `id`). The single place, which knows
+ * the shapes: re-implementing them in the app will break on the next shape
+ * added here.
+ *
+ * The fields are the action’s own values without any check, so the caller
+ * must filter them by the table schema: the fields of a `records` row
+ * also contain `id`, and a `plural/deleted` action has no fields at all.
+ * Use {@link parseCrdtAction} to get the field names of the schema instead.
+ *
+ * The action type is not checked, so call it only for actions
+ * of {@link CrdtDatabase#table}.
+ *
+ * ```ts
+ * import { parseCrdtRows } from '@logux/client/db'
+ *
+ * for (let [id, fields] of parseCrdtRows(action)) {
+ *   await copyToBackup(id, fields)
+ * }
+ * ```
+ *
+ * @param action Table action.
+ * @returns Row IDs with the fields, which the action writes to them.
+ */
+export function parseCrdtRows(
+  action: Action
+): [id: string, fields: object | undefined][]
 
 /**
  * Read the rows and fields of a table action, whatever batch shape it uses
  * (`records`, `ids` or a single `id`).
  *
  * Policies on the `applied` event and on the log events need it to know,
- * which rows the action is about, before it was applied. Re-implementing
- * the shapes in the app will break on the next shape added here.
+ * which rows the action is about, before it was applied.
  *
  * ```ts
  * import { parseCrdtAction } from '@logux/client/db'
  *
  * client.on('preadd', (action, meta) => {
- *   let parsed = parseCrdtAction(action, ['feeds', 'posts'])
+ *   let parsed = parseCrdtAction(action, crdt.tables)
  *   if (!parsed) return
  *   for (let [id, fields] of parsed.rows) {
  *     for (let field of fields) {
@@ -446,13 +512,21 @@ export interface CrdtParsedAction {
  * })
  * ```
  *
+ * The schemas can be written by hand, so actions can be parsed without
+ * the database (in tests or on the server):
+ *
+ * ```ts
+ * parseCrdtAction(action, { feeds: feedsSchema })
+ * ```
+ *
  * @param action Any action from the log.
- * @param plurals Table names of {@link CrdtDatabase#table} to accept.
+ * @param tables Schemas of the tables to accept
+ *               ({@link CrdtDatabase#tables}).
  * @returns Parsed action or `false` if it is not an action of these tables.
  */
 export function parseCrdtAction(
   action: Action,
-  plurals: string[]
+  tables: CrdtTables
 ): CrdtParsedAction | false
 
 /**
@@ -634,64 +708,6 @@ export interface CrdtActionOptions {
 
 export interface CrdtDatabaseOptions<Dialect extends string = 'sqlite'> {
   /**
-   * Called after a table action was applied to the tables — inside
-   * the applying transaction and only in the applying browser tab.
-   * A good place for the log bookkeeping like per-cell reasons
-   * or shadows. See the `applied` event of {@link CrdtDatabase#on}
-   * for the rules and for installing more than one listener.
-   *
-   * ```js
-   * let crdt = createCrdtDatabase(client, db, {
-   *   applied(tx, action, meta, won) {
-   *     // Metas restored from the tables have no reasons to change
-   *     if (!('reasons' in meta)) return
-   *     for (let cell of won) {
-   *       void client.log.removeReason(cell.join('/'), { olderThan: meta })
-   *     }
-   *   }
-   * })
-   * ```
-   */
-  applied?: CrdtAppliedListener
-
-  /**
-   * Called when the database can not be opened or prepared. The tables will
-   * never be filled, so {@link CrdtDatabase#status} becomes `broken`,
-   * {@link CrdtDatabase#ready} is resolved and all pending changes
-   * are rejected.
-   *
-   * ```js
-   * let crdt = createCrdtDatabase(client, db, {
-   *   broken(error) {
-   *     reportToSentry(error)
-   *     showBrokenDatabaseScreen()
-   *   }
-   * })
-   * ```
-   *
-   * Sugar for a single `broken` listener of {@link CrdtDatabase#on}.
-   * Without this option and without any `broken` listener the error
-   * is re-thrown as an unhandled rejection.
-   *
-   * @param error Error from the database.
-   */
-  broken?(error: unknown): void
-
-  /**
-   * Sugar for a single listener of the `corrupted` event.
-   *
-   * ```js
-   * let crdt = createCrdtDatabase(client, db, {
-   *   corrupted(reason) {
-   *     downloadEverythingAgain(reason)
-   *   },
-   *   timeout: 60_000
-   * })
-   * ```
-   */
-  corrupted?(reason: CrdtCorruption): void
-
-  /**
    * SQL dialect of the database: `'sqlite'` (default), `'pglite'`
    * or any other name for your own dialect. The dialect selects
    * per-dialect extra column SQL in {@link CrdtColumnOptions#sql}
@@ -709,26 +725,6 @@ export interface CrdtDatabaseOptions<Dialect extends string = 'sqlite'> {
    * Default is `logux:db`.
    */
   key?: string
-
-  /**
-   * Called when the table schema was changed and tables are being dropped
-   * and refilled from the log. A good place to show a “migrating database”
-   * loader until the passed promise is resolved.
-   *
-   * ```js
-   * let crdt = createCrdtDatabase(client, db, {
-   *   migrating(done) {
-   *     showLoader('Migrating database', done)
-   *   }
-   * })
-   * ```
-   *
-   * Sugar for a single `migrating` listener of {@link CrdtDatabase#on}.
-   *
-   * @param done Promise resolved when the database is ready
-   *             (the same as {@link CrdtDatabase#ready}).
-   */
-  migrating?(done: Promise<void>): void
 
   /**
    * Called on schema change to get old actions missing from the log
@@ -755,15 +751,6 @@ export interface CrdtDatabaseOptions<Dialect extends string = 'sqlite'> {
    * ```
    */
   storage?: PersistentStorage
-
-  /**
-   * Called when another browser tab has a newer table schema and this tab
-   * must stop touching the database (good place to show “reload the page”
-   * warning).
-   *
-   * Sugar for a single `stop` listener of {@link CrdtDatabase#on}.
-   */
-  stop?(): void
 
   /**
    * Should table actions be sent to the server. Default is `true`.
@@ -941,25 +928,6 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
   on(event: 'applied', listener: CrdtAppliedListener): Unsubscribe
 
   /**
-   * `broken` event is called when the database can not be opened or prepared.
-   *
-   * Without any `broken` listener the error is re-thrown
-   * as an unhandled rejection.
-   *
-   * ```js
-   * crdt.on('broken', error => {
-   *   reportToSentry(error)
-   *   showBrokenDatabaseScreen()
-   * })
-   * ```
-   *
-   * @param event The event name.
-   * @param listener The listener function.
-   * @returns Unbind listener from event.
-   */
-  on(event: 'broken', listener: (error: unknown) => void): Unsubscribe
-
-  /**
    * Subscribe to the corruption of the local database.
    *
    * The database can not be trusted anymore and the app decides what to do:
@@ -967,18 +935,20 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
    * again. Only the first reason is reported.
    *
    * ```js
-   * crdt.on('corrupted', reason => {
+   * crdt.on('corrupted', (reason, error) => {
+   *   if (error) reportToSentry(error)
    *   void resetDatabase(reason)
    * })
    * ```
    *
    * @param event Event name.
-   * @param listener Callback with the reason of the corruption.
+   * @param listener Callback with the reason of the corruption
+   *                 and with the database error for the `error` reason.
    * @returns Unbind listener from event.
    */
   on(
     event: 'corrupted',
-    listener: (reason: CrdtCorruption) => void
+    listener: (reason: CrdtCorruption, error?: unknown) => void
   ): Unsubscribe
 
   /**
@@ -1083,6 +1053,23 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
     schema: Schema,
     indexes?: CrdtIndex<NoInfer<Schema>>[]
   ): CrdtTable<Schema, Dialect>
+
+  /**
+   * Schemas of all tables of {@link CrdtDatabase#table} by their plural.
+   *
+   * Do not change it: the applier uses the same object. It is useful
+   * for the log policies, which work with any table of the database:
+   * {@link parseCrdtAction} and {@link parseCrdtType} take it, and
+   * a `plural/deleted` action has no fields, so the field list of the row
+   * can be taken only from here.
+   *
+   * ```js
+   * for (let field in crdt.tables[plural]) {
+   *   void client.log.removeReason(`${plural}/${id}/${field}`)
+   * }
+   * ```
+   */
+  tables: CrdtTables
 }
 
 export type Dialects = 'sqlite' | 'pglite'
@@ -1100,8 +1087,9 @@ export type Dialects = 'sqlite' | 'pglite'
  *
  * Until the action is applied, it is kept in the log by
  * the `applying-to-db` reason. Any tab can take the `key:apply` lock,
- * apply the actions in batches, and remove the reason. Actions of the tab, which was closed
- * in the middle of the work, will be applied on the next start.
+ * apply the actions in batches, and remove the reason. Actions of the tab,
+ * which was closed in the middle of the work, will be applied
+ * on the next start.
  *
  * Actions are the same as in {@link syncMapTemplate}
  * (`user/created`, `user/changed`, `user/deleted` from `@logux/actions`),
@@ -1134,15 +1122,16 @@ export type Dialects = 'sqlite' | 'pglite'
  *
  * let db = openDb(sqlocalDriver('app.sqlite'))
  * let crdt = createCrdtDatabase(client, db, {
- *   migrating(done) {
- *     showLoader('Migrating database', done)
- *   },
  *   async repeat() {
  *     return await fetchActionsSnapshot()
- *   },
- *   stop() {
- *     updateAppWarning.show()
  *   }
+ * })
+ *
+ * crdt.on('migrating', done => {
+ *   showLoader('Migrating database', done)
+ * })
+ * crdt.on('stop', () => {
+ *   updateAppWarning.show()
  * })
  *
  * showLoader('Loading data', crdt.ready)
@@ -1168,7 +1157,7 @@ export type Dialects = 'sqlite' | 'pglite'
  *
  * @param client Logux client.
  * @param db SQL database from `@nanostores/sql` `openDb()`.
- * @param opts Database options, old actions source and migration callbacks.
+ * @param opts Database options and the source of old actions.
  */
 export function createCrdtDatabase<Dialect extends Dialects = 'sqlite'>(
   client: Client,

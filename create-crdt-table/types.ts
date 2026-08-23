@@ -13,6 +13,8 @@ import {
   oneOf,
   optional,
   parseCrdtAction,
+  parseCrdtRows,
+  parseCrdtType,
   string
 } from './index.js'
 
@@ -25,33 +27,33 @@ let client = new Client({
 declare let db: Database
 
 let crdt = createCrdtDatabase(client, db, {
-  applied(tx, action, meta, won, touched) {
-    let cells: CrdtCell[] = won
-    let lost: CrdtCell[] = touched
-    if ('reasons' in meta) {
-      for (let [table, id, field] of cells) {
-        void client.log.removeReason(`${table}/${id}/${field}`, {
-          olderThan: meta
-        })
-      }
-      for (let cell of lost) {
-        void client.log.removeReason(cell.join('/'), { id: meta.id })
-      }
-    }
-    console.log(tx, action.type, meta.id, meta.time)
-  },
   dialect: 'sqlite',
   key: 'widget:db',
-  migrating(done) {
-    void done.then(() => {})
-  },
   repeat() {
     return []
   },
   storage: {},
-  stop() {},
   sync: false
 })
+crdt.on('applied', (tx, action, meta, won, touched) => {
+  let cells: CrdtCell[] = won
+  let lost: CrdtCell[] = touched
+  if ('reasons' in meta) {
+    for (let [table, id, field] of cells) {
+      void client.log.removeReason(`${table}/${id}/${field}`, {
+        olderThan: meta
+      })
+    }
+    for (let cell of lost) {
+      void client.log.removeReason(cell.join('/'), { id: meta.id })
+    }
+  }
+  console.log(tx, action.type, meta.id, meta.time)
+})
+crdt.on('migrating', done => {
+  void done.then(() => {})
+})
+crdt.on('stop', () => {})
 
 let user = crdt.table(
   'user',
@@ -255,7 +257,7 @@ async function rename(): Promise<void> {
 }
 
 client.on('preadd', (action, meta) => {
-  let parsed = parseCrdtAction(action, [user.plural, pgUser.plural])
+  let parsed = parseCrdtAction(action, crdt.tables)
   if (!parsed) return
   let verb: 'changed' | 'created' | 'deleted' = parsed.verb
   console.log(verb)
@@ -265,6 +267,19 @@ client.on('preadd', (action, meta) => {
     }
   }
 })
+
+let parsedType = parseCrdtType('user/created', crdt.tables)
+if (parsedType) {
+  let plural: string = parsedType.plural
+  let verb: 'changed' | 'created' | 'deleted' = parsedType.verb
+  console.log(plural, verb)
+}
+
+declare let tableAction: Action
+
+for (let [id, fields] of parseCrdtRows(tableAction)) {
+  console.log(id, fields)
+}
 
 async function repeatAll(): Promise<void> {
   let entries: [Action, MetaTime][] = await crdtTableToActions([user, pgUser])
@@ -282,8 +297,8 @@ let unbinds: (() => void)[] = [
     await tx.driver.select('SELECT 1', [])
     console.log(action.type, meta.id, won.length, touched.length)
   }),
-  crdt.on('broken', error => {
-    console.log(error)
+  crdt.on('corrupted', (reason, error) => {
+    console.log(reason, error)
   }),
   crdt.on('migrating', done => {
     void done.then(() => {})

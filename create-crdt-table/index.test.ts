@@ -40,6 +40,8 @@ import {
   oneOf,
   optional,
   parseCrdtAction,
+  parseCrdtRows,
+  parseCrdtType,
   string,
   withMeta,
   withoutMeta
@@ -737,13 +739,13 @@ it('rebuilds database on schema change and replays repeat() entries', async () =
   let migratings: Promise<void>[] = []
   let oldRows: unknown
   let crdt = createCrdtDatabase(client, db, {
-    migrating(done) {
-      migratings.push(done)
-    },
     async repeat() {
       oldRows = await db.driver.select('SELECT "id" FROM "user"', [])
       return entries
     }
+  })
+  crdt.on('migrating', done => {
+    migratings.push(done)
   })
   let user = crdt.table('user', USER_SCHEMA)
   let statuses: string[] = []
@@ -895,15 +897,14 @@ it('replays restored actions into the same tables', async () => {
   ).toEqual(rows)
 })
 
-it('reports won cells to applied()', async () => {
+it('reports won cells to applied listeners', async () => {
   let { client, db } = await setup()
   let applied: [string, string, [string, string, string][]][] = []
-  let crdt = createCrdtDatabase(client, db, {
-    async applied(tx, action, meta, won) {
-      // The hook can use the applying transaction
-      await tx.driver.select('SELECT 1', [])
-      applied.push([action.type, meta.id, won])
-    }
+  let crdt = createCrdtDatabase(client, db)
+  crdt.on('applied', async (tx, action, meta, won) => {
+    // The hook can use the applying transaction
+    await tx.driver.select('SELECT 1', [])
+    applied.push([action.type, meta.id, won])
   })
   let user = crdt.table('user', USER_SCHEMA)
   await crdt.ready
@@ -963,13 +964,12 @@ it('reports won cells to applied()', async () => {
   })
 })
 
-it('returns won cells from change() without applied() call', async () => {
+it('returns won cells from change() without applied event', async () => {
   let { client, db } = await setup()
   let applied: string[] = []
-  let crdt = createCrdtDatabase(client, db, {
-    applied(tx, action) {
-      applied.push(action.type)
-    }
+  let crdt = createCrdtDatabase(client, db)
+  crdt.on('applied', (tx, action) => {
+    applied.push(action.type)
   })
   let user = crdt.table('user', USER_SCHEMA)
   let renamed = defineAction<{ name: string; type: 'renamed' }>('renamed')
@@ -1033,37 +1033,36 @@ it('reports touched cells to applied listeners', async () => {
 it('supports many applied listeners', async () => {
   let { client, db } = await setup()
   let calls: string[] = []
-  let crdt = createCrdtDatabase(client, db, {
-    async applied(tx, action) {
-      await delay(1)
-      calls.push(`option ${action.type}`)
-    }
+  let crdt = createCrdtDatabase(client, db)
+  crdt.on('applied', async (tx, action) => {
+    await delay(1)
+    calls.push(`first ${action.type}`)
   })
   let user = crdt.table('user', USER_SCHEMA)
   let unbind = crdt.on('applied', async (tx, action) => {
     // Listeners share the applying transaction, so they are called one by one
     await tx.driver.select('SELECT 1', [])
-    calls.push(`first ${action.type}`)
+    calls.push(`second ${action.type}`)
   })
   crdt.on('applied', (tx, action) => {
-    calls.push(`second ${action.type}`)
+    calls.push(`third ${action.type}`)
   })
   await crdt.ready
 
   await user.create({ id: 'U1', name: 'Ann' })
   expect(calls).toEqual([
-    'option user/created',
     'first user/created',
-    'second user/created'
+    'second user/created',
+    'third user/created'
   ])
 
   unbind()
   calls = []
   await user.update('U1', { name: 'Ben' })
-  expect(calls).toEqual(['option user/changed', 'second user/changed'])
+  expect(calls).toEqual(['first user/changed', 'third user/changed'])
 })
 
-it('sends the database error to broken listeners', async () => {
+it('sends the database error to corrupted listeners', async () => {
   let client = new TestClient('10')
   await client.connect()
   let error = new Error('No disk space')
@@ -1076,14 +1075,13 @@ it('sends the database error to broken listeners', async () => {
   })
 
   let errors: string[] = []
-  let crdt = createCrdtDatabase(client, openDb(brokenDriver(error)), {
-    broken(e) {
-      errors.push(`option ${(e as Error).message}`)
-    }
+  let crdt = createCrdtDatabase(client, openDb(brokenDriver(error)))
+  crdt.on('corrupted', (reason, e) => {
+    errors.push(`first ${reason} ${(e as Error).message}`)
   })
   crdt.table('user', USER_SCHEMA)
-  crdt.on('broken', e => {
-    errors.push(`event ${(e as Error).message}`)
+  crdt.on('corrupted', (reason, e) => {
+    errors.push(`second ${reason} ${(e as Error).message}`)
   })
 
   await crdt.ready
@@ -1092,7 +1090,10 @@ it('sends the database error to broken listeners', async () => {
   process.removeAllListeners('unhandledRejection')
   for (let listener of origin) process.on('unhandledRejection', listener)
 
-  expect(errors).toEqual(['option No disk space', 'event No disk space'])
+  expect(errors).toEqual([
+    'first error No disk space',
+    'second error No disk space'
+  ])
   expect(unhandled).toEqual([])
 })
 
@@ -1104,44 +1105,42 @@ it('sends the migration to migrating listeners', async () => {
   crdt1.destroy()
 
   let events: string[] = []
-  let crdt2 = createCrdtDatabase(client, db, {
-    migrating(done) {
-      events.push('option')
-      void done.then(() => {
-        events.push('option done')
-      })
-    }
+  let crdt2 = createCrdtDatabase(client, db)
+  crdt2.on('migrating', done => {
+    events.push('first')
+    void done.then(() => {
+      events.push('first done')
+    })
   })
   crdt2.table('user', USER_SCHEMA, ['name'])
   crdt2.on('migrating', done => {
-    events.push('event')
+    events.push('second')
     void done.then(() => {
-      events.push('event done')
+      events.push('second done')
     })
   })
 
   await crdt2.ready
   await delay(10)
-  expect(events).toEqual(['option', 'event', 'option done', 'event done'])
+  expect(events).toEqual(['first', 'second', 'first done', 'second done'])
 })
 
 it('sends the newer schema in another tab to stop listeners', async () => {
   let { client, db } = await setup()
   let stopped: string[] = []
-  let crdt = createCrdtDatabase(client, db, {
-    stop() {
-      stopped.push('option')
-    }
+  let crdt = createCrdtDatabase(client, db)
+  crdt.on('stop', () => {
+    stopped.push('first')
   })
   crdt.table('user', USER_SCHEMA)
   let unbind = crdt.on('stop', () => {
-    stopped.push('event')
+    stopped.push('second')
   })
   await crdt.ready
 
   emitStorage('logux:db', 'newer-hash')
   expect(crdt.status.get()).toBe('outdated')
-  expect(stopped).toEqual(['option', 'event'])
+  expect(stopped).toEqual(['first', 'second'])
 
   unbind()
 })
@@ -1153,13 +1152,59 @@ function tableAction(action: AnyAction): Action {
   return action
 }
 
+it('parses the type of table actions', () => {
+  let tables = { user: USER_SCHEMA }
+
+  expect(parseCrdtType('user/created', tables)).toEqual({
+    plural: 'user',
+    verb: 'created'
+  })
+  expect(parseCrdtType('user/deleted', tables)).toEqual({
+    plural: 'user',
+    verb: 'deleted'
+  })
+  expect(parseCrdtType('user/renamed', tables)).toBe(false)
+  expect(parseCrdtType('post/created', tables)).toBe(false)
+  expect(parseCrdtType('rename', tables)).toBe(false)
+})
+
+it('parses the rows of table actions without the schema', () => {
+  // The fields are the action’s own values: the caller filters them
+  // by the schema, since the row of a `records` action also has `id`
+  expect(
+    parseCrdtRows(
+      tableAction({
+        records: [{ id: 'U1', name: 'Ann', unknown: 1 }],
+        type: 'user/created'
+      })
+    )
+  ).toEqual([['U1', { id: 'U1', name: 'Ann', unknown: 1 }]])
+
+  expect(
+    parseCrdtRows(
+      tableAction({
+        fields: { name: 'Ann' },
+        ids: ['U1', 'U2'],
+        type: 'user/changed'
+      })
+    )
+  ).toEqual([
+    ['U1', { name: 'Ann' }],
+    ['U2', { name: 'Ann' }]
+  ])
+
+  expect(
+    parseCrdtRows(tableAction({ ids: ['U1'], type: 'user/deleted' }))
+  ).toEqual([['U1', undefined]])
+})
+
 it('parses every shape of table actions', () => {
-  let plurals = ['user', 'post']
+  let tables = { user: USER_SCHEMA }
 
   expect(
     parseCrdtAction(
       tableAction({ fields: { name: 'Ann' }, id: 'U1', type: 'user/created' }),
-      plurals
+      tables
     )
   ).toEqual({ plural: 'user', rows: [['U1', ['name']]], verb: 'created' })
 
@@ -1172,7 +1217,7 @@ it('parses every shape of table actions', () => {
         ],
         type: 'user/created'
       }),
-      plurals
+      tables
     )
   ).toEqual({
     plural: 'user',
@@ -1186,7 +1231,7 @@ it('parses every shape of table actions', () => {
   expect(
     parseCrdtAction(
       tableAction({ fields: { age: 30 }, id: 'U1', type: 'user/changed' }),
-      plurals
+      tables
     )
   ).toEqual({ plural: 'user', rows: [['U1', ['age']]], verb: 'changed' })
 
@@ -1197,7 +1242,7 @@ it('parses every shape of table actions', () => {
         ids: ['U1', 'U2'],
         type: 'user/changed'
       }),
-      plurals
+      tables
     )
   ).toEqual({
     plural: 'user',
@@ -1209,13 +1254,13 @@ it('parses every shape of table actions', () => {
   })
 
   expect(
-    parseCrdtAction(tableAction({ id: 'U1', type: 'user/deleted' }), plurals)
+    parseCrdtAction(tableAction({ id: 'U1', type: 'user/deleted' }), tables)
   ).toEqual({ plural: 'user', rows: [['U1', []]], verb: 'deleted' })
 
   expect(
     parseCrdtAction(
       tableAction({ ids: ['U1', 'U2'], type: 'user/deleted' }),
-      plurals
+      tables
     )
   ).toEqual({
     plural: 'user',
@@ -1226,34 +1271,47 @@ it('parses every shape of table actions', () => {
     verb: 'deleted'
   })
 
+  // Fields, which the applier will ignore, are not in the rows
+  expect(
+    parseCrdtAction(
+      tableAction({
+        fields: { name: 'Ann', publishedAt: undefined, unknown: 1 },
+        id: 'U1',
+        type: 'user/changed'
+      }),
+      tables
+    )
+  ).toEqual({ plural: 'user', rows: [['U1', ['name']]], verb: 'changed' })
+
   // Empty batches are added to the log, but change nothing
   expect(
-    parseCrdtAction(tableAction({ records: [], type: 'user/created' }), plurals)
+    parseCrdtAction(tableAction({ records: [], type: 'user/created' }), tables)
   ).toEqual({ plural: 'user', rows: [], verb: 'created' })
   expect(
-    parseCrdtAction(tableAction({ ids: [], type: 'user/deleted' }), plurals)
+    parseCrdtAction(tableAction({ ids: [], type: 'user/deleted' }), tables)
   ).toEqual({ plural: 'user', rows: [], verb: 'deleted' })
 })
 
 it('ignores actions of other tables and types', () => {
-  let plurals = ['user']
+  let tables = { user: USER_SCHEMA }
   let ignored = [
     { type: 'logux/processed' },
     { type: 'rename' },
     { fields: {}, id: 'P1', type: 'post/created' },
     { id: 'U1', type: 'user/renamed' },
     { id: 'U1', type: 'user/toString' },
+    { fields: {}, id: 'U1', type: 'constructor/created' },
     { id: 'U1', type: 'user/' }
   ]
   for (let action of ignored) {
-    expect(parseCrdtAction(tableAction(action), plurals)).toBe(false)
+    expect(parseCrdtAction(tableAction(action), tables)).toBe(false)
   }
 
   // The verb is taken after the last slash, like in the database itself
   expect(
     parseCrdtAction(
       tableAction({ fields: {}, id: 'U1', type: 'my/user/created' }),
-      ['my/user']
+      { 'my/user': USER_SCHEMA }
     )
   ).toEqual({ plural: 'my/user', rows: [['U1', []]], verb: 'created' })
 })
@@ -1266,7 +1324,7 @@ it('parses the same cells as the database applies', async () => {
 
   let cells: string[] = []
   crdt.on('applied', (tx, action, meta, won, touched) => {
-    let parsed = parseCrdtAction(action, ['user'])
+    let parsed = parseCrdtAction(action, crdt.tables)
     if (!parsed) throw new Error(`Unknown action ${action.type}`)
     let parsedCells: string[] = []
     for (let [id, fields] of parsed.rows) {
@@ -1285,13 +1343,18 @@ it('parses the same cells as the database applies', async () => {
   ])
   await user.update('U1', { age: 31 })
   await user.update(['U2', 'U3'], { role: 'admin' })
+  // Both sides ignore the fields, which are not in the schema
+  await client.log.add(
+    { fields: { name: 'Dan', unknown: 1 }, id: 'U1', type: 'user/changed' },
+    { reasons: ['test'] }
+  )
   await user.delete('U1')
   await user.delete(['U2', 'U3'])
   await delay(10)
 
   // 4 cells of U1, 4 of U2 and 5 of U3, 1 update, 2 in the batch update,
-  // and nothing for the deletes
-  expect(cells).toHaveLength(16)
+  // 1 of the action with the unknown field, and nothing for the deletes
+  expect(cells).toHaveLength(17)
 })
 
 it('restores cells of custom actions as table actions', async () => {
@@ -1470,10 +1533,9 @@ it('re-creates the database only when index SQL changed', async () => {
 it('resolves ready promise on ready and on outdated', async () => {
   let { client, db } = await setup()
   let migratingCalled = 0
-  let crdt = createCrdtDatabase(client, db, {
-    migrating() {
-      migratingCalled += 1
-    }
+  let crdt = createCrdtDatabase(client, db)
+  crdt.on('migrating', () => {
+    migratingCalled += 1
   })
   crdt.table('user', USER_SCHEMA)
 
@@ -1523,10 +1585,9 @@ it('becomes broken when the database can not be prepared', async () => {
   let error = new Error('No disk space')
 
   let errors: unknown[] = []
-  let crdt = createCrdtDatabase(client, openDb(brokenDriver(error)), {
-    broken(e) {
-      errors.push(e)
-    }
+  let crdt = createCrdtDatabase(client, openDb(brokenDriver(error)))
+  crdt.on('corrupted', (reason, e) => {
+    errors.push(e)
   })
   crdt.table('user', USER_SCHEMA)
   let states: string[] = []
@@ -1552,9 +1613,8 @@ it('becomes broken when the migration failed', async () => {
   let error = new Error('No disk space')
   let client2 = new TestClient('10')
   await client2.connect()
-  let crdt2 = createCrdtDatabase(client2, openDb(brokenDriver(error)), {
-    broken() {}
-  })
+  let crdt2 = createCrdtDatabase(client2, openDb(brokenDriver(error)))
+  crdt2.on('corrupted', () => {})
   crdt2.table('user', USER_SCHEMA, ['name'])
   let states: string[] = []
   crdt2.status.subscribe(state => {
@@ -1569,9 +1629,8 @@ it('rejects pending changes on broken database', async () => {
   let client = new TestClient('10')
   await client.connect()
   let error = new Error('No disk space')
-  let crdt = createCrdtDatabase(client, openDb(brokenDriver(error, 10)), {
-    broken() {}
-  })
+  let crdt = createCrdtDatabase(client, openDb(brokenDriver(error, 10)))
+  crdt.on('corrupted', () => {})
   let user = crdt.table('user', USER_SCHEMA)
 
   let creating = user.create({ name: 'Ann' })
@@ -1583,7 +1642,7 @@ it('rejects pending changes on broken database', async () => {
   await expect(creating).rejects.toThrow('The database is broken')
 })
 
-it('re-throws the database error without broken callback', async () => {
+it('re-throws the database error without corrupted listener', async () => {
   let client = new TestClient('10')
   await client.connect()
   let error = new Error('No disk space')
@@ -1632,9 +1691,8 @@ it('keeps the tables, but drops the schema on clean() of broken database', async
   failing = true
   let client2 = new TestClient('10')
   await client2.connect()
-  let crdt2 = createCrdtDatabase(client2, db, {
-    broken() {}
-  })
+  let crdt2 = createCrdtDatabase(client2, db)
+  crdt2.on('corrupted', () => {})
   crdt2.table('user', USER_SCHEMA)
   await crdt2.ready
   expect(crdt2.status.get()).toBe('broken')
@@ -1677,10 +1735,9 @@ it('keeps database when schema hash matches', async () => {
 it('becomes outdated on storage event with different hash', async () => {
   let { client, db } = await setup()
   let stopCalled = 0
-  let crdt = createCrdtDatabase(client, db, {
-    stop() {
-      stopCalled += 1
-    }
+  let crdt = createCrdtDatabase(client, db)
+  crdt.on('stop', () => {
+    stopCalled += 1
   })
   let user = crdt.table('user', USER_SCHEMA)
   await delay(10)
@@ -1763,10 +1820,9 @@ it('does not apply actions after outdate', async () => {
 it('unsubscribes from the log and from other tabs on destroy()', async () => {
   let { client, db } = await setup()
   let stopCalled = 0
-  let crdt = createCrdtDatabase(client, db, {
-    stop() {
-      stopCalled += 1
-    }
+  let crdt = createCrdtDatabase(client, db)
+  crdt.on('stop', () => {
+    stopCalled += 1
   })
   let user = crdt.table('user', USER_SCHEMA)
   await delay(10)
@@ -2001,10 +2057,9 @@ it('allows to replace localStorage key for third-party widgets', async () => {
   let { client, db } = await setup()
   let stopCalled = 0
   let crdt = createCrdtDatabase(client, db, {
-    key: 'widget:db',
-    stop() {
-      stopCalled += 1
-    }
+    key: 'widget:db'})
+  crdt.on('stop', () => {
+    stopCalled += 1
   })
   crdt.table('user', USER_SCHEMA)
   await delay(10)
@@ -2026,10 +2081,10 @@ it('allows to replace localStorage with custom storage', async () => {
   let storage: Record<string, string | undefined> = {}
   let stopCalled = 0
   let crdt = createCrdtDatabase(client, db, {
-    stop() {
-      stopCalled += 1
-    },
     storage
+  })
+  crdt.on('stop', () => {
+    stopCalled += 1
   })
   let user = crdt.table('user', USER_SCHEMA)
   await crdt.ready
@@ -2504,10 +2559,9 @@ it('applies actions in the transaction of SQL log store', async () => {
     userId: '10'
   })
   let applied: string[] = []
-  let crdt = createCrdtDatabase(client, db, {
-    applied(tx, action) {
-      applied.push(action.type)
-    }
+  let crdt = createCrdtDatabase(client, db)
+  crdt.on('applied', (tx, action) => {
+    applied.push(action.type)
   })
   let user = crdt.table('user', USER_SCHEMA)
   await crdt.ready
@@ -3319,10 +3373,10 @@ it('does not report the database, which was prepared in time', async () => {
   let { client, db } = await setup()
   let reasons: CrdtCorruption[] = []
   let crdt = createCrdtDatabase(client, db, {
-    corrupted(reason) {
-      reasons.push(reason)
-    },
     timeout: 20
+  })
+  crdt.on('corrupted', reason => {
+    reasons.push(reason)
   })
   crdt.table('user', USER_SCHEMA)
 
@@ -3337,20 +3391,17 @@ it('reports the error of the database as the corruption', async () => {
   let client = new TestClient('10')
   await client.connect()
   let error = new Error('No disk space')
-  let reported: string[] = []
-  let crdt = createCrdtDatabase(client, openDb(brokenDriver(error)), {
-    broken() {
-      reported.push('broken')
-    },
-    corrupted(reason) {
-      reported.push(reason)
-    }
+  let reported: [CrdtCorruption, unknown][] = []
+  let crdt = createCrdtDatabase(client, openDb(brokenDriver(error)))
+  crdt.on('corrupted', (reason, e) => {
+    reported.push([reason, e])
   })
   crdt.table('user', USER_SCHEMA)
 
   await crdt.ready
   await delay(10)
-  expect(reported).toEqual(['error', 'broken'])
+  expect(reported).toEqual([['error', error]])
+  expect(crdt.status.get()).toBe('broken')
 })
 
 it('does not re-throw the database error with corrupted listener', async () => {
@@ -3390,10 +3441,9 @@ it('reports the migration, which was interrupted by the closed tab', async () =>
   localStorage.setItem('logux:db:migrating', '1')
 
   let reasons: CrdtCorruption[] = []
-  let crdt = createCrdtDatabase(client, db, {
-    corrupted(reason) {
-      reasons.push(reason)
-    }
+  let crdt = createCrdtDatabase(client, db)
+  crdt.on('corrupted', reason => {
+    reasons.push(reason)
   })
   crdt.table('user', USER_SCHEMA)
   await crdt.ready
@@ -3413,10 +3463,9 @@ it('cleans the migration flag after the replay', async () => {
   )
 
   let flags: (null | string)[] = []
-  let crdt = createCrdtDatabase(client, db, {
-    migrating() {
-      flags.push(localStorage.getItem('logux:db:migrating'))
-    }
+  let crdt = createCrdtDatabase(client, db)
+  crdt.on('migrating', () => {
+    flags.push(localStorage.getItem('logux:db:migrating'))
   })
   crdt.table('user', USER_SCHEMA)
   await crdt.ready
@@ -3441,10 +3490,9 @@ it('reports the tables, which were emptied not by the actions', async () => {
   await db.driver.exec('DELETE FROM "user"', [])
 
   let reasons: CrdtCorruption[] = []
-  let crdt2 = createCrdtDatabase(client, db, {
-    corrupted(reason) {
-      reasons.push(reason)
-    }
+  let crdt2 = createCrdtDatabase(client, db)
+  crdt2.on('corrupted', reason => {
+    reasons.push(reason)
   })
   crdt2.table('user', USER_SCHEMA)
   await crdt2.ready
@@ -3468,10 +3516,9 @@ it('does not report the tables, which the user emptied', async () => {
   crdt1.destroy()
 
   let reasons: CrdtCorruption[] = []
-  let crdt2 = createCrdtDatabase(client, db, {
-    corrupted(reason) {
-      reasons.push(reason)
-    }
+  let crdt2 = createCrdtDatabase(client, db)
+  crdt2.on('corrupted', reason => {
+    reasons.push(reason)
   })
   crdt2.table('user', USER_SCHEMA)
   await crdt2.ready

@@ -202,34 +202,34 @@ const WRITES = new WeakMap()
  */
 const APPLY_LOCK_IDLE = 300
 
-const VERBS = {
-  changed: 1,
-  created: 2,
-  deleted: 3
+const VERBS = new Set(['changed', 'created', 'deleted'])
+
+export function parseCrdtType(type, tables) {
+  let slash = type.lastIndexOf('/')
+  if (slash === -1) return false
+  let plural = type.slice(0, slash)
+  let verb = type.slice(slash + 1)
+  if (!Object.hasOwn(tables, plural) || !VERBS.has(verb)) return false
+  return { plural, verb }
 }
 
-const RESULT = ['', 0]
+export function parseCrdtRows(action) {
+  if (action.records) return action.records.map(fields => [fields.id, fields])
+  return (action.ids ?? [action.id]).map(id => [id, action.fields])
+}
 
-export function parseCrdtAction(action, plurals) {
-  let slash = action.type.lastIndexOf('/')
-  if (slash === -1) return false
-  let plural = action.type.slice(0, slash)
-  if (!plurals.includes(plural)) return false
-  let verb = action.type.slice(slash + 1)
-  if (!Object.hasOwn(VERBS, verb)) return false
-  let rows
-  if (action.records) {
-    rows = action.records.map(record => [
-      record.id,
-      Object.keys(record).filter(key => key !== 'id')
-    ])
-  } else {
-    // A `deleted` action has no fields, a batch of `created` or `changed`
-    // writes the same fields to every row
-    let fields = action.fields ? Object.keys(action.fields) : []
-    rows = (action.ids ?? [action.id]).map(id => [id, fields])
-  }
-  return { plural, rows, verb }
+export function parseCrdtAction(action, tables) {
+  let parsed = parseCrdtType(action.type, tables)
+  if (!parsed) return false
+  let schema = tables[parsed.plural]
+  parsed.rows = parseCrdtRows(action).map(([id, fields]) => {
+    let names = []
+    for (let key in fields) {
+      if (schema[key] && fields[key] !== undefined) names.push(key)
+    }
+    return [id, names]
+  })
+  return parsed
 }
 
 function holders(count) {
@@ -264,10 +264,6 @@ export function createCrdtDatabase(client, db, opts = {}) {
   let storageKey = opts.key ?? 'logux:db'
   let sync = opts.sync ?? true
   let emitter = createNanoEvents()
-  // Options are just a sugar for the events with a single listener
-  for (let event of ['applied', 'broken', 'corrupted', 'migrating', 'stop']) {
-    if (opts[event]) emitter.on(event, opts[event])
-  }
   // Without localStorage (SSR, React Native) the schema is kept in memory
   let storage =
     opts.storage ?? (typeof localStorage === 'undefined' ? {} : localStorage)
@@ -278,7 +274,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
   db.pause()
 
   let status = atom('initializing')
-  let tables = {}
+  let tables = Object.create(null)
   let tableIndexes = {}
   let indexNames = new Set()
   let actions = Object.create(null)
@@ -291,10 +287,15 @@ export function createCrdtDatabase(client, db, opts = {}) {
 
   let reported = false
 
-  function corrupted(reason) {
+  function corrupted(reason, error) {
     if (reported) return
     reported = true
-    emitter.emit('corrupted', reason)
+    if (emitter.events.corrupted?.length) {
+      emitter.emit('corrupted', reason, error)
+    } else if (error) {
+      // The database error must not be lost, if the app has no listener
+      throw error
+    }
   }
 
   // The database, which hangs instead of throwing the error, never resolves
@@ -495,25 +496,13 @@ export function createCrdtDatabase(client, db, opts = {}) {
     }
   }
 
-  function parseType(type) {
-    let slash = type.lastIndexOf('/')
-    if (slash === -1) return undefined
-    let plural = type.slice(0, slash)
-    if (!tables[plural]) return undefined
-    let verb = VERBS[type.slice(slash + 1)]
-    if (!verb) return undefined
-    RESULT[0] = plural
-    RESULT[1] = verb
-    return RESULT
-  }
-
   function isKnown(type) {
-    return !!actions[type] || !!parseType(type)
+    return !!actions[type] || !!parseCrdtType(type, tables)
   }
 
   function isDeleting(action) {
-    let parsed = parseType(action.type)
-    return !!parsed && parsed[1] === VERBS.deleted
+    let parsed = parseCrdtType(action.type, tables)
+    return !!parsed && parsed.verb === 'deleted'
   }
 
   async function applyAction(action, meta, tx) {
@@ -523,15 +512,15 @@ export function createCrdtDatabase(client, db, opts = {}) {
       return
     }
 
-    let parsed = parseType(action.type)
+    let parsed = parseCrdtType(action.type, tables)
     if (!parsed) return
-    let [plural, verb] = parsed
+    let { plural, verb } = parsed
     // Sortable meta can be compared by SQL and by JS strings
     let sorted = toSorted(meta)
     let schema = tables[plural]
     let target = tx.driver
 
-    if (verb === VERBS.deleted) {
+    if (verb === 'deleted') {
       let ids = action.ids ?? [action.id]
       if (ids.length === 0) return [[], []]
       await target.exec(
@@ -541,14 +530,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
       return [[], []]
     }
 
-    let records
-    if (action.records) {
-      records = action.records.map(fields => [fields.id, fields])
-    } else if (action.ids) {
-      records = action.ids.map(id => [id, action.fields])
-    } else {
-      records = [[action.id, action.fields]]
-    }
+    let records = parseCrdtRows(action)
     if (records.length === 0) return [[], []]
 
     // Cells addressed by the action: the cells it lost are `touched`
@@ -583,7 +565,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
       let row = known.get(id)
       let insert = row === undefined
       if (insert) {
-        if (verb === VERBS.changed) continue
+        if (verb === 'changed') continue
         row = {}
         known.set(id, row)
       }
@@ -738,12 +720,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
     stopApplying('The database is broken')
     lockRequest.abort()
     setReady()
-    corrupted('error')
-    if (emitter.events.broken?.length) {
-      emitter.emit('broken', error)
-    } else if (!emitter.events.corrupted?.length) {
-      throw error
-    }
+    corrupted('error', error)
   }
 
   let preparing = Promise.resolve().then(async () => {
@@ -1080,7 +1057,8 @@ export function createCrdtDatabase(client, db, opts = {}) {
           }
         }
       }
-    }
+    },
+    tables
   }
 }
 
