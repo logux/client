@@ -188,8 +188,36 @@ async function tableNames(db: Database): Promise<string[]> {
   return rows.map(i => i.name)
 }
 
-function brokenDriver(error: Error, wait = 0): Driver {
+/**
+ * Wrap `exec()` of the driver and of its transactions, since the schema
+ * is created inside a transaction.
+ */
+function hookExec(
+  origin: Driver,
+  hook: (query: string, exec: () => Promise<unknown>) => Promise<unknown>
+): Driver {
   return {
+    ...origin,
+    exec(query: string, params: SqlParam[]) {
+      return hook(query, () => origin.exec(query, params))
+    },
+    transaction(callback, opts) {
+      return origin.transaction(
+        tx =>
+          callback({
+            ...tx,
+            exec(query: string, params: SqlParam[]) {
+              return hook(query, () => tx.exec(query, params))
+            }
+          }),
+        opts
+      )
+    }
+  }
+}
+
+function brokenDriver(error: Error, wait = 0): Driver {
+  let driver: Driver = {
     close() {},
     async exec() {
       if (wait) await delay(wait)
@@ -201,10 +229,11 @@ function brokenDriver(error: Error, wait = 0): Driver {
     subscribe() {
       return () => {}
     },
-    transaction() {
-      throw new Error('Unsupported')
+    transaction(callback) {
+      return callback(driver)
     }
   }
+  return driver
 }
 
 async function indexSqls(db: Database): Promise<string[]> {
@@ -465,6 +494,7 @@ it('applies batch actions in the smallest number of queries', async () => {
   let user = crdt.table('user', USER_SCHEMA)
   await delay(10)
   executed = []
+  transactions = 0
 
   await user.create([
     { id: 'U1', name: 'Ann' },
@@ -1209,18 +1239,20 @@ it('applies actions added while the tables were prepared', async () => {
   let origin = nodeDriver(':memory:')
   let user: CrdtTable<typeof USER_SCHEMA>
   let created: Promise<string> | undefined
-  let db = openDb({
-    ...origin,
-    async exec(query: string, params: SqlParam[]) {
-      // The last step before the database is ready, so the action will be
-      // added to the log after the log was replayed to the tables
-      if (query.startsWith('CREATE INDEX') && !created) {
-        created = user.create({ name: 'Ann' })
-        await delay(10)
-      }
-      return origin.exec(query, params)
+  // The last step before the database is ready, so the action will be
+  // added to the log after the log was replayed to the tables
+  async function beforeIndex(query: string): Promise<void> {
+    if (query.startsWith('CREATE INDEX') && !created) {
+      created = user.create({ name: 'Ann' })
+      await delay(10)
     }
-  })
+  }
+  let db = openDb(
+    hookExec(origin, async (query, exec) => {
+      await beforeIndex(query)
+      return exec()
+    })
+  )
 
   let crdt = createCrdtDatabase(client, db)
   user = crdt.table('user', USER_SCHEMA, ['name'])
@@ -1293,8 +1325,8 @@ it('resolves ready promise on ready and on outdated', async () => {
     subscribe() {
       return () => {}
     },
-    transaction() {
-      throw new Error('Unsupported')
+    transaction(callback) {
+      return callback(slowDriver)
     }
   }
   let crdt2 = createCrdtDatabase(client2, openDb(slowDriver), {
@@ -1405,15 +1437,14 @@ it('keeps the tables, but drops the schema on clean() of broken database', async
   await client.connect()
   let origin = nodeDriver(':memory:')
   let failing = false
-  let db = openDb({
-    ...origin,
-    exec(query: string, params: SqlParam[]) {
+  let db = openDb(
+    hookExec(origin, (query, exec) => {
       if (failing && query.startsWith('CREATE TABLE')) {
         return Promise.reject(new Error('No disk space'))
       }
-      return origin.exec(query, params)
-    }
-  })
+      return exec()
+    })
+  )
 
   let crdt1 = createCrdtDatabase(client, db)
   let user1 = crdt1.table('user', USER_SCHEMA)
@@ -1756,8 +1787,8 @@ it('generates SQL with dialect-specific and extra column SQL', async () => {
     subscribe() {
       return () => {}
     },
-    transaction() {
-      throw new Error('Unsupported')
+    transaction(callback) {
+      return callback(fakeDriver)
     }
   }
 
@@ -2207,10 +2238,11 @@ it('applies many actions in a single transaction', async () => {
   }
 
   let crdt = createCrdtDatabase(client, db)
-  crdt.table('user', USER_SCHEMA)
+  crdt.table('user', USER_SCHEMA, ['name'])
   await crdt.ready
 
-  expect(transactions).toBe(1)
+  // The schema, the replay of all actions, and the indexes
+  expect(transactions).toBe(3)
   expect(
     await db.driver.select('SELECT count(*) AS "count" FROM "user"', [])
   ).toEqual([{ count: 1000 }])

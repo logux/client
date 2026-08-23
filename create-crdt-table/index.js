@@ -191,6 +191,12 @@ function indexSql(plural, schema, index, names) {
 const CHUNK_SIZE = 1000
 
 /**
+ * The last write to every connection: two databases can share a connection,
+ * where a transaction can not be started inside another one.
+ */
+const WRITES = new WeakMap()
+
+/**
  * How long to keep the apply lock after the last write before another tab
  * can take it.
  */
@@ -266,7 +272,6 @@ export function createCrdtDatabase(client, db, opts = {}) {
   let inlined = new Set()
   let blocking = false
   let draining
-  let writing = Promise.resolve()
   let sqlStore
   let destroyed = false
   let unbindStorage = () => {}
@@ -373,13 +378,20 @@ export function createCrdtDatabase(client, db, opts = {}) {
     }
   }
 
+  // The lock is taken outside of the queue: a database waiting for its turn
+  // must not block another database, which is not waiting for the lock
   function writeToTables(callback) {
-    let result = writing.then(() =>
-      withApplyLock(() => {
-        return sqlStore ? sqlStore.write(callback) : db.transaction(callback)
-      })
-    )
-    writing = result.catch(() => {})
+    return withApplyLock(() => inTransaction(callback))
+  }
+
+  function inTransaction(callback) {
+    let store = client.log.store
+    // The log store has its own queue for the same connection,
+    // so its writes must go through it, not around it
+    if (store.write && store.driver === driver) return store.write(callback)
+    let previous = WRITES.get(driver) ?? Promise.resolve()
+    let result = previous.then(() => db.transaction(callback))
+    WRITES.set(driver, result.catch(() => {}))
     return result
   }
 
@@ -624,9 +636,9 @@ export function createCrdtDatabase(client, db, opts = {}) {
     if (pending.length > 0) void drain()
   }
 
-  async function createIndexes(plural) {
+  async function createIndexes(target, plural) {
     for (let sql of tableIndexes[plural]) {
-      await driver.exec(sql, [])
+      await target.exec(sql, [])
     }
   }
 
@@ -691,10 +703,17 @@ export function createCrdtDatabase(client, db, opts = {}) {
 
     let old = storage[storageKey]
     if (old === hash) {
-      for (let plural in tables) {
-        await driver.exec(createTableSql(plural, tables[plural], dialect), [])
-        await createIndexes(plural)
-      }
+      // Every statement pays for the write on its own, so the whole schema
+      // is created in a single transaction
+      await inTransaction(async tx => {
+        for (let plural in tables) {
+          await tx.driver.exec(
+            createTableSql(plural, tables[plural], dialect),
+            []
+          )
+          await createIndexes(tx.driver, plural)
+        }
+      })
       // Actions, which were not applied before the last tab was closed
       let unapplied = []
       await client.log.each({ order: 'added' }, (action, meta) => {
@@ -721,15 +740,23 @@ export function createCrdtDatabase(client, db, opts = {}) {
         if (opts.repeat) repeated = await opts.repeat()
       }
       await reading
-      if (old) {
-        for (let oldTable in JSON.parse(old).tables) {
-          await driver.exec(`DROP TABLE IF EXISTS "${oldTable}"`, [])
+      // Tables, which were removed from the schema, are dropped too.
+      // A single transaction both saves the write for every statement
+      // and keeps the old tables on an error
+      await inTransaction(async tx => {
+        if (old) {
+          for (let oldTable in JSON.parse(old).tables) {
+            await tx.driver.exec(`DROP TABLE IF EXISTS "${oldTable}"`, [])
+          }
         }
-      }
-      for (let plural in tables) {
-        await driver.exec(`DROP TABLE IF EXISTS "${plural}"`, [])
-        await driver.exec(createTableSql(plural, tables[plural], dialect), [])
-      }
+        for (let plural in tables) {
+          await tx.driver.exec(`DROP TABLE IF EXISTS "${plural}"`, [])
+          await tx.driver.exec(
+            createTableSql(plural, tables[plural], dialect),
+            []
+          )
+        }
+      })
       entries = entries.concat(repeated)
       let added = pending
       pending = []
@@ -738,9 +765,11 @@ export function createCrdtDatabase(client, db, opts = {}) {
       await drain()
       // Indexes are created after the replay: filling the table
       // without them is much faster
-      for (let plural in tables) {
-        await createIndexes(plural)
-      }
+      await inTransaction(async tx => {
+        for (let plural in tables) {
+          await createIndexes(tx.driver, plural)
+        }
+      })
       storage[storageKey] = hash
       becomeReady()
     }
