@@ -265,12 +265,15 @@ export function createCrdtDatabase(client, db, opts = {}) {
   let sync = opts.sync ?? true
   let emitter = createNanoEvents()
   // Options are just a sugar for the events with a single listener
-  for (let event of ['applied', 'broken', 'migrating', 'stop']) {
+  for (let event of ['applied', 'broken', 'corrupted', 'migrating', 'stop']) {
     if (opts[event]) emitter.on(event, opts[event])
   }
   // Without localStorage (SSR, React Native) the schema is kept in memory
   let storage =
     opts.storage ?? (typeof localStorage === 'undefined' ? {} : localStorage)
+  // The flags of the corruption detectors are kept next to the schema hash
+  let migratingKey = `${storageKey}:migrating`
+  let filledKey = `${storageKey}:filled`
   let driver = db.driver
   db.pause()
 
@@ -281,10 +284,32 @@ export function createCrdtDatabase(client, db, opts = {}) {
   let actions = Object.create(null)
   let actionVersions = Object.create(null)
 
-  let setReady
+  let prepared
   let ready = new Promise(resolve => {
-    setReady = resolve
+    prepared = resolve
   })
+
+  let reported = false
+
+  function corrupted(reason) {
+    if (reported) return
+    reported = true
+    emitter.emit('corrupted', reason)
+  }
+
+  // The database, which hangs instead of throwing the error, never resolves
+  // `ready`, so nothing else will detect it
+  let timeout
+  if (opts.timeout) {
+    timeout = setTimeout(() => {
+      corrupted('timeout')
+    }, opts.timeout)
+  }
+
+  function setReady() {
+    clearTimeout(timeout)
+    prepared()
+  }
 
   let started = false
   let hash
@@ -486,6 +511,11 @@ export function createCrdtDatabase(client, db, opts = {}) {
     return !!actions[type] || !!parseType(type)
   }
 
+  function isDeleting(action) {
+    let parsed = parseType(action.type)
+    return !!parsed && parsed[1] === VERBS.deleted
+  }
+
   async function applyAction(action, meta, tx) {
     let custom = actions[action.type]
     if (custom) {
@@ -630,6 +660,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
   async function applyAndEmit(tx, action, meta) {
     let cells = await applyAction(action, meta, tx)
     if (!cells) return
+    await trackFilled(tx.driver, action, cells[0])
     // Listeners write to the applying transaction, so they can not be parallel
     for (let listener of emitter.events.applied ?? []) {
       await listener(tx, action, meta, cells[0], cells[1])
@@ -667,15 +698,50 @@ export function createCrdtDatabase(client, db, opts = {}) {
     }
   }
 
+  /**
+   * The tables were emptied by something, which is not the applier:
+   * a cleaned storage, a lost database file or a browser, which dropped
+   * the data of the origin.
+   */
+  async function checkTables(target = driver) {
+    let empty = true
+    for (let plural in tables) {
+      let rows = await target.select(`SELECT 1 FROM "${plural}" LIMIT 1`, [])
+      if (rows.length > 0) {
+        empty = false
+        break
+      }
+    }
+    if (!empty) {
+      storage[filledKey] = '1'
+    } else if (storage[filledKey]) {
+      delete storage[filledKey]
+      corrupted('empty-tables')
+    }
+  }
+
+  /**
+   * The marker of the detector follows the rows: it is set on the first
+   * written row and is cleared when the actions deleted the last one.
+   */
+  async function trackFilled(target, action, won) {
+    if (won.length > 0) {
+      if (!storage[filledKey]) storage[filledKey] = '1'
+    } else if (storage[filledKey] && isDeleting(action)) {
+      await checkTables(target)
+    }
+  }
+
   function breakDatabase(error) {
     if (destroyed) return
     status.set('broken')
     stopApplying('The database is broken')
     lockRequest.abort()
     setReady()
+    corrupted('error')
     if (emitter.events.broken?.length) {
       emitter.emit('broken', error)
-    } else {
+    } else if (!emitter.events.corrupted?.length) {
       throw error
     }
   }
@@ -726,6 +792,13 @@ export function createCrdtDatabase(client, db, opts = {}) {
       }
     }
 
+    // Actions are in the memory between the drop of the tables and the end
+    // of the replay, so the tab, which was closed in the middle, lost them
+    if (storage[migratingKey]) {
+      delete storage[migratingKey]
+      corrupted('interrupted-migration')
+    }
+
     let old = storage[storageKey]
     if (old === hash) {
       // Every statement pays for the write on its own, so the whole schema
@@ -748,6 +821,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
       })
       for (let entry of unapplied) pushToApply(entry[0], entry[1])
       await drain()
+      await checkTables()
       becomeReady()
     } else {
       // The log and the tables are only read here, so the log entries
@@ -765,6 +839,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
         if (opts.repeat) repeated = await opts.repeat()
       }
       await reading
+      if (old) storage[migratingKey] = '1'
       // Tables, which were removed from the schema, are dropped too.
       // A single transaction both saves the write for every statement
       // and keeps the old tables on an error
@@ -796,6 +871,8 @@ export function createCrdtDatabase(client, db, opts = {}) {
         }
       })
       storage[storageKey] = hash
+      delete storage[migratingKey]
+      await checkTables()
       becomeReady()
     }
   })
@@ -831,6 +908,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
     if (draining) await draining.catch(() => {})
     if (!outdated) {
       delete storage[storageKey]
+      delete storage[filledKey]
       if (!isBroken) {
         db.pause()
         await writeToTables(async tx => {
@@ -877,6 +955,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
       lockRequest.abort()
     },
     async empty() {
+      delete storage[filledKey]
       await ready
       // Empty pending list before cleaning tables
       await drain()

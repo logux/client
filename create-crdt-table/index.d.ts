@@ -678,6 +678,20 @@ export interface CrdtDatabaseOptions<Dialect extends string = 'sqlite'> {
   broken?(error: unknown): void
 
   /**
+   * Sugar for a single listener of the `corrupted` event.
+   *
+   * ```js
+   * let crdt = createCrdtDatabase(client, db, {
+   *   corrupted(reason) {
+   *     downloadEverythingAgain(reason)
+   *   },
+   *   timeout: 60_000
+   * })
+   * ```
+   */
+  corrupted?(reason: CrdtCorruption): void
+
+  /**
    * SQL dialect of the database: `'sqlite'` (default), `'pglite'`
    * or any other name for your own dialect. The dialect selects
    * per-dialect extra column SQL in {@link CrdtColumnOptions#sql}
@@ -770,7 +784,39 @@ export interface CrdtDatabaseOptions<Dialect extends string = 'sqlite'> {
    * in any case: they are already on the server.
    */
   sync?: boolean
+
+  /**
+   * Milliseconds to wait for the database to be prepared.
+   *
+   * A database, which hangs instead of throwing the error, never resolves
+   * {@link CrdtDatabase#ready}, so nothing else will detect it. On the
+   * timeout the database reports `timeout` to the `corrupted` event.
+   *
+   * ```js
+   * let crdt = createCrdtDatabase(client, db, { timeout: 60_000 })
+   * ```
+   *
+   * By default, the database waits forever.
+   */
+  timeout?: number
 }
+
+/**
+ * Reason why the local database can not be trusted anymore:
+ *
+ * - `empty-tables`: the tables are empty, but the previous start of the app
+ *   saw the rows in them and no action deleted them.
+ * - `error`: the database threw the error and can not be prepared.
+ * - `interrupted-migration`: the tab was closed during the schema migration,
+ *   between the drop of the tables and the end of the replay.
+ * - `timeout`: the database did not answer in
+ *   {@link CrdtDatabaseOptions#timeout}.
+ */
+export type CrdtCorruption =
+  | 'empty-tables'
+  | 'error'
+  | 'interrupted-migration'
+  | 'timeout'
 
 export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
   /**
@@ -912,6 +958,28 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
    * @returns Unbind listener from event.
    */
   on(event: 'broken', listener: (error: unknown) => void): Unsubscribe
+
+  /**
+   * Subscribe to the corruption of the local database.
+   *
+   * The database can not be trusted anymore and the app decides what to do:
+   * usually it cleans the client and downloads the data from the server
+   * again. Only the first reason is reported.
+   *
+   * ```js
+   * crdt.on('corrupted', reason => {
+   *   void resetDatabase(reason)
+   * })
+   * ```
+   *
+   * @param event Event name.
+   * @param listener Callback with the reason of the corruption.
+   * @returns Unbind listener from event.
+   */
+  on(
+    event: 'corrupted',
+    listener: (reason: CrdtCorruption) => void
+  ): Unsubscribe
 
   /**
    * `migrating` is called when the table schema was changed and tables

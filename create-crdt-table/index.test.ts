@@ -30,6 +30,7 @@ import {
   bigint,
   boolean,
   type CrdtCell,
+  type CrdtCorruption,
   type CrdtTable,
   type CrdtTableRow,
   createCrdtDatabase,
@@ -232,6 +233,25 @@ function brokenDriver(error: Error, wait = 0): Driver {
     },
     select() {
       return Promise.resolve([])
+    },
+    subscribe() {
+      return () => {}
+    },
+    transaction(callback) {
+      return callback(driver)
+    }
+  }
+  return driver
+}
+
+function hangingDriver(): Driver {
+  let driver: Driver = {
+    close() {},
+    exec() {
+      return new Promise(() => {})
+    },
+    select() {
+      return new Promise(() => {})
     },
     subscribe() {
       return () => {}
@@ -1250,7 +1270,9 @@ it('parses the same cells as the database applies', async () => {
     if (!parsed) throw new Error(`Unknown action ${action.type}`)
     let parsedCells: string[] = []
     for (let [id, fields] of parsed.rows) {
-      for (let field of fields) parsedCells.push(`${parsed.plural}/${id}/${field}`)
+      for (let field of fields) {
+        parsedCells.push(`${parsed.plural}/${id}/${field}`)
+      }
     }
     expect(parsedCells).toEqual(touched.map(cell => cell.join('/')))
     cells.push(...touched.map(cell => cell.join('/')))
@@ -3269,4 +3291,207 @@ it('writes to the log from the applied event', async () => {
   tasks.destroy()
   crdt.destroy()
   await db.close()
+})
+
+it('reports the hanging database by the timeout', async () => {
+  let client = new TestClient('10')
+  await client.connect()
+  let crdt = createCrdtDatabase(client, openDb(hangingDriver()), {
+    timeout: 20
+  })
+  crdt.table('user', USER_SCHEMA)
+  let reasons: CrdtCorruption[] = []
+  crdt.on('corrupted', reason => {
+    reasons.push(reason)
+  })
+
+  await delay(10)
+  expect(reasons).toEqual([])
+
+  await delay(20)
+  expect(reasons).toEqual(['timeout'])
+  expect(crdt.status.get()).toBe('initializing')
+
+  crdt.destroy()
+})
+
+it('does not report the database, which was prepared in time', async () => {
+  let { client, db } = await setup()
+  let reasons: CrdtCorruption[] = []
+  let crdt = createCrdtDatabase(client, db, {
+    corrupted(reason) {
+      reasons.push(reason)
+    },
+    timeout: 20
+  })
+  crdt.table('user', USER_SCHEMA)
+
+  await crdt.ready
+  await delay(30)
+  expect(reasons).toEqual([])
+
+  crdt.destroy()
+})
+
+it('reports the error of the database as the corruption', async () => {
+  let client = new TestClient('10')
+  await client.connect()
+  let error = new Error('No disk space')
+  let reported: string[] = []
+  let crdt = createCrdtDatabase(client, openDb(brokenDriver(error)), {
+    broken() {
+      reported.push('broken')
+    },
+    corrupted(reason) {
+      reported.push(reason)
+    }
+  })
+  crdt.table('user', USER_SCHEMA)
+
+  await crdt.ready
+  await delay(10)
+  expect(reported).toEqual(['error', 'broken'])
+})
+
+it('does not re-throw the database error with corrupted listener', async () => {
+  let client = new TestClient('10')
+  await client.connect()
+  let unhandled: unknown[] = []
+  let origin = process.listeners('unhandledRejection')
+  process.removeAllListeners('unhandledRejection')
+  process.on('unhandledRejection', reason => {
+    unhandled.push(reason)
+  })
+
+  let reasons: CrdtCorruption[] = []
+  let crdt = createCrdtDatabase(
+    client,
+    openDb(brokenDriver(new Error('No disk space')))
+  )
+  crdt.table('user', USER_SCHEMA)
+  crdt.on('corrupted', reason => {
+    reasons.push(reason)
+  })
+
+  await crdt.ready
+  await delay(10)
+
+  process.removeAllListeners('unhandledRejection')
+  for (let listener of origin) process.on('unhandledRejection', listener)
+
+  expect(reasons).toEqual(['error'])
+  expect(unhandled).toEqual([])
+})
+
+it('reports the migration, which was interrupted by the closed tab', async () => {
+  let { client, db } = await setup()
+  // The tab was closed between the drop of the tables and the end
+  // of the replay
+  localStorage.setItem('logux:db:migrating', '1')
+
+  let reasons: CrdtCorruption[] = []
+  let crdt = createCrdtDatabase(client, db, {
+    corrupted(reason) {
+      reasons.push(reason)
+    }
+  })
+  crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+
+  expect(reasons).toEqual(['interrupted-migration'])
+  expect(localStorage.getItem('logux:db:migrating')).toBeNull()
+
+  crdt.destroy()
+})
+
+it('cleans the migration flag after the replay', async () => {
+  let { client, db } = await setup()
+  localStorage.setItem('logux:db', '{}')
+  await client.log.add(
+    { fields: { name: 'Ann' }, id: 'U1', type: 'user/created' },
+    { reasons: ['test'] }
+  )
+
+  let flags: (null | string)[] = []
+  let crdt = createCrdtDatabase(client, db, {
+    migrating() {
+      flags.push(localStorage.getItem('logux:db:migrating'))
+    }
+  })
+  crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+
+  expect(flags).toEqual([null])
+  expect(localStorage.getItem('logux:db:migrating')).toBeNull()
+
+  crdt.destroy()
+})
+
+it('reports the tables, which were emptied not by the actions', async () => {
+  let { client, db } = await setup()
+  let crdt1 = createCrdtDatabase(client, db)
+  let user1 = crdt1.table('user', USER_SCHEMA)
+  await crdt1.ready
+  await user1.create({ name: 'Ann' })
+  await delay(10)
+  expect(localStorage.getItem('logux:db:filled')).toBe('1')
+  crdt1.destroy()
+
+  // The browser dropped the data of the origin, but kept `localStorage`
+  await db.driver.exec('DELETE FROM "user"', [])
+
+  let reasons: CrdtCorruption[] = []
+  let crdt2 = createCrdtDatabase(client, db, {
+    corrupted(reason) {
+      reasons.push(reason)
+    }
+  })
+  crdt2.table('user', USER_SCHEMA)
+  await crdt2.ready
+
+  expect(reasons).toEqual(['empty-tables'])
+  expect(localStorage.getItem('logux:db:filled')).toBeNull()
+
+  crdt2.destroy()
+})
+
+it('does not report the tables, which the user emptied', async () => {
+  let { client, db } = await setup()
+  let crdt1 = createCrdtDatabase(client, db)
+  let user1 = crdt1.table('user', USER_SCHEMA)
+  await crdt1.ready
+  let id = await user1.create({ name: 'Ann' })
+  await delay(10)
+  await user1.delete(id)
+  await delay(10)
+  expect(localStorage.getItem('logux:db:filled')).toBeNull()
+  crdt1.destroy()
+
+  let reasons: CrdtCorruption[] = []
+  let crdt2 = createCrdtDatabase(client, db, {
+    corrupted(reason) {
+      reasons.push(reason)
+    }
+  })
+  crdt2.table('user', USER_SCHEMA)
+  await crdt2.ready
+  await delay(10)
+
+  expect(reasons).toEqual([])
+
+  crdt2.destroy()
+})
+
+it('does not report the tables, which were cleaned with the client', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+  await user.create({ name: 'Ann' })
+  await delay(10)
+
+  await crdt.empty()
+  expect(localStorage.getItem('logux:db:filled')).toBeNull()
+
+  crdt.destroy()
 })
