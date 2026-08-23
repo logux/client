@@ -10,10 +10,10 @@ importers:
     dependencies:
       '@logux/actions':
         specifier: github:logux/actions#next
-        version: git+https://github.com/logux/actions.git#eaf920ba94c93526a35f74b86b4f8079cefd170b(@logux/core@git+https://github.com/logux/core.git#149d5bef43e99adf8d6bffec50c7f674cd9a9ac8)
+        version: git+https://github.com/logux/actions.git#eaf920ba94c93526a35f74b86b4f8079cefd170b(@logux/core@git+https://github.com/logux/core.git#41ac51b75560181d1945f91e59cbad2ad5cd319c)
       '@logux/core':
         specifier: github:logux/core#next
-        version: git+https://github.com/logux/core.git#149d5bef43e99adf8d6bffec50c7f674cd9a9ac8
+        version: git+https://github.com/logux/core.git#41ac51b75560181d1945f91e59cbad2ad5cd319c
       nanoevents:
         specifier: ^10.0.0
         version: 10.0.0
@@ -22,8 +22,8 @@ importers:
         version: 6.0.1
     devDependencies:
       '@electric-sql/pglite':
-        specifier: ^0.5.5
-        version: 0.5.5
+        specifier: ^0.5.6
+        version: 0.5.6
       '@logux/oxc-configs':
         specifier: ^1.1.0
         version: 1.1.0(oxlint-tsgolint@7.0.2001)(oxlint@1.79.0(oxlint-tsgolint@7.0.2001))(typescript@7.0.2)
@@ -35,7 +35,7 @@ importers:
         version: 1.1.0(nanostores@1.5.2)(react@19.2.8)
       '@nanostores/sql':
         specifier: ^0.4.3
-        version: 0.4.3(@electric-sql/pglite@0.5.5)(nanostores@1.5.2)
+        version: 0.4.3(@electric-sql/pglite@0.5.6)(nanostores@1.5.2)
       '@nanostores/vue':
         specifier: ^1.1.0
         version: 1.1.0(nanostores@1.5.2)(vue@3.5.41(typescript@7.0.2))
@@ -86,7 +86,7 @@ importers:
         version: 20.11.6
       multiocular:
         specifier: ^0.8.4
-        version: 0.8.4(@logux/core@git+https://github.com/logux/core.git#149d5bef43e99adf8d6bffec50c7f674cd9a9ac8)
+        version: 0.8.4(@logux/core@git+https://github.com/logux/core.git#41ac51b75560181d1945f91e59cbad2ad5cd319c)
       nanodelay:
         specifier: ^2.0.2
         version: 2.0.2
@@ -164,8 +164,8 @@ packages:
     resolution: {integrity: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==}
     engines: {node: '>=18'}
 
-  '@electric-sql/pglite@0.5.5':
-    resolution: {integrity: sha512-QeZ+oB7QaU4EJj2awrB8hwFZ5TXxLRBQ9Gfq0dQauYDdWsRtuWRCERgtri35vRfL07KQHlVlc/4Qxvn7a5AXeA==}
+  '@electric-sql/pglite@0.5.6':
+    resolution: {integrity: sha512-ipn6AOHouIRwNSVL+0hIRuM3yDwAWgRmvZuj+45sudzKpmdPbG8hQuQDZ4A8l7U8E0l7u6pJ/VtMEW42w+vEKQ==}
 
   '@esbuild/aix-ppc64@0.28.2':
     resolution: {integrity: sha512-XExcO+dvLKvVtNTibSTBej1NCAbaGhWn9Ww1ZPx80qsahhPFe/8jgWP0IchNe0F3HwkU7n8ejhH8bjonqht8mQ==}
@@ -354,8 +354,8 @@ packages:
     resolution: {integrity: sha512-VbgVkEloAe2ym5w0cjyRI16Eeyk2R0BgJa9pMYT1FcJEhFnzrB23E0ExIEhrok0iD48bFh7goledwmDLmgWaiw==}
     engines: {node: ^20.0.0 || >=22.0.0}
 
-  '@logux/core@git+https://github.com/logux/core.git#149d5bef43e99adf8d6bffec50c7f674cd9a9ac8':
-    resolution: {commit: 149d5bef43e99adf8d6bffec50c7f674cd9a9ac8, repo: https://github.com/logux/core.git, type: git}
+  '@logux/core@git+https://github.com/logux/core.git#41ac51b75560181d1945f91e59cbad2ad5cd319c':
+    resolution: {commit: 41ac51b75560181d1945f91e59cbad2ad5cd319c, repo: https://github.com/logux/core.git, type: git}
     version: 0.10.0
     engines: {node: ^22.0.0 || ^24.0.0 || >=26.0.0}
 
@@ -2004,7 +2004,7 @@ snapshots:
 
   '@bcoe/v8-coverage@1.0.2': {}
 
-  '@electric-sql/pglite@0.5.5': {}
+  '@electric-sql/pglite@0.5.6': {}
 
   '@esbuild/aix-ppc64@0.28.2':
     optional: true
@@ -2106,19 +2106,19 @@ snapshots:
     dependencies:
       '@logux/core': 0.10.0
 
-  '@logux/actions@0.5.0(@logux/core@git+https://github.com/logux/core.git#149d5bef43e99adf8d6bffec50c7f674cd9a9ac8)':
+  '@logux/actions@0.5.0(@logux/core@git+https://github.com/logux/core.git#41ac51b75560181d1945f91e59cbad2ad5cd319c)':
     dependencies:
-      '@logux/core': git+https://github.com/logux/core.git#149d5bef43e99adf8d6bffec50c7f674cd9a9ac8
+      '@logux/core': git+https://github.com/logux/core.git#41ac51b75560181d1945f91e59cbad2ad5cd319c
 
-  '@logux/actions@git+https://github.com/logux/actions.git#eaf920ba94c93526a35f74b86b4f8079cefd170b(@logux/core@git+https://github.com/logux/core.git#149d5bef43e99adf8d6bffec50c7f674cd9a9ac8)':
+  '@logux/actions@git+https://github.com/logux/actions.git#eaf920ba94c93526a35f74b86b4f8079cefd170b(@logux/core@git+https://github.com/logux/core.git#41ac51b75560181d1945f91e59cbad2ad5cd319c)':
     dependencies:
-      '@logux/core': git+https://github.com/logux/core.git#149d5bef43e99adf8d6bffec50c7f674cd9a9ac8
+      '@logux/core': git+https://github.com/logux/core.git#41ac51b75560181d1945f91e59cbad2ad5cd319c
 
   '@logux/core@0.10.0':
     dependencies:
       nanoevents: 9.1.0
 
-  '@logux/core@git+https://github.com/logux/core.git#149d5bef43e99adf8d6bffec50c7f674cd9a9ac8':
+  '@logux/core@git+https://github.com/logux/core.git#41ac51b75560181d1945f91e59cbad2ad5cd319c':
     dependencies:
       nanoevents: 10.0.0
 
@@ -2154,11 +2154,11 @@ snapshots:
       nanostores: 1.5.2
       react: 19.2.8
 
-  '@nanostores/sql@0.4.3(@electric-sql/pglite@0.5.5)(nanostores@1.5.2)':
+  '@nanostores/sql@0.4.3(@electric-sql/pglite@0.5.6)(nanostores@1.5.2)':
     dependencies:
       nanostores: 1.5.2
     optionalDependencies:
-      '@electric-sql/pglite': 0.5.5
+      '@electric-sql/pglite': 0.5.6
 
   '@nanostores/vue@1.1.0(nanostores@1.5.2)(vue@3.5.41(typescript@7.0.2))':
     dependencies:
@@ -3168,9 +3168,9 @@ snapshots:
 
   minipass@7.1.3: {}
 
-  multiocular@0.8.4(@logux/core@git+https://github.com/logux/core.git#149d5bef43e99adf8d6bffec50c7f674cd9a9ac8):
+  multiocular@0.8.4(@logux/core@git+https://github.com/logux/core.git#41ac51b75560181d1945f91e59cbad2ad5cd319c):
     dependencies:
-      '@logux/actions': 0.5.0(@logux/core@git+https://github.com/logux/core.git#149d5bef43e99adf8d6bffec50c7f674cd9a9ac8)
+      '@logux/actions': 0.5.0(@logux/core@git+https://github.com/logux/core.git#41ac51b75560181d1945f91e59cbad2ad5cd319c)
       '@logux/server': 0.14.0
       diff2html: 3.4.56
       dompurify: 3.4.14
