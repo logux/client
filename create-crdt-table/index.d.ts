@@ -1107,3 +1107,84 @@ export function createCrdtDatabase<Dialect extends Dialects = 'sqlite'>(
   db: Database,
   opts?: CrdtDatabaseOptions<Dialect>
 ): CrdtDatabase<Dialect>
+
+export interface CrdtTasksOptions {
+  /**
+   * Called when the task throws.
+   *
+   * ```js
+   * let tasks = createCrdtTasks(crdt, {
+   *   onError(error) {
+   *     reportToSentry(error)
+   *   }
+   * })
+   * ```
+   *
+   * The queue keeps working: the next tasks are not cancelled by the error.
+   * By default, errors are printed with `console.error()`.
+   */
+  onError?: (error: unknown) => void
+}
+
+export interface CrdtTasks {
+  /**
+   * Add the task to the queue.
+   *
+   * @param task Callback to run after the previous tasks.
+   */
+  add(task: () => Promise<void> | void): void
+
+  /**
+   * Drop the queue: the tasks, which were not started, will never run.
+   *
+   * Call it on sign-out after {@link CrdtTasks#finish}.
+   */
+  destroy(): void
+
+  /**
+   * Promise resolved when every task added before this call was finished.
+   *
+   * ```js
+   * await tasks.finish()
+   * tasks.destroy()
+   * await client.clean()
+   * ```
+   */
+  finish(): Promise<void>
+}
+
+/**
+ * Queue for the log writes of the database bookkeeping.
+ *
+ * The `applied` listener runs inside the applying transaction, so it can not
+ * await a log write: the store will put the write in its own transaction,
+ * which waits for the applying one to commit. The migration replay opens
+ * its transactions the same way.
+ *
+ * The queue solves both: the tasks are not awaited by the applier, they
+ * are serialized between themselves, so they do not overwrite each other’s
+ * changes, and they start only after {@link CrdtDatabase#ready}.
+ *
+ * ```js
+ * import { createCrdtTasks } from '@logux/client/db'
+ *
+ * let tasks = createCrdtTasks(crdt)
+ *
+ * crdt.on('applied', (tx, action, meta, won) => {
+ *   tasks.add(async () => {
+ *     await client.log.removeReason(
+ *       won.map(cell => cell.join('/')),
+ *       { olderThan: meta }
+ *     )
+ *   })
+ * })
+ * ```
+ *
+ * @param crdt CRDT database from {@link createCrdtDatabase}.
+ * @param opts Queue options.
+ * @returns Task queue.
+ */
+export function createCrdtTasks(
+  crdt: Pick<CrdtDatabase, 'ready'>,
+  opts?: CrdtTasksOptions
+): CrdtTasks

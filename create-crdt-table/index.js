@@ -1004,3 +1004,36 @@ export function createCrdtDatabase(client, db, opts = {}) {
     }
   }
 }
+
+export function createCrdtTasks(crdt, opts = {}) {
+  let onError = opts.onError ?? (error => console.error(error))
+
+  let destroyed = false
+  let start
+  let queue = new Promise(resolve => {
+    start = resolve
+  })
+  void crdt.ready.then(() => {
+    start()
+  })
+
+  return {
+    add(task) {
+      queue = queue.then(async () => {
+        if (destroyed) return
+        try {
+          await task()
+        } catch (error) {
+          if (!destroyed) onError(error)
+        }
+      })
+    },
+    destroy() {
+      destroyed = true
+      start()
+    },
+    finish() {
+      return queue
+    }
+  }
+}

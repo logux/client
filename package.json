@@ -153,6 +153,13 @@
       "limit": "4.1 KB"
     },
     {
+      "name": "DB Tasks",
+      "import": {
+        "./create-crdt-table/index.js": "{ createCrdtTasks }"
+      },
+      "limit": "150 B"
+    },
+    {
       "name": "Log Store",
       "import": {
         "./sql-log-store/index.js": "{ SqlLogStore }"

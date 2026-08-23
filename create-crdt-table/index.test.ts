@@ -16,7 +16,7 @@ import { openDb } from '@nanostores/sql'
 import { nodeDriver } from '@nanostores/sql/node'
 import { delay } from 'nanodelay'
 import { cleanStores } from 'nanostores'
-import { afterEach, beforeAll, beforeEach, expect, it } from 'vitest'
+import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 
 import {
   Client,
@@ -33,6 +33,7 @@ import {
   type CrdtTable,
   type CrdtTableRow,
   createCrdtDatabase,
+  createCrdtTasks,
   crdtTableToActions,
   number,
   oneOf,
@@ -3082,4 +3083,190 @@ it('deletes nothing on clean() of outdated database', async () => {
     { id: 'U1' }
   ])
   expect(localStorage.getItem('logux:db')).toBe(hash)
+})
+
+function manualReady(): {
+  crdt: { ready: Promise<void> }
+  ready: () => void
+} {
+  let ready: () => void = () => {}
+  let promise = new Promise<void>(resolve => {
+    ready = resolve
+  })
+  return { crdt: { ready: promise }, ready }
+}
+
+it('runs the tasks in the order after the database is ready', async () => {
+  let { crdt, ready } = manualReady()
+  let tasks = createCrdtTasks(crdt)
+  let calls: string[] = []
+
+  tasks.add(() => {
+    calls.push('first')
+  })
+  tasks.add(async () => {
+    await delay(10)
+    calls.push('second')
+  })
+  await delay(20)
+  expect(calls).toEqual([])
+
+  ready()
+  await tasks.finish()
+  expect(calls).toEqual(['first', 'second'])
+})
+
+it('runs the tasks one by one', async () => {
+  let { crdt, ready } = manualReady()
+  let tasks = createCrdtTasks(crdt)
+  ready()
+
+  let running = 0
+  let parallel = 0
+  for (let i = 0; i < 3; i++) {
+    tasks.add(async () => {
+      running += 1
+      parallel = Math.max(parallel, running)
+      await delay(10)
+      running -= 1
+    })
+  }
+
+  await tasks.finish()
+  expect(parallel).toBe(1)
+})
+
+it('waits for the added tasks in finish()', async () => {
+  let { crdt, ready } = manualReady()
+  let tasks = createCrdtTasks(crdt)
+  ready()
+
+  let calls: string[] = []
+  tasks.add(async () => {
+    await delay(10)
+    calls.push('first')
+  })
+  tasks.add(async () => {
+    await delay(10)
+    calls.push('second')
+  })
+
+  await tasks.finish()
+  expect(calls).toEqual(['first', 'second'])
+})
+
+it('drops the queue on destroy', async () => {
+  let { crdt, ready } = manualReady()
+  let tasks = createCrdtTasks(crdt)
+  let calls: string[] = []
+
+  tasks.add(() => {
+    calls.push('task')
+  })
+  tasks.destroy()
+  await tasks.finish()
+  expect(calls).toEqual([])
+
+  // The database, which was never ready, does not start the dropped queue
+  ready()
+  await delay(10)
+  expect(calls).toEqual([])
+})
+
+it('reports the error and keeps the queue working', async () => {
+  let { crdt, ready } = manualReady()
+  let errors: unknown[] = []
+  let tasks = createCrdtTasks(crdt, {
+    onError(error) {
+      errors.push(error)
+    }
+  })
+  ready()
+
+  let calls: string[] = []
+  tasks.add(() => {
+    throw new Error('Task error')
+  })
+  tasks.add(() => {
+    calls.push('next')
+  })
+
+  await tasks.finish()
+  expect(errors).toEqual([new Error('Task error')])
+  expect(calls).toEqual(['next'])
+})
+
+it('prints the error by default', async () => {
+  let { crdt, ready } = manualReady()
+  let error = vi.spyOn(console, 'error').mockImplementation(() => {})
+  let tasks = createCrdtTasks(crdt)
+  ready()
+
+  tasks.add(() => {
+    throw new Error('Task error')
+  })
+
+  await tasks.finish()
+  expect(error).toHaveBeenCalledWith(new Error('Task error'))
+  error.mockRestore()
+})
+
+it('ignores the error of the task, which was destroyed', async () => {
+  let { crdt, ready } = manualReady()
+  let errors: unknown[] = []
+  let tasks = createCrdtTasks(crdt, {
+    onError(error) {
+      errors.push(error)
+    }
+  })
+  ready()
+
+  tasks.add(async () => {
+    await delay(10)
+    throw new Error('Task error')
+  })
+  await delay(5)
+  tasks.destroy()
+
+  await tasks.finish()
+  expect(errors).toEqual([])
+})
+
+it('writes to the log from the applied event', async () => {
+  let db = openDb(nodeDriver(':memory:'))
+  let client = new Client({
+    server: 'ws://localhost',
+    store: new SqlLogStore(db),
+    subprotocol: 1,
+    userId: '10'
+  })
+  // Without the server the action is kept only by the reason of the test
+  let crdt = createCrdtDatabase(client, db, { sync: false })
+  let user = crdt.table('user', USER_SCHEMA)
+  let tasks = createCrdtTasks(crdt)
+
+  client.log.on('preadd', (action, meta) => {
+    if (action.type === 'user/created') meta.reasons.push('test')
+  })
+  crdt.on('applied', (tx, action, meta) => {
+    tasks.add(async () => {
+      await client.log.removeReason('test', { id: meta.id })
+    })
+  })
+
+  await crdt.ready
+  await user.create({ name: 'Ann' })
+  await delay(10)
+
+  // The write inside the applying transaction would wait for it forever
+  await tasks.finish()
+  let types: string[] = []
+  await client.log.each(action => {
+    types.push(action.type)
+  })
+  expect(types).toEqual([])
+
+  tasks.destroy()
+  crdt.destroy()
+  await db.close()
 })
