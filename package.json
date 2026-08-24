@@ -43,7 +43,7 @@
     "start": "vite test/demo/ --open"
   },
   "dependencies": {
-    "@logux/actions": "github:logux/actions#next",
+    "@logux/actions": "^0.6.0",
     "@logux/core": "^0.11.0",
     "nanoevents": "^10.0.0",
     "nanoid": "^6.0.1"

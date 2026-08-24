@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@logux/actions':
-        specifier: github:logux/actions#next
-        version: git+https://github.com/logux/actions.git#eaf920ba94c93526a35f74b86b4f8079cefd170b(@logux/core@0.11.0)
+        specifier: ^0.6.0
+        version: 0.6.0(@logux/core@0.11.0)
       '@logux/core':
         specifier: ^0.11.0
         version: 0.11.0
@@ -343,12 +343,11 @@ packages:
     peerDependencies:
       '@logux/core': ^0.10.0
 
-  '@logux/actions@git+https://github.com/logux/actions.git#eaf920ba94c93526a35f74b86b4f8079cefd170b':
-    resolution: {commit: eaf920ba94c93526a35f74b86b4f8079cefd170b, repo: https://github.com/logux/actions.git, type: git}
-    version: 0.5.0
+  '@logux/actions@0.6.0':
+    resolution: {integrity: sha512-06BB0Ixpp6PwYttJlj9IWWTwjy65QgtzpVeRLY6dnUcXwmw3Z1FcdqtBzl8IWSeGjPCLBJPfGIxN2hjPmb/p2g==}
     engines: {node: ^22.0.0 || ^24.0.0 || >=26.0.0}
     peerDependencies:
-      '@logux/core': ^0.10.0
+      '@logux/core': ^0.11.0
 
   '@logux/core@0.10.0':
     resolution: {integrity: sha512-VbgVkEloAe2ym5w0cjyRI16Eeyk2R0BgJa9pMYT1FcJEhFnzrB23E0ExIEhrok0iD48bFh7goledwmDLmgWaiw==}
@@ -2108,7 +2107,7 @@ snapshots:
     dependencies:
       '@logux/core': 0.11.0
 
-  '@logux/actions@git+https://github.com/logux/actions.git#eaf920ba94c93526a35f74b86b4f8079cefd170b(@logux/core@0.11.0)':
+  '@logux/actions@0.6.0(@logux/core@0.11.0)':
     dependencies:
       '@logux/core': 0.11.0
 
