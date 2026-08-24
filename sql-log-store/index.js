@@ -91,6 +91,56 @@ function toEntry(row) {
   return [parseJSONWithBinary(row.action), meta]
 }
 
+function matchTime(meta, criteria) {
+  if (criteria.olderThan && !isFirstOlder(meta, criteria.olderThan)) {
+    return false
+  }
+  if (criteria.youngerThan && !isFirstOlder(criteria.youngerThan, meta)) {
+    return false
+  }
+  return true
+}
+
+async function selectByCriteria(target, criteria, reasons) {
+  let where = []
+  let params = []
+  if (reasons) {
+    where.push(
+      `"added" IN (SELECT "added" FROM "logux_reason"` +
+        ` WHERE "reason" IN (${holders(reasons.length)}))`
+    )
+    params.push(...reasons)
+  }
+  if (criteria.index !== undefined) {
+    where.push(
+      `"added" IN (SELECT "added" FROM "logux_index" WHERE "name" = ?)`
+    )
+    params.push(criteria.index)
+  }
+  if (criteria.id !== undefined) {
+    where.push('"id" = ?')
+    params.push(criteria.id)
+  }
+  if (criteria.ids !== undefined) {
+    where.push(`"id" IN (${holders(criteria.ids.length)})`)
+    params.push(...criteria.ids)
+  }
+  if (criteria.minAdded !== undefined) {
+    where.push('"added" >= ?')
+    params.push(criteria.minAdded)
+  }
+  if (criteria.maxAdded !== undefined) {
+    where.push('"added" <= ?')
+    params.push(criteria.maxAdded)
+  }
+  return target.select(
+    `SELECT "added", "action", "meta" FROM "logux_log"` +
+      (where.length > 0 ? ` WHERE ${where.join(' AND ')}` : '') +
+      ` ORDER BY "added"`,
+    params
+  )
+}
+
 export class SqlLogStore {
   constructor(db) {
     this.db = db
@@ -298,45 +348,38 @@ export class SqlLogStore {
     })
   }
 
-  async removeReason(reason, criteria, callback) {
+  async addReason(reasons, criteria) {
+    if (criteria.ids && criteria.ids.length === 0) return
+    await this.write(async tx => {
+      let rows = await selectByCriteria(tx.driver, criteria)
+      for (let row of rows) {
+        let [, meta] = toEntry(row)
+        if (!matchTime(meta, criteria)) continue
+        let missing = reasons.filter(i => !meta.reasons.includes(i))
+        if (missing.length === 0) continue
+        meta.reasons = meta.reasons.concat(missing)
+        await tx.driver.exec(
+          `UPDATE "logux_log" SET "meta" = ? WHERE "added" = ?`,
+          [serializeToJSONWithBinary(meta), meta.added]
+        )
+        await addTags(tx.driver, 'logux_reason', 'reason', meta.added, missing)
+      }
+    })
+  }
+
+  async removeReason(reasons, criteria, callback) {
     if (criteria.ids && criteria.ids.length === 0) return
     // Callbacks are called after the commit, so they will not see
     // the database in the middle of the changes
     let cleaned = await this.write(async tx => {
-      let where = [
-        `"added" IN (SELECT "added" FROM "logux_reason" WHERE "reason" = ?)`
-      ]
-      let params = [reason]
-      if (criteria.id !== undefined) {
-        where.push('"id" = ?')
-        params.push(criteria.id)
-      }
-      if (criteria.ids !== undefined) {
-        where.push(`"id" IN (${holders(criteria.ids.length)})`)
-        params.push(...criteria.ids)
-      }
-      if (criteria.minAdded !== undefined) {
-        where.push('"added" >= ?')
-        params.push(criteria.minAdded)
-      }
-      if (criteria.maxAdded !== undefined) {
-        where.push('"added" <= ?')
-        params.push(criteria.maxAdded)
-      }
-      let rows = await tx.driver.select(
-        `SELECT "added", "action", "meta" FROM "logux_log"` +
-          ` WHERE ${where.join(' AND ')} ORDER BY "added"`,
-        params
-      )
-
+      let rows = await selectByCriteria(tx.driver, criteria, reasons)
       let removed = []
       for (let row of rows) {
         let [action, meta] = toEntry(row)
-        let older = criteria.olderThan
-        let younger = criteria.youngerThan
-        if (older && !isFirstOlder(meta, older)) continue
-        if (younger && !isFirstOlder(younger, meta)) continue
-        meta.reasons = meta.reasons.filter(i => i !== reason)
+        if (!matchTime(meta, criteria)) continue
+        let dropping = reasons.filter(i => meta.reasons.includes(i))
+        if (dropping.length === 0) continue
+        meta.reasons = meta.reasons.filter(i => !dropping.includes(i))
         if (meta.reasons.length === 0) {
           removed.push([action, meta])
         } else {
@@ -345,8 +388,9 @@ export class SqlLogStore {
             [serializeToJSONWithBinary(meta), meta.added]
           )
           await tx.driver.exec(
-            `DELETE FROM "logux_reason" WHERE "added" = ? AND "reason" = ?`,
-            [meta.added, reason]
+            `DELETE FROM "logux_reason" WHERE "added" = ?` +
+              ` AND "reason" IN (${holders(dropping.length)})`,
+            [meta.added, ...dropping]
           )
         }
       }

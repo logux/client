@@ -29,6 +29,82 @@ function isDefined(value) {
   return typeof value !== 'undefined'
 }
 
+function matchCriteria(entry, criteria) {
+  let meta = entry.meta
+  let c = criteria
+  if (isDefined(c.ids) && !c.ids.includes(meta.id)) {
+    return false
+  }
+  if (isDefined(c.index) && !entry.indexes.includes(c.index)) {
+    return false
+  }
+  if (isDefined(c.olderThan) && !isFirstOlder(meta, c.olderThan)) {
+    return false
+  }
+  if (isDefined(c.youngerThan) && !isFirstOlder(c.youngerThan, meta)) {
+    return false
+  }
+  if (isDefined(c.minAdded) && entry.added < c.minAdded) {
+    return false
+  }
+  if (isDefined(c.maxAdded) && entry.added > c.maxAdded) {
+    return false
+  }
+  return true
+}
+
+/**
+ * Change reasons of every action matching the criteria. Uses `criteria.id`,
+ * `criteria.index`, or the single removing reason to avoid scanning
+ * the whole log.
+ *
+ * The `change` callback returns the request to wait for, or `false`
+ * if the action was not changed.
+ */
+async function changeReasons(store, criteria, reasons, change) {
+  if (criteria.ids && criteria.ids.length === 0) return
+
+  if (isDefined(criteria.id)) {
+    let entry = await promisify(store.os('log').index('id').get(criteria.id))
+    if (!entry || !matchCriteria(entry, criteria)) return
+    let log = store.os('log', 'write')
+    let process = change(entry, log)
+    if (process) await promisify(process)
+    return
+  }
+
+  await new Promise((resolve, reject) => {
+    let log = store.os('log', 'write')
+    let request
+    if (isDefined(criteria.index)) {
+      request = log.index('indexes').openCursor(criteria.index)
+    } else if (reasons && reasons.length === 1) {
+      request = log.index('reasons').openCursor(reasons[0])
+    } else {
+      request = log.openCursor()
+    }
+    rejectify(request, reject)
+
+    request.onsuccess = e => {
+      let cursor = e.target.result
+      if (!cursor) {
+        resolve()
+        return
+      }
+      let entry = cursor.value
+      let process = matchCriteria(entry, criteria) && change(entry, log)
+      if (!process) {
+        cursor.continue()
+        return
+      }
+      rejectify(process, reject)
+      process.onsuccess = () => {
+        cursor.continue()
+      }
+    }
+  })
+}
+
 export class IndexedStore {
   constructor(name = 'logux') {
     this.name = name
@@ -60,6 +136,17 @@ export class IndexedStore {
       meta.added = added
       return meta
     }
+  }
+
+  async addReason(reasons, criteria) {
+    let store = await this.init()
+    await changeReasons(store, criteria, undefined, (entry, log) => {
+      let missing = reasons.filter(i => !entry.reasons.includes(i))
+      if (missing.length === 0) return false
+      entry.reasons = entry.reasons.concat(missing)
+      entry.meta.reasons = entry.reasons
+      return log.put(entry)
+    })
   }
 
   async byId(id) {
@@ -210,80 +297,18 @@ export class IndexedStore {
     }
   }
 
-  async removeReason(reason, criteria, callback) {
-    if (criteria.ids && criteria.ids.length === 0) return
+  async removeReason(reasons, criteria, callback) {
     let store = await this.init()
-    if (criteria.id) {
-      let entry = await promisify(store.os('log').index('id').get(criteria.id))
-      if (entry) {
-        let index = entry.meta.reasons.indexOf(reason)
-        if (index !== -1) {
-          entry.meta.reasons.splice(index, 1)
-          entry.reasons = entry.meta.reasons
-          if (entry.meta.reasons.length === 0) {
-            callback(entry.action, entry.meta)
-            await promisify(store.os('log', 'write').delete(entry.added))
-          } else {
-            await promisify(store.os('log', 'write').put(entry))
-          }
-        }
-      }
-    } else {
-      let ids = criteria.ids && new Set(criteria.ids)
-      await new Promise((resolve, reject) => {
-        let log = store.os('log', 'write')
-        let request = log.index('reasons').openCursor(reason)
-        rejectify(request, reject)
-        request.onsuccess = function (e) {
-          if (!e.target.result) {
-            resolve()
-            return
-          }
-
-          let entry = e.target.result.value
-          let m = entry.meta
-          let c = criteria
-
-          if (ids && !ids.has(m.id)) {
-            e.target.result.continue()
-            return
-          }
-          if (isDefined(c.olderThan) && !isFirstOlder(m, c.olderThan)) {
-            e.target.result.continue()
-            return
-          }
-          if (isDefined(c.youngerThan) && !isFirstOlder(c.youngerThan, m)) {
-            e.target.result.continue()
-            return
-          }
-          if (isDefined(c.minAdded) && entry.added < c.minAdded) {
-            e.target.result.continue()
-            return
-          }
-          if (isDefined(c.maxAdded) && entry.added > c.maxAdded) {
-            e.target.result.continue()
-            return
-          }
-
-          entry.reasons = entry.reasons.filter(i => i !== reason)
-          entry.meta.reasons = entry.reasons
-
-          let process
-          if (entry.reasons.length === 0) {
-            entry.meta.added = entry.added
-            callback(entry.action, entry.meta)
-            process = log.delete(entry.added)
-          } else {
-            process = log.put(entry)
-          }
-
-          rejectify(process, reject)
-          process.onsuccess = function () {
-            e.target.result.continue()
-          }
-        }
-      })
-    }
+    await changeReasons(store, criteria, reasons, (entry, log) => {
+      let kept = entry.reasons.filter(i => !reasons.includes(i))
+      if (kept.length === entry.reasons.length) return false
+      entry.reasons = kept
+      entry.meta.reasons = kept
+      if (kept.length > 0) return log.put(entry)
+      entry.meta.added = entry.added
+      callback(entry.action, entry.meta)
+      return log.delete(entry.added)
+    })
   }
 
   async setLastSynced(values) {

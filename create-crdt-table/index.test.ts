@@ -3535,7 +3535,11 @@ it('reports the tables, which were emptied not by the actions', async () => {
 
 it('does not report the tables, which the user emptied', async () => {
   let { client, db } = await setup()
+  let reasons: CrdtCorruption[] = []
   let crdt1 = createCrdtDatabase(client, db)
+  crdt1.on('corrupted', reason => {
+    reasons.push(reason)
+  })
   let user1 = crdt1.table('user', USER_SCHEMA)
   await crdt1.ready
   let id = await user1.create({ name: 'Ann' })
@@ -3543,9 +3547,10 @@ it('does not report the tables, which the user emptied', async () => {
   await user1.delete(id)
   await delay(10)
   expect(localStorage.getItem('logux:db:filled')).toBeNull()
+  // The deleting action emptied the tables, not the data loss
+  expect(reasons).toEqual([])
   crdt1.destroy()
 
-  let reasons: CrdtCorruption[] = []
   let crdt2 = createCrdtDatabase(client, db)
   crdt2.on('corrupted', reason => {
     reasons.push(reason)

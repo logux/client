@@ -122,7 +122,7 @@ it('updates reasons cache', async () => {
   store = new IndexedStore()
   await store.add({ type: 'A' }, { added: 1, id: '1', reasons: ['a'], time: 1 })
   await store.changeMeta('1', { reasons: ['a', 'b', 'b', 'c'] })
-  await store.removeReason('b', {}, () => {})
+  await store.removeReason(['b'], {}, () => {})
   await check(store, [
     [{ type: 'A' }, { added: 1, id: '1', reasons: ['a', 'c'], time: 1 }]
   ])

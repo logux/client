@@ -647,7 +647,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
     if (cells[0].length > 0) {
       if (!storage[filledKey]) storage[filledKey] = '1'
     } else if (storage[filledKey] && isDeleting(action)) {
-      await checkTables(tx.driver)
+      await checkTables(tx.driver, true)
     }
     // Listeners write to the applying transaction, so they can not be parallel
     let listeners = emitter.events.applied
@@ -694,7 +694,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
    * a cleaned storage, a lost database file or a browser, which dropped
    * the data of the origin.
    */
-  async function checkTables(target = driver) {
+  async function checkTables(target = driver, deleted = false) {
     let checks = []
     for (let plural in tables) checks.push(`EXISTS(SELECT 1 FROM "${plural}")`)
     if (checks.length === 0) return
@@ -707,7 +707,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
       storage[filledKey] = '1'
     } else if (storage[filledKey]) {
       delete storage[filledKey]
-      corrupted('empty-tables')
+      if (!deleted) corrupted('empty-tables')
     }
   }
 
