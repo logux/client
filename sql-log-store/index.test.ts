@@ -21,7 +21,8 @@ type Entry = [Action, Meta]
 let db: Database
 
 beforeEach(() => {
-  db = openDb(nodeDriver(':memory:'))
+  // Disabling error output since we will test error handling
+  db = openDb(nodeDriver(':memory:'), { onError() {} })
 })
 
 afterEach(async () => {

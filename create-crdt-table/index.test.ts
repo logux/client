@@ -181,7 +181,7 @@ async function setup(): Promise<{
 }> {
   let client = new TestClient('10')
   await client.connect()
-  let db = openDb(nodeDriver(':memory:'))
+  let db = openDb(nodeDriver(':memory:'), { onError() {} })
   return { client, db }
 }
 
@@ -1075,7 +1075,10 @@ it('sends the database error to corrupted listeners', async () => {
   })
 
   let errors: string[] = []
-  let crdt = createCrdtDatabase(client, openDb(brokenDriver(error)))
+  let crdt = createCrdtDatabase(
+    client,
+    openDb(brokenDriver(error), { onError() {} })
+  )
   crdt.on('corrupted', (reason, e) => {
     errors.push(`first ${reason} ${(e as Error).message}`)
   })
@@ -1153,19 +1156,19 @@ function tableAction(action: AnyAction): Action {
 }
 
 it('parses the type of table actions', () => {
-  let tables = { user: USER_SCHEMA }
+  let crdt = { tables: { user: USER_SCHEMA } }
 
-  expect(parseCrdtType('user/created', tables)).toEqual({
+  expect(parseCrdtType('user/created', crdt)).toEqual({
     plural: 'user',
     verb: 'created'
   })
-  expect(parseCrdtType('user/deleted', tables)).toEqual({
+  expect(parseCrdtType('user/deleted', crdt)).toEqual({
     plural: 'user',
     verb: 'deleted'
   })
-  expect(parseCrdtType('user/renamed', tables)).toBe(false)
-  expect(parseCrdtType('post/created', tables)).toBe(false)
-  expect(parseCrdtType('rename', tables)).toBe(false)
+  expect(parseCrdtType('user/renamed', crdt)).toBe(false)
+  expect(parseCrdtType('post/created', crdt)).toBe(false)
+  expect(parseCrdtType('rename', crdt)).toBe(false)
 })
 
 it('parses the rows of table actions without the schema', () => {
@@ -1199,12 +1202,12 @@ it('parses the rows of table actions without the schema', () => {
 })
 
 it('parses every shape of table actions', () => {
-  let tables = { user: USER_SCHEMA }
+  let crdt = { tables: { user: USER_SCHEMA } }
 
   expect(
     parseCrdtAction(
       tableAction({ fields: { name: 'Ann' }, id: 'U1', type: 'user/created' }),
-      tables
+      crdt
     )
   ).toEqual({ plural: 'user', rows: [['U1', ['name']]], verb: 'created' })
 
@@ -1217,7 +1220,7 @@ it('parses every shape of table actions', () => {
         ],
         type: 'user/created'
       }),
-      tables
+      crdt
     )
   ).toEqual({
     plural: 'user',
@@ -1231,7 +1234,7 @@ it('parses every shape of table actions', () => {
   expect(
     parseCrdtAction(
       tableAction({ fields: { age: 30 }, id: 'U1', type: 'user/changed' }),
-      tables
+      crdt
     )
   ).toEqual({ plural: 'user', rows: [['U1', ['age']]], verb: 'changed' })
 
@@ -1242,7 +1245,7 @@ it('parses every shape of table actions', () => {
         ids: ['U1', 'U2'],
         type: 'user/changed'
       }),
-      tables
+      crdt
     )
   ).toEqual({
     plural: 'user',
@@ -1254,13 +1257,13 @@ it('parses every shape of table actions', () => {
   })
 
   expect(
-    parseCrdtAction(tableAction({ id: 'U1', type: 'user/deleted' }), tables)
+    parseCrdtAction(tableAction({ id: 'U1', type: 'user/deleted' }), crdt)
   ).toEqual({ plural: 'user', rows: [['U1', []]], verb: 'deleted' })
 
   expect(
     parseCrdtAction(
       tableAction({ ids: ['U1', 'U2'], type: 'user/deleted' }),
-      tables
+      crdt
     )
   ).toEqual({
     plural: 'user',
@@ -1279,21 +1282,21 @@ it('parses every shape of table actions', () => {
         id: 'U1',
         type: 'user/changed'
       }),
-      tables
+      crdt
     )
   ).toEqual({ plural: 'user', rows: [['U1', ['name']]], verb: 'changed' })
 
   // Empty batches are added to the log, but change nothing
   expect(
-    parseCrdtAction(tableAction({ records: [], type: 'user/created' }), tables)
+    parseCrdtAction(tableAction({ records: [], type: 'user/created' }), crdt)
   ).toEqual({ plural: 'user', rows: [], verb: 'created' })
   expect(
-    parseCrdtAction(tableAction({ ids: [], type: 'user/deleted' }), tables)
+    parseCrdtAction(tableAction({ ids: [], type: 'user/deleted' }), crdt)
   ).toEqual({ plural: 'user', rows: [], verb: 'deleted' })
 })
 
 it('ignores actions of other tables and types', () => {
-  let tables = { user: USER_SCHEMA }
+  let crdt = { tables: { user: USER_SCHEMA } }
   let ignored = [
     { type: 'logux/processed' },
     { type: 'rename' },
@@ -1304,14 +1307,14 @@ it('ignores actions of other tables and types', () => {
     { id: 'U1', type: 'user/' }
   ]
   for (let action of ignored) {
-    expect(parseCrdtAction(tableAction(action), tables)).toBe(false)
+    expect(parseCrdtAction(tableAction(action), crdt)).toBe(false)
   }
 
   // The verb is taken after the last slash, like in the database itself
   expect(
     parseCrdtAction(
       tableAction({ fields: {}, id: 'U1', type: 'my/user/created' }),
-      { 'my/user': USER_SCHEMA }
+      { tables: { 'my/user': USER_SCHEMA } }
     )
   ).toEqual({ plural: 'my/user', rows: [['U1', []]], verb: 'created' })
 })
@@ -1324,7 +1327,7 @@ it('parses the same cells as the database applies', async () => {
 
   let cells: string[] = []
   crdt.on('applied', (tx, action, meta, won, touched) => {
-    let parsed = parseCrdtAction(action, crdt.tables)
+    let parsed = parseCrdtAction(action, crdt)
     if (!parsed) throw new Error(`Unknown action ${action.type}`)
     let parsedCells: string[] = []
     for (let [id, fields] of parsed.rows) {
@@ -1585,7 +1588,10 @@ it('becomes broken when the database can not be prepared', async () => {
   let error = new Error('No disk space')
 
   let errors: unknown[] = []
-  let crdt = createCrdtDatabase(client, openDb(brokenDriver(error)))
+  let crdt = createCrdtDatabase(
+    client,
+    openDb(brokenDriver(error), { onError() {} })
+  )
   crdt.on('corrupted', (reason, e) => {
     errors.push(e)
   })
@@ -1613,7 +1619,10 @@ it('becomes broken when the migration failed', async () => {
   let error = new Error('No disk space')
   let client2 = new TestClient('10')
   await client2.connect()
-  let crdt2 = createCrdtDatabase(client2, openDb(brokenDriver(error)))
+  let crdt2 = createCrdtDatabase(
+    client2,
+    openDb(brokenDriver(error), { onError() {} })
+  )
   crdt2.on('corrupted', () => {})
   crdt2.table('user', USER_SCHEMA, ['name'])
   let states: string[] = []
@@ -1629,7 +1638,10 @@ it('rejects pending changes on broken database', async () => {
   let client = new TestClient('10')
   await client.connect()
   let error = new Error('No disk space')
-  let crdt = createCrdtDatabase(client, openDb(brokenDriver(error, 10)))
+  let crdt = createCrdtDatabase(
+    client,
+    openDb(brokenDriver(error, 10), { onError() {} })
+  )
   crdt.on('corrupted', () => {})
   let user = crdt.table('user', USER_SCHEMA)
 
@@ -1654,7 +1666,10 @@ it('re-throws the database error without corrupted listener', async () => {
     unhandled.push(reason)
   })
 
-  let crdt = createCrdtDatabase(client, openDb(brokenDriver(error)))
+  let crdt = createCrdtDatabase(
+    client,
+    openDb(brokenDriver(error), { onError() {} })
+  )
   crdt.table('user', USER_SCHEMA)
   await crdt.ready
   await delay(10)
@@ -1677,7 +1692,8 @@ it('keeps the tables, but drops the schema on clean() of broken database', async
         return Promise.reject(new Error('No disk space'))
       }
       return exec()
-    })
+    }),
+    { onError() {} }
   )
 
   let crdt1 = createCrdtDatabase(client, db)
@@ -2596,7 +2612,7 @@ it('applies actions in the transaction of SQL log store', async () => {
 })
 
 it('does not add action to the log if applying failed', async () => {
-  let db = openDb(nodeDriver(':memory:'))
+  let db = openDb(nodeDriver(':memory:'), { onError() {} })
   let client = new Client({
     server: 'ws://localhost',
     store: new SqlLogStore(db),
@@ -3422,7 +3438,10 @@ it('reports the error of the database as the corruption', async () => {
   await client.connect()
   let error = new Error('No disk space')
   let reported: [CrdtCorruption, unknown][] = []
-  let crdt = createCrdtDatabase(client, openDb(brokenDriver(error)))
+  let crdt = createCrdtDatabase(
+    client,
+    openDb(brokenDriver(error), { onError() {} })
+  )
   crdt.on('corrupted', (reason, e) => {
     reported.push([reason, e])
   })
@@ -3447,7 +3466,7 @@ it('does not re-throw the database error with corrupted listener', async () => {
   let reasons: CrdtCorruption[] = []
   let crdt = createCrdtDatabase(
     client,
-    openDb(brokenDriver(new Error('No disk space')))
+    openDb(brokenDriver(new Error('No disk space')), { onError() {} })
   )
   crdt.table('user', USER_SCHEMA)
   crdt.on('corrupted', reason => {
