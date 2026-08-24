@@ -1,5 +1,11 @@
 import { isFirstOlder, toSorted } from '@logux/core'
 
+export function newerDatabaseError(part) {
+  let error = new Error(`${part} from a newer Logux Client`)
+  error.name = 'LoguxNewerDatabase'
+  return error
+}
+
 /**
  * Version of the internal tables format to re-create the log on changes.
  * It can only grow, so the log from a newer client is not supported.
@@ -277,7 +283,7 @@ export class SqlLogStore {
         )
         let version = row ? Number(row.version) : 0
         if (version > LOGUX_SQL_LOG_VERSION) {
-          throw new Error('DB was created by a newer version of Logux Client')
+          throw newerDatabaseError('Log')
         }
         if (version < LOGUX_SQL_LOG_VERSION) {
           await tx.driver.exec(`DELETE FROM "logux_version"`, [])

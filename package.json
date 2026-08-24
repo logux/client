@@ -53,7 +53,7 @@
     "@logux/oxc-configs": "^1.1.0",
     "@nanostores/preact": "^1.1.0",
     "@nanostores/react": "^1.1.0",
-    "@nanostores/sql": "^0.4.3",
+    "@nanostores/sql": "^0.5.0",
     "@nanostores/vue": "^1.1.0",
     "@size-limit/preset-small-lib": "^13.0.3",
     "@testing-library/preact": "^3.2.4",
@@ -150,7 +150,7 @@
       "import": {
         "./create-crdt-table/index.js": "{ createCrdtDatabase }"
       },
-      "limit": "4.3 KB"
+      "limit": "4.5 KB"
     },
     {
       "name": "Log Store",

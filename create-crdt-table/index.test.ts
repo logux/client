@@ -175,14 +175,25 @@ const USER_SCHEMA = {
 
 type UserValue = CrdtTableRow<typeof USER_SCHEMA>
 
+/**
+ * The tests check the database errors themselves, so the default listener
+ * must not print them to the console.
+ */
+function openSilentDb<DBDriver extends Driver>(
+  driver: DBDriver
+): Database<DBDriver> {
+  let db = openDb(driver)
+  db.on('error', () => {})
+  return db
+}
+
 async function setup(): Promise<{
   client: TestClient
   db: Database
 }> {
   let client = new TestClient('10')
   await client.connect()
-  let db = openDb(nodeDriver(':memory:'), { onError() {} })
-  return { client, db }
+  return { client, db: openSilentDb(nodeDriver(':memory:')) }
 }
 
 async function loadList<Row>(store: SqlStore<Row[]>): Promise<Row[]> {
@@ -196,6 +207,39 @@ async function tableNames(db: Database): Promise<string[]> {
     ['table']
   )) as { name: string }[]
   return rows.map(i => i.name)
+}
+
+const CREATE_SERVICE_SQL =
+  'CREATE TABLE IF NOT EXISTS "logux_crdt"' +
+  ' ("key" TEXT PRIMARY KEY, "value" TEXT)'
+
+const WRITE_SERVICE_SQL =
+  'INSERT INTO "logux_crdt" ("key", "value") VALUES (?, ?)' +
+  ' ON CONFLICT ("key") DO UPDATE SET "value" = excluded."value"'
+
+/**
+ * The applier keeps the schema hash and the marker of the filled tables
+ * in its own table, so the tests read and write them like it does.
+ */
+async function readService(db: Database, key: string): Promise<string | null> {
+  let rows = (await db.driver.select(
+    'SELECT "value" FROM "logux_crdt" WHERE "key" = ?',
+    [key]
+  )) as { value: string }[]
+  return rows[0]?.value ?? null
+}
+
+/**
+ * A database, which the applier of the previous start left behind:
+ * the storage and the database itself both remember the schema.
+ */
+async function writeService(
+  db: Database,
+  key: string,
+  value: string
+): Promise<void> {
+  await db.driver.exec(CREATE_SERVICE_SQL, [])
+  await db.driver.exec(WRITE_SERVICE_SQL, [key, value])
 }
 
 /**
@@ -712,10 +756,9 @@ it('fills table from existing log on first run', async () => {
 
 it('rebuilds database on schema change and replays repeat() entries', async () => {
   let { client, db } = await setup()
-  localStorage.setItem(
-    'logux:db',
-    JSON.stringify({ tables: { removed: {}, user: {} } })
-  )
+  let oldHash = JSON.stringify({ tables: { removed: {}, user: {} } })
+  localStorage.setItem('logux:db', oldHash)
+  await writeService(db, 'schema', oldHash)
   await db.driver.exec('CREATE TABLE "user" ("id" TEXT PRIMARY KEY)', [])
   await db.driver.exec('INSERT INTO "user" ("id") VALUES (?)', ['garbage'])
   await db.driver.exec('CREATE TABLE "removed" ("id" TEXT PRIMARY KEY)', [])
@@ -773,6 +816,7 @@ it('rebuilds database on schema change and replays repeat() entries', async () =
 it('rebuilds database on schema change without repeat()', async () => {
   let { client, db } = await setup()
   localStorage.setItem('logux:db', '{}')
+  await writeService(db, 'schema', '{}')
 
   let crdt = createCrdtDatabase(client, db)
   let user = crdt.table('user', USER_SCHEMA)
@@ -1075,10 +1119,7 @@ it('sends the database error to corrupted listeners', async () => {
   })
 
   let errors: string[] = []
-  let crdt = createCrdtDatabase(
-    client,
-    openDb(brokenDriver(error), { onError() {} })
-  )
+  let crdt = createCrdtDatabase(client, openSilentDb(brokenDriver(error)))
   crdt.on('corrupted', (reason, e) => {
     errors.push(`first ${reason} ${(e as Error).message}`)
   })
@@ -1467,10 +1508,15 @@ it('creates indexes after replaying the log on migration', async () => {
     .map(sql => sql.split(' ').slice(0, 2).join(' '))
     .filter(type => type !== 'SELECT "id",')
   expect(types).toEqual([
+    // The service table with the schema hash of the database
+    'CREATE TABLE',
     'DROP TABLE',
     'CREATE TABLE',
     'INSERT INTO',
-    'CREATE INDEX'
+    'CREATE INDEX',
+    // The hash and the version are written after the successful replay
+    'INSERT INTO',
+    'INSERT INTO'
   ])
 })
 
@@ -1588,10 +1634,7 @@ it('becomes broken when the database can not be prepared', async () => {
   let error = new Error('No disk space')
 
   let errors: unknown[] = []
-  let crdt = createCrdtDatabase(
-    client,
-    openDb(brokenDriver(error), { onError() {} })
-  )
+  let crdt = createCrdtDatabase(client, openSilentDb(brokenDriver(error)))
   crdt.on('corrupted', (reason, e) => {
     errors.push(e)
   })
@@ -1610,8 +1653,8 @@ it('becomes broken when the database can not be prepared', async () => {
 it('becomes broken when the migration failed', async () => {
   let client = new TestClient('10')
   await client.connect()
-  let db = openDb(nodeDriver(':memory:'))
-  let crdt1 = createCrdtDatabase(client, db)
+  let origin = nodeDriver(':memory:')
+  let crdt1 = createCrdtDatabase(client, openDb(origin))
   crdt1.table('user', USER_SCHEMA)
   await crdt1.ready
   crdt1.destroy()
@@ -1619,10 +1662,13 @@ it('becomes broken when the migration failed', async () => {
   let error = new Error('No disk space')
   let client2 = new TestClient('10')
   await client2.connect()
-  let crdt2 = createCrdtDatabase(
-    client2,
-    openDb(brokenDriver(error), { onError() {} })
-  )
+  // The schema of the database is read without an error, so the migration
+  // starts, and only its writes fail
+  let broken = hookExec(origin, (query, exec) => {
+    if (query.startsWith('DROP TABLE')) return Promise.reject(error)
+    return exec()
+  })
+  let crdt2 = createCrdtDatabase(client2, openSilentDb(broken))
   crdt2.on('corrupted', () => {})
   crdt2.table('user', USER_SCHEMA, ['name'])
   let states: string[] = []
@@ -1638,10 +1684,7 @@ it('rejects pending changes on broken database', async () => {
   let client = new TestClient('10')
   await client.connect()
   let error = new Error('No disk space')
-  let crdt = createCrdtDatabase(
-    client,
-    openDb(brokenDriver(error, 10), { onError() {} })
-  )
+  let crdt = createCrdtDatabase(client, openSilentDb(brokenDriver(error, 10)))
   crdt.on('corrupted', () => {})
   let user = crdt.table('user', USER_SCHEMA)
 
@@ -1666,10 +1709,7 @@ it('re-throws the database error without corrupted listener', async () => {
     unhandled.push(reason)
   })
 
-  let crdt = createCrdtDatabase(
-    client,
-    openDb(brokenDriver(error), { onError() {} })
-  )
+  let crdt = createCrdtDatabase(client, openSilentDb(brokenDriver(error)))
   crdt.table('user', USER_SCHEMA)
   await crdt.ready
   await delay(10)
@@ -1686,14 +1726,13 @@ it('keeps the tables, but drops the schema on clean() of broken database', async
   await client.connect()
   let origin = nodeDriver(':memory:')
   let failing = false
-  let db = openDb(
+  let db = openSilentDb(
     hookExec(origin, (query, exec) => {
       if (failing && query.startsWith('CREATE TABLE')) {
         return Promise.reject(new Error('No disk space'))
       }
       return exec()
-    }),
-    { onError() {} }
+    })
   )
 
   let crdt1 = createCrdtDatabase(client, db)
@@ -2053,6 +2092,7 @@ it('generates SQL with dialect-specific and extra column SQL', async () => {
   await delay(10)
 
   expect(executed).toEqual([
+    CREATE_SERVICE_SQL,
     'DROP TABLE IF EXISTS "user"',
     'CREATE TABLE IF NOT EXISTS "user" (' +
       '"id" TEXT PRIMARY KEY, ' +
@@ -2065,7 +2105,10 @@ it('generates SQL with dialect-specific and extra column SQL', async () => {
       '"updatedAt_name" TEXT, ' +
       '"updatedAt_pinned" TEXT, ' +
       '"updatedAt_postedAt" TEXT, ' +
-      '"updatedAt_quote" TEXT)'
+      '"updatedAt_quote" TEXT)',
+    // The schema hash and the tables format version of this database
+    WRITE_SERVICE_SQL,
+    WRITE_SERVICE_SQL
   ])
 })
 
@@ -2073,7 +2116,8 @@ it('allows to replace localStorage key for third-party widgets', async () => {
   let { client, db } = await setup()
   let stopCalled = 0
   let crdt = createCrdtDatabase(client, db, {
-    key: 'widget:db'})
+    key: 'widget:db'
+  })
   crdt.on('stop', () => {
     stopCalled += 1
   })
@@ -2123,6 +2167,7 @@ it('allows to replace localStorage with custom storage', async () => {
 it('rebuilds database on schema change in custom storage', async () => {
   let { client, db } = await setup()
   let storage: Record<string, string | undefined> = { 'logux:db': '{}' }
+  await writeService(db, 'schema', '{}')
   await client.log.add(
     { fields: { name: 'Ann' }, id: 'U1', type: 'user/created' },
     { reasons: ['test'] }
@@ -2487,8 +2532,9 @@ it('applies many actions in a single transaction', async () => {
   crdt.table('user', USER_SCHEMA, ['name'])
   await crdt.ready
 
-  // The schema, the replay of all actions, and the indexes
-  expect(transactions).toBe(3)
+  // The service table, the schema, the replay of all actions,
+  // and the indexes with the new hash
+  expect(transactions).toBe(4)
   expect(
     await db.driver.select('SELECT count(*) AS "count" FROM "user"', [])
   ).toEqual([{ count: 1000 }])
@@ -2612,7 +2658,7 @@ it('applies actions in the transaction of SQL log store', async () => {
 })
 
 it('does not add action to the log if applying failed', async () => {
-  let db = openDb(nodeDriver(':memory:'), { onError() {} })
+  let db = openSilentDb(nodeDriver(':memory:'))
   let client = new Client({
     server: 'ws://localhost',
     store: new SqlLogStore(db),
@@ -2987,11 +3033,13 @@ it('empties all tables keeping the database ready', async () => {
 
   expect(await loadList($users)).toEqual([])
   expect(await loadList(post.select())).toEqual([])
-  expect(await tableNames(db)).toEqual(['post', 'user'])
+  expect(await tableNames(db)).toEqual(['logux_crdt', 'post', 'user'])
   expect(await indexSqls(db)).toEqual([
     'CREATE INDEX "user_name" ON "user" ("name")'
   ])
   expect(localStorage.getItem('logux:db')).toBeTypeOf('string')
+  // The database is still ours, only its rows are gone
+  expect(await readService(db, 'schema')).toBeTypeOf('string')
   cleanStores($users)
 
   await user.create({ id: 'U3', name: 'Cat' })
@@ -3010,7 +3058,7 @@ it('drops all tables on clean()', async () => {
   let $all = user.select()
   expect(await loadList($all)).toHaveLength(1)
   cleanStores($all)
-  expect(await tableNames(db)).toEqual(['post', 'user'])
+  expect(await tableNames(db)).toEqual(['logux_crdt', 'post', 'user'])
 
   await crdt.clean()
 
@@ -3041,7 +3089,7 @@ it('does not drop tables on client.clean() after destroy()', async () => {
   crdt.destroy()
   await client.clean()
 
-  expect(await tableNames(db)).toEqual(['user'])
+  expect(await tableNames(db)).toEqual(['logux_crdt', 'user'])
   expect(localStorage.getItem('logux:db')).toBeTypeOf('string')
 })
 
@@ -3438,10 +3486,7 @@ it('reports the error of the database as the corruption', async () => {
   await client.connect()
   let error = new Error('No disk space')
   let reported: [CrdtCorruption, unknown][] = []
-  let crdt = createCrdtDatabase(
-    client,
-    openDb(brokenDriver(error), { onError() {} })
-  )
+  let crdt = createCrdtDatabase(client, openSilentDb(brokenDriver(error)))
   crdt.on('corrupted', (reason, e) => {
     reported.push([reason, e])
   })
@@ -3466,7 +3511,7 @@ it('does not re-throw the database error with corrupted listener', async () => {
   let reasons: CrdtCorruption[] = []
   let crdt = createCrdtDatabase(
     client,
-    openDb(brokenDriver(new Error('No disk space')), { onError() {} })
+    openSilentDb(brokenDriver(new Error('No disk space')))
   )
   crdt.table('user', USER_SCHEMA)
   crdt.on('corrupted', reason => {
@@ -3506,6 +3551,7 @@ it('reports the migration, which was interrupted by the closed tab', async () =>
 it('cleans the migration flag after the replay', async () => {
   let { client, db } = await setup()
   localStorage.setItem('logux:db', '{}')
+  await writeService(db, 'schema', '{}')
   await client.log.add(
     { fields: { name: 'Ann' }, id: 'U1', type: 'user/created' },
     { reasons: ['test'] }
@@ -3525,31 +3571,130 @@ it('cleans the migration flag after the replay', async () => {
   crdt.destroy()
 })
 
-it('reports the tables, which were emptied not by the actions', async () => {
+it('reports the database, which the storage does not describe', async () => {
+  let { client, db } = await setup()
+  await client.log.add(
+    { fields: { name: 'Ann' }, id: 'U1', type: 'user/created' },
+    { reasons: ['test'] }
+  )
+  let crdt1 = createCrdtDatabase(client, db)
+  crdt1.table('user', USER_SCHEMA)
+  await crdt1.ready
+  crdt1.destroy()
+
+  // The browser dropped the file of the origin, but kept `localStorage`
+  let another = openDb(nodeDriver(':memory:'))
+
+  let reasons: CrdtCorruption[] = []
+  let crdt2 = createCrdtDatabase(client, another)
+  crdt2.on('corrupted', reason => {
+    reasons.push(reason)
+  })
+  let user2 = crdt2.table('user', USER_SCHEMA)
+  await crdt2.ready
+
+  expect(reasons).toEqual(['lost-database'])
+  // The database is re-created from the log, not left broken
+  expect(crdt2.status.get()).toBe('ready')
+  expect((await loadList(user2.select())).map(i => i.name)).toEqual(['Ann'])
+  expect(await readService(another, 'schema')).toBe(
+    localStorage.getItem('logux:db')
+  )
+
+  crdt2.destroy()
+})
+
+it('restores the schema hash to the cleaned storage', async () => {
   let { client, db } = await setup()
   let crdt1 = createCrdtDatabase(client, db)
   let user1 = crdt1.table('user', USER_SCHEMA)
   await crdt1.ready
-  await user1.create({ name: 'Ann' })
+  await user1.create({ id: 'U1', name: 'Ann' })
   await delay(10)
-  expect(localStorage.getItem('logux:db:filled')).toBe('1')
+  let hash = localStorage.getItem('logux:db')
   crdt1.destroy()
 
-  // The browser dropped the data of the origin, but kept `localStorage`
-  await db.driver.exec('DELETE FROM "user"', [])
+  // The browser dropped `localStorage`, but kept the database file
+  localStorage.clear()
 
   let reasons: CrdtCorruption[] = []
+  let statuses: string[] = []
   let crdt2 = createCrdtDatabase(client, db)
   crdt2.on('corrupted', reason => {
     reasons.push(reason)
   })
+  let user2 = crdt2.table('user', USER_SCHEMA)
+  crdt2.status.subscribe(state => {
+    statuses.push(state)
+  })
+  await crdt2.ready
+
+  // The tables were not dropped and replayed
+  expect(statuses).toEqual(['initializing', 'ready'])
+  expect(reasons).toEqual([])
+  expect(localStorage.getItem('logux:db')).toBe(hash)
+  expect((await loadList(user2.select())).map(i => i.id)).toEqual(['U1'])
+
+  crdt2.destroy()
+})
+
+it('stops the tab on the tables of a newer client', async () => {
+  let { client, db } = await setup()
+  let crdt1 = createCrdtDatabase(client, db)
+  crdt1.table('user', USER_SCHEMA)
+  await crdt1.ready
+  crdt1.destroy()
+
+  // Another tab with a newer bundle has already migrated the database
+  await writeService(db, 'version', '2')
+
+  let reasons: CrdtCorruption[] = []
+  let stops = 0
+  let crdt2 = createCrdtDatabase(client, db)
+  crdt2.on('corrupted', reason => {
+    reasons.push(reason)
+  })
+  crdt2.on('stop', () => {
+    stops += 1
+  })
   crdt2.table('user', USER_SCHEMA)
   await crdt2.ready
 
-  expect(reasons).toEqual(['empty-tables'])
-  expect(localStorage.getItem('logux:db:filled')).toBeNull()
+  expect(crdt2.status.get()).toBe('outdated')
+  expect(stops).toBe(1)
+  // The data is fine, so it must not be reset
+  expect(reasons).toEqual([])
+  expect(await tableNames(db)).toEqual(['logux_crdt', 'user'])
 
   crdt2.destroy()
+})
+
+it('stops the tab on the storage error of a newer client', async () => {
+  let client = new TestClient('10')
+  await client.connect()
+  // Any Logux storage, like SqlLogStore, marks the error this way
+  let error = new Error('Log from a newer Logux Client')
+  error.name = 'LoguxNewerDatabase'
+
+  let reasons: CrdtCorruption[] = []
+  let stops = 0
+  let crdt = createCrdtDatabase(client, openSilentDb(brokenDriver(error)))
+  crdt.on('corrupted', reason => {
+    reasons.push(reason)
+  })
+  crdt.on('stop', () => {
+    stops += 1
+  })
+  crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+
+  expect(crdt.status.get()).toBe('outdated')
+  expect(stops).toBe(1)
+  // The data of the newer client is fine, so it must not be reset
+  expect(reasons).toEqual([])
+  expect(localStorage.getItem('logux:db')).toBeNull()
+
+  crdt.destroy()
 })
 
 it('does not report the tables, which the user emptied', async () => {
@@ -3565,7 +3710,6 @@ it('does not report the tables, which the user emptied', async () => {
   await delay(10)
   await user1.delete(id)
   await delay(10)
-  expect(localStorage.getItem('logux:db:filled')).toBeNull()
   // The deleting action emptied the tables, not the data loss
   expect(reasons).toEqual([])
   crdt1.destroy()
@@ -3585,14 +3729,28 @@ it('does not report the tables, which the user emptied', async () => {
 
 it('does not report the tables, which were cleaned with the client', async () => {
   let { client, db } = await setup()
-  let crdt = createCrdtDatabase(client, db)
-  let user = crdt.table('user', USER_SCHEMA)
-  await crdt.ready
+  let reasons: CrdtCorruption[] = []
+  let crdt1 = createCrdtDatabase(client, db)
+  crdt1.on('corrupted', reason => {
+    reasons.push(reason)
+  })
+  let user = crdt1.table('user', USER_SCHEMA)
+  await crdt1.ready
   await user.create({ name: 'Ann' })
   await delay(10)
 
-  await crdt.empty()
-  expect(localStorage.getItem('logux:db:filled')).toBeNull()
+  await crdt1.empty()
+  expect(reasons).toEqual([])
+  crdt1.destroy()
 
-  crdt.destroy()
+  let crdt2 = createCrdtDatabase(client, db)
+  crdt2.on('corrupted', reason => {
+    reasons.push(reason)
+  })
+  crdt2.table('user', USER_SCHEMA)
+  await crdt2.ready
+
+  expect(reasons).toEqual([])
+
+  crdt2.destroy()
 })

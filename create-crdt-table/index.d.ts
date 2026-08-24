@@ -793,18 +793,18 @@ export interface CrdtDatabaseOptions<Dialect extends string = 'sqlite'> {
 /**
  * Reason why the local database can not be trusted anymore:
  *
- * - `empty-tables`: the tables are empty, but the previous start of the app
- *   saw the rows in them and no action deleted them.
  * - `error`: the database threw the error and can not be prepared.
  * - `interrupted-migration`: the tab was closed during the schema migration,
  *   between the drop of the tables and the end of the replay.
+ * - `lost-database`: the data is gone. The client did not find the database
+ *   it was using before: the file was lost or replaced by an empty one.
  * - `timeout`: the database did not answer in
  *   {@link CrdtDatabaseOptions#timeout}.
  */
 export type CrdtCorruption =
-  | 'empty-tables'
   | 'error'
   | 'interrupted-migration'
+  | 'lost-database'
   | 'timeout'
 
 export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
@@ -1105,7 +1105,9 @@ export type Dialects = 'sqlite' | 'pglite'
  * edit conflicts with per-field last write wins strategy.
  *
  * The schema version — serialized schemas and indexes of all tables — is kept
- * in `localStorage` (or in {@link CrdtDatabaseOptions#storage}).
+ * in the `logux_crdt` table of the database itself and is copied
+ * to `localStorage` (or to {@link CrdtDatabaseOptions#storage}) to tell
+ * other tabs about the change.
  * On any schema change all tables (including tables
  * removed from the schema) are dropped and refilled by replaying actions
  * from the log and from the `repeat()` callback.

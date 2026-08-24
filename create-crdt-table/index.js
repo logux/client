@@ -3,6 +3,8 @@ import { createNanoEvents } from 'nanoevents'
 import { nanoid } from 'nanoid'
 import { atom } from 'nanostores'
 
+import { newerDatabaseError } from '../sql-log-store/index.js'
+
 function column(type, opts = {}) {
   if (typeof opts === 'string') opts = { sql: opts }
   return { required: !('default' in opts), type, ...opts }
@@ -143,6 +145,28 @@ function columnSql(name, col, dialect) {
   return sql
 }
 
+/**
+ * Table with the service data of the Logux itself: `schema` with the hash
+ * of this database and `version` with the format of the tables.
+ */
+const SERVICE = 'logux_crdt'
+
+async function readService(target, key) {
+  let rows = await target.select(
+    `SELECT "value" FROM "${SERVICE}" WHERE "key" = ?`,
+    [key]
+  )
+  return rows[0]?.value
+}
+
+function writeService(target, key, value) {
+  return target.exec(
+    `INSERT INTO "${SERVICE}" ("key", "value") VALUES (?, ?)` +
+      ` ON CONFLICT ("key") DO UPDATE SET "value" = excluded."value"`,
+    [key, value]
+  )
+}
+
 function createTableSql(plural, schema, dialect) {
   let columns = ['"id" TEXT PRIMARY KEY']
   let metas = []
@@ -267,9 +291,9 @@ export function createCrdtDatabase(client, db, opts = {}) {
   // Without localStorage (SSR, React Native) the schema is kept in memory
   let storage =
     opts.storage ?? (typeof localStorage === 'undefined' ? {} : localStorage)
-  // The flags of the corruption detectors are kept next to the schema hash
+  // The flag of the interrupted migration must survive the drop of
+  // the tables, so it is kept outside the database
   let migratingKey = `${storageKey}:migrating`
-  let filledKey = `${storageKey}:filled`
   let driver = db.driver
   db.pause()
 
@@ -498,11 +522,6 @@ export function createCrdtDatabase(client, db, opts = {}) {
     return !!actions[type] || !!parseCrdtType(type, crdt)
   }
 
-  function isDeleting(action) {
-    let parsed = parseCrdtType(action.type, crdt)
-    return !!parsed && parsed.verb === 'deleted'
-  }
-
   async function applyAction(action, meta, tx) {
     let custom = actions[action.type]
     if (custom) {
@@ -642,13 +661,6 @@ export function createCrdtDatabase(client, db, opts = {}) {
   async function applyAndEmit(tx, action, meta) {
     let cells = await applyAction(action, meta, tx)
     if (!cells) return
-    // The marker of the detector follows the rows: it is set on the first
-    // written row and is cleared when the actions deleted the last one
-    if (cells[0].length > 0) {
-      if (!storage[filledKey]) storage[filledKey] = '1'
-    } else if (storage[filledKey] && isDeleting(action)) {
-      await checkTables(tx.driver, true)
-    }
     // Listeners write to the applying transaction, so they can not be parallel
     let listeners = emitter.events.applied
     if (listeners) {
@@ -690,29 +702,28 @@ export function createCrdtDatabase(client, db, opts = {}) {
   }
 
   /**
-   * The tables were emptied by something, which is not the applier:
-   * a cleaned storage, a lost database file or a browser, which dropped
-   * the data of the origin.
+   * Another tab with a newer bundle has already migrated the database,
+   * so this tab must not touch it and must be reloaded.
    */
-  async function checkTables(target = driver, deleted = false) {
-    let checks = []
-    for (let plural in tables) checks.push(`EXISTS(SELECT 1 FROM "${plural}")`)
-    if (checks.length === 0) return
-    // A single query, since every statement costs a round trip
-    let rows = await target.select(
-      `SELECT ${checks.join(' OR ')} AS "filled"`,
-      []
-    )
-    if (rows[0]?.filled) {
-      storage[filledKey] = '1'
-    } else if (storage[filledKey]) {
-      delete storage[filledKey]
-      if (!deleted) corrupted('empty-tables')
-    }
+  function becomeOutdated() {
+    if (status.value === 'outdated') return
+    status.set('outdated')
+    db.pause()
+    emitter.emit('stop')
+    setReady()
+    stopWaiting([...waiting.keys()], new Error('The database is outdated'))
+    pending = []
+    pendingIds.clear()
+    lockRequest.abort()
+    unblockClosing()
   }
 
   function breakDatabase(error) {
     if (destroyed) return
+    if (error && error.name === 'LoguxNewerDatabase') {
+      becomeOutdated()
+      return
+    }
     status.set('broken')
     stopApplying('The database is broken')
     lockRequest.abort()
@@ -742,23 +753,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
     if (hasWindow() && storage === window.localStorage && !destroyed) {
       let onOutdated = event => {
         if (event.key !== storageKey || event.newValue === null) return
-        if (event.newValue !== hash) {
-          if (status.value === 'outdated') return
-          status.set('outdated')
-          db.pause()
-          emitter.emit('stop')
-          setReady()
-          stopWaiting(
-            [...waiting.keys()],
-            new Error(
-              'The database was stopped before the action was applied to it'
-            )
-          )
-          pending = []
-          pendingIds.clear()
-          lockRequest.abort()
-          unblockClosing()
-        }
+        if (event.newValue !== hash) becomeOutdated()
       }
       window.addEventListener('storage', onOutdated)
       unbindStorage = () => {
@@ -773,8 +768,32 @@ export function createCrdtDatabase(client, db, opts = {}) {
       corrupted('interrupted-migration')
     }
 
+    // The schema hash in the storage says nothing about the file, which
+    // the driver opened, so the database keeps its own copy of it
     let old = storage[storageKey]
-    if (old === hash) {
+    let stored
+    await inTransaction(async tx => {
+      await tx.driver.exec(
+        `CREATE TABLE IF NOT EXISTS "${SERVICE}"` +
+          ` ("key" TEXT PRIMARY KEY, "value" TEXT)`,
+        []
+      )
+      let version = await readService(tx.driver, 'version')
+      if (version && Number(version) > LOGUX_CRDT_TABLE_VERSION) {
+        throw newerDatabaseError('Tables')
+      }
+      stored = await readService(tx.driver, 'schema')
+    })
+
+    if (!stored && old) {
+      // Database file was lost but we have the marker in localStorage
+      corrupted('lost-database')
+    }
+
+    if (stored === hash) {
+      // The database survived the cleaned storage, so only the copy
+      // of the hash has to be restored
+      if (old !== hash) storage[storageKey] = hash
       // Every statement pays for the write on its own, so the whole schema
       // is created in a single transaction
       await inTransaction(async tx => {
@@ -797,7 +816,6 @@ export function createCrdtDatabase(client, db, opts = {}) {
       unapplied.reverse()
       unapplied.forEach(pushToApply)
       await drain()
-      await checkTables()
       becomeReady()
     } else {
       // The log and the tables are only read here, so the log entries
@@ -807,7 +825,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
         if (isKnown(action.type)) entries.push([action, meta])
       })
       let repeated = []
-      if (old) {
+      if (stored) {
         status.set('migrating')
         emitter.emit('migrating', ready)
         // Tables are dropped after the callback, so actions missing
@@ -817,13 +835,13 @@ export function createCrdtDatabase(client, db, opts = {}) {
       await reading
       // The log is read from the newest action to the oldest
       entries.reverse()
-      if (old) storage[migratingKey] = '1'
+      if (stored) storage[migratingKey] = '1'
       // Tables, which were removed from the schema, are dropped too.
       // A single transaction both saves the write for every statement
       // and keeps the old tables on an error
       await inTransaction(async tx => {
-        if (old) {
-          for (let oldTable in JSON.parse(old).tables) {
+        if (stored) {
+          for (let oldTable in JSON.parse(stored).tables) {
             await tx.driver.exec(`DROP TABLE IF EXISTS "${oldTable}"`, [])
           }
         }
@@ -842,15 +860,17 @@ export function createCrdtDatabase(client, db, opts = {}) {
       for (let list of [entries, repeated, added]) list.forEach(pushToApply)
       await drain()
       // Indexes are created after the replay: filling the table
-      // without them is much faster
+      // without them is much faster. The hash is written by the same
+      // transaction, so an error keeps the database unfinished
       await inTransaction(async tx => {
         for (let plural in tables) {
           await createIndexes(tx.driver, plural)
         }
+        await writeService(tx.driver, 'schema', hash)
+        await writeService(tx.driver, 'version', `${LOGUX_CRDT_TABLE_VERSION}`)
       })
       storage[storageKey] = hash
       delete storage[migratingKey]
-      await checkTables()
       becomeReady()
     }
   })
@@ -886,13 +906,13 @@ export function createCrdtDatabase(client, db, opts = {}) {
     if (draining) await draining.catch(() => {})
     if (!outdated) {
       delete storage[storageKey]
-      delete storage[filledKey]
       if (!isBroken) {
         db.pause()
         await writeToTables(async tx => {
           for (let plural in tables) {
             await tx.driver.exec(`DROP TABLE IF EXISTS "${plural}"`, [])
           }
+          await tx.driver.exec(`DROP TABLE IF EXISTS "${SERVICE}"`, [])
         })
       }
     }
@@ -936,9 +956,6 @@ export function createCrdtDatabase(client, db, opts = {}) {
       await ready
       // Empty pending list before cleaning tables
       await drain()
-      // The marker is cleaned after the last apply, which could set it back,
-      // and before the tables, so a crash between them only re-checks them
-      delete storage[filledKey]
       await writeToTables(async tx => {
         for (let plural in tables) {
           await tx.driver.exec(`DELETE FROM "${plural}"`, [])

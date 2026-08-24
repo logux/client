@@ -21,8 +21,9 @@ type Entry = [Action, Meta]
 let db: Database
 
 beforeEach(() => {
+  db = openDb(nodeDriver(':memory:'))
   // Disabling error output since we will test error handling
-  db = openDb(nodeDriver(':memory:'), { onError() {} })
+  db.on('error', () => {})
 })
 
 afterEach(async () => {
@@ -127,10 +128,12 @@ it('does not work with the log from a newer client', async () => {
   await db.exec`UPDATE "logux_version" SET "version" = ${2}`
 
   let next = new SqlLogStore(db)
-  await expect(next.get()).rejects.toThrow(
-    'DB was created by a newer version of Logux Client'
-  )
-  await expect(next.getLastAdded()).rejects.toThrow(/newer version/)
+  await expect(next.get()).rejects.toThrow('Log from a newer Logux Client')
+  await expect(next.getLastAdded()).rejects.toThrow(/newer Logux Client/)
+  // The applier reads the name to stop the tab instead of resetting the data
+  let thrown = await next.getLastAdded().catch((e: Error) => e)
+  expect(thrown).toBeInstanceOf(Error)
+  expect((thrown as Error).name).toBe('LoguxNewerDatabase')
 
   expect(await versions()).toEqual([{ version: 2 }])
   expect(await all(store.get())).toEqual([
