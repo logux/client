@@ -327,7 +327,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
   let timeout
   if (opts.timeout) {
     timeout = setTimeout(() => {
-      corrupted('timeout')
+      breakDatabase(undefined, 'timeout')
     }, opts.timeout)
   }
 
@@ -718,7 +718,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
     unblockClosing()
   }
 
-  function breakDatabase(error) {
+  function breakDatabase(error, reason = 'error') {
     if (destroyed) return
     if (error && error.name === 'LoguxNewerDatabase') {
       becomeOutdated()
@@ -728,7 +728,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
     stopApplying('The database is broken')
     lockRequest.abort()
     setReady()
-    corrupted('error', error)
+    corrupted(reason, error)
   }
 
   let preparing = Promise.resolve().then(async () => {

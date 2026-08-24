@@ -3447,18 +3447,24 @@ it('reports the hanging database by the timeout', async () => {
   let crdt = createCrdtDatabase(client, openDb(hangingDriver()), {
     timeout: 20
   })
-  crdt.table('user', USER_SCHEMA)
+  let user = crdt.table('user', USER_SCHEMA)
   let reasons: CrdtCorruption[] = []
   crdt.on('corrupted', reason => {
     reasons.push(reason)
   })
 
+  let creating = expect(user.create({ name: 'Ann' })).rejects.toThrow(
+    'The database is broken'
+  )
   await delay(10)
   expect(reasons).toEqual([])
+  expect(crdt.status.get()).toBe('initializing')
 
   await delay(20)
   expect(reasons).toEqual(['timeout'])
-  expect(crdt.status.get()).toBe('initializing')
+  expect(crdt.status.get()).toBe('broken')
+  await crdt.ready
+  await creating
 
   crdt.destroy()
 })
