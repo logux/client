@@ -2,6 +2,24 @@
 
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.24.0
+
+- Moved to Logux Core 0.11.
+- Added Protocol 6 with binary messages support.
+- Added `@logux/client/db` with CRDT tables in local SQL database.
+- Added `SqlLogStore` to keep Logux log in SQLite or PGlite.
+- Added `createReducer()` and `createStorageReducer()`.
+- Added `replaceWithShadow()` to replace processed actions with shadows.
+- Added `cleaning` event to clean own storages before `Client#clean()`.
+- Added `clean: false` option to `encryptActions()`.
+- Moved `IndexedStore` to the new format version.
+- Reduced client ID size and made tab ID sequential.
+- Improved performance of actions writing and reading.
+- Removed Node.js 20 support.
+- Fixed `Client#tabId` without `localStorage` like in React Native.
+- Fixed types.
+- Fixed action creators support to `CrossTabClient#type()`.
+
 ## 0.23.2
 
 - Fixed `sending`-`synchronized` jiggling in `status()`.
