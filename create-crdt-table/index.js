@@ -204,12 +204,12 @@ const APPLY_LOCK_IDLE = 300
 
 const VERBS = new Set(['changed', 'created', 'deleted'])
 
-export function parseCrdtType(type, tables) {
+export function parseCrdtType(type, crdt) {
   let slash = type.lastIndexOf('/')
   if (slash === -1) return false
   let plural = type.slice(0, slash)
   let verb = type.slice(slash + 1)
-  if (!Object.hasOwn(tables, plural) || !VERBS.has(verb)) return false
+  if (!Object.hasOwn(crdt.tables, plural) || !VERBS.has(verb)) return false
   return { plural, verb }
 }
 
@@ -218,10 +218,10 @@ export function parseCrdtRows(action) {
   return (action.ids ?? [action.id]).map(id => [id, action.fields])
 }
 
-export function parseCrdtAction(action, tables) {
-  let parsed = parseCrdtType(action.type, tables)
+export function parseCrdtAction(action, crdt) {
+  let parsed = parseCrdtType(action.type, crdt)
   if (!parsed) return false
-  let schema = tables[parsed.plural]
+  let schema = crdt.tables[parsed.plural]
   parsed.rows = parseCrdtRows(action).map(([id, fields]) => {
     let names = []
     for (let key in fields) {
@@ -495,11 +495,11 @@ export function createCrdtDatabase(client, db, opts = {}) {
   }
 
   function isKnown(type) {
-    return !!actions[type] || !!parseCrdtType(type, tables)
+    return !!actions[type] || !!parseCrdtType(type, crdt)
   }
 
   function isDeleting(action) {
-    let parsed = parseCrdtType(action.type, tables)
+    let parsed = parseCrdtType(action.type, crdt)
     return !!parsed && parsed.verb === 'deleted'
   }
 
@@ -510,7 +510,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
       return
     }
 
-    let parsed = parseCrdtType(action.type, tables)
+    let parsed = parseCrdtType(action.type, crdt)
     if (!parsed) return
     let { plural, verb } = parsed
     // Sortable meta can be compared by SQL and by JS strings
@@ -918,7 +918,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
     unblockClosing()
   }
 
-  return {
+  let crdt = {
     action(creator, apply, actionOpts = {}) {
       checkDefine()
       actions[creator.type] = apply
@@ -1049,6 +1049,8 @@ export function createCrdtDatabase(client, db, opts = {}) {
     },
     tables
   }
+
+  return crdt
 }
 
 export function createCrdtTasks(crdt, opts = {}) {

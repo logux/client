@@ -257,7 +257,7 @@ async function rename(): Promise<void> {
 }
 
 client.on('preadd', (action, meta) => {
-  let parsed = parseCrdtAction(action, crdt.tables)
+  let parsed = parseCrdtAction(action, crdt)
   if (!parsed) return
   let verb: 'changed' | 'created' | 'deleted' = parsed.verb
   console.log(verb)
@@ -268,7 +268,7 @@ client.on('preadd', (action, meta) => {
   }
 })
 
-let parsedType = parseCrdtType('user/created', crdt.tables)
+let parsedType = parseCrdtType('user/created', crdt)
 if (parsedType) {
   let plural: string = parsedType.plural
   let verb: 'changed' | 'created' | 'deleted' = parsedType.verb

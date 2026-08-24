@@ -447,19 +447,20 @@ export interface CrdtParsedAction extends CrdtParsedType {
  * import { parseCrdtType } from '@logux/client/db'
  *
  * client.log.on('clean', action => {
- *   let parsed = parseCrdtType(action.type, crdt.tables)
+ *   let parsed = parseCrdtType(action.type, crdt)
  *   if (parsed?.verb === 'deleted') cleaned.add(parsed.plural)
  * })
  * ```
  *
  * @param type Type of any action from the log.
- * @param tables Schemas of the tables to accept
- *               ({@link CrdtDatabase#tables}).
+ * @param crdt Database from {@link createCrdtDatabase} or any object
+ *             with {@link CrdtDatabase#tables} to parse actions
+ *             without the database.
  * @returns Table and verb or `false` if it is not an action of these tables.
  */
 export function parseCrdtType(
   type: string,
-  tables: CrdtTables
+  crdt: Pick<CrdtDatabase, 'tables'>
 ): CrdtParsedType | false
 
 /**
@@ -502,7 +503,7 @@ export function parseCrdtRows(
  * import { parseCrdtAction } from '@logux/client/db'
  *
  * client.on('preadd', (action, meta) => {
- *   let parsed = parseCrdtAction(action, crdt.tables)
+ *   let parsed = parseCrdtAction(action, crdt)
  *   if (!parsed) return
  *   for (let [id, fields] of parsed.rows) {
  *     for (let field of fields) {
@@ -516,17 +517,18 @@ export function parseCrdtRows(
  * the database (in tests or on the server):
  *
  * ```ts
- * parseCrdtAction(action, { feeds: feedsSchema })
+ * parseCrdtAction(action, { tables: { feeds: feedsSchema } })
  * ```
  *
  * @param action Any action from the log.
- * @param tables Schemas of the tables to accept
- *               ({@link CrdtDatabase#tables}).
+ * @param crdt Database from {@link createCrdtDatabase} or any object
+ *             with {@link CrdtDatabase#tables} to parse actions
+ *             without the database.
  * @returns Parsed action or `false` if it is not an action of these tables.
  */
 export function parseCrdtAction(
   action: Action,
-  tables: CrdtTables
+  crdt: Pick<CrdtDatabase, 'tables'>
 ): CrdtParsedAction | false
 
 /**
@@ -1059,7 +1061,6 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
    *
    * Do not change it: the applier uses the same object. It is useful
    * for the log policies, which work with any table of the database:
-   * {@link parseCrdtAction} and {@link parseCrdtType} take it, and
    * a `plural/deleted` action has no fields, so the field list of the row
    * can be taken only from here.
    *
