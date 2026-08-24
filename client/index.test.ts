@@ -30,8 +30,12 @@ beforeEach(() => {
   global.WebSocket = WebSocket as any
 })
 
+let created: Client<object, TestLog>[] = []
 let originIndexedDB = global.indexedDB
 afterEach(() => {
+  // The tab ping interval keeps running until the client is destroyed
+  for (let client of created) client.destroy()
+  created = []
   global.indexedDB = originIndexedDB
   restoreAll()
 })
@@ -120,6 +124,7 @@ function createClient(): Client<object, TestLog> {
   })
   client.node.connection.connect = () => Promise.resolve()
   privateMethods(client).tabPing = 50
+  created.push(client)
   return client
 }
 
