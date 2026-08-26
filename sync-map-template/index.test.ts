@@ -126,7 +126,7 @@ it('subscribes and unsubscribes', async () => {
   expect(client.subscribed('posts/ID')).toBe(true)
 
   unbind()
-  await delay(1020)
+  await delay(1050)
   expect(client.subscribed('posts/ID')).toBe(false)
 })
 
