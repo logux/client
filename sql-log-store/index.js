@@ -1,4 +1,4 @@
-import { isFirstOlder, toSorted } from '@logux/core'
+import { idToTime, toSorted } from '@logux/core'
 
 export function newerDatabaseError(part) {
   let error = new Error(`${part} from a newer Logux Client`)
@@ -6,27 +6,35 @@ export function newerDatabaseError(part) {
   return error
 }
 
-/**
- * Version of the internal tables format to re-create the log on changes.
- * It can only grow, so the log from a newer client is not supported.
- */
-const LOGUX_SQL_LOG_VERSION = 1
+function noPackerError(type) {
+  let error = new Error(`No packer for ${type}`)
+  error.name = 'LoguxNoPacker'
+  return error
+}
 
 const TABLES = ['logux_log', 'logux_reason', 'logux_index', 'logux_extra']
 
-const DDL = [
-  `CREATE TABLE IF NOT EXISTS "logux_log" (` +
-    `"added" BIGINT PRIMARY KEY, "id" TEXT UNIQUE, "sorted" TEXT,` +
-    ` "action" TEXT, "meta" TEXT)`,
-  `CREATE TABLE IF NOT EXISTS "logux_reason" (` +
-    `"added" BIGINT, "reason" TEXT, PRIMARY KEY ("added", "reason"))`,
-  `CREATE INDEX IF NOT EXISTS "logux_reason_reason"` +
-    ` ON "logux_reason" ("reason")`,
-  `CREATE TABLE IF NOT EXISTS "logux_index" (` +
-    `"added" BIGINT, "name" TEXT, PRIMARY KEY ("added", "name"))`,
-  `CREATE INDEX IF NOT EXISTS "logux_index_name" ON "logux_index" ("name")`,
-  `CREATE TABLE IF NOT EXISTS "logux_extra" (` +
-    `"key" TEXT PRIMARY KEY, "value" BIGINT)`
+const MIGRATIONS = [
+  [
+    `CREATE TABLE IF NOT EXISTS "logux_log" (` +
+      `"added" BIGINT PRIMARY KEY, "id" TEXT UNIQUE, "sorted" TEXT,` +
+      ` "action" TEXT, "meta" TEXT)`,
+    `CREATE TABLE IF NOT EXISTS "logux_reason" (` +
+      `"added" BIGINT, "reason" TEXT, PRIMARY KEY ("added", "reason"))`,
+    `CREATE INDEX IF NOT EXISTS "logux_reason_reason"` +
+      ` ON "logux_reason" ("reason")`,
+    `CREATE TABLE IF NOT EXISTS "logux_index" (` +
+      `"added" BIGINT, "name" TEXT, PRIMARY KEY ("added", "name"))`,
+    `CREATE INDEX IF NOT EXISTS "logux_index_name" ON "logux_index" ("name")`,
+    `CREATE TABLE IF NOT EXISTS "logux_extra" (` +
+      `"key" TEXT PRIMARY KEY, "value" BIGINT)`
+  ],
+  [
+    `ALTER TABLE "logux_log" ADD COLUMN "blob" BYTEA`,
+    `CREATE INDEX IF NOT EXISTS "logux_log_sorted"` +
+      ` ON "logux_log" ("sorted", "added")`,
+    `INSERT INTO "logux_extra" ("key", "value") VALUES ('added', 0)`
+  ]
 ]
 
 const SYNCED = ['received', 'sent']
@@ -69,8 +77,11 @@ function isLocked(error) {
  * is marked by `$bytes` key in JSON.
  */
 function parseJSONWithBinary(json) {
+  if (!json.includes('"$bytes"')) return JSON.parse(json)
   return JSON.parse(json, (key, value) => {
-    if (value && value.$bytes) return Uint8Array.from(value.$bytes)
+    if (value && typeof value.$bytes === 'string') {
+      return Uint8Array.from(atob(value.$bytes), char => char.charCodeAt(0))
+    }
     return value
   })
 }
@@ -86,25 +97,24 @@ async function removeEntries(target, added) {
 
 function serializeToJSONWithBinary(data) {
   return JSON.stringify(data, (key, value) => {
-    if (value instanceof Uint8Array) return { $bytes: Array.from(value) }
+    if (value instanceof Uint8Array) {
+      let binary = ''
+      for (let byte of value) binary += String.fromCharCode(byte)
+      return { $bytes: btoa(binary) }
+    }
     return value
   })
 }
 
-function toEntry(row) {
+function toMeta(row) {
   let meta = parseJSONWithBinary(row.meta)
   meta.added = Number(row.added)
-  return [parseJSONWithBinary(row.action), meta]
+  return meta
 }
 
-function matchTime(meta, criteria) {
-  if (criteria.olderThan && !isFirstOlder(meta, criteria.olderThan)) {
-    return false
-  }
-  if (criteria.youngerThan && !isFirstOlder(criteria.youngerThan, meta)) {
-    return false
-  }
-  return true
+function position(meta) {
+  if (typeof meta === 'string') meta = { id: meta, time: idToTime(meta) }
+  return toSorted({ ...meta, time: meta.time ?? 0 })
 }
 
 async function selectByCriteria(target, criteria, reasons) {
@@ -145,8 +155,16 @@ async function selectByCriteria(target, criteria, reasons) {
     where.push('"added" <= ?')
     params.push(criteria.maxAdded)
   }
+  if (criteria.olderThan) {
+    where.push('"sorted" < ?')
+    params.push(position(criteria.olderThan))
+  }
+  if (criteria.youngerThan) {
+    where.push('"sorted" > ?')
+    params.push(position(criteria.youngerThan))
+  }
   return target.select(
-    `SELECT "added", "action", "meta" FROM "logux_log"` +
+    `SELECT "added", "action", "meta", "blob" FROM "logux_log"` +
       (where.length > 0 ? ` WHERE ${where.join(' AND ')}` : '') +
       ` ORDER BY "added"`,
     params
@@ -154,10 +172,11 @@ async function selectByCriteria(target, criteria, reasons) {
 }
 
 export class SqlLogStore {
-  constructor(db) {
+  constructor(db, opts = {}) {
     this.db = db
     this.driver = db.driver
     this.queue = Promise.resolve()
+    this.packers = opts.packers ?? {}
   }
 
   async add(action, meta) {
@@ -168,24 +187,35 @@ export class SqlLogStore {
       )
       if (exist) return false
 
-      // Next `added` is taken by SQL inside the immediate transaction
-      // to be safe with other tabs writing to the same database
-      let [{ last }] = await tx.driver.select(
-        `SELECT coalesce(max("added"), 0) AS "last" FROM "logux_log"`,
+      let [{ next }] = await tx.driver.select(
+        `UPDATE "logux_extra" SET "value" = "value" + 1` +
+          ` WHERE "key" = 'added' RETURNING "value" AS "next"`,
         []
       )
-      meta.added = Number(last) + 1
+      meta.added = Number(next)
+
+      let blob = null
+      let body = action
+      let packer = this.packers[action.type]
+      if (packer) {
+        let packed = packer.pack(action)
+        if (packed) {
+          blob = packed.blob
+          body = packed.action
+        }
+      }
 
       await tx.driver.exec(
         `INSERT INTO "logux_log"` +
-          ` ("added", "id", "sorted", "action", "meta")` +
-          ` VALUES (${holders(5)})`,
+          ` ("added", "id", "sorted", "action", "meta", "blob")` +
+          ` VALUES (${holders(6)})`,
         [
           meta.added,
           meta.id,
           toSorted(meta),
-          serializeToJSONWithBinary(action),
-          serializeToJSONWithBinary(meta)
+          serializeToJSONWithBinary(body),
+          serializeToJSONWithBinary(meta),
+          blob
         ]
       )
       await addTags(
@@ -205,10 +235,11 @@ export class SqlLogStore {
   async byId(id) {
     await this.init()
     let [row] = await this.driver.select(
-      `SELECT "added", "action", "meta" FROM "logux_log" WHERE "id" = ?`,
+      `SELECT "added", "action", "meta", "blob" FROM "logux_log"` +
+        ` WHERE "id" = ?`,
       [id]
     )
-    return row ? toEntry(row) : [null, null]
+    return row ? this.toEntry(row) : [null, null]
   }
 
   async changeMeta(id, diff) {
@@ -246,6 +277,11 @@ export class SqlLogStore {
       for (let table of TABLES) {
         await tx.driver.exec(`DELETE FROM "${table}"`, [])
       }
+      // The counter can be reset only together with `sent` and `received`
+      await tx.driver.exec(
+        `INSERT INTO "logux_extra" ("key", "value") VALUES ('added', 0)`,
+        []
+      )
     })
   }
 
@@ -256,18 +292,19 @@ export class SqlLogStore {
 
   async getLastAdded() {
     await this.init()
-    let [{ last }] = await this.driver.select(
-      `SELECT coalesce(max("added"), 0) AS "last" FROM "logux_log"`,
+    let [row] = await this.driver.select(
+      `SELECT "value" FROM "logux_extra" WHERE "key" = 'added'`,
       []
     )
-    return Number(last)
+    return Number(row.value)
   }
 
   async getLastSynced() {
     await this.init()
     let rows = await this.driver.select(
-      `SELECT "key", "value" FROM "logux_extra"`,
-      []
+      `SELECT "key", "value" FROM "logux_extra"` +
+        ` WHERE "key" IN (${holders(SYNCED.length)})`,
+      SYNCED
     )
     let synced = { received: 0, sent: 0 }
     for (let row of rows) synced[row.key] = Number(row.value)
@@ -288,17 +325,19 @@ export class SqlLogStore {
           []
         )
         let version = row ? Number(row.version) : 0
-        if (version > LOGUX_SQL_LOG_VERSION) {
+        if (version > MIGRATIONS.length) {
           throw newerDatabaseError('Log')
         }
-        if (version < LOGUX_SQL_LOG_VERSION) {
-          await tx.driver.exec(`DELETE FROM "logux_version"`, [])
-          await tx.driver.exec(
-            `INSERT INTO "logux_version" ("version") VALUES (?)`,
-            [LOGUX_SQL_LOG_VERSION]
-          )
+        if (version === MIGRATIONS.length) return
+
+        for (let migration of MIGRATIONS.slice(version)) {
+          for (let sql of migration) await tx.driver.exec(sql, [])
         }
-        for (let sql of DDL) await tx.driver.exec(sql, [])
+        await tx.driver.exec(`DELETE FROM "logux_version"`, [])
+        await tx.driver.exec(
+          `INSERT INTO "logux_version" ("version") VALUES (?)`,
+          [MIGRATIONS.length]
+        )
       })
     }
     return this.initing
@@ -339,7 +378,7 @@ export class SqlLogStore {
     )
     rows.reverse()
 
-    let page = { entries: rows.map(toEntry) }
+    let page = { entries: rows.map(this.toEntry, this) }
     if (rows.length === PAGE_SIZE) {
       let oldest = rows[0]
       let next = created ? [oldest.sorted, oldest.added] : [oldest.added]
@@ -351,12 +390,13 @@ export class SqlLogStore {
   async remove(id) {
     return this.write(async tx => {
       let [row] = await tx.driver.select(
-        `SELECT "added", "action", "meta" FROM "logux_log" WHERE "id" = ?`,
+        `SELECT "added", "action", "meta", "blob" FROM "logux_log"` +
+          ` WHERE "id" = ?`,
         [id]
       )
       if (!row) return false
       await removeEntries(tx.driver, [row.added])
-      return toEntry(row)
+      return this.toEntry(row)
     })
   }
 
@@ -365,8 +405,8 @@ export class SqlLogStore {
     await this.write(async tx => {
       let rows = await selectByCriteria(tx.driver, criteria)
       for (let row of rows) {
-        let [, meta] = toEntry(row)
-        if (!matchTime(meta, criteria)) continue
+        // The action is not touched here, so it is not unpacked
+        let meta = toMeta(row)
         let missing = reasons.filter(i => !meta.reasons.includes(i))
         if (missing.length === 0) continue
         meta.reasons = meta.reasons.concat(missing)
@@ -387,13 +427,12 @@ export class SqlLogStore {
       let rows = await selectByCriteria(tx.driver, criteria, reasons)
       let removed = []
       for (let row of rows) {
-        let [action, meta] = toEntry(row)
-        if (!matchTime(meta, criteria)) continue
+        let meta = toMeta(row)
         let dropping = reasons.filter(i => meta.reasons.includes(i))
         if (dropping.length === 0) continue
         meta.reasons = meta.reasons.filter(i => !dropping.includes(i))
         if (meta.reasons.length === 0) {
-          removed.push([action, meta])
+          removed.push([this.toEntry(row)[0], meta])
         } else {
           await tx.driver.exec(
             `UPDATE "logux_log" SET "meta" = ? WHERE "added" = ?`,
@@ -433,6 +472,19 @@ export class SqlLogStore {
         }
       }
     })
+  }
+
+  toEntry(row) {
+    let meta = toMeta(row)
+    let action = parseJSONWithBinary(row.action)
+    if (row.blob) {
+      let packer = this.packers[action.type]
+      // Without the packer only a half of the action is in the JSON,
+      // so returning it will give the application a broken action
+      if (!packer) throw noPackerError(action.type)
+      action = packer.unpack({ action, blob: row.blob })
+    }
+    return [action, meta]
   }
 
   async transaction(callback) {

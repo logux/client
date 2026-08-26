@@ -1,5 +1,20 @@
+import type { ActionPackerMap } from '@logux/actions'
 import type { AnyAction, LogStore, Meta } from '@logux/core'
 import type { Database } from '@nanostores/sql'
+
+export interface SqlLogStoreOptions<Packers = Record<string, never>> {
+  /**
+   * Packers to keep the binary parts of the actions in a separate column
+   * instead of Base64 inside the JSON.
+   *
+   * ```js
+   * import { zeroPacker } from '@logux/actions'
+   *
+   * const store = new SqlLogStore(db, { packers: { '0': zeroPacker } })
+   * ```
+   */
+  packers?: Packers
+}
 
 /**
  * SQL store for Logux log on top of `@nanostores/sql` database.
@@ -28,11 +43,14 @@ import type { Database } from '@nanostores/sql'
  * If the database was created by a newer version of the client,
  * all methods will throw an error.
  */
-export class SqlLogStore extends LogStore {
+export class SqlLogStore<
+  Packers extends ActionPackerMap<Packers> = Record<string, never>
+> extends LogStore {
   /**
    * @param db Database from `@nanostores/sql` `openDb()`.
+   * @param opts Store options.
    */
-  constructor(db: Database)
+  constructor(db: Database, opts?: SqlLogStoreOptions<Packers>)
 
   /**
    * Set the callback, which will be called inside the transaction writing

@@ -9,11 +9,11 @@ importers:
   .:
     dependencies:
       '@logux/actions':
-        specifier: ^0.6.0
-        version: 0.6.0(@logux/core@0.11.2)
+        specifier: ^0.7.2
+        version: 0.7.2(@logux/core@0.11.6)
       '@logux/core':
-        specifier: ^0.11.2
-        version: 0.11.2
+        specifier: ^0.11.6
+        version: 0.11.6
       nanoevents:
         specifier: ^10.0.0
         version: 10.0.0
@@ -34,8 +34,8 @@ importers:
         specifier: ^1.1.0
         version: 1.1.0(nanostores@1.5.2)(react@19.2.8)
       '@nanostores/sql':
-        specifier: ^0.5.0
-        version: 0.5.0(@electric-sql/pglite@0.5.7)(nanostores@1.5.2)
+        specifier: ^0.5.2
+        version: 0.5.2(@electric-sql/pglite@0.5.7)(nanostores@1.5.2)
       '@nanostores/vue':
         specifier: ^1.1.0
         version: 1.1.0(nanostores@1.5.2)(vue@3.5.41(typescript@7.0.2))
@@ -86,7 +86,7 @@ importers:
         version: 20.11.6
       multiocular:
         specifier: ^0.8.4
-        version: 0.8.4(@logux/core@0.11.2)
+        version: 0.8.4(@logux/core@0.11.6)
       nanodelay:
         specifier: ^2.0.2
         version: 2.0.2
@@ -343,8 +343,8 @@ packages:
     peerDependencies:
       '@logux/core': ^0.10.0
 
-  '@logux/actions@0.6.0':
-    resolution: {integrity: sha512-06BB0Ixpp6PwYttJlj9IWWTwjy65QgtzpVeRLY6dnUcXwmw3Z1FcdqtBzl8IWSeGjPCLBJPfGIxN2hjPmb/p2g==}
+  '@logux/actions@0.7.2':
+    resolution: {integrity: sha512-a1/VPoXCXzEty3OKh2HVdK8PLEXsBowmP6dHfaPWmaaxiZ7arOHnD2XY3Jts9yOSf0zXr+8zF1FWiZ0CXygOzw==}
     engines: {node: ^22.0.0 || ^24.0.0 || >=26.0.0}
     peerDependencies:
       '@logux/core': ^0.11.0
@@ -353,8 +353,8 @@ packages:
     resolution: {integrity: sha512-VbgVkEloAe2ym5w0cjyRI16Eeyk2R0BgJa9pMYT1FcJEhFnzrB23E0ExIEhrok0iD48bFh7goledwmDLmgWaiw==}
     engines: {node: ^20.0.0 || >=22.0.0}
 
-  '@logux/core@0.11.2':
-    resolution: {integrity: sha512-f+c9R1go4Wy0DVT4mCSctqVvSMyZxLmli0SCD9eYeclLBez4xcXFYGE7bNtyQUHtmD3FXvuOOPZAY0H1mb3/DQ==}
+  '@logux/core@0.11.6':
+    resolution: {integrity: sha512-N2Dg6ix0lFUe7s6aoRTzbri3gwLAsOcZZM3yCVHtatTJw35lgz5w976p+kn4LSwB7AWOYMc8wGsN5qQFxkQK+w==}
     engines: {node: ^22.0.0 || ^24.0.0 || >=26.0.0}
 
   '@logux/oxc-configs@1.1.0':
@@ -383,8 +383,8 @@ packages:
       nanostores: ^1.2.0
       react: '>=18.0.0'
 
-  '@nanostores/sql@0.5.0':
-    resolution: {integrity: sha512-+1I/apmNTD5TnseCq4Y4HkHEsN2HbjJ6meIu1gGKbdO5H74lc9QtWWXCqWMojo+Hgfe4Mbt6a0BHmOLZR/Jocw==}
+  '@nanostores/sql@0.5.2':
+    resolution: {integrity: sha512-5lvLzxcg2aKCo0e2FUt9OsPmy8zQK47VMaLXkRbsUUd40s6QK1SjFeK621G2gXfV/0z8fngfQgdBnrCDcU5Iqg==}
     engines: {node: ^22.0.0 || ^24.0.0 || >=26.0.0}
     peerDependencies:
       '@electric-sql/pglite': '>=0.4.0'
@@ -2103,19 +2103,19 @@ snapshots:
     dependencies:
       '@logux/core': 0.10.0
 
-  '@logux/actions@0.5.0(@logux/core@0.11.2)':
+  '@logux/actions@0.5.0(@logux/core@0.11.6)':
     dependencies:
-      '@logux/core': 0.11.2
+      '@logux/core': 0.11.6
 
-  '@logux/actions@0.6.0(@logux/core@0.11.2)':
+  '@logux/actions@0.7.2(@logux/core@0.11.6)':
     dependencies:
-      '@logux/core': 0.11.2
+      '@logux/core': 0.11.6
 
   '@logux/core@0.10.0':
     dependencies:
       nanoevents: 9.1.0
 
-  '@logux/core@0.11.2':
+  '@logux/core@0.11.6':
     dependencies:
       nanoevents: 10.0.0
 
@@ -2151,7 +2151,7 @@ snapshots:
       nanostores: 1.5.2
       react: 19.2.8
 
-  '@nanostores/sql@0.5.0(@electric-sql/pglite@0.5.7)(nanostores@1.5.2)':
+  '@nanostores/sql@0.5.2(@electric-sql/pglite@0.5.7)(nanostores@1.5.2)':
     dependencies:
       nanostores: 1.5.2
     optionalDependencies:
@@ -3164,9 +3164,9 @@ snapshots:
 
   minipass@7.1.3: {}
 
-  multiocular@0.8.4(@logux/core@0.11.2):
+  multiocular@0.8.4(@logux/core@0.11.6):
     dependencies:
-      '@logux/actions': 0.5.0(@logux/core@0.11.2)
+      '@logux/actions': 0.5.0(@logux/core@0.11.6)
       '@logux/server': 0.14.0
       diff2html: 3.4.56
       dompurify: 3.4.14

@@ -1,5 +1,7 @@
+import { zeroPacker } from '@logux/actions'
 import {
   type Action,
+  type AnyAction,
   eachStoreCheck,
   Log,
   type LogPage,
@@ -68,6 +70,11 @@ async function fill(count: number): Promise<void> {
       params
     )
   }
+  // Rows are added by raw SQL, so the counter has to be moved by hand
+  await db.driver.exec(
+    `UPDATE "logux_extra" SET "value" = ? WHERE "key" = 'added'`,
+    [count]
+  )
 }
 
 eachStoreCheck((desc, creator) => {
@@ -102,30 +109,23 @@ it('keeps the log on the same tables version', async () => {
   expect(await all(next.get())).toEqual([
     [{ type: 'A' }, { added: 1, id: '0 n', time: 1 }]
   ])
-  expect(await versions()).toEqual([{ version: 1 }])
+  expect(await versions()).toEqual([{ version: 2 }])
 })
 
-it('writes new tables version without losing the log', async () => {
+it('does not give the number of the removed action to a new one', async () => {
   let store = new SqlLogStore(db)
-  await store.add({ type: 'A' }, {
-    id: '0 n',
-    indexes: ['a'],
-    reasons: ['test'],
-    time: 1
-  } as Meta)
-  await store.setLastSynced({ received: 1, sent: 2 })
+  await store.add({ type: 'A' }, { id: '0 n', time: 1 } as Meta)
+  await store.add({ type: 'B' }, { id: '1 n', time: 2 } as Meta)
+  await store.remove('1 n')
 
-  await db.exec`UPDATE "logux_version" SET "version" = ${0}`
-  let next = new SqlLogStore(db)
-  expect(await all(next.get())).toHaveLength(1)
-  expect(await next.getLastAdded()).toBe(1)
-  expect(await next.getLastSynced()).toEqual({ received: 1, sent: 2 })
-  expect(await versions()).toEqual([{ version: 1 }])
+  expect(await store.getLastAdded()).toBe(2)
+  let meta = await store.add({ type: 'C' }, { id: '2 n', time: 3 } as Meta)
+  expect((meta as Meta).added).toBe(3)
 })
 it('does not work with the log from a newer client', async () => {
   let store = new SqlLogStore(db)
   await store.add({ type: 'A' }, { id: '0 n', time: 1 } as Meta)
-  await db.exec`UPDATE "logux_version" SET "version" = ${2}`
+  await db.exec`UPDATE "logux_version" SET "version" = ${3}`
 
   let next = new SqlLogStore(db)
   await expect(next.get()).rejects.toThrow('Log from a newer Logux Client')
@@ -135,7 +135,7 @@ it('does not work with the log from a newer client', async () => {
   expect(thrown).toBeInstanceOf(Error)
   expect((thrown as Error).name).toBe('LoguxNewerDatabase')
 
-  expect(await versions()).toEqual([{ version: 2 }])
+  expect(await versions()).toEqual([{ version: 3 }])
   expect(await all(store.get())).toEqual([
     [{ type: 'A' }, { added: 1, id: '0 n', time: 1 }]
   ])
@@ -182,6 +182,60 @@ it('does not lose Uint8Array in meta', async () => {
 
   let [, meta] = await store.byId('0 n')
   expect(meta!.iv).toEqual(new Uint8Array([1, 2, 3]))
+})
+
+it('keeps binary in JSON as Base64', async () => {
+  let store = new SqlLogStore(db)
+  await store.add({ type: 'A' }, {
+    id: '0 n',
+    iv: new Uint8Array([1, 2, 3]),
+    time: 1
+  } as unknown as Meta)
+
+  let rows = await db.select<{ meta: string }>`
+    SELECT "meta" FROM "logux_log"`
+  expect(rows[0]!.meta).toContain('"$bytes":"AQID"')
+})
+
+it('packs binary actions into a separate column', async () => {
+  let store = new SqlLogStore(db, { packers: { '0': zeroPacker } })
+  let action: AnyAction = {
+    compressed: false,
+    d: new Uint8Array([1, 2, 3]),
+    iv: new Uint8Array(12).fill(7),
+    type: '0'
+  }
+  await store.add(action, { id: '0 n', time: 1 } as Meta)
+
+  let rows = await db.select<{
+    action: string
+    blob: Uint8Array
+  }>`SELECT "action", "blob" FROM "logux_log"`
+  expect(rows[0]!.action).toBe('{"compressed":false,"type":"0"}')
+  expect(rows[0]!.blob).toEqual(
+    new Uint8Array([...Array<number>(12).fill(7), 1, 2, 3])
+  )
+
+  expect(await all(store.get())).toEqual([
+    [action, { added: 1, id: '0 n', time: 1 }]
+  ])
+})
+
+it('does not return a half of the action without the packer', async () => {
+  let packing = new SqlLogStore(db, { packers: { '0': zeroPacker } })
+  let action: AnyAction = {
+    compressed: false,
+    d: new Uint8Array([1, 2, 3]),
+    iv: new Uint8Array(12).fill(7),
+    type: '0'
+  }
+  await packing.add(action, { id: '0 n', time: 1 } as Meta)
+
+  let store = new SqlLogStore(db)
+  let thrown = await store.byId('0 n').catch((e: Error) => e)
+  expect(thrown).toBeInstanceOf(Error)
+  expect((thrown as Error).name).toBe('LoguxNoPacker')
+  expect((thrown as Error).message).toBe('No packer for 0')
 })
 
 it('loads a big log by pages', { timeout: 30000 }, async () => {
