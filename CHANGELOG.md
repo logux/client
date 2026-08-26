@@ -2,6 +2,10 @@
 
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.24.1
+
+- Fixed missed `exceptIndex` in client's stores.
+
 ## 0.24.0
 
 - Moved to Logux Core 0.11.
