@@ -123,6 +123,12 @@ async function selectByCriteria(target, criteria, reasons) {
     )
     params.push(criteria.index)
   }
+  if (criteria.exceptIndex !== undefined) {
+    where.push(
+      `"added" NOT IN (SELECT "added" FROM "logux_index" WHERE "name" = ?)`
+    )
+    params.push(criteria.exceptIndex)
+  }
   if (criteria.id !== undefined) {
     where.push('"id" = ?')
     params.push(criteria.id)

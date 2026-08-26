@@ -38,6 +38,9 @@ function matchCriteria(entry, criteria) {
   if (isDefined(c.index) && !entry.indexes.includes(c.index)) {
     return false
   }
+  if (isDefined(c.exceptIndex) && entry.indexes.includes(c.exceptIndex)) {
+    return false
+  }
   if (isDefined(c.olderThan) && !isFirstOlder(meta, c.olderThan)) {
     return false
   }
