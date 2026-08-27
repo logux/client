@@ -479,8 +479,6 @@ export class SqlLogStore {
     let action = parseJSONWithBinary(row.action)
     if (row.blob) {
       let packer = this.packers[action.type]
-      // Without the packer only a half of the action is in the JSON,
-      // so returning it will give the application a broken action
       if (!packer) throw noPackerError(action.type)
       action = packer.unpack({ action, blob: row.blob })
     }
