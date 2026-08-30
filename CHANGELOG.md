@@ -4,7 +4,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 0.25.0
 
-- Add better binary data support in `SqlLogStore` with Base64 and packers.
+- Added better binary data support in `SqlLogStore` with Base64 and packers.
 - Improved performance of `SqlLogStore` log reading.
 - Fixed reusing `added` number in `SqlLogStore` after removing the last action.
 
