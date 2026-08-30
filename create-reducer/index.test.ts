@@ -27,53 +27,107 @@ function emitStorage(key: string, newValue: string): void {
   window.dispatchEvent(new StorageEvent('storage', { key, newValue }))
 }
 
-interface LockRequest {
-  aborted: boolean
+const DB_LOCK = 'logux:reducer:db:lock'
+
+interface MockedLocks {
+  /** Number of the requests cancelled by their `signal`. */
+  aborted: number
 
   /**
-   * Give the lock to the request. Returns the promise resolved
-   * when the lock was released.
+   * Emulate another tab holding the lock. Returns the callback
+   * to release it.
    */
-  grant(): Promise<void>
+  hold(name: string): () => void
+
+  /** Is the lock held by somebody right now. */
+  isHeld(name: string): boolean
+
+  /** Number of the requests waiting in the queue for the lock. */
+  waiting(name: string): number
 }
 
 /**
- * Emulate Web Locks API: requests are queued until the test grants them
- * and aborted requests are never granted.
+ * Emulate Web Locks API: the lock is granted in the next tick, `ifAvailable`
+ * requests get `null` instead of waiting when the lock is held, and the rest
+ * are queued until the lock will be released or their signal will be aborted.
  */
-function mockLocks(): LockRequest[] {
-  let requests: LockRequest[] = []
+function mockLocks(): MockedLocks {
+  let held = new Set<string>()
+  let queues: Record<string, (() => void)[]> = {}
+
+  function release(name: string): void {
+    held.delete(name)
+    let next = queues[name]?.shift()
+    if (next) next()
+  }
+
+  function acquire(
+    name: string,
+    callback: (lock: unknown) => unknown
+  ): Promise<unknown> {
+    held.add(name)
+    return Promise.resolve(callback({ name })).then(result => {
+      release(name)
+      return result
+    })
+  }
+
+  let mocked: MockedLocks = {
+    aborted: 0,
+    hold(name) {
+      held.add(name)
+      let released = false
+      return () => {
+        if (released) return
+        released = true
+        release(name)
+      }
+    },
+    isHeld(name) {
+      return held.has(name)
+    },
+    waiting(name) {
+      return queues[name]?.length ?? 0
+    }
+  }
+
   Object.defineProperty(navigator, 'locks', {
     configurable: true,
     value: {
       request(
-        _name: string,
-        opts: { signal: AbortSignal },
-        callback: () => Promise<unknown>
+        name: string,
+        opts: { ifAvailable?: boolean; signal?: AbortSignal },
+        callback: (lock: unknown) => unknown
       ) {
+        if (opts.ifAvailable) {
+          // The real lock is never granted in the same tick as the request
+          return delay(0).then(() => {
+            return held.has(name) ? callback(null) : acquire(name, callback)
+          })
+        }
         return new Promise((resolve, reject) => {
-          let granted = false
-          let request: LockRequest = {
-            aborted: false,
-            grant() {
-              if (request.aborted) throw new Error('Lock request was aborted')
-              granted = true
-              let released = Promise.resolve(callback()).then(() => {})
-              void released.then(resolve)
-              return released
-            }
+          let request = (): void => {
+            resolve(acquire(name, callback))
           }
-          opts.signal.addEventListener('abort', () => {
-            if (granted) return
-            request.aborted = true
+          queues[name] ??= []
+          opts.signal?.addEventListener('abort', () => {
+            let index = queues[name]!.indexOf(request)
+            if (index === -1) return
+            queues[name]!.splice(index, 1)
+            mocked.aborted += 1
             reject(new Error('AbortError'))
           })
-          requests.push(request)
+          if (held.has(name)) {
+            queues[name].push(request)
+          } else {
+            void delay(0).then(request)
+          }
         })
       }
     }
   })
-  return requests
+
+  return mocked
 }
 
 describe('createReducer', () => {
@@ -121,6 +175,193 @@ describe('createReducer', () => {
     expect(initCalled).toBe(0)
     expect(cleanCalled).toBe(0)
     expect(reducer.status.get()).toBe('ready')
+  })
+
+  it('builds the data from repeated actions on the first run', async () => {
+    let client = new TestClient('10')
+    await client.connect()
+
+    type UserAction = { id: string; type: 'users/create' }
+
+    let calls: string[] = []
+    let migratingCalled = 0
+    let reducer = createReducer(client, 'db', 2, {
+      clean(oldVersion) {
+        calls.push(`clean:${oldVersion}`)
+        return [
+          [
+            { id: 'a', type: 'users/create' },
+            { id: 'a', time: 0 }
+          ],
+          // The reducer has no listener for this action
+          [
+            { id: 'b', type: 'users/rename' },
+            { id: 'b', time: 1 }
+          ]
+        ] satisfies [UserAction | { id: string; type: 'users/rename' }, MetaTime][]
+      },
+      init() {
+        calls.push('init')
+      },
+      migrating() {
+        migratingCalled += 1
+      }
+    })
+    reducer.type<UserAction>('users/create', action => {
+      calls.push(`action:${action.id}`)
+    })
+
+    // The log can be filled before the reducer was created, but the first
+    // build is not a migration
+    expect(reducer.status.get()).toBe('initializing')
+    await reducer.ready
+    expect(calls).toEqual(['clean:0', 'init', 'action:a'])
+    expect(migratingCalled).toBe(0)
+    expect(reducer.status.get()).toBe('ready')
+    expect(localStorage.getItem('logux:reducer:db')).toBe('2')
+  })
+
+  it('saves the version only when the data was built', async () => {
+    let client = new TestClient('10')
+    await client.connect()
+
+    let hasData = false
+    let reducer = createReducer(client, 'db', 1, {
+      clean() {},
+      hasValue: () => hasData
+    })
+    reducer.type('users/create', () => {
+      hasData = true
+    })
+
+    await reducer.ready
+    expect(reducer.status.get()).toBe('ready')
+    expect(localStorage.getItem('logux:reducer:db')).toBeNull()
+
+    await client.log.add({ type: 'users/create' })
+    await delay(1)
+    expect(localStorage.getItem('logux:reducer:db')).toBe('1')
+  })
+
+  it('rebuilds the data when the version was stored without the data', async () => {
+    let client = new TestClient('10')
+    await client.connect()
+    localStorage.setItem('logux:reducer:db', '2')
+
+    let calls: string[] = []
+    let migratingCalled = 0
+    let reducer = createReducer(client, 'db', 2, {
+      clean(oldVersion) {
+        calls.push(`clean:${oldVersion}`)
+      },
+      hasValue: () => false,
+      init() {
+        calls.push('init')
+      },
+      migrating() {
+        migratingCalled += 1
+      }
+    })
+
+    // The version without the data means the partially cleaned storage
+    await reducer.ready
+    expect(calls).toEqual(['clean:0', 'init'])
+    expect(migratingCalled).toBe(0)
+    expect(reducer.status.get()).toBe('ready')
+  })
+
+  it('becomes outdated by the newer version even without the data', () => {
+    let client = new TestClient('10')
+    localStorage.setItem('logux:reducer:db', '5')
+
+    let cleanCalled = 0
+    let stopCalled = 0
+    let reducer = createReducer(client, 'db', 2, {
+      clean() {
+        cleanCalled += 1
+      },
+      hasValue: () => false,
+      stop() {
+        stopCalled += 1
+      }
+    })
+
+    expect(reducer.status.get()).toBe('outdated')
+    expect(cleanCalled).toBe(0)
+    expect(stopCalled).toBe(1)
+  })
+
+  it('becomes ready when clean() fails and keeps the old version', async () => {
+    let client = new TestClient('10')
+    await client.connect()
+    localStorage.setItem('logux:reducer:db', '1')
+
+    let reducer = createReducer(client, 'db', 2, {
+      clean(): Promise<void> {
+        return Promise.reject(new Error('The database was closed'))
+      }
+    })
+
+    expect(reducer.status.get()).toBe('migrating')
+    await reducer.ready
+    expect(reducer.status.get()).toBe('ready')
+    // The next start will build the data again
+    expect(localStorage.getItem('logux:reducer:db')).toBe('1')
+  })
+
+  it('does not become ready when the rebuild fails after destroy', async () => {
+    let client = new TestClient('10')
+    await client.connect()
+    localStorage.setItem('logux:reducer:db', '1')
+
+    let rejectClean!: (error: Error) => void
+    let reducer = createReducer(client, 'db', 2, {
+      clean() {
+        return new Promise<void>((resolve, reject) => {
+          rejectClean = reject
+        })
+      }
+    })
+
+    expect(reducer.status.get()).toBe('migrating')
+    reducer.destroy()
+    rejectClean(new Error('The database was closed'))
+    await delay(1)
+    expect(reducer.status.get()).toBe('migrating')
+    expect(localStorage.getItem('logux:reducer:db')).toBe('1')
+  })
+
+  it('becomes ready when the actions replay fails', async () => {
+    let client = new TestClient('10')
+    await client.connect()
+    localStorage.setItem('logux:reducer:db', '1')
+
+    type UserAction = { id: string; type: 'users/create' }
+
+    let calls: string[] = []
+    let reducer = createReducer(client, 'db', 2, {
+      clean() {
+        return [
+          [
+            { id: 'a', type: 'users/create' },
+            { id: 'a', time: 0 }
+          ],
+          [
+            { id: 'b', type: 'users/create' },
+            { id: 'b', time: 1 }
+          ]
+        ] satisfies [UserAction, MetaTime][]
+      }
+    })
+    reducer.type<UserAction>('users/create', action => {
+      calls.push(action.id)
+      return Promise.reject(new Error('The database was closed'))
+    })
+
+    await reducer.ready
+    expect(calls).toEqual(['a'])
+    expect(reducer.status.get()).toBe('ready')
+    expect(localStorage.getItem('logux:reducer:db')).toBe('1')
   })
 
   it('runs clean and init when version is higher than stored', async () => {
@@ -484,8 +725,56 @@ describe('createReducer', () => {
     ])
   })
 
+  it('reduces the actions, which came before the lock was granted', async () => {
+    mockLocks()
+
+    let client = new TestClient('10')
+    await client.connect()
+
+    type UserAction = { id: string; type: 'users/create' }
+
+    let reducer = createReducer(client, 'db', 1, { clean() {} })
+    let received: string[] = []
+    reducer.type<UserAction>('users/create', action => {
+      received.push(action.id)
+    })
+
+    // The lock is granted in the next tick, so the action came before it
+    await client.log.add({ id: '1', type: 'users/create' })
+    expect(received).toEqual([])
+
+    await delay(1)
+    expect(received).toEqual(['1'])
+    expect(localStorage.getItem('logux:reducer:db')).toBe('1')
+  })
+
+  it('drops the actions when another tab is the leader', async () => {
+    let locks = mockLocks()
+    locks.hold(DB_LOCK)
+
+    let client = new TestClient('10')
+    await client.connect()
+
+    type UserAction = { id: string; type: 'users/create' }
+
+    let reducer = createReducer(client, 'db', 1, { clean() {} })
+    let received: string[] = []
+    reducer.type<UserAction>('users/create', action => {
+      received.push(action.id)
+    })
+
+    await client.log.add({ id: '1', type: 'users/create' })
+    await delay(1)
+    await client.log.add({ id: '2', type: 'users/create' })
+    await delay(1)
+
+    expect(received).toEqual([])
+    expect(locks.waiting(DB_LOCK)).toBe(1)
+  })
+
   it('runs reducer only in leader tab and releases lock on new version', async () => {
     let locks = mockLocks()
+    let releaseOtherTab = locks.hold(DB_LOCK)
 
     let client = new TestClient('10')
     await client.connect()
@@ -506,27 +795,53 @@ describe('createReducer', () => {
     await client.log.add({ type: 'users/create' })
     await delay(1)
     expect(received).toEqual([])
+    expect(locks.waiting(DB_LOCK)).toBe(1)
 
-    let lockReleased = false
-    void locks[0]!.grant().then(() => {
-      lockReleased = true
-    })
+    releaseOtherTab()
     await delay(1)
+    expect(locks.isHeld(DB_LOCK)).toBe(true)
 
     await client.log.add({ type: 'users/create' })
     await delay(1)
     expect(received).toEqual(['users/create'])
-    expect(lockReleased).toBe(false)
 
     emitStorage('logux:reducer:db', '2')
     await delay(1)
     expect(reducer.status.get()).toBe('outdated')
     expect(stopCalled).toBe(1)
-    expect(lockReleased).toBe(true)
+    expect(locks.isHeld(DB_LOCK)).toBe(false)
 
     await client.log.add({ type: 'users/create' })
     await delay(1)
     expect(received).toEqual(['users/create'])
+  })
+
+  it('does not take the lock after the reducer became outdated', async () => {
+    let locks = mockLocks()
+    let releaseOtherTab = locks.hold(DB_LOCK)
+
+    let client = new TestClient('10')
+    await client.connect()
+
+    let reducer = createReducer(client, 'db', 1, { clean() {} })
+    let received: string[] = []
+    reducer.type('users/create', action => {
+      received.push(action.type)
+    })
+
+    await delay(1)
+    expect(locks.waiting(DB_LOCK)).toBe(1)
+
+    emitStorage('logux:reducer:db', '2')
+    expect(reducer.status.get()).toBe('outdated')
+
+    releaseOtherTab()
+    await delay(1)
+    expect(locks.isHeld(DB_LOCK)).toBe(false)
+
+    await client.log.add({ type: 'users/create' })
+    await delay(1)
+    expect(received).toEqual([])
   })
 
   it('stops reducing actions and storage tracking on destroy', async () => {
@@ -677,24 +992,20 @@ describe('createReducer', () => {
     })
 
     await delay(1)
-    let lockReleased = false
-    void locks[0]!.grant().then(() => {
-      lockReleased = true
-    })
-    await delay(1)
+    expect(locks.isHeld(DB_LOCK)).toBe(true)
 
     await client.log.add({ type: 'users/create' })
     await delay(1)
     expect(received).toEqual(['users/create'])
-    expect(lockReleased).toBe(false)
 
     reducer.destroy()
     await delay(1)
-    expect(lockReleased).toBe(true)
+    expect(locks.isHeld(DB_LOCK)).toBe(false)
   })
 
   it('cancels lock request on destroy in non-leader tab', async () => {
     let locks = mockLocks()
+    let releaseOtherTab = locks.hold(DB_LOCK)
 
     let client = new TestClient('10')
     await client.connect()
@@ -706,19 +1017,21 @@ describe('createReducer', () => {
     })
 
     await delay(1)
-    expect(locks[0]!.aborted).toBe(false)
+    expect(locks.waiting(DB_LOCK)).toBe(1)
+    expect(locks.aborted).toBe(0)
 
     reducer.destroy()
     await delay(1)
-    expect(locks[0]!.aborted).toBe(true)
+    expect(locks.waiting(DB_LOCK)).toBe(0)
+    expect(locks.aborted).toBe(1)
 
+    releaseOtherTab()
     let next = createReducer(client, 'db', 1, { clean() {} })
     next.type('users/create', action => {
       received.push(action.type)
     })
     await delay(1)
-    void locks[1]!.grant()
-    await delay(1)
+    expect(locks.isHeld(DB_LOCK)).toBe(true)
 
     await client.log.add({ type: 'users/create' })
     await delay(1)
@@ -788,6 +1101,130 @@ describe('createStorageReducer', () => {
 
     expect(reducer.value.get()).toBe(5)
     expect(localStorage.getItem('counter')).toBe('5')
+  })
+
+  it('builds the value from repeat() on the first run', async () => {
+    let client = new TestClient('10')
+    await client.connect()
+
+    let entries: [IncAction, ClientMeta][] = [
+      [
+        { amount: 2, type: 'inc' },
+        { added: 0, id: 'a', reasons: [], time: 0 }
+      ],
+      [
+        { amount: 3, type: 'inc' },
+        { added: 0, id: 'b', reasons: [], time: 1 }
+      ]
+    ]
+
+    let migratingCalled = 0
+    let reducer = createStorageReducer(client, 'counter', 1, 0, {
+      ...counterCallbacks(entries),
+      migrating() {
+        migratingCalled += 1
+      }
+    })
+    reducer.type<IncAction>('inc', (prev, action) => prev + action.amount)
+
+    // The value can be missed by the sync before the first start
+    expect(reducer.status.get()).toBe('initializing')
+    await reducer.ready
+    expect(migratingCalled).toBe(0)
+    expect(reducer.value.get()).toBe(5)
+    expect(localStorage.getItem('counter')).toBe('5')
+    expect(localStorage.getItem('logux:reducer:counter')).toBe('1')
+  })
+
+  it('repeats the actions on every start until the value will be built', async () => {
+    let client = new TestClient('10')
+    await client.connect()
+
+    let repeats = 0
+    let entries: [IncAction, ClientMeta][] = []
+
+    let first = createStorageReducer(client, 'counter', 1, 0, {
+      decode: s => parseInt(s, 10),
+      encode: v => String(v),
+      repeat() {
+        repeats += 1
+        return entries
+      }
+    })
+    first.type<IncAction>('inc', (prev, action) => prev + action.amount)
+
+    await first.ready
+    expect(repeats).toBe(1)
+    expect(first.value.get()).toBe(0)
+    // The empty value must not hide the actions missed by the sync
+    expect(localStorage.getItem('counter')).toBeNull()
+    expect(localStorage.getItem('logux:reducer:counter')).toBeNull()
+    first.destroy()
+
+    entries = [
+      [
+        { amount: 4, type: 'inc' },
+        { added: 0, id: 'a', reasons: [], time: 0 }
+      ]
+    ]
+    let second = createStorageReducer(client, 'counter', 1, 0, {
+      decode: s => parseInt(s, 10),
+      encode: v => String(v),
+      repeat() {
+        repeats += 1
+        return entries
+      }
+    })
+    second.type<IncAction>('inc', (prev, action) => prev + action.amount)
+
+    await second.ready
+    expect(repeats).toBe(2)
+    expect(second.value.get()).toBe(4)
+    expect(localStorage.getItem('counter')).toBe('4')
+    expect(localStorage.getItem('logux:reducer:counter')).toBe('1')
+    second.destroy()
+
+    // The value is in the storage now, so the actions are not repeated
+    let third = createStorageReducer(client, 'counter', 1, 0, {
+      decode: s => parseInt(s, 10),
+      encode: v => String(v),
+      repeat() {
+        repeats += 1
+        return entries
+      }
+    })
+    third.type<IncAction>('inc', (prev, action) => prev + action.amount)
+
+    await third.ready
+    expect(repeats).toBe(2)
+    expect(third.value.get()).toBe(4)
+  })
+
+  it('rebuilds the value when the version was stored without the value', async () => {
+    let client = new TestClient('10')
+    await client.connect()
+    localStorage.setItem('logux:reducer:counter', '1')
+
+    let entries: [IncAction, ClientMeta][] = [
+      [
+        { amount: 7, type: 'inc' },
+        { added: 0, id: 'a', reasons: [], time: 0 }
+      ]
+    ]
+
+    let migratingCalled = 0
+    let reducer = createStorageReducer(client, 'counter', 1, 0, {
+      ...counterCallbacks(entries),
+      migrating() {
+        migratingCalled += 1
+      }
+    })
+    reducer.type<IncAction>('inc', (prev, action) => prev + action.amount)
+
+    await reducer.ready
+    expect(migratingCalled).toBe(0)
+    expect(reducer.value.get()).toBe(7)
+    expect(localStorage.getItem('counter')).toBe('7')
   })
 
   it('replays actions restored from the data without reasons', async () => {
@@ -1110,7 +1547,10 @@ describe('custom storage', () => {
   it('keeps the value in custom storage', async () => {
     let client = new TestClient('10')
     await client.connect()
-    let storage: PersistentStorage = { counter: '10' }
+    let storage: PersistentStorage = {
+      'counter': '10',
+      'logux:reducer:counter': '1'
+    }
 
     let reducer = createStorageReducer(client, 'counter', 1, 0, {
       ...counterCallbacks(),
@@ -1235,7 +1675,9 @@ describe('without localStorage', () => {
 
     await reducer.ready
     expect(reducer.status.get()).toBe('ready')
-    expect(calls).toEqual(['init'])
+    // The version is kept in memory only, so the data is built
+    // from the repeated actions on every start
+    expect(calls).toEqual(['clean', 'init'])
 
     await client.log.add({ type: 'users/create' })
     await delay(1)

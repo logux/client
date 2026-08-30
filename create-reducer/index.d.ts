@@ -18,17 +18,37 @@ interface ReducerInitCallbacks {
   init?(): void | Promise<void>
 
   /**
-   * Called when the stored data has an older version. Clean the data here
-   * and return the actions to reduce it again.
+   * Called when the stored data has an older version, and on the first run
+   * with `0` as the version: the log can be filled before the reducer was
+   * created, so the data is built from the returned actions in both cases.
+   * Clean the data here and return the actions to reduce it again.
    */
   clean(
     oldVersion: number
   ): void | Promise<void> | [Action, MetaTime][] | Promise<[Action, MetaTime][]>
 
   /**
+   * Tell whether the data of the reducer is in the storage of the app.
+   *
+   * The version is saved only together with the data, so the data, which was
+   * never built, will be built again on the next start instead of looking
+   * like an up-to-date one. Without the callback the version is saved
+   * after every build.
+   *
+   * ```js
+   * createReducer(client, 'db', 1, {
+   *   clean() { … },
+   *   hasValue: () => db.tables.includes('users')
+   * })
+   * ```
+   */
+  hasValue?(): boolean
+
+  /**
    * Called when the stored data has an older version and is being cleaned
-   * and reduced again. A good place to show a “migrating data” loader
-   * until the passed promise is resolved.
+   * and reduced again. It is not called on the first build of the data.
+   * A good place to show a “migrating data” loader until the passed promise
+   * is resolved.
    *
    * @param done Promise resolved when the reducer is ready
    *             (the same as {@link Reducer#ready}).
@@ -153,6 +173,7 @@ interface StorageCallbacks {
   /**
    * Called when the stored value has an older version and is being cleaned
    * and reduced again from {@link StorageCallbacks#repeat} actions.
+   * It is not called on the first build of the value.
    *
    * @param done Promise resolved when the reducer is ready
    *             (the same as {@link StorageReducer#ready}).
@@ -160,7 +181,8 @@ interface StorageCallbacks {
   migrating?(done: Promise<void>): void
 
   /**
-   * Actions to reduce the value again after the version change.
+   * Actions to reduce the value again: on the version change, on the first
+   * run and on every start until the value will be in the storage.
    *
    * Metas need only `id` and `time`, so the same actions snapshot
    * can be passed to {@link CrdtDatabaseOptions#repeat} and reduced here,

@@ -34,6 +34,7 @@ function stopStorageTracking(key) {
 
 export function createReducer(client, name, version, callbacks) {
   let clean = callbacks.clean ?? (() => {})
+  let hasValue = callbacks.hasValue ?? (() => true)
   let init = callbacks.init ?? (() => {})
   let stop = callbacks.stop ?? (() => {})
   let storage = callbacks.storage ?? defaultStorage()
@@ -49,39 +50,67 @@ export function createReducer(client, name, version, callbacks) {
   let actionListeners = {}
 
   let destroyed = false
-  let isLeader = false
+  // `undefined` until the leader lock will be granted or taken by another tab
+  let isLeader
   let lockRequest = new AbortController()
   let releaseLock = () => {}
 
+  // The value is not built yet, so the version must not be saved
+  let building = true
+
+  let key = `logux:reducer:${name}`
+
+  function saveVersion() {
+    // The value, which was never built, or which was built only in half by
+    // the interrupted replay, must not be marked as an up-to-date one
+    if (destroyed || building || !hasValue()) return
+    if (storage[key] !== String(version)) storage[key] = String(version)
+  }
+
   let promise = Promise.resolve()
-  function becomeReady() {
-    if (destroyed) return
+
+  function reduce(listener, action, meta) {
+    promise = promise.then(() => listener(action, meta)).then(saveVersion)
+  }
+
+  function reduceWaiting() {
+    if (!isLeader || status.get() !== 'ready') return
     for (let entry of actionsWaiting) {
       let listener = actionListeners[entry[0].type]
-      if (listener) {
-        promise = promise.then(() => listener(entry[0], entry[1]))
-      }
+      if (listener) reduce(listener, entry[0], entry[1])
     }
     actionsWaiting = []
+  }
+
+  function becomeReady() {
+    if (destroyed) return
+    building = false
     status.set('ready')
+    reduceWaiting()
     setReady()
   }
 
-  let key = `logux:reducer:${name}`
-  let oldStorage = storage[key]
-  if (!oldStorage) {
-    let initializing = init() ?? Promise.resolve()
-    initializing
-      .then(() => {
-        storage[key] = String(version)
-      })
-      .then(becomeReady)
+  let stored = storage[key]
+  let oldVersion = typeof stored === 'string' ? parseInt(stored, 10) : undefined
+  // The version is saved with the value, so the version alone means
+  // the partially cleaned storage. Rebuilding is the safe answer
+  if (!hasValue() && !(oldVersion > version)) oldVersion = undefined
+
+  if (oldVersion > version) {
+    status.set('outdated')
+    stop()
+    setReady()
+  } else if (oldVersion === version) {
+    becomeReady()
   } else {
-    let oldVersion = parseInt(oldStorage, 10)
-    if (oldVersion < version) {
+    // The log can be filled before the reducer was created, so the value
+    // is built by the repeated actions even on the first run
+    if (typeof oldVersion !== 'undefined') {
       status.set('migrating')
       if (callbacks.migrating) callbacks.migrating(ready)
-      void Promise.resolve(clean(oldVersion)).then(async entries => {
+    }
+    void Promise.resolve(clean(oldVersion ?? 0))
+      .then(async entries => {
         if (destroyed) return
         await init()
         for (let entry of entries ?? []) {
@@ -89,26 +118,41 @@ export function createReducer(client, name, version, callbacks) {
           let listener = actionListeners[entry[0].type]
           if (listener) await listener(entry[0], entry[1])
         }
-        storage[key] = String(version)
+        becomeReady()
+        saveVersion()
+      })
+      .catch(() => {
+        // The database of the actions can be closed in the middle of the
+        // rebuild. The version was not saved, so the next start will
+        // build the value again
         becomeReady()
       })
-    } else if (oldVersion > version) {
-      status.set('outdated')
-      stop()
-      setReady()
-    } else {
-      becomeReady()
-    }
+  }
+
+  function keepLock() {
+    if (destroyed || status.get() === 'outdated') return Promise.resolve()
+    isLeader = true
+    reduceWaiting()
+    return new Promise(resolve => {
+      releaseLock = resolve
+    })
   }
 
   if (typeof navigator !== 'undefined' && navigator.locks) {
+    // The lock is granted in the next tick, and actions can come before it,
+    // so `ifAvailable` tells right away whether another tab is the leader
+    // and is reducing the same actions to not reduce them twice
     navigator.locks
-      .request(`${key}:lock`, { signal: lockRequest.signal }, () => {
-        if (destroyed || status.get() === 'outdated') return Promise.resolve()
-        isLeader = true
-        return new Promise(resolve => {
-          releaseLock = resolve
-        })
+      .request(`${key}:lock`, { ifAvailable: true }, lock => {
+        if (lock) return keepLock()
+        isLeader = false
+        actionsWaiting = []
+        // The lock will be granted when the leader’s tab will be closed
+        return navigator.locks.request(
+          `${key}:lock`,
+          { signal: lockRequest.signal },
+          keepLock
+        )
       })
       .catch(() => {})
   } else {
@@ -128,12 +172,12 @@ export function createReducer(client, name, version, callbacks) {
 
   let unbindAdd = client.on('add', (action, meta) => {
     let listener = actionListeners[action.type]
-    if (listener && isLeader) {
-      if (status.get() !== 'ready') {
-        actionsWaiting.push([action, meta])
-      } else {
-        promise = promise.then(() => listener(action, meta))
-      }
+    // Another tab is the leader and will put its value to the storage
+    if (!listener || isLeader === false) return
+    if (isLeader && status.get() === 'ready') {
+      reduce(listener, action, meta)
+    } else {
+      actionsWaiting.push([action, meta])
     }
   })
 
@@ -188,6 +232,7 @@ export function createStorageReducer(
       delete storage[name]
       return callbacks.repeat()
     },
+    hasValue: () => typeof storage[name] === 'string',
     migrating: callbacks.migrating,
     storage
   })
