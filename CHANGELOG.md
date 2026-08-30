@@ -2,6 +2,10 @@
 
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.25.1
+
+- Fixed some cases when reducer state could be broken.
+
 ## 0.25.0
 
 - Added better binary data support in `SqlLogStore` with Base64 and packers.
