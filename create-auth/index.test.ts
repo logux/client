@@ -89,26 +89,26 @@ it('unbinds client events', async () => {
 
   expect(getEventsCount(client, 'user')).toBe(0)
   expect(getEventsCount(client.node, 'error')).toBe(0)
-  expect(getEventsCount(client.node, 'state')).toBe(1)
+  expect(getEventsCount(client.node, 'state')).toBe(0)
 
   let destroy = auth.listen(() => {})
   expect(auth.get().isAuthenticated).toBe(false)
   expect(getEventsCount(client, 'user')).toBe(1)
   expect(getEventsCount(client.node, 'error')).toBe(1)
-  expect(getEventsCount(client.node, 'state')).toBe(2)
+  expect(getEventsCount(client.node, 'state')).toBe(1)
 
   await client.connect()
   expect(auth.get().isAuthenticated).toBe(true)
-  expect(getEventsCount(client.node, 'state')).toBe(1)
+  expect(getEventsCount(client.node, 'state')).toBe(0)
 
   emit(client.node, 'error', { type: 'wrong-credentials' })
   await delay(1)
   expect(auth.get().isAuthenticated).toBe(false)
-  expect(getEventsCount(client.node, 'state')).toBe(2)
+  expect(getEventsCount(client.node, 'state')).toBe(1)
 
   destroy()
   await delay(1000)
   expect(getEventsCount(client, 'user')).toBe(0)
   expect(getEventsCount(client.node, 'error')).toBe(0)
-  expect(getEventsCount(client.node, 'state')).toBe(1)
+  expect(getEventsCount(client.node, 'state')).toBe(0)
 })

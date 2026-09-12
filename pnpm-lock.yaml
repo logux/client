@@ -10,10 +10,10 @@ importers:
     dependencies:
       '@logux/actions':
         specifier: ^0.7.3
-        version: 0.7.3(@logux/core@0.11.8)
+        version: 0.7.3(@logux/core@git+https://github.com/logux/core.git#fe38192880bfb710427b6e5d316fa32838915177)
       '@logux/core':
-        specifier: ^0.11.8
-        version: 0.11.8
+        specifier: github:logux/core#next
+        version: git+https://github.com/logux/core.git#fe38192880bfb710427b6e5d316fa32838915177
       nanoevents:
         specifier: ^10.0.0
         version: 10.0.0
@@ -86,7 +86,7 @@ importers:
         version: 20.14.3
       multiocular:
         specifier: ^0.8.4
-        version: 0.8.4(@logux/core@0.11.8)
+        version: 0.8.4(@logux/core@git+https://github.com/logux/core.git#fe38192880bfb710427b6e5d316fa32838915177)
       nanodelay:
         specifier: ^2.0.2
         version: 2.0.2
@@ -341,6 +341,7 @@ packages:
 
   '@logux/actions@0.7.3':
     resolution: {integrity: sha512-POtg57ROMDQNG6KzDZzOT19eAR2qxZVM7ot6A6vwKK9Ql6MASHZ0NhqptpY2OzG7EOG+jy8q3QVl5Z6OzrK2mQ==}
+    version: 0.7.3
     engines: {node: ^22.0.0 || ^24.0.0 || >=26.0.0}
     peerDependencies:
       '@logux/core': ^0.11.0
@@ -349,8 +350,9 @@ packages:
     resolution: {integrity: sha512-VbgVkEloAe2ym5w0cjyRI16Eeyk2R0BgJa9pMYT1FcJEhFnzrB23E0ExIEhrok0iD48bFh7goledwmDLmgWaiw==}
     engines: {node: ^20.0.0 || >=22.0.0}
 
-  '@logux/core@0.11.8':
-    resolution: {integrity: sha512-AP+qaNqvu6ukGnaHksEgaVWvqmpWlrV9rwwXVc4rEHk5dcgm87+kxWsKJhez1bOeFOQ+l3mzOODrOhyjHnLEfA==}
+  '@logux/core@git+https://github.com/logux/core.git#fe38192880bfb710427b6e5d316fa32838915177':
+    resolution: {commit: fe38192880bfb710427b6e5d316fa32838915177, repo: https://github.com/logux/core.git, type: git}
+    version: 0.11.8
     engines: {node: ^22.0.0 || ^24.0.0 || >=26.0.0}
 
   '@logux/oxc-configs@1.2.0':
@@ -1471,6 +1473,7 @@ packages:
 
   multiocular@0.8.4:
     resolution: {integrity: sha512-8uxpaHVnNghK+jE7KHa8+o4WHM4m/VLsmDkeYQ3kNDAy9g8SytOInvONlu/fk6WXo/m0PzEmaqiUvdWeERbD+w==}
+    version: 0.8.4
     engines: {node: ^22.16.0 || >=24.0.0}
     hasBin: true
 
@@ -1974,19 +1977,19 @@ snapshots:
     dependencies:
       '@logux/core': 0.10.0
 
-  '@logux/actions@0.5.0(@logux/core@0.11.8)':
+  '@logux/actions@0.5.0(@logux/core@git+https://github.com/logux/core.git#fe38192880bfb710427b6e5d316fa32838915177)':
     dependencies:
-      '@logux/core': 0.11.8
+      '@logux/core': git+https://github.com/logux/core.git#fe38192880bfb710427b6e5d316fa32838915177
 
-  '@logux/actions@0.7.3(@logux/core@0.11.8)':
+  '@logux/actions@0.7.3(@logux/core@git+https://github.com/logux/core.git#fe38192880bfb710427b6e5d316fa32838915177)':
     dependencies:
-      '@logux/core': 0.11.8
+      '@logux/core': git+https://github.com/logux/core.git#fe38192880bfb710427b6e5d316fa32838915177
 
   '@logux/core@0.10.0':
     dependencies:
       nanoevents: 9.1.0
 
-  '@logux/core@0.11.8':
+  '@logux/core@git+https://github.com/logux/core.git#fe38192880bfb710427b6e5d316fa32838915177':
     dependencies:
       nanoevents: 10.0.0
 
@@ -2953,9 +2956,9 @@ snapshots:
 
   minipass@7.1.3: {}
 
-  multiocular@0.8.4(@logux/core@0.11.8):
+  multiocular@0.8.4(@logux/core@git+https://github.com/logux/core.git#fe38192880bfb710427b6e5d316fa32838915177):
     dependencies:
-      '@logux/actions': 0.5.0(@logux/core@0.11.8)
+      '@logux/actions': 0.5.0(@logux/core@git+https://github.com/logux/core.git#fe38192880bfb710427b6e5d316fa32838915177)
       '@logux/server': 0.14.0
       diff2html: 3.4.56
       dompurify: 3.4.15

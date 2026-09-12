@@ -56,6 +56,10 @@ function privateMethods(obj: object): any {
   return obj
 }
 
+function resubscribe(client: Client): Promise<void> {
+  return privateMethods(client).node.options.ready()
+}
+
 function toNumber(str: null | string): number {
   if (str === null) {
     throw new Error('Key value is null')
@@ -109,6 +113,7 @@ async function createDialog(
     [0, 0],
     { token }
   ])
+  pair.right.send(['ready', 0])
   await pair.wait('left')
   await Promise.resolve()
   client.node.timeFix = 0
@@ -526,7 +531,8 @@ it('sends only special actions', async () => {
   await client.node.waitFor('synchronized')
   await delay(10)
   expect(pair.leftSent).toEqual([
-    ['sync', 1, { type: 'a' }, { id: '0 10:client:uuid', time: 1 }]
+    ['sync', 1, { type: 'a' }, { id: '0 10:client:uuid', time: 1 }],
+    ['ready', 2]
   ])
 })
 
@@ -562,7 +568,8 @@ it('filters data before sending', async () => {
   await client.node.waitFor('synchronized')
   await delay(10)
   expect(pair.leftSent).toEqual([
-    ['sync', 1, { type: 'a' }, { id: '0 a:client:uuid', time: 1 }]
+    ['sync', 1, { type: 'a' }, { id: '0 a:client:uuid', time: 1 }],
+    ['ready', 2]
   ])
 })
 
@@ -605,7 +612,8 @@ it('compresses subprotocol', async () => {
         subprotocol: 11,
         time: 2
       }
-    ]
+    ],
+    ['ready', 2]
   ])
 })
 
@@ -674,7 +682,7 @@ it('resubscribes to previous subscriptions', async () => {
 
   setState(client, 'disconnected')
   setState(client, 'connecting')
-  setState(client, 'synchronized')
+  await resubscribe(client)
   expect(added).toEqual([
     {
       channel: 'a',
@@ -734,7 +742,7 @@ it('tells last action time during resubscription', async () => {
   ])
   setState(client, 'disconnected')
   setState(client, 'connecting')
-  setState(client, 'synchronized')
+  await resubscribe(client)
   expect(added).toEqual([
     {
       channel: 'a',
@@ -760,6 +768,7 @@ it('changes user ID', async () => {
   expect(users).toEqual(['20'])
   expect(client.node.state).toBe('connecting')
   pair.right.send(['connected', client.node.localProtocol, 'server', [0, 0]])
+  pair.right.send(['ready', 0])
   await client.node.waitFor('synchronized')
 })
 
@@ -966,15 +975,25 @@ it('works with unsubscribe in offline', async () => {
     [0, 0],
     {}
   ])
+  pair.right.send(['ready', 0])
   await pair.wait('left')
-  setState(client, 'synchronized')
   await delay(10)
 
+  // Actions from the offline are sent first, subscriptions are resent
+  // in `ready` option, and `ready` message closes the initial synchronization
   expect(pair.leftSent).toEqual([
     ['connect', client.node.localProtocol, '10:1:1', 0, { subprotocol: 10 }],
     [
       'sync',
-      3,
+      6,
+      { channel: 'D', filter: undefined, type: 'logux/subscribe' },
+      { id: '7', time: 8 },
+      { channel: 'B', filter: { id: 3 }, type: 'logux/subscribe' },
+      { id: '8', time: 9 }
+    ],
+    [
+      'sync',
+      6,
       {
         channel: 'A',
         since: {
@@ -987,7 +1006,7 @@ it('works with unsubscribe in offline', async () => {
     ],
     [
       'sync',
-      3,
+      6,
       {
         channel: 'B',
         filter: { id: 1 },
@@ -999,13 +1018,6 @@ it('works with unsubscribe in offline', async () => {
       },
       { id: 'D', time: 14 }
     ],
-    [
-      'sync',
-      6,
-      { channel: 'D', filter: undefined, type: 'logux/subscribe' },
-      { id: '7', time: 8 },
-      { channel: 'B', filter: { id: 3 }, type: 'logux/subscribe' },
-      { id: '8', time: 9 }
-    ]
+    ['ready', 6]
   ])
 })

@@ -260,10 +260,22 @@ export class Client {
       }
     }
 
+    async function resubscribe () {
+      let adding = []
+      for (let i in this.subscriptions) {
+        let action = JSON.parse(i)
+        let since = this.last[action.channel]
+        if (since) action.since = since
+        adding.push(this.log.add(action, { resubscribe: true, sync: true }))
+      }
+      await Promise.all(adding)
+    }
+
     this.node = new ClientNode(this.nodeId, this.log, connection, {
       fixTime: !this.options.time,
       onSend,
       ping: this.options.ping,
+      ready: resubscribe,
       subprotocol: this.options.subprotocol,
       timeout: this.options.timeout,
       token: this.options.token
@@ -291,24 +303,6 @@ export class Client {
     this.node.on('debug', (type, stack) => {
       if (type === 'error') {
         console.error('Error on Logux server:\n', stack)
-      }
-    })
-
-    let disconnected = true
-    this.node.on('state', () => {
-      let state = this.node.state
-      if (state === 'synchronized') {
-        if (disconnected) {
-          disconnected = false
-          for (let i in this.subscriptions) {
-            let action = JSON.parse(i)
-            let since = this.last[action.channel]
-            if (since) action.since = since
-            this.log.add(action, { resubscribe: true, sync: true })
-          }
-        }
-      } else if (this.node.state === 'disconnected') {
-        disconnected = true
       }
     })
 

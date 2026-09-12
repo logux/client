@@ -156,6 +156,7 @@ it('prints log', async () => {
 
   setState(client, 'connecting')
   client.node.connected = true
+  await privateMethods(client).node.options.ready()
   setState(client, 'synchronized')
 
   await client.node.log.add(

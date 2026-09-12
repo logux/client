@@ -111,6 +111,7 @@ function createServer(url: string): WsBinaryConnection<FakeWebSocket> {
   connection.on('message', message => {
     if (message[0] === 'connect') {
       connection.send(['connected', message[1], 'server', [0, 0], {}])
+      connection.send(['ready', 0])
     } else if (message[0] === 'sync') {
       connection.send(['synced', message[1]])
     }
@@ -129,7 +130,11 @@ async function connect(client: Client): Promise<void> {
     [0, 0],
     { token: 'good' }
   ])
+  pair.right.send(['ready', 0])
   await pair.wait('left')
+  while (!pair.leftSent.some(message => message[0] === 'ready')) {
+    await delay(1)
+  }
   await Promise.resolve()
 }
 
