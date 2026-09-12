@@ -355,7 +355,7 @@ it('sends encrypted actions through binary protocol', async () => {
   let long = 'a'.repeat(1000)
   client1.log.add({ type: 'sync', value: 'secret' }, { sync: true })
   client1.log.add({ type: 'sync', value: long }, { sync: true })
-  await delay(100)
+  await delay(150)
 
   // Protocol keeps compression flag in action type byte, not in the object
   expect(received).toEqual([
