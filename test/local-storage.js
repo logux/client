@@ -28,7 +28,11 @@ export function setLocalStorage() {
       writable: true
     })
   }
-  window.localStorage = storage
+  Object.defineProperty(window, 'localStorage', {
+    configurable: true,
+    value: storage,
+    writable: true
+  })
 }
 
 export function breakLocalStorage(error) {
