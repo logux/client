@@ -2,6 +2,10 @@
 
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.25.2
+
+- Fixed `default` value of CRDT Table on missed value.
+
 ## 0.25.1
 
 - Fixed some cases when reducer state could be broken.
