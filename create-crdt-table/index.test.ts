@@ -439,6 +439,109 @@ it('takes null in create() as a missing field', async () => {
   cleanStores($all)
 })
 
+it('takes defaults for missing columns of created actions', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await delay(10)
+
+  let createdMeta = { id: '1 10:other', time: 1 }
+  await client.log.add(
+    { fields: { name: 'Ann' }, id: 'U1', type: 'user/created' },
+    createdMeta
+  )
+  await client.log.add(
+    {
+      records: [
+        { id: 'U2', isAdmin: 1, name: 'Ben' },
+        { id: 'U3', name: 'Cat', role: 'admin' }
+      ],
+      type: 'user/created'
+    },
+    { id: '2 10:other', time: 2 }
+  )
+  await delay(10)
+
+  let $all = user.select`ORDER BY "id"`
+  let rows = await loadList($all)
+  expect(withoutMeta(rows)).toEqual([
+    {
+      age: null,
+      createdAt: new Date(2026, 0, 1).getTime(),
+      id: 'U1',
+      isAdmin: 0,
+      name: 'Ann',
+      publishedAt: null,
+      role: 'user'
+    },
+    {
+      age: null,
+      createdAt: new Date(2026, 0, 1).getTime(),
+      id: 'U2',
+      isAdmin: 1,
+      name: 'Ben',
+      publishedAt: null,
+      role: 'user'
+    },
+    {
+      age: null,
+      createdAt: new Date(2026, 0, 1).getTime(),
+      id: 'U3',
+      isAdmin: 0,
+      name: 'Cat',
+      publishedAt: null,
+      role: 'admin'
+    }
+  ])
+  // Columns with the default get the meta of the create action, so only
+  // newer changes can replace them. Columns without the default stay NULL
+  expect(rows[0]!.updatedAt_role).toBe(toSorted(createdMeta))
+  expect(rows[0]!.updatedAt_createdAt).toBe(toSorted(createdMeta))
+  expect(rows[0]!.updatedAt_age).toBeNull()
+
+  let $u1 = user.select`WHERE "id" = ${'U1'}`
+  await client.log.add(
+    { fields: { role: 'guest' }, id: 'U1', type: 'user/changed' },
+    { id: '0 10:other', time: 0 }
+  )
+  await delay(10)
+  expect((await loadList($u1))[0]!.role).toBe('user')
+
+  await client.log.add(
+    { fields: { role: 'guest' }, id: 'U1', type: 'user/changed' },
+    { id: '3 10:other', time: 3 }
+  )
+  await delay(10)
+  expect((await loadList($u1))[0]!.role).toBe('guest')
+
+  cleanStores($all, $u1)
+})
+
+it('keeps null cells of created actions instead of the default', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await delay(10)
+
+  // NULL in the action is a real cell with its own meta, not a missing
+  // column, so the replay of such a row must not replace it by the default
+  await client.log.add(
+    { fields: { isAdmin: null, name: 'Ann' }, id: 'U1', type: 'user/created' },
+    { id: '1 10:other', time: 1 }
+  )
+  await delay(10)
+
+  let $u1 = user.select`WHERE "id" = ${'U1'}`
+  let rows = await loadList($u1)
+  expect(rows[0]!.isAdmin).toBeNull()
+  expect(rows[0]!.updatedAt_isAdmin).toBe(
+    toSorted({ id: '1 10:other', time: 1 })
+  )
+  expect(rows[0]!.role).toBe('user')
+
+  cleanStores($u1)
+})
+
 it('creates rows again from selected rows', async () => {
   let { client, db } = await setup()
   let crdt = createCrdtDatabase(client, db)
@@ -519,7 +622,7 @@ it('resolves conflicts of batch actions with per-field last write wins', async (
   expect(rows.map(i => i.id)).toEqual(['U1', 'U2'])
   expect(rows.map(i => i.name)).toEqual(['Newer', 'Newer'])
   expect(rows.map(i => i.age)).toEqual([30, 30])
-  expect(rows.map(i => i.role)).toEqual([null, 'admin'])
+  expect(rows.map(i => i.role)).toEqual(['user', 'admin'])
   expect(rows[0]!.updatedAt_name).toBe(
     toSorted({ id: '0Z 10:other', time: 100 })
   )

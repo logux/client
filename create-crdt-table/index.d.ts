@@ -35,7 +35,8 @@ export interface CrdtColumnOptions<Type extends CrdtColumnValue> {
    * Default value or function to get it. Column with default becomes
    * optional in {@link CrdtTable#create}. The default is resolved
    * when the create action is added and is stored inside the action,
-   * so replaying the log is deterministic.
+   * so replaying the log is deterministic. A created record from another
+   * device, which misses the column, gets the default on applying too.
    */
   default?: (() => NoInfer<Type>) | NoInfer<Type>
 

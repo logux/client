@@ -621,6 +621,21 @@ export function createCrdtDatabase(client, db, opts = {}) {
       }
     }
 
+    // The record from another device can miss a column with the default,
+    // and the app can not read the row with NULL there, so the column takes
+    // the default. The replay of the tables also creates rows by a part
+    // of the columns, but the rest comes right after it from the `changed`
+    // actions and wins by the newer meta
+    for (let [, record] of inserts) {
+      for (let key in schema) {
+        let col = schema[key]
+        if (key in record || !('default' in col)) continue
+        record[key] =
+          typeof col.default === 'function' ? col.default() : col.default
+        columns.add(key)
+      }
+    }
+
     let queries = []
     if (inserts.length > 0) {
       // All fields of the action are used as columns and fields missing
