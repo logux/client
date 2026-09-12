@@ -260,7 +260,7 @@ export class Client {
       }
     }
 
-    async function resubscribe () {
+    let resubscribe = async () => {
       let adding = []
       for (let i in this.subscriptions) {
         let action = JSON.parse(i)
