@@ -1,4 +1,10 @@
-import { LoguxError, type TestLog, TestPair, TestTime } from '@logux/core'
+import {
+  type AnyAction,
+  LoguxError,
+  type TestLog,
+  TestPair,
+  TestTime
+} from '@logux/core'
 import { delay } from 'nanodelay'
 import { expect, it } from 'vitest'
 
@@ -227,4 +233,113 @@ it('removes listeners', () => {
   client.log.add({ reason: 'denied', type: 'logux/undo' })
 
   expect(calls).toBe(1)
+})
+
+let lastId = 0
+
+function receive(client: CrossTabClient, action: AnyAction): Promise<unknown> {
+  lastId += 1
+  return client.log.add(action, {
+    id: `${lastId} server:uuid`,
+    time: lastId
+  })
+}
+
+it('notifies about the download progress', async () => {
+  let test = await createTest()
+  setState(test.client.node, 'connecting')
+  await delay(105)
+  expect(test.calls).toEqual(['disconnected', 'connecting'])
+
+  await receive(test.client, { actions: 2, type: 'logux/prepare' })
+  await receive(test.client, { type: 'A' })
+  expect(test.calls).toEqual([
+    'disconnected',
+    'connecting',
+    'receiving',
+    'receiving'
+  ])
+  expect(test.args.slice(2)).toEqual([
+    { done: 0, total: 2 },
+    { done: 1, total: 2 }
+  ])
+
+  // The progress is more useful than the state
+  setState(test.client.node, 'sending')
+  expect(test.calls).toHaveLength(4)
+
+  test.client.node.connected = true
+  await receive(test.client, { type: 'B' })
+  setState(test.client.node, 'synchronized')
+  await delay(505)
+  expect(test.calls).toEqual([
+    'disconnected',
+    'connecting',
+    'receiving',
+    'receiving',
+    'receiving',
+    'sending',
+    'synchronized'
+  ])
+  expect(test.args[4]).toEqual({ done: 2, total: 2 })
+})
+
+it('switches to the download in the middle of the session', async () => {
+  let test = await createTest()
+  test.client.node.connected = true
+  setState(test.client.node, 'synchronized')
+  await delay(505)
+  expect(test.calls).toEqual(['disconnected', 'synchronized'])
+
+  await receive(test.client, { actions: 1, type: 'logux/prepare' })
+  await receive(test.client, { type: 'A' })
+  await delay(505)
+  expect(test.calls).toEqual([
+    'disconnected',
+    'synchronized',
+    'receiving',
+    'receiving',
+    'synchronized'
+  ])
+})
+
+it('does not report old state during the download', async () => {
+  let test = await createTest()
+  test.client.node.connected = true
+  setState(test.client.node, 'synchronized')
+  await receive(test.client, { actions: 2, type: 'logux/prepare' })
+  await delay(505)
+  expect(test.calls).toEqual(['disconnected', 'receiving'])
+})
+
+it('counts only the actions from the server', async () => {
+  let test = await createTest()
+  setState(test.client.node, 'connecting')
+  await delay(105)
+
+  await receive(test.client, { actions: 2, type: 'logux/prepare' })
+  await receive(test.client, { id: '1 10:1:1', type: 'logux/processed' })
+  await receive(test.client, { id: '2 10:1:1', type: 'logux/undo' })
+  await test.client.log.add({ type: 'A' }, { reasons: ['test'] })
+  // Action from another tab of this client
+  await test.client.log.add({ type: 'B' }, { id: '9 10:1:2', time: 9 })
+  expect(test.calls).toEqual(['disconnected', 'connecting', 'receiving'])
+  expect(test.args[2]).toEqual({ done: 0, total: 2 })
+
+  await receive(test.client, { type: 'C' })
+  expect(test.args[3]).toEqual({ done: 1, total: 2 })
+})
+
+it('stops the download progress on disconnect', async () => {
+  let test = await createTest()
+  setState(test.client.node, 'connecting')
+  await receive(test.client, { actions: 2, type: 'logux/prepare' })
+  expect(test.calls).toEqual(['disconnected', 'receiving'])
+
+  setState(test.client.node, 'disconnected')
+  expect(test.calls).toEqual(['disconnected', 'receiving', 'disconnected'])
+
+  await receive(test.client, { type: 'A' })
+  await delay(105)
+  expect(test.calls).toHaveLength(3)
 })

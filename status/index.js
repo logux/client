@@ -11,6 +11,7 @@ export function status(client, callback, options = {}) {
   let timeout
   let unbind = []
   let processing = {}
+  let receiving
 
   function setSynchronized() {
     if (Object.keys(processing).length === 0) {
@@ -30,6 +31,14 @@ export function status(client, callback, options = {}) {
   }
 
   function changeState() {
+    if (
+      observable.state === 'disconnected' ||
+      observable.state === 'synchronized'
+    ) {
+      receiving = undefined
+    } else if (receiving) {
+      return
+    }
     clearTimeout(timeout)
 
     if (observable.state === 'disconnected') {
@@ -80,6 +89,24 @@ export function status(client, callback, options = {}) {
         return
       } else if (action.type === 'logux/unsubscribe') {
         return
+      }
+
+      if (action.type === 'logux/prepare') {
+        clearTimeout(timeout)
+        receiving = { done: 0, total: action.actions }
+        callback('receiving', receiving)
+      } else if (
+        receiving &&
+        action.type !== 'logux/processed' &&
+        action.type !== 'logux/undo' &&
+        !meta.id.includes(client.clientId)
+      ) {
+        receiving = { done: receiving.done + 1, total: receiving.total }
+        callback('receiving', receiving)
+        if (receiving.done === receiving.total) {
+          receiving = undefined
+          changeState()
+        }
       }
 
       if (action.type === 'logux/processed') {
