@@ -294,3 +294,42 @@ it('gives different added on parallel adds to the same file', async () => {
   await db2.close()
   await rm(dir, { force: true, recursive: true })
 })
+
+it('adds the actions of a single sync message in a single transaction', async () => {
+  let store = new SqlLogStore(db)
+  // The first write creates the tables
+  await store.add({ type: 'init' }, { id: '0 n', time: 0 } as Meta)
+
+  let transactions = 0
+  let origin = db.driver.transaction.bind(db.driver)
+  db.driver.transaction = (callback, opts) => {
+    transactions += 1
+    return origin(callback, opts)
+  }
+
+  // `syncMessage` starts every `add()` of the message without awaiting them
+  let message = []
+  for (let i = 1; i <= 100; i++) {
+    message.push(store.add({ type: 'A' }, { id: `${i} n`, time: i } as Meta))
+  }
+  await Promise.all(message)
+
+  expect(transactions).toBe(1)
+  expect(await store.getLastAdded()).toBe(101)
+  expect(await all(store.get())).toHaveLength(101)
+})
+
+it('repeats the whole batch when one of its writes failed', async () => {
+  let store = new SqlLogStore(db)
+  await store.add({ type: 'init' }, { id: '0 n', time: 0 } as Meta)
+  await db.exec`DROP TABLE "logux_reason"`
+
+  let results = await Promise.allSettled([
+    store.add({ type: 'A' }, { id: '1 n', time: 1 } as Meta),
+    store.add({ type: 'B' }, { id: '2 n', reasons: ['test'], time: 2 } as Meta)
+  ])
+  expect(results.map(i => i.status)).toEqual(['rejected', 'rejected'])
+
+  // The queue is alive and the transaction was rolled back
+  expect(await store.getLastAdded()).toBe(1)
+})

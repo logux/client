@@ -157,7 +157,7 @@
       "import": {
         "./sql-log-store/index.js": "{ SqlLogStore }"
       },
-      "limit": "2.6 KB"
+      "limit": "2.7 KB"
     },
     {
       "name": "React",

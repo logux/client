@@ -501,12 +501,32 @@ export class SqlLogStore {
     }
   }
 
+  // Actions of a single `sync` message are added one by one, so a transaction
+  // per action made the first sync of an old account very slow. Writes, which
+  // were queued while the previous transaction was running, share the next one
   write(callback) {
-    let result = this.queue.then(async () => {
-      await this.init()
-      return this.transaction(callback)
+    if (!this.batch) {
+      let batch = (this.batch = [])
+      this.queue = this.queue
+        .then(async () => {
+          this.batch = undefined
+          await this.init()
+          try {
+            await this.transaction(async tx => {
+              for (let job of batch) job.result = await job.callback(tx)
+            })
+          } catch (e) {
+            // A failed write rolls back the whole transaction, so the other
+            // writes of the batch must be repeated by their callers too
+            for (let job of batch) job.reject(e)
+            return
+          }
+          for (let job of batch) job.resolve(job.result)
+        })
+        .catch(() => {})
+    }
+    return new Promise((resolve, reject) => {
+      this.batch.push({ callback, reject, resolve })
     })
-    this.queue = result.catch(() => {})
-    return result
   }
 }
