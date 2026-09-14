@@ -27,10 +27,12 @@ eachStoreCheck((desc, creator) => {
 
 it('keeps big numbers', { timeout: 60000 }, async () => {
   let store = new SqlLogStore(db)
-  await store.add({ type: 'A' }, {
-    id: 'OersMw- 10:client:uuid',
-    time: 1764021600000
-  } as Meta)
+  await store.add([
+    [
+      { type: 'A' },
+      { id: 'OersMw- 10:client:uuid', time: 1764021600000 } as Meta
+    ]
+  ])
   await store.setLastSynced({ received: 1, sent: 2 })
 
   expect(await store.getLastAdded()).toBe(1)

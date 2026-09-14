@@ -10,10 +10,10 @@ importers:
     dependencies:
       '@logux/actions':
         specifier: github:logux/actions#next
-        version: git+https://github.com/logux/actions.git#a25e3218e2d1a8295d935ca70d14b38337ee678a(@logux/core@git+https://github.com/logux/core.git#233578f53a6e7b0b1c3175a73b9046b9a5384309)
+        version: git+https://github.com/logux/actions.git#a25e3218e2d1a8295d935ca70d14b38337ee678a(@logux/core@git+https://github.com/logux/core.git#e9bc105c10a57e0342272c8723e9a5c9f34fa670)
       '@logux/core':
         specifier: github:logux/core#next
-        version: git+https://github.com/logux/core.git#233578f53a6e7b0b1c3175a73b9046b9a5384309
+        version: git+https://github.com/logux/core.git#e9bc105c10a57e0342272c8723e9a5c9f34fa670
       nanoevents:
         specifier: ^10.0.0
         version: 10.0.0
@@ -86,7 +86,7 @@ importers:
         version: 20.14.5
       multiocular:
         specifier: ^0.8.4
-        version: 0.8.4(@logux/core@git+https://github.com/logux/core.git#233578f53a6e7b0b1c3175a73b9046b9a5384309)
+        version: 0.8.4(@logux/core@git+https://github.com/logux/core.git#e9bc105c10a57e0342272c8723e9a5c9f34fa670)
       nanodelay:
         specifier: ^2.0.2
         version: 2.0.2
@@ -125,10 +125,10 @@ importers:
         version: 7.0.2
       vite:
         specifier: ^8.3.0
-        version: 8.3.0(@types/node@26.5.1)(esbuild@0.28.2)
+        version: 8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(yaml@2.9.1)
       vitest:
         specifier: ^5.0.0
-        version: 5.0.0(@types/node@26.5.1)(@vitest/coverage-v8@5.0.0)(happy-dom@20.14.5)(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2))
+        version: 5.0.0(@types/node@26.5.1)(@vitest/coverage-v8@5.0.0)(happy-dom@20.14.5)(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(yaml@2.9.1))
       vue:
         specifier: ^3.5.42
         version: 3.5.42(typescript@7.0.2)
@@ -350,8 +350,8 @@ packages:
     resolution: {integrity: sha512-VbgVkEloAe2ym5w0cjyRI16Eeyk2R0BgJa9pMYT1FcJEhFnzrB23E0ExIEhrok0iD48bFh7goledwmDLmgWaiw==}
     engines: {node: ^20.0.0 || >=22.0.0}
 
-  '@logux/core@git+https://github.com/logux/core.git#233578f53a6e7b0b1c3175a73b9046b9a5384309':
-    resolution: {commit: 233578f53a6e7b0b1c3175a73b9046b9a5384309, repo: https://github.com/logux/core.git, type: git}
+  '@logux/core@git+https://github.com/logux/core.git#e9bc105c10a57e0342272c8723e9a5c9f34fa670':
+    resolution: {commit: e9bc105c10a57e0342272c8723e9a5c9f34fa670, repo: https://github.com/logux/core.git, type: git}
     version: 0.11.8
     engines: {node: ^22.0.0 || ^24.0.0 || >=26.0.0}
 
@@ -1977,19 +1977,19 @@ snapshots:
     dependencies:
       '@logux/core': 0.10.0
 
-  '@logux/actions@0.5.0(@logux/core@git+https://github.com/logux/core.git#233578f53a6e7b0b1c3175a73b9046b9a5384309)':
+  '@logux/actions@0.5.0(@logux/core@git+https://github.com/logux/core.git#e9bc105c10a57e0342272c8723e9a5c9f34fa670)':
     dependencies:
-      '@logux/core': git+https://github.com/logux/core.git#233578f53a6e7b0b1c3175a73b9046b9a5384309
+      '@logux/core': git+https://github.com/logux/core.git#e9bc105c10a57e0342272c8723e9a5c9f34fa670
 
-  '@logux/actions@git+https://github.com/logux/actions.git#a25e3218e2d1a8295d935ca70d14b38337ee678a(@logux/core@git+https://github.com/logux/core.git#233578f53a6e7b0b1c3175a73b9046b9a5384309)':
+  '@logux/actions@git+https://github.com/logux/actions.git#a25e3218e2d1a8295d935ca70d14b38337ee678a(@logux/core@git+https://github.com/logux/core.git#e9bc105c10a57e0342272c8723e9a5c9f34fa670)':
     dependencies:
-      '@logux/core': git+https://github.com/logux/core.git#233578f53a6e7b0b1c3175a73b9046b9a5384309
+      '@logux/core': git+https://github.com/logux/core.git#e9bc105c10a57e0342272c8723e9a5c9f34fa670
 
   '@logux/core@0.10.0':
     dependencies:
       nanoevents: 9.1.0
 
-  '@logux/core@git+https://github.com/logux/core.git#233578f53a6e7b0b1c3175a73b9046b9a5384309':
+  '@logux/core@git+https://github.com/logux/core.git#e9bc105c10a57e0342272c8723e9a5c9f34fa670':
     dependencies:
       nanoevents: 10.0.0
 
@@ -2344,7 +2344,7 @@ snapshots:
       obug: 2.2.1
       std-env: 4.2.0
       tinyrainbow: 3.1.1
-      vitest: 5.0.0(@types/node@26.5.1)(@vitest/coverage-v8@5.0.0)(happy-dom@20.14.5)(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2))
+      vitest: 5.0.0(@types/node@26.5.1)(@vitest/coverage-v8@5.0.0)(happy-dom@20.14.5)(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(yaml@2.9.1))
 
   '@vitest/istanbul-lib-coverage@1.0.1': {}
 
@@ -2352,14 +2352,14 @@ snapshots:
     dependencies:
       '@vitest/istanbul-lib-coverage': 1.0.1
 
-  '@vitest/mocker@5.0.0(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2))':
+  '@vitest/mocker@5.0.0(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(yaml@2.9.1))':
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       '@vitest/spy': 5.0.0
       estree-walker: 3.0.3
       magic-string: 1.3.1
     optionalDependencies:
-      vite: 8.3.0(@types/node@26.5.1)(esbuild@0.28.2)
+      vite: 8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(yaml@2.9.1)
 
   '@vitest/spy@5.0.0': {}
 
@@ -2956,9 +2956,9 @@ snapshots:
 
   minipass@7.1.3: {}
 
-  multiocular@0.8.4(@logux/core@git+https://github.com/logux/core.git#233578f53a6e7b0b1c3175a73b9046b9a5384309):
+  multiocular@0.8.4(@logux/core@git+https://github.com/logux/core.git#e9bc105c10a57e0342272c8723e9a5c9f34fa670):
     dependencies:
-      '@logux/actions': 0.5.0(@logux/core@git+https://github.com/logux/core.git#233578f53a6e7b0b1c3175a73b9046b9a5384309)
+      '@logux/actions': 0.5.0(@logux/core@git+https://github.com/logux/core.git#e9bc105c10a57e0342272c8723e9a5c9f34fa670)
       '@logux/server': 0.14.0
       diff2html: 3.4.56
       dompurify: 3.4.15
@@ -3252,7 +3252,7 @@ snapshots:
 
   url-pattern@1.0.3: {}
 
-  vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2):
+  vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(yaml@2.9.1):
     dependencies:
       lightningcss: 1.33.0
       picomatch: 4.0.7
@@ -3263,11 +3263,12 @@ snapshots:
       '@types/node': 26.5.1
       esbuild: 0.28.2
       fsevents: 2.3.3
+      yaml: 2.9.1
 
-  vitest@5.0.0(@types/node@26.5.1)(@vitest/coverage-v8@5.0.0)(happy-dom@20.14.5)(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)):
+  vitest@5.0.0(@types/node@26.5.1)(@vitest/coverage-v8@5.0.0)(happy-dom@20.14.5)(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(yaml@2.9.1)):
     dependencies:
       '@types/chai': 5.2.3
-      '@vitest/mocker': 5.0.0(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2))
+      '@vitest/mocker': 5.0.0(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(yaml@2.9.1))
       chai: 6.2.2
       es-module-lexer: 2.3.2
       expect-type: 1.4.0
@@ -3278,7 +3279,7 @@ snapshots:
       tinybench: 6.1.4
       tinyexec: 1.3.0
       tinyglobby: 0.2.17
-      vite: 8.3.0(@types/node@26.5.1)(esbuild@0.28.2)
+      vite: 8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(yaml@2.9.1)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 26.5.1

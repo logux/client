@@ -129,7 +129,7 @@
       "name": "CrossTabClient",
       "path": "./cross-tab-client/index.js",
       "import": "{ CrossTabClient }",
-      "limit": "9 KB"
+      "limit": "10 KB"
     },
     {
       "name": "Helpers",
@@ -157,7 +157,7 @@
       "import": {
         "./sql-log-store/index.js": "{ SqlLogStore }"
       },
-      "limit": "2.7 KB"
+      "limit": "3 KB"
     },
     {
       "name": "React",

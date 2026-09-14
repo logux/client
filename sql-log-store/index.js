@@ -171,6 +171,51 @@ async function selectByCriteria(target, criteria, reasons) {
   )
 }
 
+async function addTo(store, tx, action, meta) {
+  let [exist] = await tx.driver.select(
+    `SELECT "added" FROM "logux_log" WHERE "id" = ?`,
+    [meta.id]
+  )
+  if (exist) return false
+
+  let [{ next }] = await tx.driver.select(
+    `UPDATE "logux_extra" SET "value" = "value" + 1` +
+      ` WHERE "key" = 'added' RETURNING "value" AS "next"`,
+    []
+  )
+  meta.added = Number(next)
+
+  let blob = null
+  let body = action
+  let packer = store.packers[action.type]
+  if (packer) {
+    let packed = packer.pack(action)
+    if (packed) {
+      blob = packed.blob
+      body = packed.action
+    }
+  }
+
+  await tx.driver.exec(
+    `INSERT INTO "logux_log"` +
+      ` ("added", "id", "sorted", "action", "meta", "blob")` +
+      ` VALUES (${holders(6)})`,
+    [
+      meta.added,
+      meta.id,
+      toSorted(meta),
+      serializeToJSONWithBinary(body),
+      serializeToJSONWithBinary(meta),
+      blob
+    ]
+  )
+  await addTags(tx.driver, 'logux_reason', 'reason', meta.added, meta.reasons)
+  await addTags(tx.driver, 'logux_index', 'name', meta.added, meta.indexes)
+  // Materialized views commit together with the action
+  if (store.onAdd) await store.onAdd(tx, action, meta)
+  return meta
+}
+
 export class SqlLogStore {
   constructor(db, opts = {}) {
     this.db = db
@@ -179,56 +224,13 @@ export class SqlLogStore {
     this.packers = opts.packers ?? {}
   }
 
-  async add(action, meta) {
+  async add(entries) {
     return this.write(async tx => {
-      let [exist] = await tx.driver.select(
-        `SELECT "added" FROM "logux_log" WHERE "id" = ?`,
-        [meta.id]
-      )
-      if (exist) return false
-
-      let [{ next }] = await tx.driver.select(
-        `UPDATE "logux_extra" SET "value" = "value" + 1` +
-          ` WHERE "key" = 'added' RETURNING "value" AS "next"`,
-        []
-      )
-      meta.added = Number(next)
-
-      let blob = null
-      let body = action
-      let packer = this.packers[action.type]
-      if (packer) {
-        let packed = packer.pack(action)
-        if (packed) {
-          blob = packed.blob
-          body = packed.action
-        }
+      let results = []
+      for (let [action, meta] of entries) {
+        results.push(await addTo(this, tx, action, meta))
       }
-
-      await tx.driver.exec(
-        `INSERT INTO "logux_log"` +
-          ` ("added", "id", "sorted", "action", "meta", "blob")` +
-          ` VALUES (${holders(6)})`,
-        [
-          meta.added,
-          meta.id,
-          toSorted(meta),
-          serializeToJSONWithBinary(body),
-          serializeToJSONWithBinary(meta),
-          blob
-        ]
-      )
-      await addTags(
-        tx.driver,
-        'logux_reason',
-        'reason',
-        meta.added,
-        meta.reasons
-      )
-      await addTags(tx.driver, 'logux_index', 'name', meta.added, meta.indexes)
-      // Materialized views commit together with the action
-      if (this.onAdd) await this.onAdd(tx, action, meta)
-      return meta
+      return results
     })
   }
 
@@ -240,6 +242,16 @@ export class SqlLogStore {
       [id]
     )
     return row ? this.toEntry(row) : [null, null]
+  }
+
+  async has(ids) {
+    if (ids.length === 0) return []
+    await this.init()
+    let rows = await this.driver.select(
+      `SELECT "id" FROM "logux_log" WHERE "id" IN (${holders(ids.length)})`,
+      ids
+    )
+    return rows.map(row => row.id)
   }
 
   async changeMeta(id, diff) {

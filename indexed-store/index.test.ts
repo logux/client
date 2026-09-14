@@ -120,7 +120,9 @@ it('works with broken lastSynced', async () => {
 
 it('updates reasons cache', async () => {
   store = new IndexedStore()
-  await store.add({ type: 'A' }, { added: 1, id: '1', reasons: ['a'], time: 1 })
+  await store.add([
+    [{ type: 'A' }, { added: 1, id: '1', reasons: ['a'], time: 1 }]
+  ])
   await store.changeMeta('1', { reasons: ['a', 'b', 'b', 'c'] })
   await store.removeReason(['b'], {}, () => {})
   await check(store, [
@@ -151,15 +153,9 @@ it('removes created index from old databases', async () => {
   })
 
   store = new IndexedStore()
-  await store.add(
-    { type: 'A' },
-    {
-      added: 0,
-      id: '1 n',
-      reasons: ['test'],
-      time: 1
-    }
-  )
+  await store.add([
+    [{ type: 'A' }, { added: 0, id: '1 n', reasons: ['test'], time: 1 }]
+  ])
   let entries = await all(store.get({ order: 'created' }))
   expect(entries).toHaveLength(1)
 

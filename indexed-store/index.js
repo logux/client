@@ -114,7 +114,15 @@ export class IndexedStore {
     this.adding = {}
   }
 
-  async add(action, meta) {
+  async add(entries) {
+    let results = []
+    for (let [action, meta] of entries) {
+      results.push(await this.addOne(action, meta))
+    }
+    return results
+  }
+
+  async addOne(action, meta) {
     let entry = {
       action,
       id: meta.id,
@@ -160,6 +168,16 @@ export class IndexedStore {
     } else {
       return [null, null]
     }
+  }
+
+  async has(ids) {
+    let store = await this.init()
+    let index = store.os('log').index('id')
+    let found = []
+    for (let id of ids) {
+      if (await promisify(index.get(id))) found.push(id)
+    }
+    return found
   }
 
   async changeMeta(id, diff) {

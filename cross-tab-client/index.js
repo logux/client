@@ -169,7 +169,7 @@ export class CrossTabClient extends Client {
         let meta = data[2]
         if (!meta.tab || meta.tab === this.tabId) {
           if (isMemory(this.log.store)) {
-            void this.log.store.add(action, meta)
+            void this.log.store.add([[action, meta]])
           }
           actionEvents(this.emitter, 'add', action, meta)
           if (this.role === 'leader') {

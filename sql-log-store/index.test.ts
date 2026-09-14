@@ -32,6 +32,18 @@ afterEach(async () => {
   await db.close()
 })
 
+/**
+ * Add a single action, since the store API takes a batch of them.
+ */
+async function add(
+  store: SqlLogStore,
+  action: AnyAction,
+  meta: Partial<Meta>
+): Promise<false | Meta> {
+  let [result] = await store.add([[action, meta as Meta]])
+  return result!
+}
+
 async function versions(): Promise<{ version: number }[]> {
   return db.select`SELECT * FROM "logux_version"`
 }
@@ -87,7 +99,7 @@ eachStoreCheck((desc, creator) => {
 it('creates tables only once', async () => {
   let store = new SqlLogStore(db)
   await Promise.all([store.getLastAdded(), store.getLastAdded()])
-  await store.add({ type: 'A' }, { id: '0 n', time: 1 } as Meta)
+  await add(store, { type: 'A' }, { id: '0 n', time: 1 })
 
   let tables = await db.select<{
     name: string
@@ -103,7 +115,7 @@ it('creates tables only once', async () => {
 
 it('keeps the log on the same tables version', async () => {
   let store = new SqlLogStore(db)
-  await store.add({ type: 'A' }, { id: '0 n', time: 1 } as Meta)
+  await add(store, { type: 'A' }, { id: '0 n', time: 1 })
 
   let next = new SqlLogStore(db)
   expect(await all(next.get())).toEqual([
@@ -114,17 +126,17 @@ it('keeps the log on the same tables version', async () => {
 
 it('does not give the number of the removed action to a new one', async () => {
   let store = new SqlLogStore(db)
-  await store.add({ type: 'A' }, { id: '0 n', time: 1 } as Meta)
-  await store.add({ type: 'B' }, { id: '1 n', time: 2 } as Meta)
+  await add(store, { type: 'A' }, { id: '0 n', time: 1 })
+  await add(store, { type: 'B' }, { id: '1 n', time: 2 })
   await store.remove('1 n')
 
   expect(await store.getLastAdded()).toBe(2)
-  let meta = await store.add({ type: 'C' }, { id: '2 n', time: 3 } as Meta)
+  let meta = await add(store, { type: 'C' }, { id: '2 n', time: 3 })
   expect((meta as Meta).added).toBe(3)
 })
 it('does not work with the log from a newer client', async () => {
   let store = new SqlLogStore(db)
-  await store.add({ type: 'A' }, { id: '0 n', time: 1 } as Meta)
+  await add(store, { type: 'A' }, { id: '0 n', time: 1 })
   await db.exec`UPDATE "logux_version" SET "version" = ${3}`
 
   let next = new SqlLogStore(db)
@@ -143,8 +155,8 @@ it('does not work with the log from a newer client', async () => {
 
 it('ignores unknown parts of action ID', async () => {
   let store = new SqlLogStore(db)
-  await store.add({ type: 'A' }, { id: 'unknown', time: 1 } as Meta)
-  await store.add({ type: 'B' }, { id: '1 n', time: 2 } as Meta)
+  await add(store, { type: 'A' }, { id: 'unknown', time: 1 })
+  await add(store, { type: 'B' }, { id: '1 n', time: 2 })
 
   expect(await all(store.get({ order: 'created' }))).toEqual([
     [{ type: 'A' }, { added: 1, id: 'unknown', time: 1 }],
@@ -154,16 +166,20 @@ it('ignores unknown parts of action ID', async () => {
 
 it('keeps the queue alive after error', async () => {
   let store = new SqlLogStore(db)
-  await store.add({ type: 'A' }, { id: '0 n', time: 1 } as Meta)
+  await add(store, { type: 'A' }, { id: '0 n', time: 1 })
   await db.exec`DROP TABLE "logux_reason"`
 
   let error: Error | undefined
   try {
-    await store.add({ type: 'B' }, {
-      id: '1 n',
-      reasons: ['test'],
-      time: 2
-    } as Meta)
+    await add(
+      store,
+      { type: 'B' },
+      {
+        id: '1 n',
+        reasons: ['test'],
+        time: 2
+      }
+    )
   } catch (e) {
     error = e as Error
   }
@@ -174,11 +190,15 @@ it('keeps the queue alive after error', async () => {
 
 it('does not lose Uint8Array in meta', async () => {
   let store = new SqlLogStore(db)
-  await store.add({ type: 'A' }, {
-    id: '0 n',
-    iv: new Uint8Array([1, 2, 3]),
-    time: 1
-  } as unknown as Meta)
+  await add(
+    store,
+    { type: 'A' },
+    {
+      id: '0 n',
+      iv: new Uint8Array([1, 2, 3]),
+      time: 1
+    }
+  )
 
   let [, meta] = await store.byId('0 n')
   expect(meta!.iv).toEqual(new Uint8Array([1, 2, 3]))
@@ -186,11 +206,15 @@ it('does not lose Uint8Array in meta', async () => {
 
 it('keeps binary in JSON as Base64', async () => {
   let store = new SqlLogStore(db)
-  await store.add({ type: 'A' }, {
-    id: '0 n',
-    iv: new Uint8Array([1, 2, 3]),
-    time: 1
-  } as unknown as Meta)
+  await add(
+    store,
+    { type: 'A' },
+    {
+      id: '0 n',
+      iv: new Uint8Array([1, 2, 3]),
+      time: 1
+    }
+  )
 
   let rows = await db.select<{ meta: string }>`
     SELECT "meta" FROM "logux_log"`
@@ -205,7 +229,7 @@ it('packs binary actions into a separate column', async () => {
     iv: new Uint8Array(12).fill(7),
     type: '0'
   }
-  await store.add(action, { id: '0 n', time: 1 } as Meta)
+  await add(store, action, { id: '0 n', time: 1 })
 
   let rows = await db.select<{
     action: string
@@ -229,7 +253,7 @@ it('does not return a half of the action without the packer', async () => {
     iv: new Uint8Array(12).fill(7),
     type: '0'
   }
-  await packing.add(action, { id: '0 n', time: 1 } as Meta)
+  await add(packing, action, { id: '0 n', time: 1 })
 
   let store = new SqlLogStore(db)
   let thrown = await store.byId('0 n').catch((e: Error) => e)
@@ -281,8 +305,8 @@ it('gives different added on parallel adds to the same file', async () => {
   await store2.getLastAdded()
 
   let [meta1, meta2] = await Promise.all([
-    store1.add({ type: 'A' }, { id: '0 n', time: 1 } as Meta),
-    store2.add({ type: 'B' }, { id: '1 n', time: 2 } as Meta)
+    add(store1, { type: 'A' }, { id: '0 n', time: 1 }),
+    add(store2, { type: 'B' }, { id: '1 n', time: 2 })
   ])
   let added = [(meta1 as Meta).added, (meta2 as Meta).added]
   expect(added.sort((a, b) => a - b)).toEqual([1, 2])
@@ -295,10 +319,10 @@ it('gives different added on parallel adds to the same file', async () => {
   await rm(dir, { force: true, recursive: true })
 })
 
-it('adds the actions of a single sync message in a single transaction', async () => {
+it('adds all actions of the batch by a single transaction', async () => {
   let store = new SqlLogStore(db)
   // The first write creates the tables
-  await store.add({ type: 'init' }, { id: '0 n', time: 0 } as Meta)
+  await add(store, { type: 'init' }, { id: '0 n', time: 0 })
 
   let transactions = 0
   let origin = db.driver.transaction.bind(db.driver)
@@ -307,29 +331,31 @@ it('adds the actions of a single sync message in a single transaction', async ()
     return origin(callback, opts)
   }
 
-  // `syncMessage` starts every `add()` of the message without awaiting them
-  let message = []
+  let message: [AnyAction, Meta][] = []
   for (let i = 1; i <= 100; i++) {
-    message.push(store.add({ type: 'A' }, { id: `${i} n`, time: i } as Meta))
+    message.push([{ type: 'A' }, { id: `${i} n`, time: i } as Meta])
   }
-  await Promise.all(message)
+  let metas = await store.add(message)
 
   expect(transactions).toBe(1)
+  expect(metas).toHaveLength(100)
   expect(await store.getLastAdded()).toBe(101)
   expect(await all(store.get())).toHaveLength(101)
 })
 
-it('repeats the whole batch when one of its writes failed', async () => {
+it('rolls back the whole batch when one action failed', async () => {
   let store = new SqlLogStore(db)
-  await store.add({ type: 'init' }, { id: '0 n', time: 0 } as Meta)
+  await add(store, { type: 'init' }, { id: '0 n', time: 0 })
   await db.exec`DROP TABLE "logux_reason"`
 
-  let results = await Promise.allSettled([
-    store.add({ type: 'A' }, { id: '1 n', time: 1 } as Meta),
-    store.add({ type: 'B' }, { id: '2 n', reasons: ['test'], time: 2 } as Meta)
-  ])
-  expect(results.map(i => i.status)).toEqual(['rejected', 'rejected'])
+  await expect(
+    store.add([
+      [{ type: 'A' }, { id: '1 n', time: 1 } as Meta],
+      [{ type: 'B' }, { id: '2 n', reasons: ['test'], time: 2 } as Meta]
+    ])
+  ).rejects.toThrow()
 
-  // The queue is alive and the transaction was rolled back
+  // The queue is alive and the action before the failed one was not written
   expect(await store.getLastAdded()).toBe(1)
+  expect(await all(store.get())).toHaveLength(1)
 })
