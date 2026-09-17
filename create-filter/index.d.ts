@@ -16,15 +16,15 @@ export interface FilterOptions {
   listChangesOnly?: boolean
 }
 
-export type LoadedFilterValue<Value extends SyncMapValues> = {
+export interface LoadedFilterValue<Value extends SyncMapValues> {
   isEmpty: boolean
-  isLoading: false
-  list: LoadedSyncMapValue<Value>[]
+  status: 'ready'
   stores: Map<string, SyncMapStore<Value>>
+  value: LoadedSyncMapValue<Value>[]
 }
 
 export type FilterValue<Value extends SyncMapValues> =
-  | { isLoading: true }
+  | { status: 'loading' }
   | LoadedFilterValue<Value>
 
 export interface FilterStoreExt {

@@ -117,12 +117,12 @@ it('subscribes and unsubscribes', async () => {
   let unbind = (): void => {}
   await client.server.freezeProcessing(() => {
     unbind = post.listen(() => {})
-    expect(post.get().isLoading).toBe(true)
+    expect(post.get().status).toBe('loading')
     return Promise.resolve()
   })
 
   await Promise.resolve()
-  expect(post.get().isLoading).toBe(false)
+  expect(post.get().status).toBe('ready')
   expect(client.subscribed('posts/ID')).toBe(true)
 
   unbind()
@@ -140,38 +140,34 @@ it('changes key', async () => {
     changes.push(clone(value))
   })
 
-  expect(post.get()).toEqual({
-    id: 'ID',
-    isLoading: true
-  })
+  expect(post.get()).toEqual({ id: 'ID', status: 'loading' })
 
   await post.loading
 
   changeSyncMap(post, 'title', '1')
   expect(post.get()).toEqual({
     id: 'ID',
-    isLoading: false,
-    title: '1'
+    status: 'ready',
+    value: { title: '1' }
   })
   expect(changes).toEqual([
-    { id: 'ID', isLoading: true },
-    { id: 'ID', isLoading: false },
-    { id: 'ID', isLoading: false, title: '1' }
+    { id: 'ID', status: 'loading' },
+    { id: 'ID', status: 'ready', value: {} },
+    { id: 'ID', status: 'ready', value: { title: '1' } }
   ])
 
   changeSyncMapById(client, Post, 'ID', 'category', 'demo')
   expect(post.get()).toEqual({
     id: 'ID',
-    isLoading: false,
-    title: '1'
+    status: 'ready',
+    value: { title: '1' }
   })
 
   await allTasks()
   expect(post.get()).toEqual({
-    category: 'demo',
     id: 'ID',
-    isLoading: false,
-    title: '1'
+    status: 'ready',
+    value: { category: 'demo', title: '1' }
   })
 
   let actions = await client.sent(async () => {
@@ -181,19 +177,17 @@ it('changes key', async () => {
 
   await client.log.add(changeAction({ title: '3' }), { sync: true })
   expect(post.get()).toEqual({
-    category: 'demo',
     id: 'ID',
-    isLoading: false,
-    title: '3'
+    status: 'ready',
+    value: { category: 'demo', title: '3' }
   })
 
   client.server.log.add(changedAction({ title: '4' }))
   await allTasks()
   expect(post.get()).toEqual({
-    category: 'demo',
     id: 'ID',
-    isLoading: false,
-    title: '4'
+    status: 'ready',
+    value: { category: 'demo', title: '4' }
   })
 
   expect(client.log.actions()).toEqual([
@@ -246,8 +240,8 @@ it('ignores old actions', async () => {
 
   expect(post.get()).toEqual({
     id: 'ID',
-    isLoading: false,
-    title: 'New'
+    status: 'ready',
+    value: { title: 'New' }
   })
   expect(client.log.actions()).toEqual([changeAction({ title: 'New' })])
 })
@@ -265,8 +259,8 @@ it('reverts changes for simple case', async () => {
   let promise = changeSyncMap(post, 'title', 'Bad')
   expect(post.get()).toEqual({
     id: 'ID',
-    isLoading: false,
-    title: 'Bad'
+    status: 'ready',
+    value: { title: 'Bad' }
   })
 
   let error = await catchError(() => promise)
@@ -275,8 +269,8 @@ it('reverts changes for simple case', async () => {
   await allTasks()
   expect(post.get()).toEqual({
     id: 'ID',
-    isLoading: false,
-    title: 'Good'
+    status: 'ready',
+    value: { title: 'Good' }
   })
   expect(client.log.actions()).toEqual([changeAction({ title: 'Good' })])
 })
@@ -297,8 +291,8 @@ it('reverts changes for multiple actions case', async () => {
 
   expect(post.get()).toEqual({
     id: 'ID',
-    isLoading: false,
-    title: 'Good 2'
+    status: 'ready',
+    value: { title: 'Good 2' }
   })
 })
 
@@ -321,13 +315,13 @@ it('filters action by ID', async () => {
 
   expect(post1.get()).toEqual({
     id: '1',
-    isLoading: false,
-    title: 'A'
+    status: 'ready',
+    value: { title: 'A' }
   })
   expect(post2.get()).toEqual({
     id: '2',
-    isLoading: false,
-    title: 'C'
+    status: 'ready',
+    value: { title: 'C' }
   })
 })
 
@@ -346,11 +340,9 @@ it('supports bulk changes', async () => {
     time: 4
   })
   expect(post.get()).toEqual({
-    author: 'Yaropolk',
-    category: 'demo',
     id: 'ID',
-    isLoading: false,
-    title: '3'
+    status: 'ready',
+    value: { author: 'Yaropolk', category: 'demo', title: '3' }
   })
 
   client.server.undoNext()
@@ -358,11 +350,9 @@ it('supports bulk changes', async () => {
   await allTasks()
 
   expect(post.get()).toEqual({
-    author: 'Yaropolk',
-    category: 'demo',
     id: 'ID',
-    isLoading: false,
-    title: '3'
+    status: 'ready',
+    value: { author: 'Yaropolk', category: 'demo', title: '3' }
   })
 })
 
@@ -407,10 +397,9 @@ it('could cache specific stores without server', async () => {
   restored.listen(() => {})
   await restored.loading
   expect(restored.get()).toEqual({
-    category: 'demo',
     id: 'ID',
-    isLoading: false,
-    title: 'The post'
+    status: 'ready',
+    value: { category: 'demo', title: 'The post' }
   })
 })
 
@@ -502,8 +491,8 @@ it('could cache specific stores and use server', async () => {
   await allTasks()
   expect(restored.get()).toEqual({
     id: 'ID',
-    isLoading: false,
-    title: 'The post'
+    status: 'ready',
+    value: { title: 'The post' }
   })
 })
 
@@ -585,8 +574,8 @@ it('creates and deletes local maps on uncleaned log', async () => {
   await post2.loading
   expect(post2.get()).toEqual({
     id: 'DEL',
-    isLoading: false,
-    title: 'New'
+    status: 'ready',
+    value: { title: 'New' }
   })
 })
 
@@ -610,8 +599,8 @@ it('uses created and delete during undo', async () => {
   await allTasks()
   expect(post2.get()).toEqual({
     id: 'ID',
-    isLoading: false,
-    title: 'New'
+    status: 'ready',
+    value: { title: 'New' }
   })
 })
 
@@ -674,11 +663,9 @@ it('allows to send create action and return instance', async () => {
       })
       post.listen(() => {})
       expect(post.get()).toEqual({
-        author: 'Ivan',
-        category: 'none',
         id: 'ID',
-        isLoading: false,
-        title: 'Test'
+        status: 'ready',
+        value: { author: 'Ivan', category: 'none', title: 'Test' }
       })
       expect(post.createdAt?.id).toBe('2 10:2:2')
       expect(post.createdAt?.time).toBe(2)
@@ -709,10 +696,9 @@ it('does not send subscription on local store creation', async () => {
       })
       post.listen(() => {})
       expect(post.get()).toEqual({
-        category: 'none',
         id: 'ID',
-        isLoading: false,
-        title: 'Test'
+        status: 'ready',
+        value: { category: 'none', title: 'Test' }
       })
     })
   ).toEqual([])
@@ -726,23 +712,25 @@ it('does not send subscription on local store creation', async () => {
 })
 
 it('loads data by created action', async () => {
-  let client = new TestClient('10')
+  let client = createAutoprocessingClient()
   client.log.keepActions()
   await client.connect()
 
   let post = Post('1', client)
   post.listen(() => {})
+  expect(post.get()).toEqual({ id: '1', status: 'loading' })
 
   await client.log.add({
     fields: { category: 'demo', title: 'A' },
     id: '1',
     type: 'posts/created'
   })
+  // Fields from the log are kept while loading and published on `ready`
+  await post.loading
   expect(post.get()).toEqual({
-    category: 'demo',
     id: '1',
-    isLoading: true,
-    title: 'A'
+    status: 'ready',
+    value: { category: 'demo', title: 'A' }
   })
 })
 
@@ -766,11 +754,13 @@ it('has helper to insure that store is loaded', async () => {
   await post.loading
   expect(ensureLoaded(post.get())).toEqual({
     id: 'ID',
-    isLoading: false
+    status: 'ready',
+    value: {}
   })
   expect(ensureLoadedStore(post).get()).toEqual({
     id: 'ID',
-    isLoading: false
+    status: 'ready',
+    value: {}
   })
 })
 
@@ -784,8 +774,8 @@ it('has helper to load value', async () => {
   let post1 = LocalPost('1', client)
   expect(await loadValue(post1)).toEqual({
     id: '1',
-    isLoading: false,
-    title: 'A'
+    status: 'ready',
+    value: { title: 'A' }
   })
 
   await createSyncMap(client, LocalPost, {
@@ -797,8 +787,8 @@ it('has helper to load value', async () => {
   await post2.loading
   expect(await loadValue(post2)).toEqual({
     id: '2',
-    isLoading: false,
-    title: 'B'
+    status: 'ready',
+    value: { title: 'B' }
   })
 
   let post3 = LocalPost('3', client)

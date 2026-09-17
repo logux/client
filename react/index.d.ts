@@ -110,10 +110,10 @@ export class ChannelErrors extends Component<
  *
  * export const UserPage: FC = ({ id }) => {
  *   let user = useSync(User, id)
- *   if (user.isLoading) {
+ *   if (user.status === 'loading') {
  *     return <Loader />
  *   } else {
- *     return <h1>{user.name}</h1>
+ *     return <h1>{user.value.name}</h1>
  *   }
  * }
  * ```
@@ -143,9 +143,9 @@ export function useSync<Value extends object, Args extends any[]>(
  *
  * export const Users = ({ projectId }) => {
  *   let users = useFilter(User, { projectId })
+ *   if (users.status === 'loading') return <Loader />
  *   return <div>
- *     {users.list.map(user => <User user={user} />)}
- *     {users.isLoading && <Loader />}
+ *     {users.value.map(user => <User user={user} />)}
  *   </div>
  * }
  * ```

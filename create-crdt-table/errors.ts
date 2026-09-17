@@ -52,7 +52,7 @@ async function test(): Promise<void> {
   await user.update('id', { unknown: 1 })
 
   let all = user.select().get()
-  if (!all.isLoading) {
+  if (all.status === 'ready') {
     // THROWS Property 'updatedAt' does not exist
     console.log(all.value[0]!.updatedAt)
     // THROWS Property 'updatedAt_missing' does not exist
@@ -65,7 +65,7 @@ async function test(): Promise<void> {
     SELECT COUNT(*) AS "total" FROM "user"
   `
   let stats = $stats.get()
-  if (!stats.isLoading) {
+  if (stats.status === 'ready') {
     // THROWS Type 'number' is not assignable to type 'string'.
     let total: string = stats.value[0]!.total
     // THROWS Property 'missing' does not exist
@@ -97,7 +97,7 @@ let pgUser = pg.table('user', {
 })
 
 let pgValue = pgUser.select().get()
-if (!pgValue.isLoading) {
+if (pgValue.status === 'ready') {
   // THROWS Type 'boolean' is not assignable to type 'number'.
   let isAdmin: number = pgValue.value[0]!.isAdmin
   console.log(isAdmin)

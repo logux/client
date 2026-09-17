@@ -14,7 +14,7 @@ import {
   syncMapTemplate,
   TestClient
 } from '../index.js'
-import type { FilterStore } from '../index.js'
+import type { FilterStore, FilterValue } from '../index.js'
 
 let Post = syncMapTemplate<{
   authorId: string
@@ -51,6 +51,15 @@ function cachedIds(Template: any): string[] {
 
 function getSize(filterStore: FilterStore): number {
   return ensureLoaded(filterStore.get()).stores.size
+}
+
+/**
+ * The whole value is replaced on every change, so tests track notifications
+ * by the value they brought, not by the changed key.
+ */
+function snapshot(value: FilterValue<any>): string {
+  if (value.status === 'loading') return 'loading'
+  return `ready:${value.value.length}`
 }
 
 it('caches filters', () => {
@@ -104,17 +113,19 @@ it('looks for already loaded stores', async () => {
     authorId: '10',
     projectId: '100'
   })
+  posts.listen(() => {})
 
-  expect(posts.get().isLoading).toBe(true)
-  expect((posts.get() as any).stores).toEqual(
+  expect(posts.get().status).toBe('loading')
+  await posts.loading
+  expect(ensureLoaded(posts.get()).stores).toEqual(
     new Map([
       ['1', post1],
       ['2', post2]
     ])
   )
-  expect((posts.get() as any).list).toEqual([
-    { authorId: '10', id: '1', isLoading: false, projectId: '100' },
-    { authorId: '10', id: '2', isLoading: false, projectId: '100' }
+  expect(ensureLoaded(posts.get()).value).toEqual([
+    { id: '1', status: 'ready', value: { authorId: '10', projectId: '100' } },
+    { id: '2', status: 'ready', value: { authorId: '10', projectId: '100' } }
   ])
 })
 
@@ -140,10 +151,10 @@ it('subscribes to channels for remote stores', async () => {
       { channel: 'posts', filter: { projectId: '1' }, type: 'logux/subscribe' }
     ])
     expect(resolved).toBe(false)
-    expect(posts.get().isLoading).toBe(true)
+    expect(posts.get().status).toBe('loading')
   })
   expect(resolved).toBe(true)
-  expect(posts.get().isLoading).toBe(false)
+  expect(posts.get().status).toBe('ready')
 
   expect(
     await client.sent(async () => {
@@ -197,9 +208,9 @@ it('does not subscribe if server did it for client', async () => {
     type: 'posts/changed'
   })
   await allTasks()
-  expect(ensureLoaded(posts.get()).list).toEqual([
-    { id: '1', isLoading: false, title: 'A' },
-    { id: '2', isLoading: false, title: 'B' }
+  expect(ensureLoaded(posts.get()).value).toEqual([
+    { id: '1', status: 'ready', value: { title: 'A' } },
+    { id: '2', status: 'ready', value: { title: 'B' } }
   ])
 
   unbind()
@@ -268,9 +279,9 @@ it('loads store from the log for offline stores', async () => {
 
   let posts = createFilter(client, LocalPost, { projectId: '10' })
   posts.listen(() => {})
-  expect(posts.get().isLoading).toBe(true)
+  expect(posts.get().status).toBe('loading')
   await posts.loading
-  expect(posts.get().isLoading).toBe(false)
+  expect(posts.get().status).toBe('ready')
   expect(
     Array.from(ensureLoaded(posts.get()).stores.keys()).toSorted()
   ).toEqual(['4', '5'])
@@ -411,11 +422,11 @@ it('supports both offline and remote stores', async () => {
   let posts = createFilter(client, CachedPost, { projectId: '10' })
   await client.server.freezeProcessing(() => {
     posts.listen(() => {})
-    expect(posts.get().isLoading).toBe(true)
+    expect(posts.get().status).toBe('loading')
     return Promise.resolve()
   })
   await allTasks()
-  expect(posts.get().isLoading).toBe(false)
+  expect(posts.get().status).toBe('ready')
   expect(getSize(posts)).toBe(1)
   expect(Array.from(ensureLoaded(posts.get()).stores.keys())).toEqual(['ID'])
 })
@@ -448,14 +459,14 @@ it('updates list on store create/deleted/change', async () => {
     authorId: '1',
     projectId: '1'
   })
-  let changes: (string | undefined)[] = []
-  posts.listen((value, old, key) => {
-    changes.push(key)
+  let changes: string[] = []
+  posts.listen(value => {
+    changes.push(snapshot(value))
   })
 
   await posts.loading
   expect(getSize(posts)).toBe(0)
-  expect(changes).toEqual(['isLoading'])
+  expect(changes).toEqual(['ready:0'])
 
   await createSyncMap(client, Post, {
     authorId: '1',
@@ -464,7 +475,7 @@ it('updates list on store create/deleted/change', async () => {
     title: '1'
   })
   expect(getSize(posts)).toBe(1)
-  expect(changes).toEqual(['isLoading', 'list', 'isEmpty'])
+  expect(changes).toEqual(['ready:0', 'ready:1'])
 
   let post2 = await buildNewSyncMap(client, Post, {
     authorId: '2',
@@ -483,30 +494,27 @@ it('updates list on store create/deleted/change', async () => {
 
   await changeSyncMapById(client, Post, '2', 'authorId', '1')
   expect(getSize(posts)).toBe(2)
-  expect(changes).toEqual(['isLoading', 'list', 'isEmpty', 'list'])
+  expect(changes).toEqual(['ready:0', 'ready:1', 'ready:2'])
 
   await changeSyncMapById(client, Post, '2', 'authorId', '2')
   expect(getSize(posts)).toBe(1)
   expect(changes).toEqual([
-    'isLoading',
-    'list',
-    'isEmpty',
-    'list',
-    'list',
-    'list'
+    'ready:0',
+    'ready:1',
+    'ready:2',
+    'ready:2',
+    'ready:1'
   ])
 
   await deleteSyncMapById(client, Post, '1')
   expect(getSize(posts)).toBe(0)
   expect(changes).toEqual([
-    'isLoading',
-    'list',
-    'isEmpty',
-    'list',
-    'list',
-    'list',
-    'list',
-    'isEmpty'
+    'ready:0',
+    'ready:1',
+    'ready:2',
+    'ready:2',
+    'ready:1',
+    'ready:0'
   ])
 })
 
@@ -608,24 +616,23 @@ it('triggers on child changes', async () => {
 
   let posts = createFilter(client, Post, { authorId: '10' })
   posts.listen(() => {})
-  let calls: (string | undefined)[] = []
-  posts.subscribe((value, old, key) => {
-    calls.push(key)
+  let calls: string[] = []
+  posts.subscribe(value => {
+    calls.push(snapshot(value))
   })
   await posts.loading
-  expect(calls).toEqual([undefined, 'isLoading'])
+  expect(calls).toEqual(['loading', 'ready:1'])
 
   await changeSyncMap(post, 'title', 'New')
-  expect(calls).toEqual([undefined, 'isLoading', 'list'])
+  expect(calls).toEqual(['loading', 'ready:1', 'ready:1'])
 
   await changeSyncMap(post, 'authorId', '20')
   expect(calls).toEqual([
-    undefined,
-    'isLoading',
-    'list',
-    'list',
-    'list',
-    'isEmpty'
+    'loading',
+    'ready:1',
+    'ready:1',
+    'ready:1',
+    'ready:0'
   ])
 })
 
@@ -643,16 +650,16 @@ it('can ignore child changes', async () => {
     { listChangesOnly: true }
   )
   posts.listen(() => {})
-  let calls: (string | undefined)[] = []
-  posts.subscribe((value, old, key) => {
-    calls.push(key)
+  let calls: string[] = []
+  posts.subscribe(value => {
+    calls.push(snapshot(value))
   })
   await posts.loading
-  expect(calls).toEqual([undefined, 'isLoading'])
+  expect(calls).toEqual(['loading', 'ready:1'])
 
   await changeSyncMap(post, 'title', 'New')
   await changeSyncMap(post, 'authorId', '20')
-  expect(calls).toEqual([undefined, 'isLoading', 'list', 'isEmpty'])
+  expect(calls).toEqual(['loading', 'ready:1', 'ready:0'])
 })
 
 it('is ready create/delete/change undo', async () => {
@@ -700,11 +707,9 @@ it('is ready create/delete/change undo', async () => {
   })
   expect(getSize(posts)).toBe(1)
   expect(Post('2', client).get()).toEqual({
-    authorId: '1',
     id: '2',
-    isLoading: false,
-    projectId: '1',
-    title: '2'
+    status: 'ready',
+    value: { authorId: '1', projectId: '1', title: '2' }
   })
 
   let post3 = Post('3', client)

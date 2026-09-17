@@ -4,6 +4,25 @@ import { clean, map, onMount, startTask, task } from 'nanostores'
 import { LoguxUndoError } from '../logux-undo-error/index.js'
 import { track } from '../track/index.js'
 
+/**
+ * Fields are kept in `store.fields` even while the store is loading,
+ * so the whole value can be published by a single `set()` when it is ready.
+ */
+function updateFields(store, fields) {
+  let next = { ...store.fields }
+  let changed = false
+  for (let key in fields) {
+    // Setting the same value must not notify listeners, like `setKey()` did
+    if (next[key] !== fields[key]) {
+      next[key] = fields[key]
+      changed = true
+    }
+  }
+  if (!changed) return
+  store.fields = next
+  if (store.get().status === 'ready') store.setKey('value', store.fields)
+}
+
 function changeIfLast(store, fields, meta) {
   let changes = {}
   for (let key in fields) {
@@ -12,9 +31,7 @@ function changeIfLast(store, fields, meta) {
       if (meta) store.lastChanged[key] = meta
     }
   }
-  for (let key in changes) {
-    store.setKey(key, changes[key])
-  }
+  updateFields(store, changes)
 }
 
 function getIndexes(plural, id) {
@@ -38,7 +55,7 @@ export function syncMapTemplate(plural, opts = {}) {
     createMeta,
     alreadySubscribed
   ) => {
-    let store = map({ id, isLoading: true })
+    let store = map({ id, status: 'loading' })
     onMount(store, () => {
       if (!client) {
         throw new Error('Missed Logux client')
@@ -62,6 +79,7 @@ export function syncMapTemplate(plural, opts = {}) {
 
       store.lastChanged = {}
       store.lastProcessed = {}
+      store.fields = {}
 
       let deletedType = `${plural}/deleted`
       let deleteType = `${plural}/delete`
@@ -73,16 +91,20 @@ export function syncMapTemplate(plural, opts = {}) {
 
       let loadingError
       let isLoading = true
-      store.setKey('isLoading', true)
+      store.set({ id, status: 'loading' })
+
+      function becomeReady() {
+        isLoading = false
+        store.set({ id, status: 'ready', value: store.fields })
+      }
 
       if (createAction) {
+        store.fields = { ...createAction.fields }
         for (let key in createAction.fields) {
-          store.setKey(key, createAction.fields[key])
           store.lastChanged[key] = createMeta
         }
-        isLoading = false
         store.loading = Promise.resolve()
-        store.setKey('isLoading', false)
+        becomeReady()
         store.createdAt = createMeta
         if (
           createAction.type === createType ||
@@ -119,8 +141,7 @@ export function syncMapTemplate(plural, opts = {}) {
           await subscription
             .then(() => {
               if (isLoading) {
-                isLoading = false
-                store.setKey('isLoading', false)
+                becomeReady()
                 loadingResolve()
               }
             })
@@ -161,8 +182,7 @@ export function syncMapTemplate(plural, opts = {}) {
             })
             .then(async () => {
               if (found && isLoading && !store.remote) {
-                isLoading = false
-                store.setKey('isLoading', false)
+                becomeReady()
                 loadingResolve()
               } else if (!found && !store.remote) {
                 loadingReject(
@@ -291,9 +311,9 @@ export function syncMapTemplate(plural, opts = {}) {
                   return undefined
                 })
                 .then(() => {
-                  for (let key of reverting) {
-                    store.setKey(key, undefined)
-                  }
+                  let reverted = {}
+                  for (let key of reverting) reverted[key] = undefined
+                  updateFields(store, reverted)
                   endTask()
                 })
             }
@@ -447,11 +467,11 @@ export async function deleteSyncMapById(client, Template, id) {
     })
   } else {
     let store = Template.client ? Template : Template(id, client)
-    if (store.get().isLoading) await store.loading
+    if (store.get().status === 'loading') await store.loading
     await Promise.all(
-      Object.keys(store.get())
-        .filter(i => i !== 'id' && i !== 'isLoading')
-        .map(key => client.log.removeReason(`${Template.plural}/${id}/${key}`))
+      Object.keys(store.get().value).map(key => {
+        return client.log.removeReason(`${Template.plural}/${id}/${key}`)
+      })
     )
     return addSyncAction(client, Template, {
       id,
@@ -465,7 +485,7 @@ export function deleteSyncMap(store) {
 }
 
 export function ensureLoaded(value) {
-  if (value.isLoading) throw new Error('Store was not loaded yet')
+  if (value.status === 'loading') throw new Error('Store was not loaded yet')
   return value
 }
 
@@ -476,7 +496,7 @@ export function ensureLoadedStore(store) {
 
 export async function loadValue(store) {
   let value = store.get()
-  if (value.isLoading) {
+  if (value.status === 'loading') {
     let unbind = store.listen(() => {})
     try {
       await store.loading

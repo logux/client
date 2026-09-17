@@ -39,7 +39,8 @@ import {
 export function asLoaded<Value extends SyncMapValues>(
   value: FilterValue<Value>
 ): LoadedFilterValue<Value> {
-  return value as LoadedFilterValue<Value>
+  if (value.status === 'ready') return value
+  return { isEmpty: true, status: 'ready', stores: new Map(), value: [] }
 }
 
 function getCatcher(cb: () => void): [string[], FC] {
@@ -77,10 +78,10 @@ function throwFromBroken(e: Error | string): void {
   }
 }
 
-type BrokenMap = { loading: Promise<void> } & MapStore<{ isLoading: boolean }>
+type BrokenMap = { loading: Promise<void> } & MapStore<{ status: string }>
 
 let Broken = (): BrokenMap => {
-  let store = map({ isLoading: true }) as BrokenMap
+  let store = map({ status: 'loading' }) as BrokenMap
   onMount(store, () => {
     store.loading = new Promise((resolve, reject) => {
       brokenReject = reject
@@ -91,12 +92,12 @@ let Broken = (): BrokenMap => {
 
 let IdTest: FC<{ Template: SyncMapTemplateLike }> = ({ Template }) => {
   let store = useSync(Template, 'ID')
-  return h('div', {}, store.isLoading ? 'loading' : store.id)
+  return h('div', {}, store.status === 'loading' ? 'loading' : store.id)
 }
 
 let SyncTest: FC<{ Template: SyncMapTemplate }> = ({ Template }) => {
   let store = useSync(Template, 'ID')
-  return h('div', {}, store.isLoading ? 'loading' : store.id)
+  return h('div', {}, store.status === 'loading' ? 'loading' : store.id)
 }
 
 function getText(component: ReactElement): null | string {
@@ -358,9 +359,9 @@ it('renders filter', async () => {
     return h(
       'ul',
       { 'data-testid': 'test' },
-      asLoaded(posts).list.map((post, index) => {
+      asLoaded(posts).value.map((post, index) => {
         renders.push(post.id)
-        return h('li', { key: post.id }, ` ${index}:${post.title}`)
+        return h('li', { key: post.id }, ` ${index}:${post.value.title}`)
       })
     )
   }
@@ -431,9 +432,9 @@ it('recreating filter on args changes', async () => {
       h(
         'ul',
         { 'data-testid': 'test' },
-        asLoaded(posts).list.map((post, index) => {
+        asLoaded(posts).value.map((post, index) => {
           renders.push(post.id)
-          return h('li', { key: index }, ` ${index}:${post.title}`)
+          return h('li', { key: index }, ` ${index}:${post.value.title}`)
         })
       )
     )
@@ -467,7 +468,7 @@ it('recreating filter on args changes', async () => {
   })
   expect(renders).toEqual([
     'list', // State is changed
-    'list' // Store isLoading changed to false
+    'list' // Store status changed to ready
   ])
 
   renders.splice(0, renders.length)

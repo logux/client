@@ -42,13 +42,14 @@ interface SyncMapStoreExt {
   remote: boolean
 }
 
-export type LoadedSyncMapValue<Value extends SyncMapValues> = {
+export interface LoadedSyncMapValue<Value extends SyncMapValues> {
   id: string
-  isLoading: false
-} & Value
+  status: 'ready'
+  value: Value
+}
 
 export type SyncMapValue<Value extends SyncMapValues> =
-  | { id: string; isLoading: true }
+  | { id: string; status: 'loading' }
   | LoadedSyncMapValue<Value>
 
 export type SyncMapStore<Value extends SyncMapValues = any> = MapStore<
@@ -264,7 +265,7 @@ export function deleteSyncMapById(
 export function deleteSyncMap(store: SyncMapStore): Promise<void>
 
 /**
- * Change store’s value type to value with `isLoaded: false`.
+ * Change store’s value type to the value with `status: 'ready'`.
  *
  * If store is still loading, this function will trow an error.
  *
@@ -273,7 +274,11 @@ export function deleteSyncMap(store: SyncMapStore): Promise<void>
  * ```js
  * import { ensureLoaded } from '@logux/client'
  *
- * expect(ensureLoaded($currentUser)).toEqual({ id: 1, name: 'User' })
+ * expect(ensureLoaded($currentUser)).toEqual({
+ *   id: '1',
+ *   status: 'ready',
+ *   value: { name: 'User' }
+ * })
  * ```
  *
  * @param value Store’s value.
@@ -285,13 +290,14 @@ export function ensureLoaded<Value extends SyncMapValues>(
   value: FilterValue<Value>
 ): LoadedFilterValue<Value>
 
-export type LoadedValue<Type extends { isLoading: boolean }> = {
-  isLoading: false
-} & Type
+export type LoadedValue<Type extends { status: string }> = Extract<
+  Type,
+  { status: 'ready' }
+>
 
 export type LoadableStore = {
   readonly loading: Promise<unknown>
-} & ReadableAtom<{ isLoading: boolean }>
+} & ReadableAtom<{ status: string }>
 
 /**
  * Return store’s value if store is loaded or wait until store will be loaded
@@ -315,7 +321,7 @@ export function loadValue<Store extends LoadableStore>(
 ): Promise<LoadedValue<StoreValue<Store>>>
 
 export type LoadedSyncMap<Store extends SyncMapStore> = MapStore<
-  LoadedSyncMapValue<StoreValue<Store>>
+  LoadedValue<StoreValue<Store>>
 > &
   SyncMapStoreExt
 

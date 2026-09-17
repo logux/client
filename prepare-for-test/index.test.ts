@@ -24,15 +24,12 @@ it('prepares instances', () => {
   expect(user1a).toBe(user1b)
   expect(user1b.get()).toEqual({
     id: '1',
-    isLoading: false,
-    name: 'Test user'
+    status: 'ready',
+    value: { name: 'Test user' }
   })
 
   let user2 = User('2', client)
-  expect(user2.get()).toEqual({
-    id: '2',
-    isLoading: true
-  })
+  expect(user2.get()).toEqual({ id: '2', status: 'loading' })
 })
 
 it('generates IDs', () => {
@@ -61,15 +58,15 @@ it('works with filters', () => {
   let users1 = createFilter(client, User)
   users1.listen(() => {})
 
-  expect(users1.get().isLoading).toBe(false)
-  expect(ensureLoaded(users1.get()).list).toEqual([
-    { id: 'users:1', isLoading: false, name: 'Test 1' },
-    { id: 'users:2', isLoading: false, name: 'Test 2' }
+  expect(users1.get().status).toBe('ready')
+  expect(ensureLoaded(users1.get()).value).toEqual([
+    { id: 'users:1', status: 'ready', value: { name: 'Test 1' } },
+    { id: 'users:2', status: 'ready', value: { name: 'Test 2' } }
   ])
 
   cleanStores(User)
   let users2 = createFilter(client, User)
-  expect(users2.get().isLoading).toBe(true)
+  expect(users2.get().status).toBe('loading')
 })
 
 it('marks empty', () => {
@@ -78,6 +75,6 @@ it('marks empty', () => {
   let users1 = createFilter(client, User)
   users1.listen(() => {})
 
-  expect(users1.get().isLoading).toBe(false)
-  expect(ensureLoaded(users1.get()).list).toEqual([])
+  expect(users1.get().status).toBe('ready')
+  expect(ensureLoaded(users1.get()).value).toEqual([])
 })

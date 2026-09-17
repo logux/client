@@ -3210,7 +3210,7 @@ it('pauses reactive stores on clean()', async () => {
   let $all = user.select()
   $all.listen(() => {})
   await delay(10)
-  expect($all.get()).toEqual({ isLoading: true })
+  expect($all.get()).toEqual({ status: 'loading' })
 
   cleanStores($all)
 })

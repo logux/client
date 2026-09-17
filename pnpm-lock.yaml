@@ -34,8 +34,8 @@ importers:
         specifier: ^2.0.1
         version: 2.0.1(nanostores@1.5.3)(react@19.3.0)
       '@nanostores/sql':
-        specifier: ^0.5.3
-        version: 0.5.3(@electric-sql/pglite@0.5.8)(nanostores@1.5.3)
+        specifier: ^0.6.0
+        version: 0.6.0(@electric-sql/pglite@0.5.8)(nanostores@1.5.3)
       '@nanostores/vue':
         specifier: ^1.1.0
         version: 1.1.0(nanostores@1.5.3)(vue@3.5.42(typescript@7.0.2))
@@ -225,9 +225,9 @@ packages:
       nanostores: ^1.2.0
       react: '>=18.0.0'
 
-  '@nanostores/sql@0.5.3':
-    resolution: {integrity: sha512-C2BtBmZHgNmndS52rScQsAmc1t+Vhowscta16svFTjmb8ZLJLqCWiH4XWWF3sDxBimXl7c5ZcrPuahAvaaBwkQ==}
-    engines: {node: ^22.0.0 || ^24.0.0 || >=26.0.0}
+  '@nanostores/sql@0.6.0':
+    resolution: {integrity: sha512-qAH2owXzTqsg7h82atgsdGrflsSqnfx8bjx9ZONCU6mgQV6qrl4sTVvaOl03iESaT9uuAvmhgUk8gy53d2cRbQ==}
+    engines: {node: ^22.13.0 || ^24.0.0 || >=26.0.0}
     peerDependencies:
       '@electric-sql/pglite': '>=0.4.0'
       expo-sqlite: '>=14.0.0'
@@ -1782,7 +1782,7 @@ snapshots:
       nanostores: 1.5.3
       react: 19.3.0
 
-  '@nanostores/sql@0.5.3(@electric-sql/pglite@0.5.8)(nanostores@1.5.3)':
+  '@nanostores/sql@0.6.0(@electric-sql/pglite@0.5.8)(nanostores@1.5.3)':
     dependencies:
       nanostores: 1.5.3
     optionalDependencies:

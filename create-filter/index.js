@@ -16,23 +16,34 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
         listener = () => {}
       } else {
         listener = () => {
-          filterStore.setKey(
-            'list',
-            Array.from(stores.values()).map(i => i.value)
-          )
+          publish()
         }
       }
 
       let stores = new Map()
       let isLoading = true
-      let list = []
-      filterStore.setKey('list', list)
-      filterStore.set({
-        isEmpty: true,
-        isLoading: true,
-        list,
-        stores
-      })
+      filterStore.set({ status: 'loading' })
+
+      // The list is published only when the filter is ready, so the loading
+      // value stays `{ status: 'loading' }` without a half-loaded list
+      function publish() {
+        if (isLoading) return
+        filterStore.set({
+          isEmpty: stores.size === 0,
+          status: 'ready',
+          stores,
+          value: Array.from(stores.values()).map(i => i.value)
+        })
+      }
+
+      function becomeReady() {
+        isLoading = false
+        publish()
+      }
+
+      function childFields(child) {
+        return child.value.value
+      }
 
       let channelPrefix = Template.plural + '/'
 
@@ -60,11 +71,7 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
         }
         unbindIds.set(child.value.id, unbindChild)
         stores.set(child.value.id, child)
-        filterStore.setKey(
-          'list',
-          Array.from(stores.values()).map(i => i.value)
-        )
-        filterStore.setKey('isEmpty', stores.size === 0)
+        publish()
       }
 
       function remove(childId) {
@@ -73,11 +80,7 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
           unbindIds.get(childId)()
           unbindIds.delete(childId)
           stores.delete(childId)
-          filterStore.setKey(
-            'list',
-            Array.from(stores.values()).map(i => i.value)
-          )
-          filterStore.setKey('isEmpty', stores.size === 0)
+          publish()
         }
       }
 
@@ -113,9 +116,8 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
             .then(() => {
               if (isLoading) {
                 isLoading = false
-                if (filterStore.value) {
-                  filterStore.setKey('isLoading', false)
-                }
+                // The store could be unmounted while the subscription loaded
+                if (filterStore.value) publish()
                 endTask()
                 resolve()
               }
@@ -130,8 +132,8 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
         async function loadAndCheck(child) {
           let clear = child.listen(() => {})
           try {
-            if (child.value.isLoading) await child.loading
-            if (checkAllFields(child.value)) {
+            if (child.value.status === 'loading') await child.loading
+            if (checkAllFields(childFields(child))) {
               await add(child)
             }
           } finally {
@@ -147,7 +149,7 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
         if (process.env.NODE_ENV !== 'production') {
           if (Template.mocked) {
             load = false
-            filterStore.setKey('isLoading', false)
+            becomeReady()
             endTask()
             resolve()
           }
@@ -187,8 +189,7 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
                 await Promise.all(checking)
 
                 if (!Template.remote && isLoading) {
-                  isLoading = false
-                  filterStore.setKey('isLoading', false)
+                  becomeReady()
                   endTask()
                   resolve()
                 } else if (Template.remote) {
@@ -274,7 +275,7 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
           client.type(changedType, async (action, meta) => {
             await Promise.resolve()
             if (stores.has(action.id)) {
-              if (!checkAllFields(stores.get(action.id).value)) {
+              if (!checkAllFields(childFields(stores.get(action.id)))) {
                 remove(action.id)
               }
             } else if (checkSomeFields(action.fields)) {
@@ -292,24 +293,24 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
           client.type(changeType, async (action, meta) => {
             await Promise.resolve()
             if (stores.has(action.id)) {
-              if (!checkAllFields(stores.get(action.id).value)) {
+              if (!checkAllFields(childFields(stores.get(action.id)))) {
                 removeAndListen(action.id, meta.id)
               }
             } else if (checkSomeFields(action.fields)) {
               let child = Template(action.id, client)
               let clear = child.listen(() => {})
               try {
-                if (child.value.isLoading) await child.loading
+                if (child.value.status === 'loading') await child.loading
               } catch {
                 /* v8 ignore next 2 -- @preserve */
                 return
               }
-              if (checkAllFields(child.value)) {
+              if (checkAllFields(childFields(child))) {
                 clear()
                 void add(child)
                 track(client, meta.id).catch(async () => {
                   let unbind = child.listen(() => {
-                    if (!checkAllFields(child.value)) {
+                    if (!checkAllFields(childFields(child))) {
                       remove(action.id)
                     }
                     unbind()

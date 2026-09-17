@@ -126,7 +126,7 @@ async function test(): Promise<void> {
     WHERE "isAdmin" = ${1} AND "createdAt" > ${new Date(2026, 0, 1).getTime()}
   `
   let value = $admins.get()
-  if (!value.isLoading) {
+  if (value.status === 'ready') {
     let row = value.value[0]!
     let name: string = row.name
     let age: null | number = row.age
@@ -170,7 +170,7 @@ async function test(): Promise<void> {
     WHERE "post"."draft" = ${0}
   `
   let joined = $joined.get()
-  if (!joined.isLoading) {
+  if (joined.status === 'ready') {
     let joinedName: string = joined.value[0]!.name
     console.log(joinedName)
   }
@@ -185,7 +185,7 @@ async function test(): Promise<void> {
     WHERE "post"."publishedAt" > ${new Date(2026, 0, 1).getTime()}
   `
   let feed = $feed.get()
-  if (!feed.isLoading) {
+  if (feed.status === 'ready') {
     let author: string = feed.value[0]!.author
     let publishedAt: null | number = feed.value[0]!.publishedAt
     let title: string = feed.value[0]!.title
@@ -196,7 +196,7 @@ async function test(): Promise<void> {
     posts: number
   }>`SELECT COUNT(*) AS "posts" FROM "post"`
   let count = $count.get()
-  if (!count.isLoading) {
+  if (count.status === 'ready') {
     let posts: number = count.value[0]!.posts
     console.log(posts)
   }
@@ -214,7 +214,7 @@ let pgUser = pg.table('user', {
 })
 
 let pgValue = pgUser.select`WHERE "isAdmin" = ${true}`.get()
-if (!pgValue.isLoading) {
+if (pgValue.status === 'ready') {
   let pgRow = pgValue.value[0]!
   let pgAdmin: boolean = pgRow.isAdmin
   let pgCreated: number = pgRow.createdAt

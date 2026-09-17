@@ -39,7 +39,8 @@ import {
 export function asLoaded<Value extends SyncMapValues>(
   value: DeepReadonly<FilterValue<Value>>
 ): DeepReadonly<LoadedFilterValue<Value>> {
-  return value as DeepReadonly<LoadedFilterValue<Value>>
+  if (value.status === 'ready') return value
+  return { isEmpty: true, status: 'ready', stores: new Map(), value: [] }
 }
 
 function getCatcher(cb: () => void): [string[], Component] {
@@ -84,7 +85,10 @@ let defineIdTest = (Template: SyncMapTemplateLike): Component => {
   return defineComponent(() => {
     let store = useSync(Template, 'ID')
     return () => {
-      return h('div', store.value.isLoading ? 'loading' : store.value.id)
+      return h(
+        'div',
+        store.value.status === 'loading' ? 'loading' : store.value.id
+      )
     }
   })
 }
@@ -92,7 +96,8 @@ let defineIdTest = (Template: SyncMapTemplateLike): Component => {
 let defineSyncTest = (Template: SyncMapTemplate): Component => {
   return defineComponent(() => {
     let store = useSync(Template, 'ID')
-    return () => h('div', store.value.isLoading ? 'loading' : store.value.id)
+    return () =>
+      h('div', store.value.status === 'loading' ? 'loading' : store.value.id)
   })
 }
 
@@ -185,10 +190,10 @@ function throwFromBroken(e: Error | string): void {
   }
 }
 
-type BrokenMap = { loading: Promise<void> } & MapStore<{ isLoading: boolean }>
+type BrokenMap = { loading: Promise<void> } & MapStore<{ status: string }>
 
 let BrokenStore = (): BrokenMap => {
-  let store = map({ isLoading: true }) as BrokenMap
+  let store = map({ status: 'loading' }) as BrokenMap
   onMount(store, () => {
     store.loading = new Promise((resolve, reject) => {
       brokenReject = reject
@@ -328,7 +333,7 @@ it('recreates state on id changes', async () => {
             id.value = '2'
           }
         },
-        state.value.isLoading ? 'loading' : state.value.id
+        state.value.status === 'loading' ? 'loading' : state.value.id
       )
   })
 
@@ -383,16 +388,16 @@ it('renders filter', async () => {
   let TestList = defineComponent(() => {
     let posts = useFilter(LocalPostStore, { projectId: '1' })
     expect(asLoaded(posts.value).stores.size).toEqual(
-      asLoaded(posts.value).list.length
+      asLoaded(posts.value).value.length
     )
     return () => {
       renders.push('list')
       return h(
         'ul',
         { 'data-testid': 'test' },
-        asLoaded(posts.value).list.map((post, index) => {
+        asLoaded(posts.value).value.map((post, index) => {
           renders.push(post.id)
-          return h('li', ` ${index}:${post.title}`)
+          return h('li', ` ${index}:${post.value.title}`)
         })
       )
     }
@@ -471,9 +476,9 @@ it('recreates filter on args changes', async () => {
         h(
           'ul',
           { 'data-testid': 'test' },
-          asLoaded(posts.value).list.map((post, index) => {
+          asLoaded(posts.value).value.map((post, index) => {
             renders.push(post.id)
-            return h('li', ` ${index}:${post.title}`)
+            return h('li', ` ${index}:${post.value.title}`)
           })
         )
       ])
@@ -517,7 +522,7 @@ it('recreates filter on args changes', async () => {
   await delay(10)
   expect(renders).toEqual([
     'list', // State is changed
-    'list' // Store isLoading changed to false
+    'list' // Store status changed to ready
   ])
 
   renders.splice(0, renders.length)

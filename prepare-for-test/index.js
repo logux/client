@@ -19,11 +19,13 @@ export function prepareForTest(client, Template, value) {
   let store = Template(id, client)
   store.listen(() => {})
 
-  if ('isLoading' in store.value) {
-    store.setKey('isLoading', false)
-  }
-  for (let key in keys) {
-    store.setKey(key, keys[key])
+  if ('status' in store.value) {
+    store.fields = { ...store.fields, ...keys }
+    store.set({ id, status: 'ready', value: store.fields })
+  } else {
+    for (let key in keys) {
+      store.setKey(key, keys[key])
+    }
   }
 
   return store

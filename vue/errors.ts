@@ -16,29 +16,29 @@ let postList = useFilter($post, { id: '10' })
 let $custom = (id: string): MapStore<Post> => map({ id, text: 'A' })
 let custom = useSync($custom, '10')
 
-if (post.value.isLoading) {
-  // THROWS Property 'title' does not exist
-  post.value.title = 'New title'
+if (post.value.status === 'loading') {
+  // THROWS Property 'value' does not exist
+  post.value.value.title = 'New title'
 } else {
   // THROWS Cannot assign to 'title' because it is a read-only
-  post.value.title = 'New title'
+  post.value.value.title = 'New title'
 }
 
-if (!postList.value.isLoading) {
+if (postList.value.status === 'ready') {
   let postListItem = postList.value.stores.get('10')!.value!
-  if (postListItem.isLoading) {
-    // THROWS Property 'title' does not exist
-    postListItem.title = 'New title'
+  if (postListItem.status === 'loading') {
+    // THROWS Property 'value' does not exist
+    postListItem.value.title = 'New title'
   } else {
     // THROWS Cannot assign to 'title' because it is a read-only
-    postListItem.title = 'New title'
+    postListItem.value.title = 'New title'
   }
 }
 
-if (custom.value.isLoading) {
-  // THROWS Property 'title' does not exist
-  custom.value.title = 'B'
+if (custom.value.status === 'loading') {
+  // THROWS Property 'value' does not exist
+  custom.value.value.title = 'B'
 } else {
   // THROWS Cannot assign to 'title' because it is a read-only
-  custom.value.title = 'B'
+  custom.value.value.title = 'B'
 }

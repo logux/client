@@ -16,20 +16,20 @@ let postList = useFilter($post, { id: '10' })
 let $custom = (id: string): MapStore<Post> => map({ id, text: 'A' })
 let custom = useSync($custom, '10')
 
-if (post.isLoading) {
-  // THROWS Property 'title' does not exist
-  post.title = 'New title'
+if (post.status === 'loading') {
+  // THROWS Property 'value' does not exist
+  post.value.title = 'New title'
 }
 
-if (!postList.isLoading) {
+if (postList.status === 'ready') {
   let postListItem = postList.stores.get('10')!.value!
-  if (postListItem.isLoading) {
-    // THROWS Property 'title' does not exist
-    postListItem.title = 'New title'
+  if (postListItem.status === 'loading') {
+    // THROWS Property 'value' does not exist
+    postListItem.value.title = 'New title'
   }
 }
 
-if (custom.isLoading) {
-  // THROWS Property 'title' does not exist
-  custom.title = 'B'
+if (custom.status === 'loading') {
+  // THROWS Property 'value' does not exist
+  custom.value.title = 'B'
 }

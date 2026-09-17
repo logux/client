@@ -68,8 +68,8 @@ export function useClient(): Client
  *
  * ```html
  * <template>
- *   <loader v-if="user.isLoading" />
- *   <h1 v-else>{{ user.name }}</h1>
+ *   <loader v-if="user.status === 'loading'" />
+ *   <h1 v-else>{{ user.value.name }}</h1>
  * </template>
  *
  * <script>
@@ -107,8 +107,8 @@ export function useSync<Value extends object, Args extends any[]>(
  *
  * ```html
  * <template>
- *   <loader v-if="users.isLoading" />
- *   <user v-else v-for="user in users" :user="user" />
+ *   <loader v-if="users.status === 'loading'" />
+ *   <user v-else v-for="user in users.value" :user="user" />
  * </template>
  *
  * <script>
