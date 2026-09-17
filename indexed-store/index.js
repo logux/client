@@ -114,39 +114,40 @@ export class IndexedStore {
     this.adding = {}
   }
 
+  // IndexedDB opens a new transaction for every `os()` call, so all actions
+  // of a single `Log#add()` call share one
   async add(entries) {
+    if (entries.length === 0) return []
+    let store = await this.init()
+    let log = store.os('log', 'write')
+    let index = log.index('id')
+
     let results = []
     for (let [action, meta] of entries) {
-      results.push(await this.addOne(action, meta))
+      let entry = {
+        action,
+        id: meta.id,
+        indexes: meta.indexes || [],
+        meta,
+        reasons: meta.reasons,
+        time: meta.time
+      }
+
+      if (store.adding[entry.id]) {
+        results.push(false)
+        continue
+      }
+      store.adding[entry.id] = true
+
+      if (await promisify(index.get(entry.id))) {
+        results.push(false)
+      } else {
+        meta.added = await promisify(log.add(entry))
+        delete store.adding[entry.id]
+        results.push(meta)
+      }
     }
     return results
-  }
-
-  async addOne(action, meta) {
-    let entry = {
-      action,
-      id: meta.id,
-      indexes: meta.indexes || [],
-      meta,
-      reasons: meta.reasons,
-      time: meta.time
-    }
-
-    if (this.adding[entry.id]) {
-      return false
-    }
-    this.adding[entry.id] = true
-
-    let store = await this.init()
-    let exist = await promisify(store.os('log').index('id').get(meta.id))
-    if (exist) {
-      return false
-    } else {
-      let added = await promisify(store.os('log', 'write').add(entry))
-      delete store.adding[entry.id]
-      meta.added = added
-      return meta
-    }
   }
 
   async addReason(reasons, criteria) {

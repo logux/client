@@ -325,22 +325,67 @@ it('adds all actions of the batch by a single transaction', async () => {
   await add(store, { type: 'init' }, { id: '0 n', time: 0 })
 
   let transactions = 0
+  let queries: string[] = []
   let origin = db.driver.transaction.bind(db.driver)
   db.driver.transaction = (callback, opts) => {
     transactions += 1
-    return origin(callback, opts)
+    return origin(tx => {
+      let exec = tx.exec.bind(tx)
+      let select = tx.select.bind(tx)
+      tx.exec = (sql, params) => {
+        queries.push(sql)
+        return exec(sql, params)
+      }
+      tx.select = (sql, params) => {
+        queries.push(sql)
+        return select(sql, params)
+      }
+      return callback(tx)
+    }, opts)
   }
 
   let message: [AnyAction, Meta][] = []
   for (let i = 1; i <= 100; i++) {
-    message.push([{ type: 'A' }, { id: `${i} n`, time: i } as Meta])
+    message.push([
+      { type: 'A' },
+      { id: `${i} n`, indexes: ['x'], reasons: ['test'], time: i } as Meta
+    ])
   }
   let metas = await store.add(message)
 
   expect(transactions).toBe(1)
+  // The duplicates check, the `added` counter and a query per table
+  expect(queries.map(sql => sql.split(' ').slice(0, 3).join(' '))).toEqual([
+    'SELECT "id" FROM',
+    'UPDATE "logux_extra" SET',
+    'INSERT INTO "logux_log"',
+    'INSERT INTO "logux_reason"',
+    'INSERT INTO "logux_index"'
+  ])
   expect(metas).toHaveLength(100)
+  expect((metas[0] as Meta).added).toBe(2)
+  expect((metas[99] as Meta).added).toBe(101)
   expect(await store.getLastAdded()).toBe(101)
   expect(await all(store.get())).toHaveLength(101)
+})
+
+it('returns false for a duplicate inside the batch', async () => {
+  let store = new SqlLogStore(db)
+  await add(store, { type: 'A' }, { id: '1 n', time: 1 })
+
+  let metas = await store.add([
+    // Already in the store
+    [{ type: 'A' }, { id: '1 n', time: 1 } as Meta],
+    [{ type: 'B' }, { id: '2 n', time: 2 } as Meta],
+    // Duplicate of the action from this very batch
+    [{ type: 'B' }, { id: '2 n', time: 2 } as Meta]
+  ])
+
+  expect(metas.map(meta => meta !== false)).toEqual([false, true, false])
+  expect((await all(store.get())).map(entry => entry[0].type)).toEqual([
+    'A',
+    'B'
+  ])
 })
 
 it('rolls back the whole batch when one action failed', async () => {

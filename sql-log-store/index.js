@@ -171,49 +171,108 @@ async function selectByCriteria(target, criteria, reasons) {
   )
 }
 
-async function addTo(store, tx, action, meta) {
-  let [exist] = await tx.driver.select(
-    `SELECT "added" FROM "logux_log" WHERE "id" = ?`,
-    [meta.id]
-  )
-  if (exist) return false
+/**
+ * How many actions to write by a single `INSERT`: every row spends
+ * a few query parameters, and drivers have a limit for them.
+ */
+const INSERT_SIZE = 100
 
-  let [{ next }] = await tx.driver.select(
-    `UPDATE "logux_extra" SET "value" = "value" + 1` +
-      ` WHERE "key" = 'added' RETURNING "value" AS "next"`,
-    []
-  )
-  meta.added = Number(next)
+async function insertTags(target, table, column, tags) {
+  for (let i = 0; i < tags.length; i += INSERT_SIZE) {
+    let chunk = tags.slice(i, i + INSERT_SIZE)
+    await target.exec(
+      `INSERT INTO "${table}" ("added", "${column}") VALUES ` +
+        chunk.map(() => `(${holders(2)})`).join(', '),
+      chunk.flat()
+    )
+  }
+}
 
-  let blob = null
-  let body = action
-  let packer = store.packers[action.type]
-  if (packer) {
-    let packed = packer.pack(action)
-    if (packed) {
-      blob = packed.blob
-      body = packed.action
+/**
+ * Write all actions of a single `Log#add()` call: a query per action
+ * made the first sync of an old account very slow, so every step here
+ * takes the whole batch.
+ */
+async function addAll(store, tx, entries) {
+  let ids = entries.map(entry => entry[1].id)
+  let known = new Set(
+    (
+      await tx.driver.select(
+        `SELECT "id" FROM "logux_log" WHERE "id" IN (${holders(ids.length)})`,
+        ids
+      )
+    ).map(row => row.id)
+  )
+
+  let results = []
+  let writing = []
+  for (let entry of entries) {
+    // A duplicate inside the batch must not reach the UNIQUE index
+    if (known.has(entry[1].id)) {
+      results.push(false)
+    } else {
+      known.add(entry[1].id)
+      results.push(entry[1])
+      writing.push(entry)
     }
   }
+  if (writing.length === 0) return results
 
-  await tx.driver.exec(
-    `INSERT INTO "logux_log"` +
-      ` ("added", "id", "sorted", "action", "meta", "blob")` +
-      ` VALUES (${holders(6)})`,
-    [
+  // All `added` numbers of the batch are taken by a single query
+  let [{ next }] = await tx.driver.select(
+    `UPDATE "logux_extra" SET "value" = "value" + ?` +
+      ` WHERE "key" = 'added' RETURNING "value" AS "next"`,
+    [writing.length]
+  )
+  let first = Number(next) - writing.length
+
+  let reasons = []
+  let indexes = []
+  let rows = []
+  for (let i = 0; i < writing.length; i++) {
+    let [action, meta] = writing[i]
+    meta.added = first + i + 1
+
+    let blob = null
+    let body = action
+    let packer = store.packers[action.type]
+    if (packer) {
+      let packed = packer.pack(action)
+      if (packed) {
+        blob = packed.blob
+        body = packed.action
+      }
+    }
+
+    rows.push([
       meta.added,
       meta.id,
       toSorted(meta),
       serializeToJSONWithBinary(body),
       serializeToJSONWithBinary(meta),
       blob
-    ]
-  )
-  await addTags(tx.driver, 'logux_reason', 'reason', meta.added, meta.reasons)
-  await addTags(tx.driver, 'logux_index', 'name', meta.added, meta.indexes)
-  // Materialized views commit together with the action
-  if (store.onAdd) await store.onAdd(tx, action, meta)
-  return meta
+    ])
+    for (let reason of meta.reasons ?? []) reasons.push([meta.added, reason])
+    for (let index of meta.indexes ?? []) indexes.push([meta.added, index])
+  }
+
+  for (let i = 0; i < rows.length; i += INSERT_SIZE) {
+    let chunk = rows.slice(i, i + INSERT_SIZE)
+    await tx.driver.exec(
+      `INSERT INTO "logux_log"` +
+        ` ("added", "id", "sorted", "action", "meta", "blob") VALUES ` +
+        chunk.map(() => `(${holders(6)})`).join(', '),
+      chunk.flat()
+    )
+  }
+  await insertTags(tx.driver, 'logux_reason', 'reason', reasons)
+  await insertTags(tx.driver, 'logux_index', 'name', indexes)
+
+  // Materialized views commit together with the actions
+  if (store.onAdd) {
+    for (let [action, meta] of writing) await store.onAdd(tx, action, meta)
+  }
+  return results
 }
 
 export class SqlLogStore {
@@ -225,13 +284,8 @@ export class SqlLogStore {
   }
 
   async add(entries) {
-    return this.write(async tx => {
-      let results = []
-      for (let [action, meta] of entries) {
-        results.push(await addTo(this, tx, action, meta))
-      }
-      return results
-    })
+    if (entries.length === 0) return []
+    return this.write(tx => addAll(this, tx, entries))
   }
 
   async byId(id) {
