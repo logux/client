@@ -1,7 +1,7 @@
 import { sortedToMeta, toSorted } from '@logux/core'
 import { createNanoEvents } from 'nanoevents'
 import { nanoid } from 'nanoid'
-import { atom } from 'nanostores'
+import { atom, computed } from 'nanostores'
 
 import { newerDatabaseError } from '../sql-log-store/index.js'
 
@@ -30,8 +30,27 @@ export function oneOf(values, opts) {
   return { ...column('TEXT', opts), values }
 }
 
+export function json(shape, opts) {
+  return { ...column('JSON', opts), shape }
+}
+
 export function optional(col) {
   return { ...col, nullable: true, required: false }
+}
+
+/**
+ * JSON columns are the only columns with a conversion: the database
+ * keeps them as text (SQLite) or `JSONB` (PGlite), and rows must have
+ * the parsed value like the actions
+ */
+function toDb(col, value) {
+  return col.type === 'JSON' && value !== null ? JSON.stringify(value) : value
+}
+
+function fromDb(col, value) {
+  return col.type === 'JSON' && typeof value === 'string'
+    ? JSON.parse(value)
+    : value
 }
 
 /**
@@ -81,7 +100,7 @@ export async function crdtTableToActions(tables) {
           fields = {}
           metaRows.set(row.id, fields)
         }
-        fields[key] = row[key]
+        fields[key] = fromDb(schema[key], row[key])
         let min = oldest.get(row.id)
         if (!min || sorted < min) oldest.set(row.id, sorted)
       }
@@ -133,8 +152,13 @@ export async function crdtTableToActions(tables) {
  */
 const LOGUX_CRDT_TABLE_VERSION = 1
 
+function sqlType(col, dialect) {
+  if (col.type !== 'JSON') return col.type
+  return dialect === 'pglite' ? 'JSONB' : 'TEXT'
+}
+
 function columnSql(name, col, dialect) {
-  let sql = `"${name}" ${col.type}`
+  let sql = `"${name}" ${sqlType(col, dialect)}`
   if (col.values) {
     let values = col.values.map(i => `'${i.replaceAll("'", "''")}'`)
     sql += ` CHECK ("${name}" IN (${values.join(', ')}))`
@@ -281,6 +305,20 @@ function sortKeys(object, map) {
     sorted[key] = map ? map(object[key], key) : object[key]
   }
   return sorted
+}
+
+function shapeHash(shape) {
+  if (Array.isArray(shape)) return [shapeColumnHash(shape[0])]
+  return sortKeys(shape, shapeColumnHash)
+}
+
+function shapeColumnHash(col) {
+  return {
+    nullable: col.nullable,
+    shape: col.shape && shapeHash(col.shape),
+    type: col.type,
+    values: col.values
+  }
 }
 
 export function createCrdtDatabase(client, db, opts = {}) {
@@ -596,7 +634,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
           (!last || last < sorted)
         ) {
           keys.push(key)
-          values.push(fields[key])
+          values.push(toDb(schema[key], fields[key]))
           // Keep meta for the next record with the same ID in this batch
           row[`${META}${key}`] = sorted
         }
@@ -626,8 +664,10 @@ export function createCrdtDatabase(client, db, opts = {}) {
       for (let key in schema) {
         let col = schema[key]
         if (key in record || !('default' in col)) continue
-        record[key] =
+        record[key] = toDb(
+          col,
           typeof col.default === 'function' ? col.default() : col.default
+        )
         columns.add(key)
       }
     }
@@ -748,6 +788,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
       actions: sortKeys(actionVersions),
       tables: sortKeys(tables, (schema, plural) => ({
         columns: sortKeys(schema, col => ({
+          shape: col.shape && shapeHash(col.shape),
           sql:
             col.sql && typeof col.sql === 'object'
               ? sortKeys(col.sql)
@@ -992,6 +1033,15 @@ export function createCrdtDatabase(client, db, opts = {}) {
         .map(index => indexSql(plural, schema, index, indexNames))
         .sort((a, b) => (a < b ? -1 : 1))
       tables[plural] = schema
+      let jsonColumns = Object.keys(schema).filter(
+        key => schema[key].type === 'JSON'
+      )
+
+      function parseRow(row) {
+        let parsed = { ...row }
+        for (let key of jsonColumns) parsed[key] = fromDb(schema[key], row[key])
+        return parsed
+      }
 
       function withDefaults(fields) {
         let { id = nanoid(), ...values } = fields
@@ -1059,7 +1109,16 @@ export function createCrdtDatabase(client, db, opts = {}) {
           let parts = template
             ? [`${prefix} ${template[0]}`, ...template.slice(1)]
             : [prefix]
-          return db.store(parts, ...params)
+          let store = db.store(parts, ...params)
+          if (jsonColumns.length === 0) return store
+          // The driver returns JSON columns as they are stored,
+          // so the rows are parsed on the way to the app
+          let parsed = computed(store, value => {
+            if (value.status !== 'ready') return value
+            return { status: 'ready', value: value.value.map(parseRow) }
+          })
+          parsed.loading = store.loading
+          return parsed
         },
         async update(id, diff) {
           let batch = Array.isArray(id)

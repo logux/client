@@ -10,6 +10,7 @@ import {
   bigint,
   boolean,
   createCrdtDatabase,
+  json,
   optional,
   string
 } from './index.js'
@@ -38,7 +39,9 @@ it('uses real BOOLEAN columns in PGlite', { timeout: 60000 }, async () => {
       createdAt: bigint({ default: () => new Date(2026, 0, 1).getTime() }),
       isAdmin: boolean({ default: false }),
       name: string(),
-      publishedAt: optional(bigint())
+      publishedAt: optional(bigint()),
+      settings: json({ theme: string() }, { default: { theme: 'dark' } }),
+      tags: optional(json([string()]))
     },
     [
       'name',
@@ -67,17 +70,30 @@ it('uses real BOOLEAN columns in PGlite', { timeout: 60000 }, async () => {
     'user_published'
   ])
 
+  let columns = (await db.driver.select(
+    'SELECT "column_name", "data_type" FROM "information_schema"."columns"' +
+      ' WHERE "table_name" = $1 AND "column_name" IN ($2, $3)',
+    ['user', 'settings', 'tags']
+  )) as { column_name: string; data_type: string }[]
+  expect(columns.map(i => i.data_type)).toEqual(['jsonb', 'jsonb'])
+
   await user.create({
     id: 'U1',
     isAdmin: true,
     name: 'Ann',
-    publishedAt: 3000
+    publishedAt: 3000,
+    tags: ['a']
   })
   await user.create({ id: 'U2', name: 'Ben' })
   await delay(100)
 
   let rows = await loadList(user.select`ORDER BY "id"`)
   expect(rows.map(i => i.id)).toEqual(['U1', 'U2'])
+  expect(rows.map(i => i.settings)).toEqual([
+    { theme: 'dark' },
+    { theme: 'dark' }
+  ])
+  expect(rows.map(i => i.tags)).toEqual([['a'], null])
   expect(rows[0]!.isAdmin).toBe(true)
   expect(rows[1]!.isAdmin).toBe(false)
   expect(rows[0]!.createdAt).toBe(new Date(2026, 0, 1).getTime())
@@ -90,11 +106,21 @@ it('uses real BOOLEAN columns in PGlite', { timeout: 60000 }, async () => {
   let late = await loadList(user.select`WHERE "publishedAt" > ${2000}`)
   expect(late.map(i => i.id)).toEqual(['U1'])
 
-  await user.update('U1', { isAdmin: false, publishedAt: 5000 })
+  await user.update('U1', {
+    isAdmin: false,
+    publishedAt: 5000,
+    settings: { theme: 'light' }
+  })
   await delay(100)
   let updated = await loadList(user.select`WHERE "id" = ${'U1'}`)
   expect(updated[0]!.isAdmin).toBe(false)
   expect(updated[0]!.publishedAt).toBe(5000)
+  expect(updated[0]!.settings).toEqual({ theme: 'light' })
+
+  let light = await loadList(
+    user.select`WHERE "settings"->>'theme' = ${'light'}`
+  )
+  expect(light.map(i => i.id)).toEqual(['U1'])
 
   await user.delete('U2')
   await delay(100)

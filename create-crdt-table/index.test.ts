@@ -36,6 +36,7 @@ import {
   createCrdtDatabase,
   createCrdtTasks,
   crdtTableToActions,
+  json,
   number,
   oneOf,
   optional,
@@ -174,6 +175,31 @@ const USER_SCHEMA = {
 }
 
 type UserValue = CrdtTableRow<typeof USER_SCHEMA>
+
+const NOTE_SCHEMA = {
+  meta: optional(json({ views: number() })),
+  settings: json(
+    {
+      address: optional(json({ city: string(), zip: optional(string()) })),
+      fontSize: number(),
+      theme: oneOf(['dark', 'light'])
+    },
+    { default: { fontSize: 14, theme: 'dark' } }
+  ),
+  tags: json([string()]),
+  title: string()
+}
+
+async function columnTypes(
+  db: Database,
+  table: string
+): Promise<Record<string, string>> {
+  let rows = (await db.driver.select(
+    `SELECT "name", "type" FROM pragma_table_info(?)`,
+    [table]
+  )) as { name: string; type: string }[]
+  return Object.fromEntries(rows.map(i => [i.name, i.type]))
+}
 
 /**
  * The tests check the database errors themselves, so the default listener
@@ -728,6 +754,241 @@ it('ignores empty batch actions', async () => {
 
   expect(await loadList(user.select())).toEqual([])
   expect(client.log.entries()).toEqual([])
+})
+
+it('stores JSON columns', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let note = crdt.table('note', NOTE_SCHEMA)
+
+  let noteTagged = defineAction<{
+    id: string
+    tag: string
+    type: 'note/tagged'
+  }>('note/tagged')
+  let tagNote = crdt.action(noteTagged, async (tx, action, meta) => {
+    // Custom actions read the columns as the database keeps them
+    let [row] = await tx.select<{ tags: string }>`
+      SELECT "tags" FROM "note" WHERE "id" = ${action.id}
+    `
+    let tags: string[] = JSON.parse(row!.tags)
+    await note.change(tx, action.id, { tags: [...tags, action.tag] }, meta)
+  })
+  await delay(10)
+
+  expect(await columnTypes(db, 'note')).toEqual({
+    id: 'TEXT',
+    meta: 'TEXT',
+    settings: 'TEXT',
+    tags: 'TEXT',
+    title: 'TEXT',
+    updatedAt_meta: 'TEXT',
+    updatedAt_settings: 'TEXT',
+    updatedAt_tags: 'TEXT',
+    updatedAt_title: 'TEXT'
+  })
+
+  await note.create({ id: 'N1', tags: ['a', 'b'], title: 'A' })
+  await note.create({
+    id: 'N2',
+    meta: { views: 1 },
+    settings: { address: { city: 'Riga' }, fontSize: 16, theme: 'light' },
+    tags: [],
+    title: 'B'
+  })
+  await delay(10)
+
+  let $all = note.select`ORDER BY "id"`
+  expect($all.get()).toEqual({ status: 'loading' })
+  let rows = await loadList($all)
+  await $all.loading
+  expect(withoutMeta(rows)).toEqual([
+    {
+      id: 'N1',
+      meta: null,
+      settings: { fontSize: 14, theme: 'dark' },
+      tags: ['a', 'b'],
+      title: 'A'
+    },
+    {
+      id: 'N2',
+      meta: { views: 1 },
+      settings: { address: { city: 'Riga' }, fontSize: 16, theme: 'light' },
+      tags: [],
+      title: 'B'
+    }
+  ])
+  expect(rows[0]!.updatedAt_settings).toBe(rows[0]!.updatedAt_title)
+
+  // The database keeps JSON as text, so raw queries see the strings
+  expect(
+    await db.driver.select(
+      'SELECT "meta", "settings", "tags" FROM "note" WHERE "id" = ?',
+      ['N2']
+    )
+  ).toEqual([
+    {
+      meta: '{"views":1}',
+      settings: '{"address":{"city":"Riga"},"fontSize":16,"theme":"light"}',
+      tags: '[]'
+    }
+  ])
+
+  let $light = note.select`
+    WHERE json_extract("settings", '$.theme') = ${'light'}
+  `
+  expect((await loadList($light)).map(i => i.id)).toEqual(['N2'])
+
+  await note.update('N1', {
+    meta: { views: 5 },
+    settings: { fontSize: 12, theme: 'light' }
+  })
+  await note.update('N2', { meta: null })
+  await note.update(['N1', 'N2'], { tags: ['x'] })
+  await tagNote({ id: 'N1', tag: 'y' })
+  await delay(10)
+
+  rows = await loadList($all)
+  expect(rows.map(i => i.meta)).toEqual([{ views: 5 }, null])
+  expect(rows[0]!.settings).toEqual({ fontSize: 12, theme: 'light' })
+  expect(rows.map(i => i.tags)).toEqual([['x', 'y'], ['x']])
+
+  // Rows from select() can be inserted back with parsed values
+  let copies = await note.create(
+    withoutMeta(rows).map(row => ({ ...row, id: `copy-${row.id}` }))
+  )
+  await delay(10)
+  expect(copies).toEqual(['copy-N1', 'copy-N2'])
+  let $copies = note.select`WHERE "id" LIKE ${'copy-%'} ORDER BY "id"`
+  expect((await loadList($copies)).map(i => i.settings)).toEqual([
+    { fontSize: 12, theme: 'light' },
+    { address: { city: 'Riga' }, fontSize: 16, theme: 'light' }
+  ])
+  await note.delete(copies)
+  await delay(10)
+
+  // Restored actions get parsed values back
+  let actions = await crdtTableToActions([note])
+  expect(actions.map(([action]) => action)).toEqual([
+    { fields: { title: 'A' }, id: 'N1', type: 'note/created' },
+    {
+      fields: {
+        settings: { address: { city: 'Riga' }, fontSize: 16, theme: 'light' },
+        title: 'B'
+      },
+      id: 'N2',
+      type: 'note/created'
+    },
+    {
+      fields: {
+        meta: { views: 5 },
+        settings: { fontSize: 12, theme: 'light' }
+      },
+      id: 'N1',
+      type: 'note/changed'
+    },
+    { fields: { meta: null }, id: 'N2', type: 'note/changed' },
+    { fields: { tags: ['x'] }, id: 'N2', type: 'note/changed' },
+    { fields: { tags: ['x', 'y'] }, id: 'N1', type: 'note/changed' }
+  ])
+
+  // Replaying the restored actions on migration fills the same rows
+  let { client: client2, db: db2 } = await setup()
+  await writeService(db2, 'schema', '{"tables":{}}')
+  let crdt2 = createCrdtDatabase(client2, db2, {
+    repeat: () => actions
+  })
+  let note2 = crdt2.table('note', NOTE_SCHEMA)
+  await delay(10)
+  expect(withoutMeta(await loadList(note2.select`ORDER BY "id"`))).toEqual(
+    withoutMeta(rows)
+  )
+})
+
+it('rebuilds database on change inside json() shape', async () => {
+  let { client, db } = await setup()
+  let crdt1 = createCrdtDatabase(client, db)
+  let note1 = crdt1.table('note', {
+    meta: json({ views: number() }),
+    tags: json([string()])
+  })
+  await delay(10)
+  await note1.create({ id: 'N1', meta: { views: 1 }, tags: ['a'] })
+  await delay(10)
+  crdt1.destroy()
+
+  async function reopen(
+    schema: Parameters<typeof crdt1.table>[1]
+  ): Promise<string[]> {
+    let repeated = 0
+    let client2 = new TestClient('10')
+    await client2.connect()
+    let crdt2 = createCrdtDatabase(client2, db, {
+      repeat() {
+        repeated += 1
+        return []
+      }
+    })
+    crdt2.table('note', schema)
+    let statuses: string[] = []
+    crdt2.status.subscribe(status => {
+      statuses.push(status)
+    })
+    await delay(10)
+    expect(statuses.at(-1)).toBe('ready')
+    expect(repeated).toBe(statuses.includes('migrating') ? 1 : 0)
+    crdt2.destroy()
+    return statuses
+  }
+
+  expect(
+    await reopen({
+      meta: json({ views: number() }),
+      tags: json([string()])
+    })
+  ).toEqual(['initializing', 'ready'])
+  expect(
+    await reopen({
+      meta: json({ views: number() }, 'NOT NULL'),
+      tags: json([string()])
+    })
+  ).toEqual(['initializing', 'migrating', 'ready'])
+  expect(
+    await reopen({
+      meta: json({ likes: optional(number()), views: number() }, 'NOT NULL'),
+      tags: json([string()])
+    })
+  ).toEqual(['initializing', 'migrating', 'ready'])
+  expect(
+    await reopen({
+      meta: json({ likes: number(), views: number() }, 'NOT NULL'),
+      tags: json([string()])
+    })
+  ).toEqual(['initializing', 'migrating', 'ready'])
+  expect(
+    await reopen({
+      meta: json({ likes: number(), views: number() }, 'NOT NULL'),
+      tags: json([oneOf(['a', 'b'])])
+    })
+  ).toEqual(['initializing', 'migrating', 'ready'])
+  expect(
+    await reopen({
+      meta: json({ likes: number(), views: number() }, 'NOT NULL'),
+      tags: json([json({ name: string() })])
+    })
+  ).toEqual(['initializing', 'migrating', 'ready'])
+  expect(
+    await reopen({
+      meta: json({ likes: number(), views: number() }, 'NOT NULL'),
+      tags: json([json({ name: string(), size: bigint() })])
+    })
+  ).toEqual(['initializing', 'migrating', 'ready'])
+  expect(
+    await reopen({
+      meta: json({ likes: number(), views: number() }, 'NOT NULL'),
+      tags: json([json({ name: string(), size: bigint() })])
+    })
+  ).toEqual(['initializing', 'ready'])
 })
 
 it('passes raw select params to the driver', async () => {

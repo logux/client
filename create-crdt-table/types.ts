@@ -9,6 +9,7 @@ import {
   createCrdtDatabase,
   crdtTableToActions,
   type CrdtCell,
+  json,
   number,
   oneOf,
   optional,
@@ -58,6 +59,7 @@ crdt.on('stop', () => {})
 let user = crdt.table(
   'user',
   {
+    address: optional(json({ city: string(), zip: optional(string()) })),
     age: optional(number()),
     createdAt: bigint({ default: () => Date.now() }),
     email: string('COLLATE NOCASE'),
@@ -65,6 +67,15 @@ let user = crdt.table(
     name: string(),
     publishedAt: optional(bigint()),
     role: oneOf(['admin', 'guest', 'user'], { default: 'user' }),
+    settings: json(
+      {
+        fontSize: number(),
+        notifications: optional(json({ email: boolean(), push: boolean() })),
+        theme: oneOf(['dark', 'light'])
+      },
+      { default: { fontSize: 14, theme: 'dark' } }
+    ),
+    tags: json([string()], { default: () => [] }),
     theme: string<'dark' | 'light'>({ default: 'dark' })
   },
   [
@@ -92,13 +103,26 @@ async function test(): Promise<void> {
 
   let id: string = await user.create({ email: 'a@b.c', name: 'Ann' })
   await user.create({
+    address: { city: 'Riga' },
     age: 30,
     createdAt: Date.now(),
     email: 'a@b.c',
     isAdmin: 1,
     name: 'Ann',
     publishedAt: Date.now(),
-    role: 'admin'
+    role: 'admin',
+    settings: {
+      fontSize: 16,
+      notifications: { email: true, push: false },
+      theme: 'light'
+    },
+    tags: ['a', 'b']
+  })
+  await user.create({
+    address: null,
+    email: 'a@b.c',
+    name: 'Ann',
+    settings: { fontSize: 16, notifications: null, theme: 'light' }
   })
 
   await user.create({
@@ -118,6 +142,12 @@ async function test(): Promise<void> {
   await user.update(id, { publishedAt: Date.now() })
   await user.update(id, { publishedAt: null })
   await user.update(ids, { role: 'guest' })
+  await user.update(id, {
+    address: { city: 'Riga', zip: '1010' },
+    settings: { fontSize: 12, theme: 'dark' },
+    tags: ['c']
+  })
+  await user.update(id, { address: null })
 
   await user.delete(id)
   await user.delete(ids)
@@ -137,6 +167,17 @@ async function test(): Promise<void> {
     let theme: 'dark' | 'light' = row.theme
     let rowId: string = row.id
     let changed: null | string = row.updatedAt_name
+    let settings: {
+      fontSize: number
+      notifications?: null | { email: boolean; push: boolean }
+      theme: 'dark' | 'light'
+    } = row.settings
+    let fontSize: number = row.settings.fontSize
+    let push: boolean | undefined = row.settings.notifications?.push
+    let tags: string[] = row.tags
+    let address: null | { city: string; zip?: null | string } = row.address
+    let city: string | undefined = row.address?.city
+    let settingsChanged: null | string = row.updatedAt_settings
     console.log(
       name,
       age,
@@ -146,7 +187,14 @@ async function test(): Promise<void> {
       role,
       theme,
       rowId,
-      changed
+      changed,
+      settings,
+      fontSize,
+      push,
+      tags,
+      address,
+      city,
+      settingsChanged
     )
 
     let clean: WithoutMeta<(typeof value.value)[number]>[] = withoutMeta(
@@ -210,7 +258,8 @@ let pgUser = pg.table('user', {
   createdAt: bigint({ default: () => Date.now() }),
   isAdmin: boolean({ default: false }),
   name: string(),
-  publishedAt: optional(bigint())
+  publishedAt: optional(bigint()),
+  settings: json({ theme: string() })
 })
 
 let pgValue = pgUser.select`WHERE "isAdmin" = ${true}`.get()
@@ -220,7 +269,8 @@ if (pgValue.status === 'ready') {
   let pgCreated: number = pgRow.createdAt
   let pgPublished: null | number = pgRow.publishedAt
   let pgName: string = pgRow.name
-  console.log(pgAdmin, pgCreated, pgPublished, pgName)
+  let pgTheme: string = pgRow.settings.theme
+  console.log(pgAdmin, pgCreated, pgPublished, pgName, pgTheme)
 }
 
 let [createdUser, changedUser, deletedUser] = defineCrdtTableActions(user)
@@ -291,6 +341,7 @@ void rename()
 test()
 console.log(user.plural satisfies string)
 console.log(user.schema.name.type satisfies 'TEXT')
+console.log(user.schema.settings.type satisfies 'JSON')
 
 let unbinds: (() => void)[] = [
   crdt.on('applied', async (tx, action, meta, won, touched) => {

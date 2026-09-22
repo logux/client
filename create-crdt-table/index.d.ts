@@ -25,10 +25,15 @@ declare const META: 'updatedAt_'
 /**
  * JS types of column values. Only JSON types are supported, because
  * all values are stored in Logux actions and passed to the database
- * driver as-is. Store dates as a number of milliseconds
- * in {@link bigint} columns.
+ * driver as-is (objects and arrays of {@link json} columns are serialized).
+ * Store dates as a number of milliseconds in {@link bigint} columns.
  */
-export type CrdtColumnValue = SyncMapTypes
+export type CrdtColumnValue = CrdtJsonValue | SyncMapTypes
+
+/**
+ * Value of {@link json} column: an object or an array.
+ */
+export type CrdtJsonValue = { [key: string]: unknown } | unknown[]
 
 export interface CrdtColumnOptions<Type extends CrdtColumnValue> {
   /**
@@ -50,8 +55,8 @@ export interface CrdtColumnOptions<Type extends CrdtColumnValue> {
 
 /**
  * Column definition created by {@link string}, {@link number},
- * {@link bigint}, {@link boolean}, {@link oneOf} and {@link optional}
- * builders.
+ * {@link bigint}, {@link boolean}, {@link oneOf}, {@link json}
+ * and {@link optional} builders.
  *
  * `Type` is the JS type of the column value in rows.
  * `RequiredOnCreate` marks whether {@link CrdtTable#create} requires
@@ -63,12 +68,14 @@ export interface CrdtColumn<
 > {
   default?: (() => Type) | Type
   required: RequiredOnCreate
+  shape?: CrdtJsonShape
   sql?: Record<string, string> | string
 
   /**
-   * SQL column type used in `CREATE TABLE`.
+   * SQL column type used in `CREATE TABLE`. `JSON` is `TEXT` in SQLite
+   * and `JSONB` in PGlite.
    */
-  type: 'BIGINT' | 'BOOLEAN' | 'DOUBLE PRECISION' | 'TEXT'
+  type: 'BIGINT' | 'BOOLEAN' | 'DOUBLE PRECISION' | 'JSON' | 'TEXT'
   values?: readonly string[]
 }
 
@@ -172,6 +179,83 @@ export function bigint<Type extends number = number>(
     default: (() => NoInfer<Type>) | NoInfer<Type>
   } & CrdtColumnOptions<Type>
 ): { type: 'BIGINT' } & CrdtColumn<Type, false>
+
+/**
+ * Shape of {@link json} column value: an object with column builders
+ * as values, or an array with a single column builder for a list.
+ */
+export type CrdtJsonShape =
+  | { [key: string]: CrdtColumn }
+  | readonly [item: CrdtColumn]
+
+type CrdtJsonObject<Shape extends { [key: string]: CrdtColumn }> = {
+  [
+    Key in keyof Shape as undefined extends CrdtColumnType<Shape[Key]>
+      ? Key
+      : never
+  ]?: Exclude<CrdtColumnType<Shape[Key]>, undefined> | null
+} & {
+  [
+    Key in keyof Shape as undefined extends CrdtColumnType<Shape[Key]>
+      ? never
+      : Key
+  ]: CrdtColumnType<Shape[Key]>
+}
+
+/**
+ * JS type of {@link json} column value inferred from its shape.
+ * Keys wrapped in {@link optional} can be omitted or set to `null`.
+ */
+export type CrdtJsonType<Shape extends CrdtJsonShape> = Shape extends readonly [
+  infer Item extends CrdtColumn
+]
+  ? CrdtColumnType<Item>[]
+  : Shape extends { [key: string]: CrdtColumn }
+    ? CrdtJsonObject<Shape>
+    : never
+
+/**
+ * Column with an object or an array value: `TEXT` in SQLite
+ * and `JSONB` in PGlite. Values are serialized to JSON on write
+ * and parsed back in rows of {@link CrdtTable#select}.
+ *
+ * The shape is an object with the same builders as the table schema
+ * (or an array with one builder for a list). It defines the TypeScript type
+ * of the value and is a part of the schema: a change inside it re-creates
+ * the database from the log.
+ *
+ * The whole value is a single cell of per-field last write wins.
+ *
+ * ```ts
+ * import { json, number, oneOf, optional, string } from '@logux/client/db'
+ *
+ * let schema = {
+ *   settings: json(
+ *     { fontSize: number(), theme: oneOf(['dark', 'light']) },
+ *     { default: { fontSize: 14, theme: 'dark' } }
+ *   ),
+ *   tags: json([string()]),
+ *   address: optional(json({ city: string(), zip: optional(string()) }))
+ * }
+ *
+ * let $dark = user.select`
+ *   WHERE json_extract("settings", '$.theme') = ${'dark'}
+ * `
+ * ```
+ *
+ * @param shape Object or single-item array of column builders.
+ * @param opts Extra column definition SQL or column options.
+ */
+export function json<const Shape extends CrdtJsonShape>(
+  shape: Shape,
+  opts?: Omit<CrdtColumnOptions<CrdtJsonType<Shape>>, 'default'> | string
+): { type: 'JSON' } & CrdtColumn<CrdtJsonType<Shape>, true>
+export function json<const Shape extends CrdtJsonShape>(
+  shape: Shape,
+  opts: {
+    default: (() => CrdtJsonType<NoInfer<Shape>>) | CrdtJsonType<NoInfer<Shape>>
+  } & CrdtColumnOptions<CrdtJsonType<Shape>>
+): { type: 'JSON' } & CrdtColumn<CrdtJsonType<Shape>, false>
 
 /**
  * Mark column as optional. The field can be omitted or set to `null`
@@ -315,8 +399,9 @@ export type CrdtSqlParam<Dialect extends Dialects = 'sqlite'> =
 
 /**
  * Table row returned by {@link CrdtTable#select}. Rows contain data
- * as the database driver returns it, without any conversion.
- * Missing optional columns are `null`.
+ * as the database driver returns it, without any conversion, except
+ * {@link json} columns, which are parsed. Missing optional columns
+ * are `null`.
  *
  * Every field has an extra `updatedAt_field` column with Logux Meta ID
  * of the last action which changed it (`null` if the field was never set).
@@ -1038,8 +1123,8 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
    * @param plural Table name and actions type prefix.
    * @param schema Columns definition from {@link string}, {@link number},
    *               {@link bigint}, {@link boolean}, {@link oneOf},
-   *               {@link optional} builders. {@link boolean} is not
-   *               allowed with `'sqlite'` dialect.
+   *               {@link json}, {@link optional} builders. {@link boolean}
+   *               is not allowed with `'sqlite'` dialect.
    * @param indexes Indexes to create for the table. The dialect is known
    *                here, so use a condition to define an index
    *                for a specific database.
@@ -1120,7 +1205,7 @@ export type Dialects = 'sqlite' | 'pglite'
  * ```ts
  * import { openDb, sqlocalDriver } from '@nanostores/sql'
  * import {
- *   bigint, createCrdtDatabase, number, oneOf, optional, string
+ *   bigint, createCrdtDatabase, json, number, oneOf, optional, string
  * } from '@logux/client/db'
  *
  * let db = openDb(sqlocalDriver('app.sqlite'))
@@ -1147,6 +1232,7 @@ export type Dialects = 'sqlite' | 'pglite'
  *     email: string('COLLATE NOCASE'),
  *     isAdmin: number({ default: 0 }),
  *     name: string(),
+ *     settings: json({ fontSize: number() }, { default: { fontSize: 14 } }),
  *     theme: oneOf(['dark', 'light'], { default: 'dark' })
  *   },
  *   [{ columns: ['email'], unique: true }, ['isAdmin', 'name']]

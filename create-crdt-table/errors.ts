@@ -5,6 +5,7 @@ import {
   bigint,
   boolean,
   createCrdtDatabase,
+  json,
   number,
   oneOf,
   optional,
@@ -78,7 +79,47 @@ async function test(): Promise<void> {
   user.select`WHERE "age" = ${true}`
   // THROWS Argument of type 'Date' is not assignable to parameter
   user.select`WHERE "createdAt" > ${new Date()}`
+
+  // THROWS No overload matches this call.
+  await note.create({ tags: ['a'] })
+  // THROWS No overload matches this call.
+  await note.create({ meta: { views: '1' }, tags: [] })
+  // THROWS No overload matches this call.
+  await note.create({ meta: { views: 1 }, tags: [1] })
+  // THROWS No overload matches this call.
+  await note.create({ meta: { views: 1, extra: 1 }, tags: [] })
+  // THROWS Type 'number' is not assignable to type 'string'.
+  await note.update('id', { tags: [1] })
+  // THROWS Type 'null' is not assignable to type
+  await note.update('id', { meta: null })
+  // THROWS Object literal may only specify known properties
+  await note.update('id', { meta: { extra: 1, views: 1 } })
+  // THROWS Type '"big"' is not assignable to type
+  await note.update('id', { meta: { size: 'big', views: 1 } })
+
+  let notes = note.select().get()
+  if (notes.status === 'ready') {
+    // THROWS Type 'number' is not assignable to type 'string'.
+    let views: string = notes.value[0]!.meta.views
+    // THROWS Property 'extra' does not exist
+    console.log(views, notes.value[0]!.meta.extra)
+    // THROWS Type '"medium" | "small" | null | undefined' is not assignable
+    let size: 'medium' | 'small' = notes.value[0]!.meta.size
+    console.log(size)
+  }
 }
+
+let note = crdt.table('note', {
+  meta: json({
+    size: optional(oneOf(['medium', 'small'])),
+    views: number()
+  }),
+  tags: json([string()])
+})
+
+let badDefault = { default: { views: '1' } }
+// THROWS No overload matches this call.
+crdt.table('badDefault', { meta: json({ views: number() }, badDefault) })
 
 // THROWS type: "BOOLEAN"; } & CrdtColumn<boolean, false>' is not assignable
 crdt.table('bad', { isAdmin: boolean({ default: false }) })
