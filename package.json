@@ -59,12 +59,12 @@
     "@testing-library/preact": "^3.2.4",
     "@testing-library/react": "^16.3.3",
     "@testing-library/vue": "^8.1.0",
-    "@types/node": "^26.6.1",
+    "@types/node": "^26.6.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/ws": "^8.18.1",
     "@vitest/coverage-v8": "^5.0.1",
-    "@vue/compiler-sfc": "^3.5.42",
+    "@vue/compiler-sfc": "^3.5.43",
     "check-dts": "^2.0.1",
     "eslint-plugin-prefer-let": "^4.2.2",
     "fake-indexeddb": "^6.2.5",
@@ -75,7 +75,7 @@
     "nanospy": "^2.0.2",
     "nanostores": "^1.5.3",
     "oxlint": "^1.83.0",
-    "oxlint-tsgolint": "^7.0.2001",
+    "oxlint-tsgolint": "^7.0.2002",
     "postcss": "^8.5.28",
     "preact": "^10.29.8",
     "react": "^19.3.0",
@@ -85,7 +85,7 @@
     "typescript": "^7.0.2",
     "vite": "^8.3.0",
     "vitest": "^5.0.1",
-    "vue": "^3.5.42"
+    "vue": "^3.5.43"
   },
   "peerDependencies": {
     "@nanostores/preact": ">=0.0.0",
