@@ -249,6 +249,53 @@ it('ignores specific actions', async () => {
   ])
 })
 
+it('does not encrypt Logux actions', async () => {
+  let client = createClient()
+  encryptActions(client, 'password')
+  await connect(client)
+  getPair(client).clear()
+
+  client.log.add({ channel: 'users', type: 'logux/subscribe' }, { sync: true })
+  await delay(10)
+  client.log.add(
+    { channel: 'posts', type: 'logux/unsubscribe' },
+    { sync: true }
+  )
+  await delay(10)
+  expect(getPair(client).leftSent).toMatchObject([
+    [
+      'sync',
+      1,
+      { channel: 'users', type: 'logux/subscribe' },
+      { id: '0', time: expect.any(Number) }
+    ],
+    [
+      'sync',
+      2,
+      { channel: 'posts', type: 'logux/unsubscribe' },
+      { id: '1', time: expect.any(Number) }
+    ]
+  ])
+})
+
+it('does not clean Logux actions on server', async () => {
+  let client = createClient()
+  encryptActions(client, 'password')
+  await connect(client)
+
+  await client.log.add(
+    { channel: 'users', type: 'logux/subscribe' },
+    { sync: true }
+  )
+  await delay(10)
+  getPair(client).clear()
+
+  await client.log.removeReason('test')
+  await client.log.removeReason('syncing')
+  await delay(10)
+  expect(getPair(client).leftSent).toEqual([])
+})
+
 it('cleans actions on server', async () => {
   let client = createClient()
   encryptActions(client, 'password')

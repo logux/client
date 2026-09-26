@@ -3,7 +3,9 @@ import type { Client } from '../client/index.js'
 /**
  * Encrypt actions before sending them to server.
  *
- * Actions will be converted to `{ type: '0', d: encrypt(action) }`
+ * Actions will be converted to `{ type: '0', d: encrypt(action) }`.
+ * `logux/*` actions (like `logux/subscribe`) are never encrypted,
+ * because server needs to read them.
  *
  * Client will be switched to binary protocol, which has a compact format
  * for encrypted actions. Call it before `client.start()`.

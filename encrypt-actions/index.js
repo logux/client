@@ -111,6 +111,11 @@ export function encryptActions(client, secret, opts = {}) {
 
   let ignore = new Set(opts.ignore || [])
 
+  // Server must read `logux/*` actions to process subscriptions
+  function isSkipped(type) {
+    return type === '0/clean' || type.startsWith('logux/') || ignore.has(type)
+  }
+
   async function onReceive(action, meta) {
     if (action.type === '0') {
       if (!key) key = await buildKey()
@@ -126,7 +131,7 @@ export function encryptActions(client, secret, opts = {}) {
     let result = await originOnSend(action, meta)
     if (!result) {
       return false
-    } else if (result[0].type === '0/clean' || ignore.has(result[0].type)) {
+    } else if (isSkipped(result[0].type)) {
       return [result[0], result[1]]
     } else {
       if (!key) key = await buildKey()
@@ -139,7 +144,7 @@ export function encryptActions(client, secret, opts = {}) {
 
   if (opts.clean !== false) {
     client.log.on('clean', (action, meta) => {
-      if (meta.sync && !ignore.has(action.type) && action.type !== '0/clean') {
+      if (meta.sync && !isSkipped(action.type)) {
         client.log.add({ id: meta.id, type: '0/clean' }, { sync: true })
       }
     })
