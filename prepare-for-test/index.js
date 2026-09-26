@@ -1,3 +1,5 @@
+import { clientPrefix } from '../sync-map-template/index.js'
+
 let lastId = 0
 
 export function emptyInTest(Template) {
@@ -10,7 +12,11 @@ export function prepareForTest(client, Template, value) {
   let { id, ...keys } = value
   if (!id) {
     if (Template.plural) {
-      id = `${Template.plural}:${Object.keys(Template.cache).length + 1}`
+      let prefix = clientPrefix(client)
+      let count = Object.keys(Template.cache).filter(i => {
+        return i.startsWith(prefix)
+      }).length
+      id = `${Template.plural}:${count + 1}`
     } else {
       id = `${++lastId}`
     }

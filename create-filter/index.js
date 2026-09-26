@@ -1,13 +1,16 @@
 import { isFirstOlder } from '@logux/core'
 import { map, onMount, startTask } from 'nanostores'
 
+import { clientPrefix } from '../sync-map-template/index.js'
 import { track } from '../track/index.js'
 
 export function createFilter(client, Template, filter = {}, opts = {}) {
+  let prefix = clientPrefix(client)
   let id = Template.plural + JSON.stringify(filter) + JSON.stringify(opts)
+  let cacheKey = prefix + id
   if (!Template.filters) Template.filters = {}
 
-  if (!Template.filters[id]) {
+  if (!Template.filters[cacheKey]) {
     let filterStore = map()
 
     onMount(filterStore, () => {
@@ -142,7 +145,7 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
         }
 
         for (let i in Template.cache) {
-          void loadAndCheck(Template.cache[i])
+          if (i.startsWith(prefix)) void loadAndCheck(Template.cache[i])
         }
 
         let load = true
@@ -217,7 +220,7 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
         }
 
         function createAt(childId) {
-          return Template.cache[childId].createdAt
+          return Template.cache[prefix + childId].createdAt
         }
 
         let removeAndListen = (childId, actionId) => {
@@ -354,10 +357,10 @@ export function createFilter(client, Template, filter = {}, opts = {}) {
           }
         }
         client.log.removeReason(id)
-        delete Template.filters[id]
+        delete Template.filters[cacheKey]
       }
     })
-    Template.filters[id] = filterStore
+    Template.filters[cacheKey] = filterStore
   }
-  return Template.filters[id]
+  return Template.filters[cacheKey]
 }

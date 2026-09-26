@@ -34,16 +34,26 @@ function changeIfLast(store, fields, meta) {
   updateFields(store, changes)
 }
 
+let clientKeys = new WeakMap()
+let lastClientKey = 0
+
+export function clientPrefix(client) {
+  if (!client) return '0 '
+  if (!clientKeys.has(client)) clientKeys.set(client, ++lastClientKey)
+  return clientKeys.get(client) + ' '
+}
+
 function getIndexes(plural, id) {
   return [plural, `${plural}/${id}`]
 }
 
 export function syncMapTemplate(plural, opts = {}) {
-  let Template = (id, ...args) => {
-    if (!Template.cache[id]) {
-      Template.cache[id] = Template.build(id, ...args)
+  let Template = (id, client, ...args) => {
+    let key = clientPrefix(client) + id
+    if (!Template.cache[key]) {
+      Template.cache[key] = Template.build(id, client, ...args)
     }
-    return Template.cache[id]
+    return Template.cache[key]
   }
 
   Template.cache = {}
@@ -334,7 +344,7 @@ export function syncMapTemplate(plural, opts = {}) {
       }
 
       return () => {
-        delete Template.cache[id]
+        delete Template.cache[clientPrefix(client) + id]
         for (let i of unbinds) i()
         if (!store.offline) {
           for (let key in store.lastChanged) {
@@ -352,13 +362,13 @@ export function syncMapTemplate(plural, opts = {}) {
 
   if (process.env.NODE_ENV !== 'production') {
     Template[clean] = () => {
-      for (let id in Template.cache) {
-        Template.cache[id][clean]()
+      for (let key in Template.cache) {
+        Template.cache[key][clean]()
       }
       Template.cache = {}
       if (Template.filters) {
-        for (let id in Template.filters) {
-          Template.filters[id][clean]()
+        for (let key in Template.filters) {
+          Template.filters[key][clean]()
         }
         Template.filters = {}
       }

@@ -130,6 +130,29 @@ it('subscribes and unsubscribes', async () => {
   expect(client.subscribed('posts/ID')).toBe(false)
 })
 
+it('does not share cached stores between clients', async () => {
+  let client1 = new TestClient('10')
+  let client2 = new TestClient('10')
+  await client1.connect()
+  await client2.connect()
+
+  let post1 = Post('ID', client1)
+  post1.listen(() => {})
+  let post2 = Post('ID', client2)
+  let unbind = post2.listen(() => {})
+  expect(post1).not.toBe(post2)
+  expect(Post('ID', client2)).toBe(post2)
+  expect(post2.client).toBe(client2)
+
+  await allTasks()
+  expect(client1.subscribed('posts/ID')).toBe(true)
+  expect(client2.subscribed('posts/ID')).toBe(true)
+
+  unbind()
+  await delay(1050)
+  expect(Object.values(Post.cache)).toEqual([post1])
+})
+
 it('changes key', async () => {
   let client = createAutoprocessingClient()
   await client.connect()

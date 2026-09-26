@@ -47,6 +47,8 @@ afterEach(() => {
 
 function cachedIds(Template: any): string[] {
   return Object.keys(Template.cache)
+    .map(i => i.split(' ')[1]!)
+    .toSorted()
 }
 
 function getSize(filterStore: FilterStore): number {
@@ -814,6 +816,24 @@ it('has shortcut to check size', async () => {
     title: '1'
   })
   expect(ensureLoaded(posts.get()).isEmpty).toBe(false)
+})
+
+it('does not share cached filters between clients', async () => {
+  let client1 = new TestClient('10')
+  let client2 = new TestClient('10')
+  await client1.connect()
+  await client2.connect()
+
+  let filter1 = createFilter(client1, Post, { projectId: '1' })
+  filter1.listen(() => {})
+  let filter2 = createFilter(client2, Post, { projectId: '1' })
+  filter2.listen(() => {})
+  expect(filter1).not.toBe(filter2)
+  expect(createFilter(client2, Post, { projectId: '1' })).toBe(filter2)
+
+  await allTasks()
+  expect(client1.subscribed('posts')).toBe(true)
+  expect(client2.subscribed('posts')).toBe(true)
 })
 
 it('clean filters', () => {

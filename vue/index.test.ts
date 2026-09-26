@@ -346,7 +346,8 @@ it('recreates state on id changes', async () => {
     ),
     client
   )
-  expect(RemotePostStore.cache['1']!.lc).toBe(1)
+  let post1 = RemotePostStore('1', client)
+  expect(post1.lc).toBe(1)
   expect(screen.getByTestId('test').textContent).toBe('loading')
 
   await client.connect()
@@ -356,7 +357,7 @@ it('recreates state on id changes', async () => {
 
   screen.getByTestId('test').click()
   await nextTick()
-  expect(RemotePostStore.cache['1']!.lc).toBe(0)
+  expect(post1.lc).toBe(0)
   expect(screen.getByTestId('test').textContent).toBe('loading')
   await delay(50)
   expect(screen.getByTestId('test').textContent).toBe('2')

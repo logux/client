@@ -67,7 +67,7 @@ export interface SyncMapTemplate<
     ...args: [] | [Action, Meta, boolean | undefined]
   ): StoreExt & SyncMapStore<Value>
   cache: {
-    [id: string]: StoreExt & SyncMapStore<Value>
+    [key: string]: StoreExt & SyncMapStore<Value>
   }
   offline: boolean
   readonly plural: string
