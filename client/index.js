@@ -141,7 +141,7 @@ export class Client {
         for (let id in subscribing) {
           let subscribe = subscribing[id]
           if (subscribe.channel === action.channel) {
-            if (isEqual(action.filer, subscribe.filter)) {
+            if (isEqual(action.filter, subscribe.filter)) {
               wasSubscribed = false
               delete subscribing[id]
               log.changeMeta(id, { reasons: [] })

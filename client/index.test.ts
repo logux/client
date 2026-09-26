@@ -985,11 +985,9 @@ it('works with unsubscribe in offline', async () => {
     ['connect', client.node.localProtocol, '10:1:1', 0, { subprotocol: 10 }],
     [
       'sync',
-      6,
+      5,
       { channel: 'D', filter: undefined, type: 'logux/subscribe' },
-      { id: '7', time: 8 },
-      { channel: 'B', filter: { id: 3 }, type: 'logux/subscribe' },
-      { id: '8', time: 9 }
+      { id: '7', time: 8 }
     ],
     [
       'sync',
