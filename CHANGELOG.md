@@ -2,6 +2,18 @@
 
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.26.0
+
+- Moved to Logux Core 0.12.
+- Moved to Protocol 7.
+- Moved to new Nano Stores Async API (`status` instead of `isLoading`).
+- Added `json()` column type to CRDT Table.
+- Added `receiving` status with initial sync progress.
+- Added action batching to `IndexedStore` and `SqlLogStore`.
+- Improved performance of initial sync with many small actions.
+- Fixed `logux/*` actions encryption in `encryptActions()`.
+- Fixed `SyncMapTemplate` and `createFilter()` cache sharing between clients.
+
 ## 0.25.2
 
 - Fixed `default` value of CRDT Table on missed value.
