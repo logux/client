@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@logux/actions':
-        specifier: ^0.8.0
-        version: 0.8.0(@logux/core@0.12.0)
+        specifier: ^0.8.1
+        version: 0.8.1(@logux/core@0.12.0)
       '@logux/core':
         specifier: ^0.12.0
         version: 0.12.0
@@ -183,11 +183,11 @@ packages:
     peerDependencies:
       '@logux/core': ^0.10.0
 
-  '@logux/actions@0.8.0':
-    resolution: {integrity: sha512-jrsx3U611EGziXWo1NtLibc4NUB7nleuifj1j087owWn7NZCw8i+zYg+ACfN85iGeR2zBEOMJ/aTxBuF8B4Nww==}
+  '@logux/actions@0.8.1':
+    resolution: {integrity: sha512-c/o6TFI1nIFV9Nfqmbwc897H+RPNXYIyibqyEMqDyM8pnduQB11xXuj9PV289G9yFjed9ncESp+10LBGmwZ3Qg==}
     engines: {node: ^22.0.0 || ^24.0.0 || >=26.0.0}
     peerDependencies:
-      '@logux/core': ^0.11.0
+      '@logux/core': ^0.12.0
 
   '@logux/core@0.10.0':
     resolution: {integrity: sha512-VbgVkEloAe2ym5w0cjyRI16Eeyk2R0BgJa9pMYT1FcJEhFnzrB23E0ExIEhrok0iD48bFh7goledwmDLmgWaiw==}
@@ -1729,7 +1729,7 @@ snapshots:
     dependencies:
       '@logux/core': 0.12.0
 
-  '@logux/actions@0.8.0(@logux/core@0.12.0)':
+  '@logux/actions@0.8.1(@logux/core@0.12.0)':
     dependencies:
       '@logux/core': 0.12.0
 
