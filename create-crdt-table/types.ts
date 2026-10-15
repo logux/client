@@ -9,6 +9,7 @@ import {
   createCrdtDatabase,
   crdtTableToActions,
   type CrdtCell,
+  defineCrdtTable,
   json,
   number,
   oneOf,
@@ -362,3 +363,34 @@ for (let unbind of unbinds) unbind()
 
 crdt.destroy()
 pg.destroy()
+
+let feeds = defineCrdtTable(
+  'feeds',
+  { categoryId: string(), title: string(), url: optional(string()) },
+  ['categoryId']
+)
+let feedCreated = feeds.created({
+  fields: { categoryId: 'A', title: 'T' },
+  id: 'F1'
+})
+let createdType: 'feeds/created' = feedCreated.type
+let changedType: 'feeds/changed' = feeds.changed({ fields: {}, id: 'F1' }).type
+let deletedType: 'feeds/deleted' = feeds.deleted({ ids: ['F1'] }).type
+console.log(createdType, changedType, deletedType)
+let feedTable = crdt.table(feeds)
+let feedTitle: string = feedTable.schema.title.type
+console.log(feedTitle)
+for (let [id, fields] of parseCrdtRows(feedCreated)) {
+  let categoryId: string = fields.categoryId
+  console.log(id, categoryId)
+}
+client.type(feeds.changed, action => {
+  for (let [, fields] of parseCrdtRows(action)) {
+    let categoryId: string | undefined = fields.categoryId
+    console.log(categoryId)
+  }
+})
+for (let [id, fields] of parseCrdtRows(feeds.deleted({ id: 'F1' }))) {
+  let none: undefined = fields
+  console.log(id, none)
+}

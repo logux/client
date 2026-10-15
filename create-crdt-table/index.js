@@ -1,3 +1,4 @@
+import { defineAction } from '@logux/actions'
 import { sortedToMeta, toSorted } from '@logux/core'
 import { createNanoEvents } from 'nanoevents'
 import { nanoid } from 'nanoid'
@@ -33,6 +34,17 @@ export function oneOf(values, opts) {
 
 export function json(shape, opts) {
   return { ...column('JSON', opts), shape }
+}
+
+export function defineCrdtTable(plural, schema, indexes = []) {
+  return {
+    changed: defineAction(`${plural}/changed`),
+    created: defineAction(`${plural}/created`),
+    deleted: defineAction(`${plural}/deleted`),
+    indexes,
+    plural,
+    schema
+  }
 }
 
 export function optional(col) {
@@ -1116,8 +1128,14 @@ export function createCrdtDatabase(client, db, opts = {}) {
     },
     ready,
     status,
-    table(plural, schema, indexes = []) {
+    table(plural, schema, indexes) {
       checkDefine()
+      if (typeof plural === 'object') {
+        indexes = schema ?? plural.indexes
+        schema = plural.schema
+        plural = plural.plural
+      }
+      indexes ??= []
       for (let name in schema) {
         if (schema[name].type === 'BOOLEAN' && dialect === 'sqlite') {
           throw new Error('sqlite does not support boolean')

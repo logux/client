@@ -1,4 +1,11 @@
-import type { AbstractActionCreator, SyncMapTypes } from '@logux/actions'
+import type {
+  AbstractActionCreator,
+  ActionCreator,
+  CrdtTableChangedAction,
+  CrdtTableCreatedAction,
+  CrdtTableDeletedAction,
+  SyncMapTypes
+} from '@logux/actions'
 import type { Action, MetaTime } from '@logux/core'
 import type { Database, Driver, SqlStore } from '@nanostores/sql'
 import type { Unsubscribe } from 'nanoevents'
@@ -393,6 +400,80 @@ export type NewCrdtRow<Schema extends CrdtTableSchema> = {
 } & CrdtCreateFields<Schema>
 
 /**
+ * `plural/created` action of the table.
+ */
+export type CrdtCreatedAction<
+  Schema extends CrdtTableSchema,
+  Plural extends string = string
+> = { type: `${Plural}/created` } & CrdtTableCreatedAction<
+  CrdtCreateFields<Schema>
+>
+
+/**
+ * `plural/changed` action of the table.
+ */
+export type CrdtChangedAction<
+  Schema extends CrdtTableSchema,
+  Plural extends string = string
+> = { type: `${Plural}/changed` } & CrdtTableChangedAction<
+  CrdtRowFields<Schema>
+>
+
+/**
+ * `plural/deleted` action of the table.
+ */
+export type CrdtDeletedAction<Plural extends string = string> = {
+  type: `${Plural}/deleted`
+} & CrdtTableDeletedAction
+
+/**
+ * Table definition from {@link defineCrdtTable}.
+ */
+export interface CrdtTableDefinition<
+  Schema extends CrdtTableSchema = CrdtTableSchema,
+  Plural extends string = string
+> {
+  readonly changed: ActionCreator<CrdtChangedAction<Schema, Plural>>
+  readonly created: ActionCreator<CrdtCreatedAction<Schema, Plural>>
+  readonly deleted: ActionCreator<CrdtDeletedAction<Plural>>
+  readonly indexes: CrdtIndex<Schema>[]
+  readonly plural: Plural
+  readonly schema: Schema
+}
+
+/**
+ * Define the table without the database, for instance, in a module
+ * with reducers, which needs only the action types.
+ * Pass it to {@link CrdtDatabase#table} later.
+ *
+ * ```ts
+ * import { defineCrdtTable, string } from '@logux/client/db'
+ *
+ * export const feeds = defineCrdtTable('feeds', {
+ *   categoryId: string(),
+ *   title: string()
+ * })
+ *
+ * client.type(feeds.created, action => {})
+ *
+ * let feed = crdt.table(feeds)
+ * ```
+ *
+ * @param plural Table name and actions type prefix.
+ * @param schema Columns definition like in {@link CrdtDatabase#table}.
+ * @param indexes Indexes to create for the table.
+ * @returns Table definition with action creators.
+ */
+export function defineCrdtTable<
+  const Plural extends string,
+  Schema extends CrdtTableSchema
+>(
+  plural: Plural,
+  schema: Schema,
+  indexes?: CrdtIndex<NoInfer<Schema>>[]
+): CrdtTableDefinition<Schema, Plural>
+
+/**
  * Values for SQL template parameters of {@link CrdtTable#select}.
  * Parameters are passed to the database driver as-is, without any
  * conversion. Booleans are allowed only in dialects
@@ -630,6 +711,15 @@ export function parseCrdtType(
  * @param action Table action.
  * @returns Row IDs with the fields, which the action writes to them.
  */
+export function parseCrdtRows<Fields extends object>(
+  action: CrdtTableCreatedAction<Fields>
+): [id: string, fields: Readonly<Fields>][]
+export function parseCrdtRows<Fields extends object>(
+  action: CrdtTableChangedAction<Fields>
+): [id: string, fields: Readonly<Partial<Fields>>][]
+export function parseCrdtRows(
+  action: CrdtTableDeletedAction
+): [id: string, fields: undefined][]
 export function parseCrdtRows(
   action: Action
 ): [id: string, fields: object | undefined][]
@@ -1193,6 +1283,13 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
    * )
    * ```
    *
+   * It also takes a table from {@link defineCrdtTable}. Indexes passed here
+   * replace the definition’s indexes, for instance, for a specific dialect.
+   *
+   * ```ts
+   * let feed = crdt.table(feeds)
+   * ```
+   *
    * Indexes have no names in the API and are compared by their SQL:
    * any change in them re-creates the database, since tables are dropped
    * and refilled from the log with their indexes.
@@ -1206,6 +1303,16 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
    *                here, so use a condition to define an index
    *                for a specific database.
    */
+  table<
+    Schema extends CrdtTableSchema<
+      Dialect extends 'sqlite'
+        ? Exclude<CrdtColumn['type'], 'BOOLEAN'>
+        : CrdtColumn['type']
+    >
+  >(
+    definition: CrdtTableDefinition<Schema>,
+    indexes?: CrdtIndex<NoInfer<Schema>>[]
+  ): CrdtTable<Schema, Dialect>
   table<
     Schema extends CrdtTableSchema<
       Dialect extends 'sqlite'

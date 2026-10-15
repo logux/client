@@ -40,6 +40,7 @@ import {
   createCrdtDatabase,
   createCrdtTasks,
   crdtTableToActions,
+  defineCrdtTable,
   json,
   mapCrdtFields,
   number,
@@ -4526,4 +4527,50 @@ it('does not finish migration after destroy in the replay', async () => {
   await crdt.destroy()
   await crdt.ready
   expect(await readService(db, 'schema')).toBe(oldSchema)
+})
+
+it('defines tables without the database', async () => {
+  let feeds = defineCrdtTable(
+    'feeds',
+    { categoryId: string(), title: string() },
+    ['categoryId']
+  )
+  expect(
+    feeds.created({ fields: { categoryId: 'A', title: 'T' }, id: 'F1' })
+  ).toEqual({
+    fields: { categoryId: 'A', title: 'T' },
+    id: 'F1',
+    type: 'feeds/created'
+  })
+  expect(feeds.changed.type).toBe('feeds/changed')
+  expect(feeds.deleted.match(feeds.deleted({ id: 'F1' }))).toBe(true)
+
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let feed = crdt.table(feeds)
+  let other = crdt.table(defineCrdtTable('other', { title: string() }), [
+    'title'
+  ])
+  await crdt.ready
+  expect(feed.plural).toBe('feeds')
+  expect(feed.schema).toBe(feeds.schema)
+  expect(other.plural).toBe('other')
+  let indexes = await db.driver.select(
+    'SELECT "name" FROM "sqlite_master"' +
+      ' WHERE "type" = ? AND "sql" IS NOT NULL ORDER BY "name"',
+    ['index']
+  )
+  expect(indexes.map(i => (i as { name: string }).name)).toEqual([
+    'feeds_categoryId',
+    'other_title'
+  ])
+
+  await client.log.add(
+    feeds.created({ fields: { categoryId: 'A', title: 'T' }, id: 'F1' }),
+    { sync: true }
+  )
+  await delay(10)
+  expect(withoutMeta(await loadList(feed.select()))).toEqual([
+    { categoryId: 'A', id: 'F1', title: 'T' }
+  ])
 })

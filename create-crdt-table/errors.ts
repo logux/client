@@ -5,10 +5,12 @@ import {
   bigint,
   boolean,
   createCrdtDatabase,
+  defineCrdtTable,
   json,
   number,
   oneOf,
   optional,
+  parseCrdtRows,
   string,
   withoutMeta
 } from './index.js'
@@ -125,7 +127,7 @@ let badDefault = { default: { views: '1' } }
 // THROWS No overload matches this call.
 crdt.table('badDefault', { meta: json({ views: number() }, badDefault) })
 
-// THROWS type: "BOOLEAN"; } & CrdtColumn<boolean, false>' is not assignable
+// THROWS No overload matches this call.
 crdt.table('bad', { isAdmin: boolean({ default: false }) })
 
 // THROWS Type '"missing"' is not assignable to type
@@ -149,3 +151,15 @@ if (pgValue.status === 'ready') {
 }
 
 test()
+
+let definedFeeds = defineCrdtTable('feeds', { title: string() })
+// THROWS Object literal may only specify known properties
+definedFeeds.created({ fields: { title: 'A', unknown: 1 }, id: 'F1' })
+for (let [, fields] of parseCrdtRows(
+  definedFeeds.created({ fields: { title: 'A' }, id: 'F1' })
+)) {
+  // THROWS Cannot assign to 'title' because it is a read-only property
+  fields.title = 'B'
+}
+// THROWS Argument of type 'CrdtTableDefinition<{ isAdmin: { type: "BOOLEAN"
+crdt.table(defineCrdtTable('flags', { isAdmin: boolean({ default: false }) }))
