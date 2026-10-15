@@ -8,6 +8,7 @@ export type StatusValue =
   | 'denied'
   | 'disconnected'
   | 'error'
+  | 'outdated'
   | 'protocolError'
   | 'receiving'
   | 'sending'
@@ -51,6 +52,10 @@ interface StatusOptions {
 /**
  * Low-level function to show Logux synchronization status with your custom UI.
  * It is used in {@link badge} widget.
+ *
+ * `outdated` means that the server has a newer subprotocol and does not
+ * support the client’s one. The user needs to reload the page
+ * to get the new client. `protocolError` is the same for Logux protocol.
  *
  * On `receiving` the details have the download progress:
  *

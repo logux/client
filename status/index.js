@@ -63,9 +63,12 @@ export function status(client, callback, options = {}) {
 
   unbind.push(
     client.node.on('error', e => {
-      if (e.type === 'wrong-protocol' || e.type === 'wrong-subprotocol') {
+      if (e.type === 'wrong-protocol') {
         error = true
         callback('protocolError')
+      } else if (e.type === 'wrong-subprotocol') {
+        error = true
+        callback('outdated')
       } else if (e.type === 'wrong-credentials') {
         error = true
         callback('wrongCredentials')

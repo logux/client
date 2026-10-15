@@ -78,7 +78,7 @@ export function badge(client, opts) {
         show(styles.disconnected, messages.disconnected)
       } else if (state === 'wait') {
         show(styles.wait, messages.wait)
-      } else if (state === 'protocolError') {
+      } else if (state === 'protocolError' || state === 'outdated') {
         show(styles.protocolError, messages.protocolError)
       } else if (state === 'syncError') {
         show(styles.error, messages.syncError)

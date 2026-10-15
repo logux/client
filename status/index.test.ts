@@ -190,7 +190,7 @@ it('notifies about old client', async () => {
 
   setState(test.client.node, 'disconnected')
 
-  expect(test.calls).toEqual(['disconnected', 'protocolError', 'protocolError'])
+  expect(test.calls).toEqual(['disconnected', 'protocolError', 'outdated'])
 })
 
 it('notifies about server error', async () => {
