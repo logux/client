@@ -292,9 +292,7 @@ export class IndexedStore {
       store.db = db
       db.onversionchange = function () {
         store.db.close()
-        if (typeof document !== 'undefined' && document.reload) {
-          document.reload()
-        }
+        if (typeof location !== 'undefined') location.reload()
       }
       return store
     })

@@ -6,18 +6,12 @@ import {
   type LogPage,
   type Meta
 } from '@logux/core'
-import { spyOn } from 'nanospy'
+import { restoreAll, spyOn } from 'nanospy'
 import { afterEach, expect, it } from 'vitest'
 
 import { IndexedStore } from '../index.js'
 
 type Entry = [Action, Meta]
-
-declare global {
-  interface Document {
-    reload: () => void
-  }
-}
 
 function privateMethods(obj: object): any {
   return obj
@@ -61,8 +55,7 @@ let store: IndexedStore | undefined
 afterEach(async () => {
   await store?.clean()
   store = undefined
-  // @ts-expect-error
-  delete document.reload
+  restoreAll()
 })
 
 eachStoreCheck((desc, creator) => {
@@ -90,8 +83,7 @@ it('allows to change DB name', async () => {
 })
 
 it('reloads page on database update', async () => {
-  document.reload = () => true
-  let reload = spyOn(document, 'reload')
+  let reload = spyOn(location, 'reload', () => {})
   store = new IndexedStore()
   await privateMethods(store).init()
   let opening = indexedDB.open(store.name, 1000)
