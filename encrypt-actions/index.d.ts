@@ -20,7 +20,6 @@ import type { Client } from '../client/index.js'
  * @param client Observed Client instance.
  * @param secret Password for encryption, or a CryptoKey AES key.
  * @param opts Encryption options.
- * @returns Unbind listener.
  */
 export function encryptActions(
   client: Client,
