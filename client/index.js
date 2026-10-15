@@ -464,6 +464,28 @@ export class Client {
     if (connect) void this.node.connection.connect()
   }
 
+  subscribe(channel, opts = {}) {
+    let action = { ...opts, channel, type: 'logux/subscribe' }
+    let processing = this.sync(action)
+    let unsubscribed = false
+    let subscription = () => {
+      if (unsubscribed) return
+      unsubscribed = true
+      // Wait for the server to not miss subscription, which is already sent.
+      // The same keys order as in subscription to find it on processing.
+      processing.then(
+        () => {
+          this.log.add({ ...action, type: 'logux/unsubscribe' }, { sync: true })
+        },
+        () => {}
+      )
+    }
+    subscription.loading = processing.then(() => {})
+    // Subscription can be used without waiting for the loading
+    subscription.loading.catch(() => {})
+    return subscription
+  }
+
   sync(action, meta = {}) {
     meta.sync = true
     if (typeof meta.id === 'undefined') {

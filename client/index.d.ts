@@ -1,4 +1,7 @@
-import type { AbstractActionCreator } from '@logux/actions'
+import type {
+  AbstractActionCreator,
+  LoguxSubscribeAction
+} from '@logux/actions'
 import type {
   Action,
   AnyAction,
@@ -141,6 +144,33 @@ export interface ClientOptions {
    * User ID.
    */
   userId: string
+}
+
+/**
+ * Subscription from {@link Client#subscribe}. Call it to unsubscribe.
+ * It is safe to call it at any time and twice.
+ *
+ * ```js
+ * let subscription = client.subscribe('users/1')
+ * subscription()
+ * ```
+ */
+export interface Subscription {
+  (): void
+
+  /**
+   * Resolves when the server processed the subscription
+   * and rejects with {@link LoguxUndoError} if the server undid it.
+   *
+   * ```js
+   * try {
+   *   await subscription.loading
+   * } catch (e) {
+   *   if (LoguxUndoError.is(e, 'notFound')) show404()
+   * }
+   * ```
+   */
+  loading: Promise<void>
 }
 
 /**
@@ -345,6 +375,27 @@ export class Client<
    * @param connect Start connection immediately.
    */
   start(connect?: boolean): void
+
+  /**
+   * Subscribe to the channel by `logux/subscribe` action.
+   *
+   * ```js
+   * let subscription = client.subscribe('users/1')
+   * await subscription.loading
+   * // Later
+   * subscription()
+   * ```
+   *
+   * Client will resubscribe on reconnection by itself.
+   *
+   * @param channel The channel name.
+   * @param opts Other `logux/subscribe` action fields, like `filter`.
+   * @returns Function to unsubscribe with `loading` promise.
+   */
+  subscribe(
+    channel: string,
+    opts?: Omit<LoguxSubscribeAction, 'channel' | 'type'>
+  ): Subscription
 
   /**
    * Send action to the server (by setting `meta.sync` and adding to the log)
