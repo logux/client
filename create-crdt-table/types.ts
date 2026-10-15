@@ -412,3 +412,20 @@ if (flagRows.status === 'ready') {
 
 let unbindEmpty = crdt.on('empty', () => {})
 unbindEmpty()
+
+let loadedFeed = await feedTable.get('F1')
+if (loadedFeed) {
+  let loadedTitle: string = loadedFeed.title
+  console.log(loadedTitle)
+}
+let loadedFeeds = await feedTable.load`WHERE "categoryId" = ${'A'}`
+let firstUrl: null | string = loadedFeeds[0]!.url
+console.log(firstUrl)
+let rowValue = feedTable.row('F1').get()
+if (rowValue.status === 'ready' && rowValue.value) {
+  let rowTitle: string = rowValue.value.title
+  console.log(rowTitle)
+}
+let counts = await crdt.select<{ count: number }>`SELECT COUNT(*) AS "count"`
+let count: number = counts[0]!.count
+console.log(count)

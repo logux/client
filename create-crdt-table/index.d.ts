@@ -7,7 +7,7 @@ import type {
   SyncMapTypes
 } from '@logux/actions'
 import type { Action, MetaTime } from '@logux/core'
-import type { Database, Driver, SqlStore } from '@nanostores/sql'
+import type { Database, Driver, SqlParam, SqlStore } from '@nanostores/sql'
 import type { Unsubscribe } from 'nanoevents'
 import type { ReadableAtom } from 'nanostores'
 
@@ -877,6 +877,37 @@ export interface CrdtTable<
   ): Promise<string[]>
 
   /**
+   * Load one row by ID once. Waits for {@link CrdtDatabase#ready}.
+   *
+   * ```ts
+   * let post = await posts.get(postId)
+   * ```
+   *
+   * @param id Row ID.
+   * @returns Row or `undefined` if there is no row with this ID.
+   */
+  get(id: string): Promise<CrdtTableRow<Schema> | undefined>
+
+  /**
+   * One-time SQL query to the table like {@link CrdtTable#select},
+   * which waits for {@link CrdtDatabase#ready} and parses
+   * {@link json} and {@link boolean} columns.
+   *
+   * ```ts
+   * let list = await posts.load`ORDER BY "publishedAt" DESC`
+   * ```
+   *
+   * @param sql SQL template after `SELECT "table".* FROM "table"`.
+   *            Omit to load all rows.
+   * @param params Interpolated template values.
+   * @returns Rows of the table.
+   */
+  load(
+    sql?: TemplateStringsArray,
+    ...params: CrdtSqlParam<Dialect>[]
+  ): Promise<CrdtTableRow<Schema>[]>
+
+  /**
    * Database driver for raw queries to the table,
    * like in {@link crdtTableToActions}.
    */
@@ -906,6 +937,24 @@ export interface CrdtTable<
    * Column definitions of the table.
    */
   readonly schema: Schema
+
+  /**
+   * Reactive store of one row by ID. Unlike `select` with `WHERE "id"`,
+   * the value is the row itself, and `undefined` means a missing row,
+   * not loading.
+   *
+   * ```ts
+   * let $post = posts.row(postId)
+   * $post.subscribe(value => {
+   *   if (value.status === 'loading') return
+   *   if (value.value) render(value.value) else renderNotFound()
+   * })
+   * ```
+   *
+   * @param id Row ID.
+   * @returns Store with the row or `undefined` for missing row.
+   */
+  row(id: string): SqlStore<CrdtTableRow<Schema> | undefined>
 
   /**
    * Reactive SQL query to the table. Use it as a template string tag
@@ -1315,6 +1364,29 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
    * ```
    */
   readonly ready: Promise<void>
+
+  /**
+   * One-time raw SQL query for joins and aggregates, which waits
+   * for {@link CrdtDatabase#ready}, so it never reads half-filled tables
+   * during the migration.
+   *
+   * It does not parse {@link json} and {@link boolean} columns,
+   * use {@link CrdtTable#parseRow} for them.
+   *
+   * ```ts
+   * let unread = await crdt.select<{ count: number }>`
+   *   SELECT COUNT(*) AS "count" FROM "posts" WHERE "read" = ${0}
+   * `
+   * ```
+   *
+   * @param sql SQL template.
+   * @param params Interpolated template values.
+   * @returns Rows from the database driver.
+   */
+  select<Row = unknown>(
+    sql: TemplateStringsArray,
+    ...params: SqlParam[]
+  ): Promise<Row[]>
 
   /**
    * Database preparing status:

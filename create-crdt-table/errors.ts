@@ -167,3 +167,15 @@ async function where(): Promise<void> {
   await whereFeeds.deleteWhere`"title" = ${true}`
 }
 where()
+
+async function reads(): Promise<void> {
+  let missing = await whereFeeds.get('F1')
+  // THROWS 'missing' is possibly 'undefined'
+  console.log(missing.title)
+  let row = whereFeeds.row('F1').get()
+  if (row.status === 'ready') {
+    // THROWS 'row.value' is possibly 'undefined'
+    console.log(row.value.title)
+  }
+}
+reads()

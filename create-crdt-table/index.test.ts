@@ -4655,3 +4655,98 @@ it('deletes and changes rows by condition', async () => {
     'feed/deleted'
   ])
 })
+
+it('loads rows once', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let post = crdt.table('post', {
+    media: json([string()]),
+    read: boolean({ default: false }),
+    title: string()
+  })
+  await crdt.ready
+  await post.create([
+    { id: 'P1', media: ['a'], title: 'A' },
+    { id: 'P2', media: [], read: true, title: 'B' }
+  ])
+
+  expect(withoutMeta(await post.load`ORDER BY "id" DESC`)).toEqual([
+    { id: 'P2', media: [], read: true, title: 'B' },
+    { id: 'P1', media: ['a'], read: false, title: 'A' }
+  ])
+  expect(withoutMeta(await post.load`WHERE "read" = ${1}`)).toEqual([
+    { id: 'P2', media: [], read: true, title: 'B' }
+  ])
+  expect((await post.load()).map(i => i.id).sort()).toEqual(['P1', 'P2'])
+  expect(withoutMeta([(await post.get('P1'))!])[0]).toEqual({
+    id: 'P1',
+    media: ['a'],
+    read: false,
+    title: 'A'
+  })
+  expect(await post.get('missing')).toBeUndefined()
+  expect(await crdt.select`SELECT COUNT(*) AS "count" FROM "post"`).toEqual([
+    { count: 2 }
+  ])
+})
+
+it('waits for migration in one-time reads', async () => {
+  let db = openSilentDb(nodeDriver(':memory:'))
+  await prepareOldTables(db, { title: string() }, [{ id: 'P1', title: 'A' }])
+
+  let { client } = await setup()
+  let finishRepeat: () => void = () => {}
+  let crdt = createCrdtDatabase(client, db, {
+    repeat() {
+      return new Promise<[]>(resolve => {
+        finishRepeat = () => {
+          resolve([])
+        }
+      })
+    }
+  })
+  let post = crdt.table('post', { title: string(), views: optional(number()) })
+  let loading = post.load()
+  let getting = post.get('P1')
+  let counting = crdt.select`SELECT COUNT(*) AS "count" FROM "post"`
+  while (crdt.status.get() !== 'migrating') await delay(1)
+  finishRepeat()
+  expect(withoutMeta(await loading)).toEqual([
+    { id: 'P1', title: 'A', views: null }
+  ])
+  expect((await getting)?.title).toBe('A')
+  expect(await counting).toEqual([{ count: 1 }])
+})
+
+it('has reactive row', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let post = crdt.table('post', { media: json([string()]), title: string() })
+  await crdt.ready
+  await post.create({ id: 'P1', media: ['a'], title: 'A' })
+
+  let $post = post.row('P1')
+  let $missing = post.row('missing')
+  let values: unknown[] = []
+  $post.subscribe(value => {
+    values.push(
+      value.status === 'ready' && value.value
+        ? withoutMeta([value.value])[0]
+        : value
+    )
+  })
+  expect(values).toEqual([{ status: 'loading' }])
+  await loadValue($post)
+  expect(await loadValue($missing)).toEqual({
+    status: 'ready',
+    value: undefined
+  })
+  await post.update('P1', { title: 'B' })
+  await delay(10)
+  expect(values).toEqual([
+    { status: 'loading' },
+    { id: 'P1', media: ['a'], title: 'A' },
+    { id: 'P1', media: ['a'], title: 'B' }
+  ])
+  await $post.loading
+})

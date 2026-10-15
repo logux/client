@@ -68,6 +68,15 @@ function fromDb(col, value) {
   return value
 }
 
+function mapStore(store, map) {
+  let mapped = computed(store, value => {
+    if (value.status !== 'ready') return value
+    return { status: 'ready', value: map(value.value) }
+  })
+  mapped.loading = store.loading
+  return mapped
+}
+
 function isConverted(col) {
   return col.type === 'JSON' || col.type === 'BOOLEAN'
 }
@@ -1113,6 +1122,10 @@ export function createCrdtDatabase(client, db, opts = {}) {
       }
     },
     clean: cleanTables,
+    async select(sql, ...params) {
+      await ready
+      return db.select(sql, ...params)
+    },
     async destroy() {
       stopApplying('The database was stopped')
       lockRequest.abort()
@@ -1163,6 +1176,13 @@ export function createCrdtDatabase(client, db, opts = {}) {
           if (key in row) parsed[key] = fromDb(schema[key], row[key])
         }
         return parsed
+      }
+
+      function selectParts(template) {
+        let prefix = `SELECT "${plural}".* FROM "${plural}"`
+        return template
+          ? [`${prefix} ${template[0]}`, ...template.slice(1)]
+          : [prefix]
       }
 
       // Rows, which match the condition right now. Rows created later
@@ -1235,6 +1255,15 @@ export function createCrdtDatabase(client, db, opts = {}) {
             )
           )
         },
+        async get(id) {
+          let rows = await table.load(['WHERE "id" = ', ''], id)
+          return rows[0]
+        },
+        async load(template, ...params) {
+          await ready
+          let rows = await db.select(selectParts(template), ...params)
+          return rows.map(parseRow)
+        },
         async deleteWhere(template, ...params) {
           let ids = await idsWhere(template, params)
           await table.delete(ids)
@@ -1244,21 +1273,18 @@ export function createCrdtDatabase(client, db, opts = {}) {
         parseRow,
         plural,
         schema,
+        row(id) {
+          return mapStore(
+            db.store(selectParts(['WHERE "id" = ', '']), id),
+            rows => (rows.length > 0 ? parseRow(rows[0]) : undefined)
+          )
+        },
         select(template, ...params) {
-          let prefix = `SELECT "${plural}".* FROM "${plural}"`
-          let parts = template
-            ? [`${prefix} ${template[0]}`, ...template.slice(1)]
-            : [prefix]
-          let store = db.store(parts, ...params)
+          let store = db.store(selectParts(template), ...params)
           if (converted.length === 0) return store
           // The driver returns JSON and boolean columns as they are stored,
           // so the rows are parsed on the way to the app
-          let parsed = computed(store, value => {
-            if (value.status !== 'ready') return value
-            return { status: 'ready', value: value.value.map(parseRow) }
-          })
-          parsed.loading = store.loading
-          return parsed
+          return mapStore(store, rows => rows.map(parseRow))
         },
         async update(id, diff) {
           let batch = Array.isArray(id)
