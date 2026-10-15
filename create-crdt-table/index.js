@@ -913,16 +913,20 @@ export function createCrdtDatabase(client, db, opts = {}) {
       }
     }
 
+    // In-memory database is empty on every start, so the marks
+    // in the storage would report every start as a lost database
+    let persistent = driver.persistent ? await driver.persistent() : true
+
     // Actions are in the memory between the drop of the tables and the end
     // of the replay, so the tab, which was closed in the middle, lost them
-    if (storage[migratingKey]) {
+    if (persistent && storage[migratingKey]) {
       delete storage[migratingKey]
       corrupted('interrupted-migration')
     }
 
     // The schema hash in the storage says nothing about the file, which
     // the driver opened, so the database keeps its own copy of it
-    let old = storage[storageKey]
+    let old = persistent ? storage[storageKey] : undefined
     let stored
     let storedSubprotocol
     await inTransaction(async tx => {
@@ -961,7 +965,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
       compared()
       // The database survived the cleaned storage, so only the copy
       // of the hash has to be restored
-      if (old !== hash) storage[storageKey] = hash
+      if (persistent && old !== hash) storage[storageKey] = hash
       // Every statement pays for the write on its own, so the whole schema
       // is created in a single transaction
       await inTransaction(async tx => {
@@ -1015,7 +1019,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
       }
       // The log is read from the newest action to the oldest
       entries.reverse()
-      if (stored) storage[migratingKey] = '1'
+      if (persistent && stored) storage[migratingKey] = '1'
       // Tables, which were removed from the schema, are dropped too.
       // A single transaction both saves the write for every statement
       // and keeps the old tables on an error
@@ -1058,8 +1062,10 @@ export function createCrdtDatabase(client, db, opts = {}) {
         await writeService(tx.driver, 'version', `${LOGUX_CRDT_TABLE_VERSION}`)
         await writeService(tx.driver, 'subprotocol', subprotocol)
       })
-      storage[storageKey] = hash
-      delete storage[migratingKey]
+      if (persistent) {
+        storage[storageKey] = hash
+        delete storage[migratingKey]
+      }
       becomeReady()
     }
   })

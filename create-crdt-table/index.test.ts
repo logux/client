@@ -214,9 +214,18 @@ async function columnTypes(
 function openSilentDb<DBDriver extends Driver>(
   driver: DBDriver
 ): Database<DBDriver> {
-  let db = openDb(driver)
+  let db = openDb(persistentDriver(driver))
   db.on('error', () => {})
   return db
+}
+
+/**
+ * Tests use in-memory databases, but most of them check the database file,
+ * which keeps the data between starts.
+ */
+function persistentDriver<DBDriver extends Driver>(driver: DBDriver): DBDriver {
+  driver.persistent = () => Promise.resolve(true)
+  return driver
 }
 
 async function setup(): Promise<{
@@ -1354,7 +1363,7 @@ it('replays restored actions into the same tables', async () => {
       time: meta.time
     })
   }
-  let db2 = openDb(nodeDriver(':memory:'))
+  let db2 = openDb(persistentDriver(nodeDriver(':memory:')))
   let crdt2 = createCrdtDatabase(client2, db2, { key: 'logux:db2' })
   crdt2.table('user', USER_SCHEMA)
   await crdt2.ready
@@ -3061,7 +3070,7 @@ it('applies repeated created and deleted actions', async () => {
   expect(await loadList(user.select())).toEqual([])
 })
 it('applies actions in the transaction of SQL log store', async () => {
-  let db = openDb(nodeDriver(':memory:'))
+  let db = openDb(persistentDriver(nodeDriver(':memory:')))
   let store = new SqlLogStore(db)
   let client = new Client({
     server: 'ws://localhost',
@@ -3285,7 +3294,7 @@ it('does not send table actions to the server with sync: false', async () => {
 })
 
 it('does not put applied actions from the server to the log', async () => {
-  let db = openDb(nodeDriver(':memory:'))
+  let db = openDb(persistentDriver(nodeDriver(':memory:')))
   let store = new SqlLogStore(db)
   let client = new Client({
     server: 'ws://localhost',
@@ -3325,7 +3334,7 @@ it('does not put applied actions from the server to the log', async () => {
 })
 
 it('does not add reason to actions applied in the log transaction', async () => {
-  let db = openDb(nodeDriver(':memory:'))
+  let db = openDb(persistentDriver(nodeDriver(':memory:')))
   let store = new SqlLogStore(db)
   let client = new Client({
     server: 'ws://localhost',
@@ -3364,7 +3373,7 @@ it('does not add reason to actions applied in the log transaction', async () => 
 })
 
 it('does not write local-only actions to the log in the same database', async () => {
-  let db = openDb(nodeDriver(':memory:'))
+  let db = openDb(persistentDriver(nodeDriver(':memory:')))
   let store = new SqlLogStore(db)
   let client = new Client({
     server: 'ws://localhost',
@@ -3400,7 +3409,7 @@ it('does not write local-only actions to the log in the same database', async ()
 })
 
 it('keeps reason on actions of outdated database', async () => {
-  let db = openDb(nodeDriver(':memory:'))
+  let db = openDb(persistentDriver(nodeDriver(':memory:')))
   let store = new SqlLogStore(db)
   let client = new Client({
     server: 'ws://localhost',
@@ -3601,7 +3610,7 @@ it('does not fill tables back by actions applied during clean()', async () => {
 })
 
 it('does not fill tables back by actions of SQL log store', async () => {
-  let db = openDb(nodeDriver(':memory:'))
+  let db = openDb(persistentDriver(nodeDriver(':memory:')))
   let store = new SqlLogStore(db)
   let client = new Client({
     server: 'ws://localhost',
@@ -3857,7 +3866,7 @@ it('ignores the error of the task, which was destroyed', async () => {
 })
 
 it('writes to the log from the applied event', async () => {
-  let db = openDb(nodeDriver(':memory:'))
+  let db = openDb(persistentDriver(nodeDriver(':memory:')))
   let client = new Client({
     server: 'ws://localhost',
     store: new SqlLogStore(db),
@@ -4043,7 +4052,7 @@ it('reports the database, which the storage does not describe', async () => {
   crdt1.destroy()
 
   // The browser dropped the file of the origin, but kept `localStorage`
-  let another = openDb(nodeDriver(':memory:'))
+  let another = openDb(persistentDriver(nodeDriver(':memory:')))
 
   let reasons: CrdtCorruption[] = []
   let crdt2 = createCrdtDatabase(client, another)
@@ -4812,4 +4821,34 @@ it('resolves checked after schema comparison', async () => {
     'migrating',
     'ready'
   ])
+})
+
+it('does not report lost in-memory database', async () => {
+  let { client } = await setup()
+  await client.log.add(
+    { fields: { name: 'Ann' }, id: 'U1', type: 'user/created' },
+    { reasons: ['test'] }
+  )
+  localStorage.setItem('logux:db', 'old')
+  localStorage.setItem('logux:db:migrating', '1')
+
+  async function start(): Promise<CrdtCorruption[]> {
+    let memory = openDb(nodeDriver(':memory:'))
+    let reasons: CrdtCorruption[] = []
+    let crdt = createCrdtDatabase(client, memory)
+    crdt.on('corrupted', reason => {
+      reasons.push(reason)
+    })
+    let user = crdt.table('user', USER_SCHEMA)
+    await crdt.ready
+    expect((await user.load()).map(i => i.name)).toEqual(['Ann'])
+    await crdt.destroy()
+    return reasons
+  }
+
+  expect(await start()).toEqual([])
+  expect(await start()).toEqual([])
+  // The marks are not changed by in-memory database
+  expect(localStorage.getItem('logux:db')).toBe('old')
+  expect(localStorage.getItem('logux:db:migrating')).toBe('1')
 })

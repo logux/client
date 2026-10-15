@@ -1139,6 +1139,8 @@ export interface CrdtDatabaseOptions<Dialect extends string = 'sqlite'> {
  *   between the drop of the tables and the end of the replay.
  * - `lost-database`: the data is gone. The client did not find the database
  *   it was using before: the file was lost or replaced by an empty one.
+ *   It is not reported for in-memory databases (`db.driver.persistent()`
+ *   returns `false`), which are empty on every start.
  * - `timeout`: the database did not answer in
  *   {@link CrdtDatabaseOptions#timeout}.
  */
