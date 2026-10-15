@@ -85,7 +85,8 @@ export interface ClientOptions {
    * lower than the current one: to received actions and to entries read
    * from the log store.
    *
-   * The stored entries are not rewritten.
+   * The stored entries are not rewritten. Client saves the current
+   * subprotocol to `meta.subprotocol` of every added action without it.
    *
    * ```js
    * new CrossTabClient({

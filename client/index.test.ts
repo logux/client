@@ -509,13 +509,19 @@ it('adds current subprotocol to meta', async () => {
   expect(client.log.entries()[0]![1].subprotocol).toBe(10)
 })
 
-it('adds current subprotocol only to own actions', async () => {
+it('adds current subprotocol to actions without it', async () => {
   let client = createClient()
   await client.log.add(
     { type: 'A' },
     { id: '0 0:client:other', reasons: ['test'] }
   )
-  expect(client.log.entries()[0]![1].subprotocol).toBeUndefined()
+  await client.log.add(
+    { type: 'B' },
+    { id: '1 0:client:other', reasons: ['test'], subprotocol: 0 }
+  )
+  expect(client.log.entries().map(([, meta]) => meta.subprotocol)).toEqual([
+    10, 0
+  ])
 })
 
 it('allows to override subprotocol in meta', async () => {
@@ -1058,6 +1064,32 @@ it('converts old received actions', async () => {
     { type: 'b' }
   ])
   expect(client.node.lastReceived).toBe(3)
+})
+
+it('converts received actions without subprotocol after upgrade', async () => {
+  let store = new MemoryStore()
+  let old = await createDialog({ store, subprotocol: 9 })
+  getPair(old).right.send([
+    'sync',
+    1,
+    { type: 'a' },
+    { id: '1 server:x', reasons: ['test'], time: 1 }
+  ])
+  await delay(10)
+  old.destroy()
+
+  let client = new Client({
+    migrations: MIGRATIONS,
+    server: 'wss://localhost:1337',
+    store,
+    subprotocol: 10,
+    userId: '10'
+  })
+  created.push(client as Client<object, TestLog>)
+  expect(await client.log.byId('1 server:x')).toEqual([
+    { type: 'a', version: 10 },
+    expect.objectContaining({ subprotocol: 10 })
+  ])
 })
 
 it('converts old actions on reading from the log', async () => {

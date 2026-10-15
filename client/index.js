@@ -180,7 +180,7 @@ export class Client {
     let unsubscribing = {}
 
     log.on('preadd', (action, meta) => {
-      if (fromNode(meta.id, this.nodeId) && !meta.subprotocol) {
+      if (meta.subprotocol === undefined) {
         meta.subprotocol = this.options.subprotocol
       }
 

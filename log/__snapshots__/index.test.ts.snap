@@ -30,7 +30,7 @@ exports[`prints log 1`] = `
 [33m[1mLogux[22m[39m subscribed to [1musers/1[22m channel by server
 [33m[1mLogux[22m[39m added [32m[1mA[22m[39m action
   Action {"type":"A"}
-  Meta {"id":"1 server:uuid","sync":true,"time":5,"reasons":["syncing"],"added":4}
+  Meta {"id":"1 server:uuid","sync":true,"time":5,"reasons":["syncing"],"subprotocol":10,"added":4}
   From: [1mserver:uuid[22m
 [33m[1mLogux[22m[39m subscribed to [1musers[22m channel
   Processed Action {"channel":"users","type":"logux/subscribe"}
