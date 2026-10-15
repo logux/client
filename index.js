@@ -1,6 +1,6 @@
 export { attention } from './attention/index.js'
 export { badge, badgeEn, badgeRu } from './badge/index.js'
-export { Client } from './client/index.js'
+export { Client, migrateAction } from './client/index.js'
 export { confirm } from './confirm/index.js'
 export { createAuth } from './create-auth/index.js'
 export { createClientStore } from './create-client-store/index.js'

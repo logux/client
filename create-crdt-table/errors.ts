@@ -106,6 +106,9 @@ async function test(): Promise<void> {
     // THROWS Type '"medium" | "small" | null | undefined' is not assignable
     let size: 'medium' | 'small' = notes.value[0]!.meta.size
     console.log(size)
+    // THROWS Type 'number | null | undefined' is not assignable to type 'n
+    let score: number | undefined = notes.value[0]!.scores[0]
+    console.log(score)
   }
 }
 
@@ -114,6 +117,7 @@ let note = crdt.table('note', {
     size: optional(oneOf(['medium', 'small'])),
     views: number()
   }),
+  scores: json([optional(number())]),
   tags: json([string()])
 })
 

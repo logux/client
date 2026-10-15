@@ -9,6 +9,7 @@ export class TestClient extends Client {
     let pair = new TestPair()
     super({
       attempts: 0,
+      migrations: opts.migrations,
       server: pair.left,
       subprotocol: opts.subprotocol || 0,
       time: server.time,

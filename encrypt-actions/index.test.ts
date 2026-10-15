@@ -3,7 +3,7 @@ import { delay } from 'nanodelay'
 import { TextDecoder, TextEncoder } from 'node:util'
 import { afterEach, expect, it } from 'vitest'
 
-import { Client, encryptActions } from '../index.js'
+import { Client, type ClientOptions, encryptActions } from '../index.js'
 import { getRandomSpaces } from './index.js'
 
 window.TextEncoder = TextEncoder
@@ -24,11 +24,12 @@ function deviation(array: Record<any, number>, runs: number): number {
 
 const BYTES = expect.any(Uint8Array)
 
-function createClient(): Client {
+function createClient(opts: Partial<ClientOptions> = {}): Client {
   let pair = new TestPair()
   let client = new Client({
+    ...opts,
     server: pair.left,
-    subprotocol: 10,
+    subprotocol: opts.subprotocol ?? 10,
     time: new TestTime(),
     userId: '10'
   })
@@ -440,5 +441,28 @@ it('compresses long actions', async () => {
   await delay(100)
   expect(privateMethods(client2.log).actions()).toEqual([
     { type: 'sync', value: long }
+  ])
+})
+
+it('converts old actions after decryption', async () => {
+  let client1 = createClient({ subprotocol: 9 })
+  let client2 = createClient({
+    migrations: {
+      10: action => ({ ...action, value: `${String(action.value)} v10` })
+    }
+  })
+  encryptActions(client1, 'password')
+  encryptActions(client2, 'password')
+  await Promise.all([connect(client1), connect(client2)])
+  getPair(client1).clear()
+
+  client1.log.add({ type: 'sync', value: 'secret' }, { sync: true })
+  await delay(50)
+  let message = privateMethods(getPair(client1).leftSent[0])
+  message[3] = { ...message[3], id: '1 10:other:1', subprotocol: 9 }
+  getPair(client2).right.send(message)
+  await delay(100)
+  expect(privateMethods(client2.log).actions()).toEqual([
+    { type: 'sync', value: 'secret v10' }
   ])
 })

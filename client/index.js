@@ -43,6 +43,55 @@ function isEqual(obj1, obj2) {
   return JSON.stringify(obj1) === JSON.stringify(obj2)
 }
 
+export function migrateAction(action, meta, migrations, subprotocol) {
+  let from = meta.subprotocol ?? 0
+  // Integer keys of the object are always iterated in ascending order
+  for (let key in migrations) {
+    let version = Number(key)
+    if (version > from && version <= subprotocol) {
+      action = migrations[key](action, meta)
+      if (!action) return undefined
+    }
+  }
+  return action
+}
+
+function migrateEntry(client, action, meta) {
+  let subprotocol = client.options.subprotocol
+  if (meta.subprotocol === undefined || meta.subprotocol >= subprotocol) {
+    return [action, meta]
+  }
+  let migrated = migrateAction(
+    action,
+    meta,
+    client.options.migrations,
+    subprotocol
+  )
+  if (!migrated) return false
+  return [migrated, { ...meta, subprotocol }]
+}
+
+function migrateStore(client, store) {
+  let originGet = store.get.bind(store)
+  let originById = store.byId.bind(store)
+  function migratePage(page) {
+    let entries = []
+    for (let [action, meta] of page.entries) {
+      let entry = migrateEntry(client, action, meta)
+      if (entry) entries.push(entry)
+    }
+    let result = { ...page, entries }
+    if (page.next) result.next = async () => migratePage(await page.next())
+    return result
+  }
+  // TODO: Replace with Log.onRead on next Logux Core release
+  store.get = async (...args) => migratePage(await originGet(...args))
+  store.byId = async id => {
+    let [action, meta] = await originById(id)
+    return (action && migrateEntry(client, action, meta)) || [null, null]
+  }
+}
+
 function unsubscribeChannel(client, unsubscribe) {
   let json = JSON.stringify({ ...unsubscribe, type: 'logux/subscribe' })
   let subscribers = client.subscriptions[json]
@@ -115,6 +164,7 @@ export class Client {
 
     this.nodeId = toNodeId(this)
     let store = this.options.store || new MemoryStore()
+    if (this.options.migrations) migrateStore(this, store)
 
     let log
     if (this.options.time) {
@@ -273,6 +323,9 @@ export class Client {
 
     this.node = new ClientNode(this.nodeId, this.log, connection, {
       fixTime: !this.options.time,
+      onReceive: this.options.migrations
+        ? async (action, meta) => migrateEntry(this, action, meta)
+        : undefined,
       onSend,
       ping: this.options.ping,
       ready: resubscribe,

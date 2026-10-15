@@ -10,7 +10,12 @@ import { delay } from 'nanodelay'
 import { restoreAll, spyOn } from 'nanospy'
 import { afterEach, beforeAll, beforeEach, expect, it } from 'vitest'
 
-import { Client, type ClientOptions } from '../index.js'
+import {
+  type ActionMigrations,
+  Client,
+  type ClientOptions,
+  migrateAction
+} from '../index.js'
 import { setLocalStorage } from '../test/local-storage.js'
 
 type Events = {
@@ -1018,4 +1023,216 @@ it('works with unsubscribe in offline', async () => {
     ],
     ['ready', 6]
   ])
+})
+
+const MIGRATIONS: ClientOptions['migrations'] = {
+  10: action => {
+    if (action.type === 'removed') return undefined
+    return { ...action, version: 10 }
+  }
+}
+
+it('converts old received actions', async () => {
+  let client = await createDialog({ migrations: MIGRATIONS })
+  let added: [Action, number | undefined][] = []
+  client.on('add', (action, meta) => {
+    added.push([action, meta.subprotocol])
+  })
+  getPair(client).right.send([
+    'sync',
+    3,
+    { type: 'a' },
+    { id: '1 server:x', subprotocol: 9, time: 1 },
+    { type: 'removed' },
+    { id: '2 server:x', subprotocol: 9, time: 1 },
+    { type: 'b' },
+    { id: '3 server:x', subprotocol: 10, time: 1 }
+  ])
+  await delay(10)
+  expect(added).toEqual([
+    [{ type: 'a', version: 10 }, 10],
+    [{ type: 'b' }, 10]
+  ])
+  expect(client.log.actions()).toEqual([
+    { type: 'a', version: 10 },
+    { type: 'b' }
+  ])
+  expect(client.node.lastReceived).toBe(3)
+})
+
+it('converts old actions on reading from the log', async () => {
+  let store = new MemoryStore()
+  await store.add([
+    [
+      { type: 'a' },
+      { added: 0, id: '1 10:1:1', reasons: ['test'], subprotocol: 9, time: 1 }
+    ],
+    [
+      { type: 'removed' },
+      { added: 0, id: '2 10:1:1', reasons: ['test'], subprotocol: 9, time: 2 }
+    ],
+    [
+      { type: 'b' },
+      { added: 0, id: '3 10:1:1', reasons: ['test'], subprotocol: 10, time: 3 }
+    ],
+    [{ type: 'c' }, { added: 0, id: '4 server:x', reasons: ['test'], time: 4 }]
+  ])
+  let client = new Client({
+    migrations: MIGRATIONS,
+    server: 'wss://localhost:1337',
+    store,
+    subprotocol: 10,
+    userId: '10'
+  })
+  created.push(client as Client<object, TestLog>)
+
+  let read: [Action, number | undefined][] = []
+  await client.log.each((action, meta) => {
+    read.push([action, meta.subprotocol])
+  })
+  expect(read).toEqual([
+    [{ type: 'c' }, undefined],
+    [{ type: 'b' }, 10],
+    [{ type: 'a', version: 10 }, 10]
+  ])
+
+  expect(await client.log.byId('1 10:1:1')).toEqual([
+    { type: 'a', version: 10 },
+    expect.objectContaining({ subprotocol: 10 })
+  ])
+  expect(await client.log.byId('2 10:1:1')).toEqual([null, null])
+  expect(await client.log.byId('5 10:1:1')).toEqual([null, null])
+  let page = await client.log.store.get({ order: 'added' })
+  expect(page.entries.map(i => i[0].type)).toEqual(['a', 'b', 'c'])
+
+  // The store keeps the original actions
+  expect(store.entries.map(i => [i[0], i[1].subprotocol])).toEqual([
+    [{ type: 'a' }, 9],
+    [{ type: 'removed' }, 9],
+    [{ type: 'b' }, 10],
+    [{ type: 'c' }, undefined]
+  ])
+})
+
+it('converts old actions on every page of the log', async () => {
+  let store = new MemoryStore()
+  let originGet = store.get.bind(store)
+  store.get = async opts => {
+    let page = await originGet(opts)
+    return {
+      entries: page.entries.slice(0, 1),
+      next: () => Promise.resolve({ entries: page.entries.slice(1) })
+    }
+  }
+  await store.add([
+    [
+      { type: 'a' },
+      { added: 0, id: '1 10:1:1', reasons: ['test'], subprotocol: 9, time: 1 }
+    ],
+    [
+      { type: 'b' },
+      { added: 0, id: '2 10:1:1', reasons: ['test'], subprotocol: 9, time: 2 }
+    ]
+  ])
+  let client = new Client({
+    migrations: MIGRATIONS,
+    server: 'wss://localhost:1337',
+    store,
+    subprotocol: 10,
+    userId: '10'
+  })
+  created.push(client as Client<object, TestLog>)
+  let read: Action[] = []
+  await client.log.each(action => {
+    read.push(action)
+  })
+  expect(read).toEqual([
+    { type: 'a', version: 10 },
+    { type: 'b', version: 10 }
+  ])
+})
+
+it('sends unsent old actions in the new format', async () => {
+  let store = new MemoryStore()
+  await store.add([
+    [
+      { type: 'a' },
+      {
+        added: 0,
+        id: '1 10:client:id',
+        reasons: ['syncing'],
+        subprotocol: 9,
+        sync: true,
+        time: 1
+      }
+    ]
+  ])
+  let client = await createDialog({ migrations: MIGRATIONS, store })
+  await delay(10)
+  expect(getPair(client).leftSent).toContainEqual([
+    'sync',
+    1,
+    { type: 'a', version: 10 },
+    { id: '1 10:client:id', time: 1 }
+  ])
+})
+
+function step(action: Action, version: number): Action {
+  let { steps = [] } = action as { steps?: number[] }
+  return { ...action, steps: [...steps, version] } as Action
+}
+
+const STEPS: ActionMigrations = {
+  1: action => step(action, 1),
+  2: action => {
+    if (action.type === 'old') return undefined
+    return step(action, 2)
+  },
+  10: action => step(action, 10)
+}
+
+it('applies migrations in order', () => {
+  expect(migrateAction({ type: 'a' }, { subprotocol: 0 }, STEPS, 10)).toEqual({
+    steps: [1, 2, 10],
+    type: 'a'
+  })
+})
+
+it('applies only migrations after the action’s subprotocol', () => {
+  let migrated: Action = { steps: [1], type: 'a' } as Action
+  expect(migrateAction(migrated, { subprotocol: 1 }, STEPS, 2)).toEqual({
+    steps: [1, 2],
+    type: 'a'
+  })
+  let action: Action = { type: 'a' }
+  expect(migrateAction(action, { subprotocol: 10 }, STEPS, 10)).toBe(action)
+})
+
+it('takes missing subprotocol as 0', () => {
+  expect(migrateAction({ type: 'a' }, {}, STEPS, 1)).toEqual({
+    steps: [1],
+    type: 'a'
+  })
+})
+
+it('drops actions', () => {
+  expect(
+    migrateAction({ type: 'old' }, { subprotocol: 0 }, STEPS, 10)
+  ).toBeUndefined()
+})
+
+it('passes meta to migrations', () => {
+  let metas: unknown[] = []
+  migrateAction(
+    { type: 'a' },
+    { id: '1 10:1:1', subprotocol: 0 },
+    {
+      1: (action, meta) => {
+        metas.push(meta)
+        return action
+      }
+    },
+    1
+  )
+  expect(metas).toEqual([{ id: '1 10:1:1', subprotocol: 0 }])
 })

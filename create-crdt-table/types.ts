@@ -75,6 +75,7 @@ let user = crdt.table(
       },
       { default: { fontSize: 14, theme: 'dark' } }
     ),
+    scores: json([optional(number())], { default: () => [] }),
     tags: json([string()], { default: () => [] }),
     theme: string<'dark' | 'light'>({ default: 'dark' })
   },
@@ -111,6 +112,7 @@ async function test(): Promise<void> {
     name: 'Ann',
     publishedAt: Date.now(),
     role: 'admin',
+    scores: [1, null],
     settings: {
       fontSize: 16,
       notifications: { email: true, push: false },

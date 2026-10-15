@@ -2,8 +2,10 @@ import { defineAction } from '@logux/actions'
 import {
   type Action,
   type AnyAction,
-  toSorted,
-  type MetaTime
+  MemoryStore,
+  type MetaTime,
+  TestPair,
+  toSorted
 } from '@logux/core'
 import type {
   Database,
@@ -19,6 +21,7 @@ import { cleanStores } from 'nanostores'
 import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 
 import {
+  type ActionMigrations,
   Client,
   type ClientMeta,
   loadValue,
@@ -31,12 +34,14 @@ import {
   boolean,
   type CrdtCell,
   type CrdtCorruption,
+  type CrdtDatabase,
   type CrdtTable,
   type CrdtTableRow,
   createCrdtDatabase,
   createCrdtTasks,
   crdtTableToActions,
   json,
+  mapCrdtFields,
   number,
   oneOf,
   optional,
@@ -1878,7 +1883,9 @@ it('creates indexes after replaying the log on migration', async () => {
     'CREATE TABLE',
     'INSERT INTO',
     'CREATE INDEX',
-    // The hash and the version are written after the successful replay
+    // The hash, the version and the subprotocol are written
+    // after the successful replay
+    'INSERT INTO',
     'INSERT INTO',
     'INSERT INTO'
   ])
@@ -2470,7 +2477,8 @@ it('generates SQL with dialect-specific and extra column SQL', async () => {
       '"updatedAt_pinned" TEXT, ' +
       '"updatedAt_postedAt" TEXT, ' +
       '"updatedAt_quote" TEXT)',
-    // The schema hash and the tables format version of this database
+    // The schema hash, the tables format version and the subprotocol
+    WRITE_SERVICE_SQL,
     WRITE_SERVICE_SQL,
     WRITE_SERVICE_SQL
   ])
@@ -4123,4 +4131,214 @@ it('does not report the tables, which were cleaned with the client', async () =>
   expect(reasons).toEqual([])
 
   crdt2.destroy()
+})
+
+it('changes fields of table actions of any shape', () => {
+  function upper(fields: Record<string, unknown>): Record<string, unknown> {
+    return { ...fields, name: String(fields.name).toUpperCase() }
+  }
+  let single = { fields: { name: 'a' }, id: 'U1', type: 'user/created' }
+  expect(mapCrdtFields(single, upper)).toEqual({
+    fields: { name: 'A' },
+    id: 'U1',
+    type: 'user/created'
+  })
+  expect(single.fields.name).toBe('a')
+  expect(
+    mapCrdtFields(
+      { fields: { name: 'b' }, ids: ['U1', 'U2'], type: 'user/changed' },
+      upper
+    )
+  ).toEqual({ fields: { name: 'B' }, ids: ['U1', 'U2'], type: 'user/changed' })
+  expect(
+    mapCrdtFields(
+      {
+        records: [
+          { id: 'U1', name: 'c' },
+          { id: 'U2', name: 'd' }
+        ],
+        type: 'user/created'
+      },
+      fields => {
+        expect(fields).not.toHaveProperty('id')
+        return upper(fields)
+      }
+    )
+  ).toEqual({
+    records: [
+      { id: 'U1', name: 'C' },
+      { id: 'U2', name: 'D' }
+    ],
+    type: 'user/created'
+  })
+  let deleted = { ids: ['U1'], type: 'user/deleted' }
+  expect(mapCrdtFields(deleted, upper)).toBe(deleted)
+})
+
+it('restores actions from tables by another schema', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let post = crdt.table('post', { media: string(), title: string() })
+  await crdt.ready
+  await post.create({ id: 'P1', media: '["a"]', title: 'Hi' })
+
+  let entries = await crdtTableToActions([post], {
+    schema: { post: { media: json([string()]) } }
+  })
+  expect(entries.map(i => i[0])).toEqual([
+    { fields: { media: ['a'] }, id: 'P1', type: 'post/created' }
+  ])
+})
+
+/**
+ * Previous start of the app: the tables keep the data, but the log
+ * does not have the actions anymore.
+ */
+async function prepareOldTables(
+  db: Database,
+  schema: Parameters<CrdtDatabase['table']>[1],
+  rows: Parameters<CrdtTable<any>['create']>[0][]
+): Promise<void> {
+  let client = new TestClient('10')
+  await client.connect()
+  let crdt = createCrdtDatabase(client, db, { sync: false })
+  let post = crdt.table('post', schema)
+  await crdt.ready
+  for (let row of rows) await post.create(row)
+  expect(client.log.actions()).toEqual([])
+  crdt.destroy()
+  client.destroy()
+}
+
+const POST_MIGRATIONS: ActionMigrations = {
+  1: action => {
+    if (action.type !== 'post/created' && action.type !== 'post/changed') {
+      return action
+    }
+    let { fields } = action as { fields?: { title?: string } }
+    if (fields?.title === 'Removed') return undefined
+    return mapCrdtFields(action, row => {
+      if (typeof row.media !== 'string') return row
+      return { ...row, media: JSON.parse(row.media) }
+    })
+  }
+}
+
+it('converts old tables by migrations on schema change', async () => {
+  let db = openSilentDb(nodeDriver(':memory:'))
+  await prepareOldTables(db, { media: string(), title: string() }, [
+    { id: 'P1', media: '["a","b"]', title: 'First' },
+    { id: 'P2', media: '[]', title: 'Removed' }
+  ])
+  expect(await readService(db, 'subprotocol')).toBe('0')
+
+  let client = new TestClient('10', {
+    migrations: POST_MIGRATIONS,
+    subprotocol: 1
+  })
+  await client.connect()
+  let crdt = createCrdtDatabase(client, db)
+  let post = crdt.table('post', { media: json([string()]), title: string() })
+  let statuses: string[] = []
+  crdt.status.subscribe(state => {
+    statuses.push(state)
+  })
+  await crdt.ready
+  expect(statuses).toEqual(['initializing', 'migrating', 'ready'])
+  expect(withoutMeta(await loadList(post.select()))).toEqual([
+    { id: 'P1', media: ['a', 'b'], title: 'First' }
+  ])
+  expect(await readService(db, 'subprotocol')).toBe('1')
+})
+
+it('restores old tables on schema change without migrations', async () => {
+  let db = openSilentDb(nodeDriver(':memory:'))
+  await prepareOldTables(db, { title: string() }, [{ id: 'P1', title: 'A' }])
+
+  let { client } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let post = crdt.table('post', { title: string(), views: optional(number()) })
+  await crdt.ready
+  expect(withoutMeta(await loadList(post.select()))).toEqual([
+    { id: 'P1', title: 'A', views: null }
+  ])
+})
+
+it('converts old tables on a new migration without schema change', async () => {
+  let db = openSilentDb(nodeDriver(':memory:'))
+  let schema = { media: json([string()]), title: string() }
+  await prepareOldTables(db, schema, [{ id: 'P1', media: ['a'], title: 'A' }])
+
+  let migrations: ActionMigrations = {
+    1: action => {
+      if (action.type !== 'post/created') return action
+      return mapCrdtFields(action, fields => ({
+        ...fields,
+        title: `${String(fields.title)} v1`
+      }))
+    }
+  }
+  async function start(subprotocol: number): Promise<string[]> {
+    let client = new TestClient('10', { migrations, subprotocol })
+    await client.connect()
+    let crdt = createCrdtDatabase(client, db)
+    crdt.table('post', schema)
+    let statuses: string[] = []
+    crdt.status.subscribe(state => {
+      statuses.push(state)
+    })
+    await crdt.ready
+    crdt.destroy()
+    client.destroy()
+    return statuses
+  }
+
+  expect(await start(1)).toEqual(['initializing', 'migrating', 'ready'])
+  expect(await readService(db, 'subprotocol')).toBe('1')
+  let rows = await db.driver.select('SELECT "title" FROM "post"', [])
+  expect(rows).toEqual([{ title: 'A v1' }])
+
+  expect(await start(1)).toEqual(['initializing', 'ready'])
+  // A new subprotocol without migrations only remembers the version
+  expect(await start(2)).toEqual(['initializing', 'ready'])
+  expect(await readService(db, 'subprotocol')).toBe('2')
+  expect(await db.driver.select('SELECT "title" FROM "post"', [])).toEqual([
+    { title: 'A v1' }
+  ])
+})
+
+it('converts unsent old actions from the log on rebuild', async () => {
+  let db = openSilentDb(nodeDriver(':memory:'))
+  let store = new MemoryStore()
+  await store.add([
+    [
+      {
+        fields: { media: '["a"]', title: 'Offline' },
+        id: 'P1',
+        type: 'post/created'
+      },
+      {
+        added: 0,
+        id: '1 10:1:1',
+        reasons: ['syncing'],
+        subprotocol: 0,
+        sync: true,
+        time: 1
+      }
+    ]
+  ])
+  let client = new Client({
+    migrations: POST_MIGRATIONS,
+    server: new TestPair().left,
+    store,
+    subprotocol: 1,
+    userId: '10'
+  })
+  let crdt = createCrdtDatabase(client, db)
+  let post = crdt.table('post', { media: json([string()]), title: string() })
+  await crdt.ready
+  expect(withoutMeta(await loadList(post.select()))).toEqual([
+    { id: 'P1', media: ['a'], title: 'Offline' }
+  ])
+  client.destroy()
 })

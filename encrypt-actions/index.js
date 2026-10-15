@@ -116,14 +116,15 @@ export function encryptActions(client, secret, opts = {}) {
     return type === '0/clean' || type.startsWith('logux/') || ignore.has(type)
   }
 
+  // Client converts old actions by `onReceive`, which must get
+  // the decrypted action
+  let originOnReceive = client.node.options.onReceive
   async function onReceive(action, meta) {
     if (action.type === '0') {
       if (!key) key = await buildKey()
-      let decrypted = await decrypt(action, key)
-      return [decrypted, meta]
-    } else {
-      return [action, meta]
+      action = await decrypt(action, key)
     }
+    return originOnReceive ? originOnReceive(action, meta) : [action, meta]
   }
 
   let originOnSend = client.node.options.onSend

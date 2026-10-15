@@ -1,10 +1,11 @@
 import type { Action, TestLog, TestPair } from '@logux/core'
 
-import type { ClientMeta, Client } from '../client/index.js'
+import type { ActionMigrations, ClientMeta, Client } from '../client/index.js'
 import type { TestServer } from '../test-server/index.js'
 
 export interface TestClientOptions<Headers extends object> {
   headers?: Headers
+  migrations?: ActionMigrations
   server?: TestServer
   subprotocol?: number
 }

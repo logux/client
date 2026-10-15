@@ -35,6 +35,28 @@ export interface ClientMeta extends Meta {
   tab?: TabID
 }
 
+/**
+ * Convert an action from the format of the previous subprotocol.
+ *
+ * It must return a new object instead of changing the action.
+ * Or return `undefined` to ignore old action.
+ *
+ * @param action Action in the old format.
+ * @param meta Action’s meta. Actions restored from the tables
+ *             have only `id`, `time` and `subprotocol`.
+ * @returns Action in the new format or `undefined` to drop the action.
+ */
+export type ActionMigration = (
+  action: AnyAction,
+  meta: Partial<ClientMeta>
+) => Action | undefined
+
+/**
+ * Migrations by the subprotocol: migration `1` converts actions written
+ * by subprotocol `0`.
+ */
+export type ActionMigrations = Record<number, ActionMigration>
+
 export interface ClientOptions {
   /**
    * Do not show warning when using `ws://` in production.
@@ -55,6 +77,27 @@ export interface ClientOptions {
    * Minimum delay between reconnections. Default is `1000`.
    */
   minDelay?: number
+
+  /**
+   * Functions to convert actions from the old subprotocols.
+   *
+   * Logux applies them in order to every action with `meta.subprotocol`
+   * lower than the current one: to received actions and to entries read
+   * from the log store.
+   *
+   * The stored entries are not rewritten.
+   *
+   * ```js
+   * new CrossTabClient({
+   *   subprotocol: 1,
+   *   migrations: {
+   *     1: (action, meta) => action // `undefined` drops the action
+   *   },
+   *   …
+   * })
+   * ```
+   */
+  migrations?: ActionMigrations
 
   /**
    * Milliseconds since last message to test connection by sending ping.
@@ -374,3 +417,20 @@ export class Client<
    */
   waitFor(state: ClientNode['state']): Promise<void>
 }
+
+/**
+ * Convert an action by migrations from {@link ClientOptions#migrations}
+ * for data outside the log, like backups.
+ *
+ * @param action Action in the old format.
+ * @param meta Action’s meta. Missing `subprotocol` means `0`.
+ * @param migrations Migrations by the subprotocol.
+ * @param subprotocol Current subprotocol.
+ * @returns Converted action or `undefined` if a migration dropped it.
+ */
+export function migrateAction(
+  action: Action,
+  meta: Partial<ClientMeta>,
+  migrations: ActionMigrations,
+  subprotocol: number
+): Action | undefined

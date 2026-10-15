@@ -3,6 +3,7 @@ import { createNanoEvents } from 'nanoevents'
 import { nanoid } from 'nanoid'
 import { atom, computed } from 'nanostores'
 
+import { migrateAction } from '../client/index.js'
 import { newerDatabaseError } from '../sql-log-store/index.js'
 
 function column(type, opts = {}) {
@@ -75,9 +76,27 @@ export function withMeta(row) {
   return { ...row, ...meta }
 }
 
-export async function crdtTableToActions(tables) {
+export function mapCrdtFields(action, fn) {
+  if (action.records) {
+    return {
+      ...action,
+      records: action.records.map(({ id, ...fields }) => ({
+        ...fn(fields),
+        id
+      }))
+    }
+  } else if (action.fields) {
+    return { ...action, fields: fn(action.fields) }
+  } else {
+    return action
+  }
+}
+
+export async function crdtTableToActions(tables, opts = {}) {
   let all = []
-  for (let { driver, plural, schema } of tables) {
+  for (let table of tables) {
+    let { driver, plural } = table
+    let schema = opts.schema?.[plural] ?? table.schema
     let rows = await driver.select(
       `SELECT * FROM "${plural}" ORDER BY "id"`,
       []
@@ -171,7 +190,8 @@ function columnSql(name, col, dialect) {
 
 /**
  * Table with the service data of the Logux itself: `schema` with the hash
- * of this database and `version` with the format of the tables.
+ * of this database, `version` with the format of the tables
+ * and `subprotocol` of the client, which wrote the data.
  */
 const SERVICE = 'logux_crdt'
 
@@ -782,6 +802,36 @@ export function createCrdtDatabase(client, db, opts = {}) {
     corrupted(reason, error)
   }
 
+  /**
+   * Old tables are the only copy of actions, which were already removed
+   * from the log, so they are read by the old schema and converted
+   * by the client’s migrations.
+   */
+  async function restoreTables(old, oldSubprotocol) {
+    // Tables in another format can not be read
+    if (old.version !== LOGUX_CRDT_TABLE_VERSION) return []
+    let entries = await crdtTableToActions(
+      Object.keys(old.tables).map(plural => ({
+        driver,
+        plural,
+        schema: old.tables[plural].columns
+      }))
+    )
+    let migrations = client.options.migrations
+    if (!migrations) return entries
+    let migrated = []
+    for (let [action, meta] of entries) {
+      let converted = migrateAction(
+        action,
+        { ...meta, subprotocol: oldSubprotocol },
+        migrations,
+        client.options.subprotocol
+      )
+      if (converted) migrated.push([converted, meta])
+    }
+    return migrated
+  }
+
   let preparing = Promise.resolve().then(async () => {
     started = true
     hash = JSON.stringify({
@@ -824,6 +874,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
     // the driver opened, so the database keeps its own copy of it
     let old = storage[storageKey]
     let stored
+    let storedSubprotocol
     await inTransaction(async tx => {
       await tx.driver.exec(
         `CREATE TABLE IF NOT EXISTS "${SERVICE}"` +
@@ -835,14 +886,28 @@ export function createCrdtDatabase(client, db, opts = {}) {
         throw newerDatabaseError('Tables')
       }
       stored = await readService(tx.driver, 'schema')
+      storedSubprotocol = await readService(tx.driver, 'subprotocol')
     })
+
+    let subprotocol = `${client.options.subprotocol}`
+    // Tables created before Logux saved the subprotocol have the data
+    // of the first subprotocol
+    let oldSubprotocol = Number(storedSubprotocol ?? '0')
+    let migrations = client.options.migrations
+    let oldData = false
+    for (let key in migrations) {
+      let version = Number(key)
+      if (version > oldSubprotocol && version <= client.options.subprotocol) {
+        oldData = true
+      }
+    }
 
     if (!stored && old) {
       // Database file was lost but we have the marker in localStorage
       corrupted('lost-database')
     }
 
-    if (stored === hash) {
+    if (stored === hash && !oldData) {
       // The database survived the cleaned storage, so only the copy
       // of the hash has to be restored
       if (old !== hash) storage[storageKey] = hash
@@ -855,6 +920,9 @@ export function createCrdtDatabase(client, db, opts = {}) {
             []
           )
           await createIndexes(tx.driver, plural)
+        }
+        if (storedSubprotocol !== subprotocol) {
+          await writeService(tx.driver, 'subprotocol', subprotocol)
         }
       })
       // Actions, which were not applied before the last tab was closed
@@ -876,13 +944,16 @@ export function createCrdtDatabase(client, db, opts = {}) {
       let reading = client.log.each({ order: 'added' }, (action, meta) => {
         if (isKnown(action.type)) entries.push([action, meta])
       })
+      let restored = []
       let repeated = []
       if (stored) {
         status.set('migrating')
         emitter.emit('migrating', ready)
+        let restoring = restoreTables(JSON.parse(stored), oldSubprotocol)
         // Tables are dropped after the callback, so actions missing
         // from the log can be restored from the tables themselves
         if (opts.repeat) repeated = await opts.repeat()
+        restored = await restoring
       }
       await reading
       // The log is read from the newest action to the oldest
@@ -909,7 +980,9 @@ export function createCrdtDatabase(client, db, opts = {}) {
       pending = []
       pendingIds.clear()
       // The lists are not merged: a copy of the whole log costs the memory
-      for (let list of [entries, repeated, added]) list.forEach(pushToApply)
+      for (let list of [entries, restored, repeated, added]) {
+        list.forEach(pushToApply)
+      }
       await drain()
       // Indexes are created after the replay: filling the table
       // without them is much faster. The hash is written by the same
@@ -920,6 +993,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
         }
         await writeService(tx.driver, 'schema', hash)
         await writeService(tx.driver, 'version', `${LOGUX_CRDT_TABLE_VERSION}`)
+        await writeService(tx.driver, 'subprotocol', subprotocol)
       })
       storage[storageKey] = hash
       delete storage[migratingKey]

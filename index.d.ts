@@ -6,7 +6,14 @@ export {
   badgeRu,
   BadgeStyles
 } from './badge/index.js'
-export { Client, ClientMeta, ClientOptions } from './client/index.js'
+export {
+  ActionMigration,
+  ActionMigrations,
+  Client,
+  ClientMeta,
+  ClientOptions,
+  migrateAction
+} from './client/index.js'
 export { confirm } from './confirm/index.js'
 
 export { AuthStore, createAuth } from './create-auth/index.js'

@@ -4,7 +4,7 @@ import type { Database, Driver, SqlStore } from '@nanostores/sql'
 import type { Unsubscribe } from 'nanoevents'
 import type { ReadableAtom } from 'nanostores'
 
-import type { Client, ClientMeta } from '../client/index.js'
+import type { Client, ClientMeta, ClientOptions } from '../client/index.js'
 import type { PersistentStorage } from '../create-reducer/index.js'
 
 export type { PersistentStorage }
@@ -202,14 +202,20 @@ type CrdtJsonObject<Shape extends { [key: string]: CrdtColumn }> = {
   ]: CrdtColumnType<Shape[Key]>
 }
 
+type CrdtJsonItem<Type> = undefined extends Type
+  ? Exclude<Type, undefined> | null
+  : Type
+
 /**
  * JS type of {@link json} column value inferred from its shape.
  * Keys wrapped in {@link optional} can be omitted or set to `null`.
+ * Items of a list wrapped in {@link optional} are `null`
+ * (JSON has no `undefined`).
  */
 export type CrdtJsonType<Shape extends CrdtJsonShape> = Shape extends readonly [
   infer Item extends CrdtColumn
 ]
-  ? CrdtColumnType<Item>[]
+  ? CrdtJsonItem<CrdtColumnType<Item>>[]
   : Shape extends { [key: string]: CrdtColumn }
     ? CrdtJsonObject<Shape>
     : never
@@ -463,6 +469,14 @@ export function withoutMeta<Value extends object>(
  */
 export function withMeta<Value>(row: WithoutMeta<Value>): Value
 
+export interface CrdtTableToActionsOptions {
+  /**
+   * Schemas to read the tables by their plural instead of the schema
+   * of the table object (for instance, the old schema of the tables).
+   */
+  schema?: CrdtTables
+}
+
 /**
  * Restore actions from the tables.
  *
@@ -470,21 +484,53 @@ export function withMeta<Value>(row: WithoutMeta<Value>): Value
  * `plural/changed`. Rows changed by one batch action are restored
  * as a single batch action.
  *
+ * On a schema change {@link createCrdtDatabase} restores the old tables
+ * by itself. Use it for other cases, like a backup:
+ *
  * ```ts
- * let crdt = createCrdtDatabase(client, db, {
- *   repeat: () => crdtTableToActions([user, post])
- * })
+ * let actions = await crdtTableToActions([user, post])
  * ```
  *
  * @param tables Tables of {@link CrdtDatabase#table} to read.
+ * @param opts Reading options.
  * @returns Actions with restored meta `id` and `time`, oldest first.
  */
 export function crdtTableToActions(
   tables: Pick<
     CrdtTable<CrdtTableSchema, string>,
     'driver' | 'plural' | 'schema'
-  >[]
+  >[],
+  opts?: CrdtTableToActionsOptions
 ): Promise<[Action, MetaTime][]>
+
+/**
+ * A helper for {@link ClientOptions#migrations}.
+ *
+ * ```ts
+ * import { mapCrdtFields } from '@logux/client/db'
+ *
+ * let migrations = {
+ *   1: action => {
+ *     if (action.type !== 'posts/created' && action.type !== 'posts/changed') {
+ *       return action
+ *     }
+ *     return mapCrdtFields(action, fields => {
+ *       if (typeof fields.media !== 'string') return fields
+ *       return { ...fields, media: JSON.parse(fields.media) }
+ *     })
+ *   }
+ * }
+ * ```
+ *
+ * @param action Table action.
+ * @param fn Callback to return new fields (without `id`) of every row.
+ *           It must not change the fields object.
+ * @returns New action with changed fields or the same `deleted` action.
+ */
+export function mapCrdtFields<CrdtAction extends Action>(
+  action: CrdtAction,
+  fn: (fields: Record<string, unknown>) => Record<string, unknown>
+): CrdtAction
 
 /**
  * Single field of a single row: `[table, id, field]`.
@@ -815,11 +861,13 @@ export interface CrdtDatabaseOptions<Dialect extends string = 'sqlite'> {
 
   /**
    * Called on schema change to get old actions missing from the log
-   * (for instance, from the server or restored from the tables themselves
-   * with {@link crdtTableToActions}). The old tables are dropped only
+   * (for instance, from the server). The old tables are dropped only
    * after the callback, so it can still read them.
    *
-   * Actions from the log will be replayed automatically.
+   * Actions from the log and actions restored from the old tables
+   * by the old schema will be replayed automatically. Restored actions
+   * are converted by {@link ClientOptions#migrations} from the subprotocol,
+   * which wrote the old tables.
    *
    * The log is read in parallel with the callback, possibly on the same
    * database connection, so the callback must not open SQL transactions.
@@ -1089,8 +1137,9 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
    * Database preparing status:
    *
    * - `initializing`: reading schema version, checking tables.
-   * - `migrating`: schema was changed, tables are being dropped and refilled
-   *   from the log and {@link CrdtDatabaseOptions#repeat}.
+   * - `migrating`: schema or data format was changed, tables are being
+   *   dropped and refilled from the log, the old tables
+   *   and {@link CrdtDatabaseOptions#repeat}.
    * - `ready`: tables can be used.
    * - `outdated`: another tab has a newer schema, this tab must be reloaded.
    * - `broken`: the database can not be opened or prepared.
@@ -1195,7 +1244,13 @@ export type Dialects = 'sqlite' | 'pglite'
  * other tabs about the change.
  * On any schema change all tables (including tables
  * removed from the schema) are dropped and refilled by replaying actions
- * from the log and from the `repeat()` callback.
+ * from the log, actions restored from the old tables by the old schema,
+ * and actions from the `repeat()` callback.
+ *
+ * The subprotocol of the client, which wrote the tables, is kept next
+ * to the schema version. Actions restored from the old tables are converted
+ * by {@link ClientOptions#migrations}, and a new migration rebuilds
+ * the tables even without a schema change.
  *
  * While there are actions waiting to be applied to the database, the tab
  * asks the user to confirm closing. It only saves the user from waiting
