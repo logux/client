@@ -1,4 +1,5 @@
 import type { LoguxSubscribeAction, LoguxUndoAction } from '@logux/actions'
+import type { AnyAction } from '@logux/core'
 
 /**
  * Error on `logux/undo` action from the server.
@@ -34,6 +35,32 @@ export class LoguxUndoError<
    * ```
    */
   name: 'LoguxUndoError'
+
+  /**
+   * Check that error is `LoguxUndoError`, optionally with specific `reason`
+   * of the server’s `logux/undo` action. It narrows the error type,
+   * so you don’t need to look into the error message.
+   *
+   * ```js
+   * try {
+   *   await client.sync(action)
+   * } catch (e) {
+   *   if (LoguxUndoError.is(e, 'notFound')) {
+   *     showNotFound(e.action.action)
+   *   } else {
+   *     throw e
+   *   }
+   * }
+   * ```
+   *
+   * @param thrown Caught error.
+   * @param reason Expected `reason` of `logux/undo` action.
+   * @returns `true` for `LoguxUndoError` with this reason.
+   */
+  static is<Reason extends string = string>(
+    thrown: unknown,
+    reason?: Reason
+  ): thrown is LoguxUndoError<LoguxUndoAction<AnyAction, Reason>>
 
   constructor(action: RevertedAction)
 }
