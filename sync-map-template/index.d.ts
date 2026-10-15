@@ -308,7 +308,7 @@ export type LoadableStore = {
  * ```js
  * import { loadValue } from '@logux/client'
  *
- * let user = loadValue($currentUser)
+ * let user = await loadValue($currentUser)
  * ```
  *
  * @param store Store to load.
