@@ -65,7 +65,8 @@ interface StatusOptions {
  * ```
  *
  * @param client Observed Client instance.
- * @param messages Disable specific message types.
+ * @param callback Status changes callback.
+ * @param options Status options.
  * @returns Unbind listener.
  */
 export function status(

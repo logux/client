@@ -20,11 +20,6 @@ export interface ClientActionListener<ListenAction extends Action> {
 
 export interface ClientMeta extends Meta {
   /**
-   * Disable setting `timeTravel` reason.
-   */
-  noAutoReason?: boolean
-
-  /**
    * This action should be synchronized with other browser tabs and server.
    */
   sync?: boolean
