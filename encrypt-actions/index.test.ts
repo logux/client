@@ -593,13 +593,16 @@ it('cleans many actions on server by one action', async () => {
 
   let meta1 = await client.log.add({ type: 'sync' }, { sync: true })
   let meta2 = await client.log.add({ type: 'sync' }, { sync: true })
-  await delay(10)
-  getPair(client).clear()
+  let pair = getPair(client)
+  while (pair.leftSent.filter(i => i[0] === 'sync').length < 2) {
+    await delay(1)
+  }
+  pair.clear()
 
   await client.log.removeReason('test')
   await client.log.removeReason('syncing')
-  await delay(10)
-  expect(getPair(client).leftSent).toMatchObject([
+  while (pair.leftSent.length === 0) await delay(1)
+  expect(pair.leftSent).toMatchObject([
     [
       'sync',
       3,

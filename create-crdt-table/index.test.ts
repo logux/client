@@ -4456,3 +4456,74 @@ it('prefers unsent log actions to old tables on rebuild', async () => {
   ])
   client.destroy()
 })
+
+it('waits for the current write on destroy', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+  let started: () => void = () => {}
+  let writing = new Promise<void>(resolve => {
+    started = resolve
+  })
+  let written = false
+  crdt.on('applied', async () => {
+    started()
+    await delay(20)
+    written = true
+  })
+  void user.create({ id: 'U1', name: 'Ann' }).catch(() => {})
+  await writing
+  await crdt.destroy()
+  expect(written).toBe(true)
+})
+
+it('does not finish migration after destroy', async () => {
+  let db = openSilentDb(nodeDriver(':memory:'))
+  await prepareOldTables(db, { title: string() }, [{ id: 'P1', title: 'A' }])
+  let oldSchema = await readService(db, 'schema')
+
+  let { client } = await setup()
+  let finishRepeat: () => void = () => {}
+  let crdt = createCrdtDatabase(client, db, {
+    repeat() {
+      return new Promise<[]>(resolve => {
+        finishRepeat = () => {
+          resolve([])
+        }
+      })
+    }
+  })
+  crdt.table('post', { title: string(), views: optional(number()) })
+  while (crdt.status.get() !== 'migrating') await delay(1)
+  let destroying = crdt.destroy()
+  finishRepeat()
+  await destroying
+  await crdt.ready
+  expect(await readService(db, 'schema')).toBe(oldSchema)
+  expect(await db.driver.select('SELECT * FROM "post"', [])).toEqual([
+    { id: 'P1', title: 'A', updatedAt_title: expect.any(String) }
+  ])
+})
+
+it('does not finish migration after destroy in the replay', async () => {
+  let db = openSilentDb(nodeDriver(':memory:'))
+  await prepareOldTables(db, { title: string() }, [{ id: 'P1', title: 'A' }])
+  let oldSchema = await readService(db, 'schema')
+
+  let { client } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  crdt.table('post', { title: string(), views: optional(number()) })
+  let started: () => void = () => {}
+  let replaying = new Promise<void>(resolve => {
+    started = resolve
+  })
+  crdt.on('applied', async () => {
+    started()
+    await delay(20)
+  })
+  await replaying
+  await crdt.destroy()
+  await crdt.ready
+  expect(await readService(db, 'schema')).toBe(oldSchema)
+})

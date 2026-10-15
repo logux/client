@@ -965,6 +965,11 @@ export function createCrdtDatabase(client, db, opts = {}) {
         restored = await restoring
       }
       await reading
+      // The tables are not touched after destroy() to let close the database
+      if (destroyed) {
+        setReady()
+        return
+      }
       // The log is read from the newest action to the oldest
       entries.reverse()
       if (stored) storage[migratingKey] = '1'
@@ -993,6 +998,12 @@ export function createCrdtDatabase(client, db, opts = {}) {
         list.forEach(pushToApply)
       }
       await drain()
+      // The replay was stopped by destroy(), so the database is unfinished
+      // like after the tab was closed in the middle of the migration
+      if (destroyed) {
+        setReady()
+        return
+      }
       // Indexes are created after the replay: filling the table
       // without them is much faster. The hash is written by the same
       // transaction, so an error keeps the database unfinished
@@ -1083,9 +1094,12 @@ export function createCrdtDatabase(client, db, opts = {}) {
       }
     },
     clean: cleanTables,
-    destroy() {
+    async destroy() {
       stopApplying('The database was stopped')
       lockRequest.abort()
+      // The current write must finish before the app closes the database
+      await preparing.catch(() => {})
+      if (draining) await draining.catch(() => {})
     },
     async empty() {
       await ready

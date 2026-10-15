@@ -1037,11 +1037,14 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
    * with more recent JS bundle.
    *
    * ```js
-   * crdt.destroy()
+   * await crdt.destroy()
    * await db.close()
    * ```
+   *
+   * @returns Promise resolved when the current writes were finished
+   *          and the database can be closed.
    */
-  destroy(): void
+  destroy(): Promise<void>
 
   /**
    * Delete all rows from all tables, but keep the database ready to use.
