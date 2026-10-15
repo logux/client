@@ -163,3 +163,12 @@ for (let [, fields] of parseCrdtRows(
 }
 // THROWS Argument of type 'CrdtTableDefinition<{ isAdmin: { type: "BOOLEAN"
 crdt.table(defineCrdtTable('flags', { isAdmin: boolean({ default: false }) }))
+
+let whereFeeds = crdt.table(defineCrdtTable('whereFeeds', { title: string() }))
+async function where(): Promise<void> {
+  // THROWS Object literal may only specify known properties
+  await whereFeeds.updateWhere({ unknown: 1 })()
+  // THROWS not assignable to parameter of type 'CrdtSqlParam<"sqlite">'
+  await whereFeeds.deleteWhere`"title" = ${true}`
+}
+where()

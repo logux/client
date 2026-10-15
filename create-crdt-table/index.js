@@ -1160,6 +1160,18 @@ export function createCrdtDatabase(client, db, opts = {}) {
         return parsed
       }
 
+      // Rows, which match the condition right now. Rows created later
+      // by another client are not changed, like with select() and delete()
+      async function idsWhere(template, params) {
+        await ready
+        let prefix = `SELECT "id" FROM "${plural}"`
+        let parts = template
+          ? [`${prefix} WHERE ${template[0]}`, ...template.slice(1)]
+          : [prefix]
+        let rows = await db.select(parts, ...params)
+        return rows.map(row => row.id)
+      }
+
       function withDefaults(fields) {
         let { id = nanoid(), ...values } = fields
         for (let key in schema) {
@@ -1175,7 +1187,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
         return [id, values]
       }
 
-      return {
+      let table = {
         async change(tx, id, fields, meta) {
           let cells = await applyAction(
             Array.isArray(id)
@@ -1218,6 +1230,11 @@ export function createCrdtDatabase(client, db, opts = {}) {
             )
           )
         },
+        async deleteWhere(template, ...params) {
+          let ids = await idsWhere(template, params)
+          await table.delete(ids)
+          return ids
+        },
         driver,
         parseRow,
         plural,
@@ -1249,8 +1266,16 @@ export function createCrdtDatabase(client, db, opts = {}) {
               newMeta()
             )
           )
+        },
+        updateWhere(diff) {
+          return async (template, ...params) => {
+            let ids = await idsWhere(template, params)
+            await table.update(ids, diff)
+            return ids
+          }
         }
       }
+      return table
     },
     tables
   }

@@ -394,3 +394,11 @@ for (let [id, fields] of parseCrdtRows(feeds.deleted({ id: 'F1' }))) {
   let none: undefined = fields
   console.log(id, none)
 }
+
+let deletedIds: string[] = await feedTable.deleteWhere`"categoryId" = ${'A'}`
+let allDeleted: string[] = await feedTable.deleteWhere()
+let movedIds: string[] = await feedTable.updateWhere({ categoryId: 'B' })`
+  "categoryId" = ${'A'}
+`
+let allMoved: string[] = await feedTable.updateWhere({ title: 'T' })()
+console.log(deletedIds, allDeleted, movedIds, allMoved)

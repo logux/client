@@ -857,6 +857,27 @@ export interface CrdtTable<
   delete(id: string[] | string): Promise<void>
 
   /**
+   * Delete rows matching the SQL condition by a single batch action.
+   * Without a template, deletes all rows.
+   *
+   * The rows are selected on the call, so rows created later on another
+   * client will not be deleted.
+   *
+   * ```js
+   * await post.deleteWhere`"feedId" = ${feedId}`
+   * await feed.deleteWhere()
+   * ```
+   *
+   * @param sql SQL condition after `WHERE`.
+   * @param params Interpolated template values.
+   * @returns IDs of deleted rows.
+   */
+  deleteWhere(
+    sql?: TemplateStringsArray,
+    ...params: CrdtSqlParam<Dialect>[]
+  ): Promise<string[]>
+
+  /**
    * Database driver for raw queries to the table,
    * like in {@link crdtTableToActions}.
    */
@@ -942,6 +963,32 @@ export interface CrdtTable<
     id: string[] | string,
     diff: Partial<CrdtRowFields<Schema>>
   ): Promise<void>
+
+  /**
+   * Change rows matching the SQL condition by a single batch action
+   * like {@link CrdtTable#update}.
+   *
+   * The rows are selected on the call, so rows created later on another
+   * client will not be changed.
+   *
+   * ```js
+   * await feed.updateWhere({ categoryId: 'general' })`
+   *   "categoryId" = ${categoryId}
+   * `
+   * await feed.updateWhere({ paused: 1 })()
+   * ```
+   *
+   * @param diff Changed fields.
+   * @returns Template tag with SQL condition after `WHERE` (call it
+   *          without a template to change all rows), which returns
+   *          IDs of changed rows.
+   */
+  updateWhere(
+    diff: Partial<CrdtRowFields<Schema>>
+  ): (
+    sql?: TemplateStringsArray,
+    ...params: CrdtSqlParam<Dialect>[]
+  ) => Promise<string[]>
 }
 
 export interface CrdtActionOptions {

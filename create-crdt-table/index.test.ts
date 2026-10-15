@@ -4574,3 +4574,56 @@ it('defines tables without the database', async () => {
     { categoryId: 'A', id: 'F1', title: 'T' }
   ])
 })
+
+it('deletes and changes rows by condition', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let post = crdt.table('post', { feedId: string(), title: string() })
+  let feed = crdt.table('feed', { categoryId: string() })
+  await crdt.ready
+  await post.create([
+    { feedId: 'F1', id: 'P1', title: 'A' },
+    { feedId: 'F1', id: 'P2', title: 'B' },
+    { feedId: 'F2', id: 'P3', title: 'C' }
+  ])
+  await feed.create([
+    { categoryId: 'C1', id: 'F1' },
+    { categoryId: 'C1', id: 'F2' },
+    { categoryId: 'C2', id: 'F3' }
+  ])
+  let types: string[] = []
+  client.on('add', action => {
+    types.push(action.type)
+  })
+
+  expect((await post.deleteWhere`"feedId" = ${'F1'}`).sort()).toEqual([
+    'P1',
+    'P2'
+  ])
+  expect((await loadList(post.select())).map(i => i.id)).toEqual(['P3'])
+  expect(await post.deleteWhere`"feedId" = ${'missing'}`).toEqual([])
+
+  let moved = await feed.updateWhere({ categoryId: 'general' })`
+    "categoryId" = ${'C1'}
+  `
+  expect(moved.sort()).toEqual(['F1', 'F2'])
+  expect(withoutMeta(await loadList(feed.select`ORDER BY "id"`))).toEqual([
+    { categoryId: 'general', id: 'F1' },
+    { categoryId: 'general', id: 'F2' },
+    { categoryId: 'C2', id: 'F3' }
+  ])
+  expect((await feed.updateWhere({ categoryId: 'all' })()).sort()).toEqual([
+    'F1',
+    'F2',
+    'F3'
+  ])
+
+  expect((await feed.deleteWhere()).sort()).toEqual(['F1', 'F2', 'F3'])
+  expect(await loadList(feed.select())).toEqual([])
+  expect(types).toEqual([
+    'post/deleted',
+    'feed/changed',
+    'feed/changed',
+    'feed/deleted'
+  ])
+})
