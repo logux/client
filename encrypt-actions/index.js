@@ -76,16 +76,46 @@ async function encrypt(action, key) {
   }
 }
 
+// Bytes inside JSON (like `logux/undo` with encrypted `action`)
+// are converted to `{ "0": byte, "1": byte }`
+function toBytes(value) {
+  return value instanceof Uint8Array
+    ? value
+    : new Uint8Array(Object.values(value))
+}
+
 async function decrypt(action, key) {
-  let bytes = await crypto.subtle.decrypt(aes(action.iv), key, action.d)
+  let bytes = await crypto.subtle.decrypt(
+    aes(toBytes(action.iv)),
+    key,
+    toBytes(action.d)
+  )
   if (action.compressed) bytes = await decompress(bytes)
   return bytesToObj(bytes)
 }
 
 export function encryptActions(client, secret, opts = {}) {
   let key
-  if (typeof CryptoKey !== 'undefined' && secret instanceof CryptoKey) {
-    key = secret
+  // Secret can be loaded later, so it is resolved only on the first action
+  function getKey() {
+    key ??= Promise.resolve(typeof secret === 'function' ? secret() : secret)
+      .then(async value => {
+        if (typeof CryptoKey !== 'undefined' && value instanceof CryptoKey) {
+          return value
+        }
+        return crypto.subtle.importKey(
+          'raw',
+          await sha256(value),
+          { name: 'AES-GCM' },
+          false,
+          ['encrypt', 'decrypt']
+        )
+      })
+      .catch(error => {
+        key = undefined
+        throw error
+      })
+    return key
   }
 
   // Binary protocol has a dedicated compact format for encrypted actions,
@@ -99,17 +129,9 @@ export function encryptActions(client, secret, opts = {}) {
     reconnect.connection = binary
   }
 
-  async function buildKey() {
-    return crypto.subtle.importKey(
-      'raw',
-      await sha256(secret),
-      { name: 'AES-GCM' },
-      false,
-      ['encrypt', 'decrypt']
-    )
-  }
-
-  let ignore = new Set(opts.ignore || [])
+  let ignore = new Set(
+    (opts.ignore || []).map(i => (typeof i === 'string' ? i : i.type))
+  )
 
   // Server must read `logux/*` actions to process subscriptions
   function isSkipped(type) {
@@ -121,8 +143,12 @@ export function encryptActions(client, secret, opts = {}) {
   let originOnReceive = client.node.options.onReceive
   async function onReceive(action, meta) {
     if (action.type === '0') {
-      if (!key) key = await buildKey()
-      action = await decrypt(action, key)
+      action = await decrypt(action, await getKey())
+    } else if (action.type === 'logux/undo' && action.action?.type === '0') {
+      action = {
+        ...action,
+        action: await decrypt(action.action, await getKey())
+      }
     }
     return originOnReceive ? originOnReceive(action, meta) : [action, meta]
   }
@@ -135,8 +161,7 @@ export function encryptActions(client, secret, opts = {}) {
     } else if (isSkipped(result[0].type)) {
       return [result[0], result[1]]
     } else {
-      if (!key) key = await buildKey()
-      let encrypted = await encrypt(result[0], key)
+      let encrypted = await encrypt(result[0], await getKey())
       return [encrypted, result[1]]
     }
   }
@@ -144,9 +169,24 @@ export function encryptActions(client, secret, opts = {}) {
   client.node.options.onReceive = onReceive
 
   if (opts.clean !== false) {
+    // Log cleaning removes many actions at once, so they are cleaned
+    // on the server by a single action
+    let cleaning = []
     client.log.on('clean', (action, meta) => {
       if (meta.sync && !isSkipped(action.type)) {
-        client.log.add({ id: meta.id, type: '0/clean' }, { sync: true })
+        if (cleaning.length === 0) {
+          setTimeout(() => {
+            let ids = cleaning
+            cleaning = []
+            client.log.add(
+              ids.length === 1
+                ? { id: ids[0], type: '0/clean' }
+                : { ids, type: '0/clean' },
+              { sync: true }
+            )
+          })
+        }
+        cleaning.push(meta.id)
       }
     })
   }

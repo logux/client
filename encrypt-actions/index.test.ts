@@ -1,3 +1,4 @@
+import { defineAction } from '@logux/actions'
 import { TestPair, TestTime, WsBinaryConnection } from '@logux/core'
 import { delay } from 'nanodelay'
 import { TextDecoder, TextEncoder } from 'node:util'
@@ -464,5 +465,146 @@ it('converts old actions after decryption', async () => {
   await delay(100)
   expect(privateMethods(client2.log).actions()).toEqual([
     { type: 'sync', value: 'secret v10' }
+  ])
+})
+
+it('waits for the secret from a promise or a function', async () => {
+  let client1 = createClient()
+  let client2 = createClient()
+
+  let enter: (password: string) => void = () => {}
+  let password = new Promise<string>(resolve => {
+    enter = resolve
+  })
+  let calls = 0
+  encryptActions(client1, password)
+  encryptActions(client2, () => {
+    calls += 1
+    return 'password'
+  })
+  expect(calls).toBe(0)
+
+  await Promise.all([connect(client1), connect(client2)])
+  getPair(client1).clear()
+
+  client1.log.add({ type: 'sync', value: 'secret' }, { sync: true })
+  await delay(50)
+  expect(getPair(client1).leftSent).toEqual([])
+
+  enter('password')
+  await delay(50)
+  expect(getPair(client1).leftSent).toMatchObject([
+    ['sync', 1, { d: BYTES, iv: BYTES, type: '0' }, { id: '0' }]
+  ])
+
+  getPair(client2).right.send(getPair(client1).leftSent[0]!)
+  getPair(client2).right.send(getPair(client1).leftSent[0]!)
+  await delay(50)
+  expect(privateMethods(client2.log).actions()).toEqual([
+    { type: 'sync', value: 'secret' }
+  ])
+  expect(calls).toBe(1)
+})
+
+it('asks the secret again after an error', async () => {
+  let client = createClient()
+  let errors: string[] = []
+  client.node.on('error', error => {
+    errors.push(error.message)
+  })
+  let calls = 0
+  encryptActions(client, () => {
+    calls += 1
+    if (calls === 1) return Promise.reject(new Error('No password'))
+    return 'password'
+  })
+  await connect(client)
+
+  client.log.add({ type: 'sync' }, { sync: true })
+  await delay(50)
+  expect(errors).toEqual(['No password'])
+  expect(client.connected).toBe(false)
+
+  await connect(client)
+  await delay(50)
+  expect(calls).toBe(2)
+  expect(getPair(client).leftSent).toContainEqual([
+    'sync',
+    1,
+    { compressed: false, d: BYTES, iv: BYTES, type: '0' },
+    { id: '0', time: expect.any(Number) }
+  ])
+})
+
+it('ignores actions by action creators', async () => {
+  let client = createClient()
+  let serverAction = defineAction<{ type: 'server' }>('server')
+  encryptActions({ log: client.log, node: client.node }, 'password', {
+    ignore: [serverAction]
+  })
+  await connect(client)
+  getPair(client).clear()
+
+  client.log.add(serverAction({}), { sync: true })
+  await delay(10)
+  expect(getPair(client).leftSent).toMatchObject([
+    ['sync', 1, { type: 'server' }, { id: '0' }]
+  ])
+})
+
+it('decrypts action in logux/undo', async () => {
+  let client1 = createClient()
+  let client2 = createClient()
+  encryptActions(client1, 'password')
+  encryptActions(client2, 'password')
+  await Promise.all([connect(client1), connect(client2)])
+  getPair(client1).clear()
+
+  client1.log.add({ type: 'sync', value: 'secret' }, { sync: true })
+  await delay(50)
+  let encrypted = privateMethods(getPair(client1).leftSent[0])[2]
+  getPair(client2).right.send([
+    'sync',
+    1,
+    {
+      // Server sends the action inside JSON, where bytes become objects
+      action: JSON.parse(JSON.stringify(encrypted)),
+      id: '0 10:1:1',
+      reason: 'error',
+      type: 'logux/undo'
+    },
+    { id: '1 server:x', time: 1 }
+  ])
+  await delay(50)
+  expect(privateMethods(client2.log).actions()).toEqual([
+    {
+      action: { type: 'sync', value: 'secret' },
+      id: '0 10:1:1',
+      reason: 'error',
+      type: 'logux/undo'
+    }
+  ])
+})
+
+it('cleans many actions on server by one action', async () => {
+  let client = createClient()
+  encryptActions(client, 'password')
+  await connect(client)
+
+  let meta1 = await client.log.add({ type: 'sync' }, { sync: true })
+  let meta2 = await client.log.add({ type: 'sync' }, { sync: true })
+  await delay(10)
+  getPair(client).clear()
+
+  await client.log.removeReason('test')
+  await client.log.removeReason('syncing')
+  await delay(10)
+  expect(getPair(client).leftSent).toMatchObject([
+    [
+      'sync',
+      3,
+      { ids: [meta1 && meta1.id, meta2 && meta2.id], type: '0/clean' },
+      { id: '2' }
+    ]
   ])
 })
