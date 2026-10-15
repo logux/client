@@ -4750,3 +4750,66 @@ it('has reactive row', async () => {
   ])
   await $post.loading
 })
+
+it('waits for applied actions', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let post = crdt.table('post', { title: string() })
+  await crdt.ready
+  crdt.on('applied', async () => {
+    await delay(10)
+  })
+
+  let meta = await client.log.add(
+    { fields: { title: 'A' }, id: 'P1', type: 'post/created' },
+    { sync: true }
+  )
+  if (!meta) throw new Error('Action was not added')
+  let applied: string[] = []
+  await Promise.all([
+    crdt.applied(meta).then(() => {
+      applied.push('first')
+    }),
+    crdt.applied(meta).then(() => {
+      applied.push('second')
+    })
+  ])
+  expect(applied).toEqual(['first', 'second'])
+  expect((await post.load()).map(i => i.title)).toEqual(['A'])
+  await crdt.applied(meta)
+  await crdt.applied({ id: 'unknown' })
+
+  void client.log.add(
+    { fields: { title: 'B' }, id: 'P2', type: 'post/created' },
+    { sync: true }
+  )
+  void client.log.add({ id: 'P1', type: 'post/deleted' }, { sync: true })
+  await delay(1)
+  await crdt.idle()
+  expect((await post.load()).map(i => i.title)).toEqual(['B'])
+})
+
+it('resolves checked after schema comparison', async () => {
+  let db = openSilentDb(nodeDriver(':memory:'))
+  await prepareOldTables(db, { title: string() }, [{ id: 'P1', title: 'A' }])
+
+  async function start(
+    schema: Parameters<CrdtDatabase['table']>[1]
+  ): Promise<[string, string]> {
+    let { client } = await setup()
+    let crdt = createCrdtDatabase(client, db)
+    crdt.table('post', schema)
+    await crdt.checked
+    let onChecked = crdt.status.get()
+    await crdt.ready
+    let result: [string, string] = [onChecked, crdt.status.get()]
+    await crdt.destroy()
+    return result
+  }
+
+  expect(await start({ title: string() })).toEqual(['initializing', 'ready'])
+  expect(await start({ title: string(), views: optional(number()) })).toEqual([
+    'migrating',
+    'ready'
+  ])
+})

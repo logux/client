@@ -403,6 +403,11 @@ export function createCrdtDatabase(client, db, opts = {}) {
     prepared = resolve
   })
 
+  let compared
+  let checked = new Promise(resolve => {
+    compared = resolve
+  })
+
   let reported = false
 
   function corrupted(reason, error) {
@@ -427,6 +432,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
 
   function setReady() {
     clearTimeout(timeout)
+    compared()
     prepared()
   }
 
@@ -479,19 +485,26 @@ export function createCrdtDatabase(client, db, opts = {}) {
   function applied(meta) {
     if (!meta || !pendingIds.has(meta.id)) return undefined
     return new Promise((resolve, reject) => {
-      waiting.set(meta.id, [resolve, reject])
+      let list = waiting.get(meta.id)
+      if (!list) {
+        list = []
+        waiting.set(meta.id, list)
+      }
+      list.push([resolve, reject])
     })
   }
 
   function stopWaiting(ids, error) {
     for (let id of ids) {
-      let callbacks = waiting.get(id)
-      if (!callbacks) continue
+      let list = waiting.get(id)
+      if (!list) continue
       waiting.delete(id)
-      if (error) {
-        callbacks[1](error)
-      } else {
-        callbacks[0]()
+      for (let [resolve, reject] of list) {
+        if (error) {
+          reject(error)
+        } else {
+          resolve()
+        }
       }
     }
   }
@@ -945,6 +958,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
     }
 
     if (stored === hash && !oldData) {
+      compared()
       // The database survived the cleaned storage, so only the copy
       // of the hash has to be restored
       if (old !== hash) storage[storageKey] = hash
@@ -983,8 +997,9 @@ export function createCrdtDatabase(client, db, opts = {}) {
       })
       let restored = []
       let repeated = []
+      if (stored) status.set('migrating')
+      compared()
       if (stored) {
-        status.set('migrating')
         emitter.emit('migrating', ready)
         let restoring = restoreTables(JSON.parse(stored), oldSubprotocol)
         // Tables are dropped after the callback, so actions missing
@@ -1121,6 +1136,10 @@ export function createCrdtDatabase(client, db, opts = {}) {
         await applied(await client.log.add(creator(...args), newMeta()))
       }
     },
+    applied(meta) {
+      return applied(meta) ?? Promise.resolve()
+    },
+    checked,
     clean: cleanTables,
     async select(sql, ...params) {
       await ready
@@ -1132,6 +1151,10 @@ export function createCrdtDatabase(client, db, opts = {}) {
       // The current write must finish before the app closes the database
       await preparing.catch(() => {})
       if (draining) await draining.catch(() => {})
+    },
+    async idle() {
+      await ready
+      await drain()
     },
     async empty() {
       await ready

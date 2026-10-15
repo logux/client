@@ -1203,6 +1203,39 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
   ): (...args: Parameters<Creator>) => Promise<void>
 
   /**
+   * Wait until the action was applied to the tables in this tab.
+   *
+   * It is resolved right away if the action is not waiting to be applied
+   * (it was already applied, it is not a table action, or another tab
+   * applies it).
+   *
+   * ```ts
+   * let meta = await client.log.add(feeds.created({ fields, id }))
+   * if (meta) await crdt.applied(meta)
+   * ```
+   *
+   * @param meta Meta of the action from the log.
+   * @returns Promise resolved when the action was applied.
+   */
+  applied(meta: Pick<ClientMeta, 'id'>): Promise<void>
+
+  /**
+   * Promise resolved when the database compared the schema with the stored
+   * one and chose to use the tables or to rebuild them. After it
+   * {@link CrdtDatabase#status} is `migrating`, if the existing tables
+   * are rebuilding, and `initializing` otherwise.
+   *
+   * Like {@link CrdtDatabase#ready}, it is resolved also when the database
+   * became `outdated` or `broken`.
+   *
+   * ```ts
+   * await crdt.checked
+   * if (crdt.status.get() === 'migrating') showMigrationLoader()
+   * ```
+   */
+  readonly checked: Promise<void>
+
+  /**
    * Drop all tables and stop the database like {@link CrdtDatabase#destroy}.
    *
    * It will be auto-called on {@link Client#clean}.
@@ -1228,6 +1261,18 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
    *          and the database can be closed.
    */
   destroy(): Promise<void>
+
+  /**
+   * Promise resolved when the database is ready and all actions,
+   * which this tab received so far, were applied to the tables.
+   *
+   * ```ts
+   * await client.log.add(actionFromServer, { sync: true })
+   * await crdt.idle()
+   * expect(await feeds.load()).toHaveLength(1)
+   * ```
+   */
+  idle(): Promise<void>
 
   /**
    * Delete all rows from all tables, but keep the database ready to use.

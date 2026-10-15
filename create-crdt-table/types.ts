@@ -429,3 +429,10 @@ if (rowValue.status === 'ready' && rowValue.value) {
 let counts = await crdt.select<{ count: number }>`SELECT COUNT(*) AS "count"`
 let count: number = counts[0]!.count
 console.log(count)
+
+await crdt.checked
+await crdt.idle()
+let addedMeta = await client.log.add(
+  feeds.created({ fields: { categoryId: 'A', title: 'T' }, id: 'F2' })
+)
+if (addedMeta) await crdt.applied(addedMeta)
