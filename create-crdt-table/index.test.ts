@@ -4342,3 +4342,64 @@ it('converts unsent old actions from the log on rebuild', async () => {
   ])
   client.destroy()
 })
+
+it('parses JSON columns in raw rows', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let post = crdt.table('post', {
+    media: json([string()]),
+    meta: optional(json({ views: number() })),
+    title: string()
+  })
+  await crdt.ready
+  await post.create({ id: 'P1', media: ['a'], title: 'A' })
+
+  let rows = await db.driver.select(
+    'SELECT "id", "media", "meta", "title" FROM "post"',
+    []
+  )
+  expect(rows.map(post.parseRow)).toEqual([
+    { id: 'P1', media: ['a'], meta: null, title: 'A' }
+  ])
+  let joined = await db.driver.select(
+    'SELECT "post"."id", "media", 1 AS "count" FROM "post"',
+    []
+  )
+  expect(joined.map(post.parseRow)).toEqual([
+    { count: 1, id: 'P1', media: ['a'] }
+  ])
+})
+
+it('prefers unsent log actions to old tables on rebuild', async () => {
+  let db = openSilentDb(nodeDriver(':memory:'))
+  let store = new MemoryStore()
+  let old = new Client({
+    server: new TestPair().left,
+    store,
+    subprotocol: 0,
+    userId: '10'
+  })
+  let oldCrdt = createCrdtDatabase(old, db)
+  let oldPost = oldCrdt.table('post', { media: string(), title: string() })
+  await oldCrdt.ready
+  await oldPost.create({ id: 'P1', media: '["a"]', title: 'Log' })
+  oldCrdt.destroy()
+  old.destroy()
+  // Same cell meta as the unsent action, but another value
+  await db.driver.exec('UPDATE "post" SET "title" = ?', ['Table'])
+
+  let client = new Client({
+    migrations: POST_MIGRATIONS,
+    server: new TestPair().left,
+    store,
+    subprotocol: 1,
+    userId: '10'
+  })
+  let crdt = createCrdtDatabase(client, db)
+  let post = crdt.table('post', { media: json([string()]), title: string() })
+  await crdt.ready
+  expect(withoutMeta(await loadList(post.select()))).toEqual([
+    { id: 'P1', media: ['a'], title: 'Log' }
+  ])
+  client.destroy()
+})

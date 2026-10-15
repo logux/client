@@ -1113,7 +1113,9 @@ export function createCrdtDatabase(client, db, opts = {}) {
 
       function parseRow(row) {
         let parsed = { ...row }
-        for (let key of jsonColumns) parsed[key] = fromDb(schema[key], row[key])
+        for (let key of jsonColumns) {
+          if (key in row) parsed[key] = fromDb(schema[key], row[key])
+        }
         return parsed
       }
 
@@ -1176,6 +1178,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
           )
         },
         driver,
+        parseRow,
         plural,
         schema,
         select(template, ...params) {

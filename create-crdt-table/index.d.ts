@@ -429,6 +429,17 @@ export type CrdtTableRow<Schema extends CrdtTableSchema> = {
 }
 
 /**
+ * Raw SQL row with parsed {@link json} columns of the table schema.
+ */
+export type CrdtParsedRow<Schema extends CrdtTableSchema, Row> = {
+  [Key in keyof Row]: Key extends keyof Schema
+    ? Schema[Key] extends { type: 'JSON' }
+      ? CrdtTableRow<Schema>[Key]
+      : Row[Key]
+    : Row[Key]
+}
+
+/**
  * Row without conflict resolution data of every field.
  */
 export type WithoutMeta<Value> = {
@@ -760,6 +771,20 @@ export interface CrdtTable<
    * like in {@link crdtTableToActions}.
    */
   readonly driver: Driver
+
+  /**
+   * Parse {@link json} columns in a row from a raw SQL query.
+   * Works with partial rows.
+   *
+   * ```ts
+   * let rows = (await db.select`SELECT "id", "media" FROM "post"`)
+   *   .map(post.parseRow)
+   * ```
+   *
+   * @param row Row from the database driver.
+   * @returns Row with parsed JSON columns.
+   */
+  parseRow<Row>(row: Row): CrdtParsedRow<Schema, Row>
 
   /**
    * Table name. It is used as SQL table name and as prefix
