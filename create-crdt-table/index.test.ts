@@ -875,10 +875,21 @@ it('stores JSON columns', async () => {
   // Restored actions get parsed values back
   let actions = await crdtTableToActions([note])
   expect(actions.map(([action]) => action)).toEqual([
-    { fields: { title: 'A' }, id: 'N1', type: 'note/created' },
     {
       fields: {
+        meta: { views: 5 },
+        settings: { fontSize: 12, theme: 'light' },
+        tags: ['x', 'y'],
+        title: 'A'
+      },
+      id: 'N1',
+      type: 'note/created'
+    },
+    {
+      fields: {
+        meta: null,
         settings: { address: { city: 'Riga' }, fontSize: 16, theme: 'light' },
+        tags: ['x'],
         title: 'B'
       },
       id: 'N2',
@@ -1224,11 +1235,11 @@ it('restores actions from tables', async () => {
   expect(await crdtTableToActions([user, post, empty])).toEqual([
     [
       {
-        // The role cells were overwritten by the changed action below,
-        // so the restored created action does not have them
+        // Created actions have the current values of all row fields,
+        // and the changed actions below keep the meta of the later changes
         records: [
-          { createdAt, id: 'U1', isAdmin: 0, name: 'Ann' },
-          { createdAt, id: 'U2', isAdmin: 0, name: 'Ben' }
+          { createdAt, id: 'U1', isAdmin: 0, name: 'Ann', role: 'admin' },
+          { createdAt, id: 'U2', isAdmin: 0, name: 'Ben', role: 'admin' }
         ],
         type: 'user/created'
       },
@@ -1236,7 +1247,14 @@ it('restores actions from tables', async () => {
     ],
     [
       {
-        fields: { age: 30, createdAt, isAdmin: 0, name: 'Jim', role: 'user' },
+        fields: {
+          age: 30,
+          createdAt,
+          isAdmin: 0,
+          name: 'Jim',
+          publishedAt: null,
+          role: 'user'
+        },
         id: 'U3',
         type: 'user/created'
       },
@@ -1257,6 +1275,34 @@ it('restores actions from tables', async () => {
   ])
 })
 
+it('restores created actions with all current fields', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let feed = crdt.table('feed', { categoryId: string(), title: string() })
+  await crdt.ready
+  await feed.create({ categoryId: 'A', id: 'F1', title: 'News' })
+  await feed.update('F1', { categoryId: 'B' })
+
+  let entries = await crdtTableToActions([feed])
+  // Reducers, which read only created actions, still get the current row
+  expect(entries.map(i => i[0])).toEqual([
+    {
+      fields: { categoryId: 'B', title: 'News' },
+      id: 'F1',
+      type: 'feed/created'
+    },
+    { fields: { categoryId: 'B' }, id: 'F1', type: 'feed/changed' }
+  ])
+
+  let rows = await db.driver.select('SELECT * FROM "feed"', [])
+  let { client: client2, db: db2 } = await setup()
+  await writeService(db2, 'schema', '{"tables":{}}')
+  let crdt2 = createCrdtDatabase(client2, db2, { repeat: () => entries })
+  crdt2.table('feed', { categoryId: string(), title: string() })
+  await crdt2.ready
+  expect(await db2.driver.select('SELECT * FROM "feed"', [])).toEqual(rows)
+})
+
 it('replays restored actions into the same tables', async () => {
   let { client, db } = await setup()
   let crdt = createCrdtDatabase(client, db)
@@ -1273,8 +1319,8 @@ it('replays restored actions into the same tables', async () => {
 
   let entries = await crdtTableToActions([user])
   // U2 kept no cells of its created action, so its oldest left action
-  // is the rename: it is restored as created and the replay applies it
-  // to the already created U1 as a change
+  // is the rename: it is restored as created with all U2 fields,
+  // and the replay applies it to the already created U1 as a change
   expect(entries.map(i => i[0].type)).toEqual([
     'user/created',
     'user/created',
@@ -1284,7 +1330,14 @@ it('replays restored actions into the same tables', async () => {
   expect(entries[1]![0]).toEqual({
     records: [
       { id: 'U1', name: 'Renamed' },
-      { id: 'U2', name: 'Renamed' }
+      {
+        age: 30,
+        createdAt: 200,
+        id: 'U2',
+        isAdmin: 1,
+        name: 'Renamed',
+        role: 'admin'
+      }
     ],
     type: 'user/created'
   })
@@ -1795,7 +1848,7 @@ it('restores cells of custom actions as table actions', async () => {
   expect(await crdtTableToActions([user, post])).toEqual([
     [
       {
-        fields: { createdAt, isAdmin: 0, role: 'user' },
+        fields: { createdAt, isAdmin: 0, name: 'New', role: 'user' },
         id: 'U1',
         type: 'user/created'
       },

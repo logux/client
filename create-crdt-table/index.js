@@ -105,7 +105,12 @@ export async function crdtTableToActions(tables, opts = {}) {
     let cells = new Map()
     // The oldest meta of every row becomes its created action
     let oldest = new Map()
+    // The created action has all fields of the row, since reducers expect
+    // the whole row in it. Newer changed actions set the right meta later.
+    let full = new Map()
     for (let row of rows) {
+      let current = {}
+      full.set(row.id, current)
       for (let key in schema) {
         let sorted = row[`${META}${key}`]
         if (!sorted) continue
@@ -120,6 +125,7 @@ export async function crdtTableToActions(tables, opts = {}) {
           metaRows.set(row.id, fields)
         }
         fields[key] = fromDb(schema[key], row[key])
+        current[key] = fields[key]
         let min = oldest.get(row.id)
         if (!min || sorted < min) oldest.set(row.id, sorted)
       }
@@ -127,7 +133,10 @@ export async function crdtTableToActions(tables, opts = {}) {
     for (let [sorted, metaRows] of cells) {
       let created = false
       for (let id of metaRows.keys()) {
-        if (oldest.get(id) === sorted) created = true
+        if (oldest.get(id) === sorted) {
+          created = true
+          metaRows.set(id, full.get(id))
+        }
       }
       let action
       if (metaRows.size === 1) {

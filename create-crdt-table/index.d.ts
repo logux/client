@@ -491,9 +491,9 @@ export interface CrdtTableToActionsOptions {
 /**
  * Restore actions from the tables.
  *
- * The oldest restored action of a row is `plural/created`, the rest are
- * `plural/changed`. Rows changed by one batch action are restored
- * as a single batch action.
+ * The oldest restored action of a row is `plural/created` with the current
+ * values of all row fields, the rest are `plural/changed`. Rows changed
+ * by one batch action are restored as a single batch action.
  *
  * On a schema change {@link createCrdtDatabase} restores the old tables
  * by itself. Use it for other cases, like a backup:
