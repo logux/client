@@ -1182,6 +1182,8 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
 
   /**
    * Delete all rows from all tables, but keep the database ready to use.
+   * The app’s state built from the tables is not changed: reset it
+   * in the `empty` event.
    *
    * ```js
    * afterEach(async () => {
@@ -1281,6 +1283,25 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
    * @returns Unbind listener from event.
    */
   on(event: 'stop', listener: () => void): Unsubscribe
+
+  /**
+   * `empty` event is called after {@link CrdtDatabase#empty} deleted
+   * all rows. Reset here the app’s state built from the tables,
+   * like reducers.
+   *
+   * ```js
+   * crdt.on('empty', () => {
+   *   resetMenu()
+   * })
+   * ```
+   *
+   * @param event The event name.
+   * @param listener The listener function.
+   * @returns Unbind listener from event.
+   */
+  // Every event has its own docs
+  // oxlint-disable-next-line typescript/unified-signatures
+  on(event: 'empty', listener: () => void): Unsubscribe
 
   /**
    * Promise resolved when the database was prepared and tables can be used.

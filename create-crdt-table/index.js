@@ -1129,6 +1129,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
           await tx.driver.exec(`DELETE FROM "${plural}"`, [])
         }
       })
+      emitter.emit('empty')
     },
     on(event, listener) {
       return emitter.on(event, listener)

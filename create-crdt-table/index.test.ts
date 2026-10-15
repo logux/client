@@ -3478,7 +3478,12 @@ it('empties all tables keeping the database ready', async () => {
     { fields: { name: 'Ben' }, id: 'U2', type: 'user/created' },
     { sync: true }
   )
+  let rowsOnEvent: unknown[] = []
+  crdt.on('empty', () => {
+    rowsOnEvent.push(db.driver.select('SELECT "id" FROM "user"', []))
+  })
   await crdt.empty()
+  expect(await Promise.all(rowsOnEvent)).toEqual([[]])
 
   expect(await loadList($users)).toEqual([])
   expect(await loadList(post.select())).toEqual([])

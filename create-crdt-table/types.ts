@@ -409,3 +409,6 @@ if (flagRows.status === 'ready') {
   let pinned: boolean = flagRows.value[0]!.pinned
   console.log(pinned)
 }
+
+let unbindEmpty = crdt.on('empty', () => {})
+unbindEmpty()
