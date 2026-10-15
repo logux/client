@@ -547,6 +547,23 @@ it('sends only special actions', async () => {
   ])
 })
 
+it('waits for just added actions to be synchronized', async () => {
+  let client = await createDialog()
+  let pair = getPair(client)
+  await client.waitFor('synchronized')
+  let meta = await client.log.add({ type: 'a' }, { sync: true })
+  let synchronized = false
+  let waiting = client.waitFor('synchronized').then(() => {
+    synchronized = true
+  })
+  await delay(10)
+  expect(client.state).toBe('sending')
+  expect(synchronized).toBe(false)
+  pair.right.send(['synced', meta ? meta.added : 0])
+  await waiting
+  expect(client.state).toBe('synchronized')
+})
+
 it('filters data before sending', async () => {
   let client = await createDialog({ userId: 'a' })
   let pair = getPair(client)

@@ -479,11 +479,12 @@ export class Client {
     return this.log.type(type, listener, opts)
   }
 
-  waitFor(state) {
-    if (this.state === state) {
-      return Promise.resolve()
-    }
-    return new Promise(resolve => {
+  async waitFor(state) {
+    // Node changes state to `sending` only after async `onSend`,
+    // so just added actions are not visible in the state yet
+    if (state === 'synchronized') await this.node.sending
+    if (this.state === state) return
+    await new Promise(resolve => {
       let unbind = this.on('state', () => {
         if (this.state === state) {
           unbind()
