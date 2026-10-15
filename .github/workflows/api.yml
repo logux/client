@@ -1,13 +1,29 @@
 name: Update API
 on:
-  create:
+  push:
     tags:
       - '*.*.*'
 permissions: {}
 jobs:
   api:
+    if: github.event.deleted == false
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - name: Start logux.org re-build
+      - name: Request a logux.org rebuild
+        env:
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
         run: |
-          curl -XPOST -u "${{ secrets.DEPLOY_USER }}:${{ secrets.DEPLOY_TOKEN }}" -H "Accept: application/vnd.github.everest-preview+json" -H "Content-Type: application/json" https://api.github.com/repos/logux/logux.org/dispatches --data '{"event_type": "deploy"}'
+          if [ -z "$DEPLOY_USER" ] || [ -z "$DEPLOY_TOKEN" ]; then
+            echo '::error::Set DEPLOY_USER and DEPLOY_TOKEN with repository dispatch access to logux/logux.org.'
+            exit 1
+          fi
+          curl --fail-with-body --silent --show-error \
+            --connect-timeout 10 --max-time 60 \
+            --request POST \
+            --user "$DEPLOY_USER:$DEPLOY_TOKEN" \
+            --header 'Accept: application/vnd.github+json' \
+            --header 'Content-Type: application/json' \
+            https://api.github.com/repos/logux/logux.org/dispatches \
+            --data '{"event_type":"deploy"}'
