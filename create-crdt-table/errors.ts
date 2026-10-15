@@ -127,9 +127,6 @@ let badDefault = { default: { views: '1' } }
 // THROWS No overload matches this call.
 crdt.table('badDefault', { meta: json({ views: number() }, badDefault) })
 
-// THROWS No overload matches this call.
-crdt.table('bad', { isAdmin: boolean({ default: false }) })
-
 // THROWS Type '"missing"' is not assignable to type
 crdt.table('post', { title: string() }, ['missing'])
 // THROWS Type '"updatedAt_missing"' is not assignable to type
@@ -161,8 +158,6 @@ for (let [, fields] of parseCrdtRows(
   // THROWS Cannot assign to 'title' because it is a read-only property
   fields.title = 'B'
 }
-// THROWS Argument of type 'CrdtTableDefinition<{ isAdmin: { type: "BOOLEAN"
-crdt.table(defineCrdtTable('flags', { isAdmin: boolean({ default: false }) }))
 
 let whereFeeds = crdt.table(defineCrdtTable('whereFeeds', { title: string() }))
 async function where(): Promise<void> {

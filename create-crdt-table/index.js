@@ -52,18 +52,24 @@ export function optional(col) {
 }
 
 /**
- * JSON columns are the only columns with a conversion: the database
- * keeps them as text (SQLite) or `JSONB` (PGlite), and rows must have
- * the parsed value like the actions
+ * JSON and boolean columns have a conversion: the database keeps JSON
+ * as text (SQLite) or `JSONB` (PGlite) and SQLite has no booleans,
+ * but rows must have the same values as the actions
  */
-function toDb(col, value) {
-  return col.type === 'JSON' && value !== null ? JSON.stringify(value) : value
+function toDb(col, value, dialect) {
+  if (col.type === 'JSON') return value === null ? value : JSON.stringify(value)
+  if (dialect === 'sqlite' && typeof value === 'boolean') return value ? 1 : 0
+  return value
 }
 
 function fromDb(col, value) {
-  return col.type === 'JSON' && typeof value === 'string'
-    ? JSON.parse(value)
-    : value
+  if (col.type === 'JSON' && typeof value === 'string') return JSON.parse(value)
+  if (col.type === 'BOOLEAN' && typeof value === 'number') return value !== 0
+  return value
+}
+
+function isConverted(col) {
+  return col.type === 'JSON' || col.type === 'BOOLEAN'
 }
 
 /**
@@ -675,7 +681,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
           (!last || last < sorted)
         ) {
           keys.push(key)
-          values.push(toDb(schema[key], fields[key]))
+          values.push(toDb(schema[key], fields[key], dialect))
           // Keep meta for the next record with the same ID in this batch
           row[`${META}${key}`] = sorted
         }
@@ -707,7 +713,8 @@ export function createCrdtDatabase(client, db, opts = {}) {
         if (key in record || !('default' in col)) continue
         record[key] = toDb(
           col,
-          typeof col.default === 'function' ? col.default() : col.default
+          typeof col.default === 'function' ? col.default() : col.default,
+          dialect
         )
         columns.add(key)
       }
@@ -1137,9 +1144,6 @@ export function createCrdtDatabase(client, db, opts = {}) {
       }
       indexes ??= []
       for (let name in schema) {
-        if (schema[name].type === 'BOOLEAN' && dialect === 'sqlite') {
-          throw new Error('sqlite does not support boolean')
-        }
         if (name.startsWith(META)) {
           throw new Error(`${META} prefix is reserved for fields meta`)
         }
@@ -1148,13 +1152,13 @@ export function createCrdtDatabase(client, db, opts = {}) {
         .map(index => indexSql(plural, schema, index, indexNames))
         .sort((a, b) => (a < b ? -1 : 1))
       tables[plural] = schema
-      let jsonColumns = Object.keys(schema).filter(
-        key => schema[key].type === 'JSON'
+      let converted = Object.keys(schema).filter(key =>
+        isConverted(schema[key])
       )
 
       function parseRow(row) {
         let parsed = { ...row }
-        for (let key of jsonColumns) {
+        for (let key of converted) {
           if (key in row) parsed[key] = fromDb(schema[key], row[key])
         }
         return parsed
@@ -1245,8 +1249,8 @@ export function createCrdtDatabase(client, db, opts = {}) {
             ? [`${prefix} ${template[0]}`, ...template.slice(1)]
             : [prefix]
           let store = db.store(parts, ...params)
-          if (jsonColumns.length === 0) return store
-          // The driver returns JSON columns as they are stored,
+          if (converted.length === 0) return store
+          // The driver returns JSON and boolean columns as they are stored,
           // so the rows are parsed on the way to the app
           let parsed = computed(store, value => {
             if (value.status !== 'ready') return value

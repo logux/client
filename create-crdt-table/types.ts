@@ -402,3 +402,10 @@ let movedIds: string[] = await feedTable.updateWhere({ categoryId: 'B' })`
 `
 let allMoved: string[] = await feedTable.updateWhere({ title: 'T' })()
 console.log(deletedIds, allDeleted, movedIds, allMoved)
+
+let flags = crdt.table('flags', { pinned: boolean({ default: false }) })
+let flagRows = flags.select`WHERE "pinned" = ${1}`.get()
+if (flagRows.status === 'ready') {
+  let pinned: boolean = flagRows.value[0]!.pinned
+  console.log(pinned)
+}

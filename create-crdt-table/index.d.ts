@@ -121,10 +121,9 @@ export function number<Type extends number = number>(
 ): { type: 'DOUBLE PRECISION' } & CrdtColumn<Type, false>
 
 /**
- * `BOOLEAN` column for databases with native boolean support like PGlite.
- * SQLite has no boolean type, so with `'sqlite'` dialect use
- * {@link number} column with `1`/`0` instead (using this builder there
- * is a type error and throws in {@link CrdtDatabase#table}).
+ * `BOOLEAN` column with `true`/`false` value. SQLite has no boolean type,
+ * so there it is stored as `1`/`0` (use them in SQL conditions)
+ * and converted back to `boolean` in rows of {@link CrdtTable#select}.
  *
  * @param opts Extra column definition SQL or column options.
  */
@@ -476,8 +475,8 @@ export function defineCrdtTable<
 /**
  * Values for SQL template parameters of {@link CrdtTable#select}.
  * Parameters are passed to the database driver as-is, without any
- * conversion. Booleans are allowed only in dialects
- * with {@link boolean} columns (not in `'sqlite'`).
+ * conversion. Booleans are not allowed in `'sqlite'`: use `1`/`0`
+ * for {@link boolean} columns there.
  */
 export type CrdtSqlParam<Dialect extends Dialects = 'sqlite'> =
   | (Dialect extends 'sqlite' ? never : boolean)
@@ -1006,9 +1005,7 @@ export interface CrdtDatabaseOptions<Dialect extends string = 'sqlite'> {
    * SQL dialect of the database: `'sqlite'` (default), `'pglite'`
    * or any other name for your own dialect. The dialect selects
    * per-dialect extra column SQL in {@link CrdtColumnOptions#sql}
-   * and prohibits {@link boolean} columns in SQLite
-   * (values are passed to the database driver without conversion
-   * and SQLite has no boolean type).
+   * and stores {@link boolean} columns as `1`/`0` in SQLite.
    */
   dialect?: Dialect
 
@@ -1344,29 +1341,16 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
    * @param plural Table name and actions type prefix.
    * @param schema Columns definition from {@link string}, {@link number},
    *               {@link bigint}, {@link boolean}, {@link oneOf},
-   *               {@link json}, {@link optional} builders. {@link boolean}
-   *               is not allowed with `'sqlite'` dialect.
+   *               {@link json}, {@link optional} builders.
    * @param indexes Indexes to create for the table. The dialect is known
    *                here, so use a condition to define an index
    *                for a specific database.
    */
-  table<
-    Schema extends CrdtTableSchema<
-      Dialect extends 'sqlite'
-        ? Exclude<CrdtColumn['type'], 'BOOLEAN'>
-        : CrdtColumn['type']
-    >
-  >(
+  table<Schema extends CrdtTableSchema>(
     definition: CrdtTableDefinition<Schema>,
     indexes?: CrdtIndex<NoInfer<Schema>>[]
   ): CrdtTable<Schema, Dialect>
-  table<
-    Schema extends CrdtTableSchema<
-      Dialect extends 'sqlite'
-        ? Exclude<CrdtColumn['type'], 'BOOLEAN'>
-        : CrdtColumn['type']
-    >
-  >(
+  table<Schema extends CrdtTableSchema>(
     plural: string,
     schema: Schema,
     indexes?: CrdtIndex<NoInfer<Schema>>[]

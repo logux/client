@@ -2778,13 +2778,36 @@ it('throws on two indexes with the same name', async () => {
   }).toThrow('Duplicate index name "user_name"')
 })
 
-it('throws on column type unsupported by dialect', async () => {
+it('stores booleans in SQLite as numbers', async () => {
   let { client, db } = await setup()
   let crdt = createCrdtDatabase(client, db)
-  expect(() => {
-    // @ts-expect-error
-    crdt.table('user', { isAdmin: boolean() })
-  }).toThrow('sqlite does not support boolean')
+  let user = crdt.table('user', {
+    isAdmin: boolean({ default: false }),
+    pinned: optional(boolean())
+  })
+  await crdt.ready
+  await user.create({ id: 'U1' })
+  await user.create({ id: 'U2', isAdmin: true, pinned: false })
+  await user.update('U1', { pinned: true })
+
+  expect(withoutMeta(await loadList(user.select`ORDER BY "id"`))).toEqual([
+    { id: 'U1', isAdmin: false, pinned: true },
+    { id: 'U2', isAdmin: true, pinned: false }
+  ])
+  expect(
+    await db.driver.select('SELECT "isAdmin", "pinned" FROM "user"', [])
+  ).toEqual([
+    { isAdmin: 0, pinned: 1 },
+    { isAdmin: 1, pinned: 0 }
+  ])
+  expect(
+    (await loadList(user.select`WHERE "isAdmin" = ${1}`)).map(i => i.id)
+  ).toEqual(['U2'])
+  expect((await crdtTableToActions([user])).map(i => i[0])).toContainEqual({
+    fields: { isAdmin: true, pinned: false },
+    id: 'U2',
+    type: 'user/created'
+  })
 })
 
 it('throws on column name reserved for fields meta', async () => {
