@@ -40,15 +40,3 @@ client.type(userRename, action => {
   // THROWS 'fullName' does not exist on type 'RenameAction'
   document.title = action.fullName
 })
-
-function subscribeWrong(): void {
-  // THROWS 'number' is not assignable to parameter of type 'string'
-  client.subscribe(1)
-  // THROWS Object literal may only specify known properties
-  client.subscribe('users/1', { type: 'logux/subscribe' })
-  // THROWS Expected 0 arguments, but got 1
-  client.subscribe('users/1')(1)
-  // THROWS 'string' is not assignable to type 'Promise<void>'
-  client.subscribe('users/1').loading = 'done'
-}
-subscribeWrong()

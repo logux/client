@@ -14,7 +14,6 @@ import {
   type ActionMigrations,
   Client,
   type ClientOptions,
-  LoguxUndoError,
   migrateAction
 } from '../index.js'
 import { setLocalStorage } from '../test/local-storage.js'
@@ -929,117 +928,6 @@ it('tracks server error of action', async () => {
   await delay(10)
 
   expect(result).toBe('error')
-})
-
-function lastId(client: Client<object, TestLog>): string {
-  return client.log.entries().at(-1)![1].id
-}
-
-it('subscribes and unsubscribes', async () => {
-  let client = await createDialog()
-  let added: Action[] = []
-  client.on('add', action => {
-    if (action.type.startsWith('logux/')) added.push(action)
-  })
-
-  let subscription = client.subscribe('users/1', { filter: { active: true } })
-  await delay(1)
-  let id = lastId(client)
-  client.log.add({ id, type: 'logux/processed' })
-  await subscription.loading
-  expect(privateMethods(client).subscriptions).toEqual({
-    '{"filter":{"active":true},"channel":"users/1","type":"logux/subscribe"}': 1
-  })
-
-  subscription()
-  subscription()
-  await delay(1)
-  let unsubscribeId = lastId(client)
-  client.log.add({ id: unsubscribeId, type: 'logux/processed' })
-  await delay(1)
-  expect(privateMethods(client).subscriptions).toEqual({})
-  expect(added).toEqual([
-    {
-      channel: 'users/1',
-      filter: { active: true },
-      type: 'logux/subscribe'
-    },
-    { id, type: 'logux/processed' },
-    {
-      channel: 'users/1',
-      filter: { active: true },
-      type: 'logux/unsubscribe'
-    },
-    { id: unsubscribeId, type: 'logux/processed' }
-  ])
-})
-
-it('cancels subscriptions on destroy', async () => {
-  let client = await createDialog()
-  let first = client.subscribe('users/1')
-  let second = client.subscribe('users/2')
-  await delay(1)
-  first()
-  let added: string[] = []
-  client.on('add', action => {
-    added.push(action.type)
-  })
-  await client.destroy()
-  await first.loading
-  await second.loading
-  second()
-  await delay(10)
-  expect(added).toEqual([])
-})
-
-it('unsubscribes after processing of sent subscription', async () => {
-  let client = await createDialog()
-  let subscription = client.subscribe('users/1')
-  await delay(1)
-  let id = lastId(client)
-  subscription()
-  await delay(1)
-  expect(client.log.actions().at(-1)).toEqual({
-    channel: 'users/1',
-    type: 'logux/subscribe'
-  })
-
-  client.log.add({ id, type: 'logux/processed' })
-  await subscription.loading
-  await delay(1)
-  expect(client.log.actions().at(-1)).toEqual({
-    channel: 'users/1',
-    type: 'logux/unsubscribe'
-  })
-})
-
-it('rejects undone subscription', async () => {
-  let client = await createDialog()
-  let subscription = client.subscribe('users/1')
-  await delay(1)
-  client.log.add({ id: lastId(client), reason: 'denied', type: 'logux/undo' })
-  let error = await subscription.loading.catch((e: unknown) => e)
-  expect(LoguxUndoError.is(error, 'denied')).toBe(true)
-
-  subscription()
-  await delay(1)
-  expect(client.log.actions().at(-1)!.type).toBe('logux/undo')
-  expect(privateMethods(client).subscriptions).toEqual({})
-})
-
-it('does not throw on ignored undone subscription', async () => {
-  let client = await createDialog()
-  let errors: unknown[] = []
-  let onError = (e: unknown): void => {
-    errors.push(e)
-  }
-  process.on('unhandledRejection', onError)
-  client.subscribe('users/1')
-  await delay(1)
-  client.log.add({ id: lastId(client), reason: 'denied', type: 'logux/undo' })
-  await delay(10)
-  process.off('unhandledRejection', onError)
-  expect(errors).toEqual([])
 })
 
 it('copies state from node', async () => {

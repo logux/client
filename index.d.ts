@@ -12,8 +12,7 @@ export {
   Client,
   ClientMeta,
   ClientOptions,
-  migrateAction,
-  Subscription
+  migrateAction
 } from './client/index.js'
 export { confirm } from './confirm/index.js'
 

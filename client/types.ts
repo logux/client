@@ -26,12 +26,3 @@ client.type<UserRenameAction>('user/rename', action => {
 client.type(userRename, action => {
   document.title = action.name
 })
-
-async function subscribe(): Promise<void> {
-  let subscription = client.subscribe('users/1', {
-    filter: { active: true }
-  })
-  await subscription.loading
-  subscription()
-}
-void subscribe()

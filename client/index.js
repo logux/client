@@ -365,7 +365,6 @@ export class Client {
     }
 
     this.processing = {}
-    this.cancelSubscriptions = new Set()
   }
 
   changeUser(userId, token) {
@@ -421,8 +420,6 @@ export class Client {
   }
 
   async destroy() {
-    this.destroyed = true
-    for (let cancel of this.cancelSubscriptions) cancel()
     this.onUnload()
     this.node.destroy()
     clearInterval(this.pinging)
@@ -472,41 +469,6 @@ export class Client {
   start(connect = true) {
     this.cleanPrevActions()
     if (connect) void this.node.connection.connect()
-  }
-
-  subscribe(channel, opts = {}) {
-    let action = { ...opts, channel, type: 'logux/subscribe' }
-    // The destroyed client will never get the answer
-    let cancel
-    let processing = Promise.race([
-      this.sync(action),
-      new Promise(resolve => {
-        cancel = resolve
-      })
-    ])
-    this.cancelSubscriptions.add(cancel)
-    processing.then(
-      () => this.cancelSubscriptions.delete(cancel),
-      () => this.cancelSubscriptions.delete(cancel)
-    )
-    let unsubscribed = false
-    let subscription = () => {
-      if (unsubscribed || this.destroyed) return
-      unsubscribed = true
-      // Wait for the server to not miss subscription, which is already sent.
-      // The same keys order as in subscription to find it on processing.
-      processing.then(
-        () => {
-          if (this.destroyed) return
-          this.log.add({ ...action, type: 'logux/unsubscribe' }, { sync: true })
-        },
-        () => {}
-      )
-    }
-    subscription.loading = processing.then(() => {})
-    // Subscription can be used without waiting for the loading
-    subscription.loading.catch(() => {})
-    return subscription
   }
 
   sync(action, meta = {}) {
