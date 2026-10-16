@@ -468,7 +468,7 @@ it('converts old actions after decryption', async () => {
   ])
 })
 
-it('waits for the secret from a promise or a function', async () => {
+it('connects only after the secret from a promise or a function', async () => {
   let client1 = createClient()
   let client2 = createClient()
 
@@ -484,21 +484,24 @@ it('waits for the secret from a promise or a function', async () => {
   })
   expect(calls).toBe(0)
 
-  await Promise.all([connect(client1), connect(client2)])
-  getPair(client1).clear()
-
   client1.log.add({ type: 'sync', value: 'secret' }, { sync: true })
+  void client1.node.connection.connect()
   await delay(50)
-  expect(getPair(client1).leftSent).toEqual([])
+  expect(client1.state).toBe('disconnected')
+  expect(getPair(client1).leftEvents).toEqual([])
 
   enter('password')
+  await connect(client1)
   await delay(50)
   expect(getPair(client1).leftSent).toMatchObject([
-    ['sync', 1, { d: BYTES, iv: BYTES, type: '0' }, { id: '0' }]
+    ['connect', expect.any(Number), expect.any(String), 0, expect.any(Object)],
+    ['sync', 1, { d: BYTES, iv: BYTES, type: '0' }, { id: '0' }],
+    ['ready', expect.any(Number)]
   ])
 
-  getPair(client2).right.send(getPair(client1).leftSent[0]!)
-  getPair(client2).right.send(getPair(client1).leftSent[0]!)
+  await connect(client2)
+  getPair(client2).right.send(getPair(client1).leftSent[1]!)
+  getPair(client2).right.send(getPair(client1).leftSent[1]!)
   await delay(50)
   expect(privateMethods(client2.log).actions()).toEqual([
     { type: 'sync', value: 'secret' }
@@ -518,13 +521,11 @@ it('asks the secret again after an error', async () => {
     if (calls === 1) return Promise.reject(new Error('No password'))
     return 'password'
   })
-  await connect(client)
+  await client.node.connection.connect()
+  expect(errors).toEqual(['No password'])
+  expect(client.state).toBe('disconnected')
 
   client.log.add({ type: 'sync' }, { sync: true })
-  await delay(50)
-  expect(errors).toEqual(['No password'])
-  expect(client.connected).toBe(false)
-
   await connect(client)
   await delay(50)
   expect(calls).toBe(2)
@@ -610,4 +611,19 @@ it('cleans many actions on server by one action', async () => {
       { id: '2' }
     ]
   ])
+})
+
+it('cleans actions on server before the client destroy', async () => {
+  let client = createClient()
+  encryptActions(client, 'password')
+  await client.log.add({ type: 'sync' }, { sync: true })
+  let types: string[] = []
+  client.on('add', action => {
+    types.push(action.type)
+  })
+  await client.log.removeReason('test')
+  await client.log.removeReason('syncing')
+  await client.destroy()
+  await delay(10)
+  expect(types).toEqual(['0/clean'])
 })

@@ -129,6 +129,22 @@ export function encryptActions(client, secret, opts = {}) {
     reconnect.connection = binary
   }
 
+  // Client can not send or read anything without the key,
+  // so it does not connect until the key will be loaded
+  if (typeof secret === 'function' || typeof secret.then === 'function') {
+    let connection = client.node.connection
+    let originConnect = connection.connect.bind(connection)
+    connection.connect = async () => {
+      try {
+        await getKey()
+      } catch (e) {
+        client.node.emitter.emit('error', e)
+        return
+      }
+      return originConnect()
+    }
+  }
+
   let ignore = new Set(
     (opts.ignore || []).map(i => (typeof i === 'string' ? i : i.type))
   )
@@ -170,12 +186,13 @@ export function encryptActions(client, secret, opts = {}) {
 
   if (opts.clean !== false) {
     // Log cleaning removes many actions at once, so they are cleaned
-    // on the server by a single action
+    // on the server by a single action. Microtask keeps it before the end
+    // of the cleaning call, so the client can be destroyed right after it.
     let cleaning = []
     client.log.on('clean', (action, meta) => {
       if (meta.sync && !isSkipped(action.type)) {
         if (cleaning.length === 0) {
-          setTimeout(() => {
+          queueMicrotask(() => {
             let ids = cleaning
             cleaning = []
             client.log.add(
