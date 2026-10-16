@@ -1402,9 +1402,11 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
   /**
    * Promise resolved when the database was prepared and tables can be used.
    *
-   * It is also resolved when the database became `outdated` or `broken`,
-   * so awaiting it will never hang. Check {@link CrdtDatabase#status}
-   * if you need to know which of them happened.
+   * It is also resolved when the database became `outdated` or `broken`
+   * or was destroyed by {@link CrdtDatabase#destroy}, so awaiting it will
+   * never hang. Check {@link CrdtDatabase#status} if you need to know
+   * which of them happened. One-time reads (like {@link CrdtTable#load})
+   * return empty results in these cases without touching the database.
    *
    * ```js
    * showLoaderUntil(crdt.ready, 'Loading data')

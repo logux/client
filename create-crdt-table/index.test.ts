@@ -4852,3 +4852,37 @@ it('does not report lost in-memory database', async () => {
   expect(localStorage.getItem('logux:db')).toBe('old')
   expect(localStorage.getItem('logux:db:migrating')).toBe('1')
 })
+
+it('returns empty reads after destroy', async () => {
+  async function check(db: Database, crdt: CrdtDatabase): Promise<void> {
+    let post = crdt.table('post', { title: string() })
+    await crdt.destroy()
+    let select = vi.spyOn(db, 'select')
+    expect(await crdt.select`SELECT * FROM "post"`).toEqual([])
+    expect(await post.load()).toEqual([])
+    expect(await post.get('P1')).toBeUndefined()
+    expect(await post.deleteWhere()).toEqual([])
+    expect(await post.updateWhere({ title: 'B' })()).toEqual([])
+    expect(select).not.toHaveBeenCalled()
+    select.mockRestore()
+  }
+
+  let first = await setup()
+  let types: string[] = []
+  first.client.on('add', action => {
+    types.push(action.type)
+  })
+  await check(first.db, createCrdtDatabase(first.client, first.db))
+
+  let second = await setup()
+  let crdt = createCrdtDatabase(second.client, second.db)
+  let post = crdt.table('post', { title: string() })
+  await crdt.ready
+  await post.create({ id: 'P1', title: 'A' })
+  await crdt.destroy()
+  await second.db.close()
+  expect(await post.load()).toEqual([])
+  expect(await post.get('P1')).toBeUndefined()
+  expect(await crdt.select`SELECT * FROM "post"`).toEqual([])
+  expect(types).toEqual([])
+})

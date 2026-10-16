@@ -473,6 +473,15 @@ export function createCrdtDatabase(client, db, opts = {}) {
     pending.push(entry)
   }
 
+  /**
+   * `ready` is resolved also on destroy() and on errors, when the tables
+   * can be missing or the app can close the database
+   */
+  async function readable() {
+    await ready
+    return !destroyed && status.value === 'ready'
+  }
+
   function newMeta() {
     return sync ? { sync: true } : {}
   }
@@ -1148,7 +1157,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
     checked,
     clean: cleanTables,
     async select(sql, ...params) {
-      await ready
+      if (!(await readable())) return []
       return db.select(sql, ...params)
     },
     async destroy() {
@@ -1217,7 +1226,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
       // Rows, which match the condition right now. Rows created later
       // by another client are not changed, like with select() and delete()
       async function idsWhere(template, params) {
-        await ready
+        if (!(await readable())) return []
         let prefix = `SELECT "id" FROM "${plural}"`
         let parts = template
           ? [`${prefix} WHERE ${template[0]}`, ...template.slice(1)]
@@ -1289,7 +1298,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
           return rows[0]
         },
         async load(template, ...params) {
-          await ready
+          if (!(await readable())) return []
           let rows = await db.select(selectParts(template), ...params)
           return rows.map(parseRow)
         },
