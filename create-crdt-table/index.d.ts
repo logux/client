@@ -18,6 +18,7 @@ export type { PersistentStorage }
 
 type CrdtMigrationStatus =
   | 'broken'
+  | 'creating'
   | 'initializing'
   | 'migrating'
   | 'outdated'
@@ -1223,9 +1224,9 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
 
   /**
    * Promise resolved when the database compared the schema with the stored
-   * one and chose to use the tables or to rebuild them. After it
-   * {@link CrdtDatabase#status} is `migrating`, if the existing tables
-   * are rebuilding, and `initializing` otherwise.
+   * one and chose to use the tables or to build them. After it
+   * {@link CrdtDatabase#status} is `creating` for new tables, `migrating`
+   * if the existing tables are rebuilding, and `initializing` otherwise.
    *
    * Like {@link CrdtDatabase#ready}, it is resolved also when the database
    * became `outdated` or `broken`.
@@ -1441,6 +1442,9 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
    * Database preparing status:
    *
    * - `initializing`: reading schema version, checking tables.
+   * - `creating`: there were no tables, they are being created and filled
+   *   from the log and {@link CrdtDatabaseOptions#repeat} for the first time
+   *   (or on every start of in-memory database).
    * - `migrating`: schema or data format was changed, tables are being
    *   dropped and refilled from the log, the old tables
    *   and {@link CrdtDatabaseOptions#repeat}.

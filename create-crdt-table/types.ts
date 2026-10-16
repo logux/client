@@ -99,8 +99,13 @@ let user = crdt.table(
 
 async function test(): Promise<void> {
   await crdt.ready
-  let status: 'broken' | 'initializing' | 'migrating' | 'outdated' | 'ready' =
-    crdt.status.get()
+  let status:
+    | 'broken'
+    | 'creating'
+    | 'initializing'
+    | 'migrating'
+    | 'outdated'
+    | 'ready' = crdt.status.get()
   console.log(status)
 
   let id: string = await user.create({ email: 'a@b.c', name: 'Ann' })

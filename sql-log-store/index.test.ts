@@ -422,7 +422,48 @@ it('ignores writes after destroy', async () => {
   })
   expect(cleaned).toEqual([])
   expect(await store.remove('1')).toBeUndefined()
-  expect((await all(store.get())).map(i => i[0].type)).toEqual(['A', 'B'])
+
+  let other = new SqlLogStore(db)
+  expect((await all(other.get())).map(i => i[0].type)).toEqual(['A', 'B'])
+})
+
+it('returns empty reads after destroy', async () => {
+  let store = new SqlLogStore(db)
+  await store.getLastAdded()
+  await fill(2500)
+  let page = await store.get()
+  expect(page.entries).toHaveLength(1000)
+  let reading = store.getLastAdded()
+  await store.destroy()
+  expect(await reading).toBe(2500)
+
+  let select = db.driver.select
+  let selects = 0
+  db.driver.select = (...args) => {
+    selects += 1
+    return select.apply(db.driver, args)
+  }
+  expect(await page.next!()).toEqual({ entries: [] })
+  expect(await store.get()).toEqual({ entries: [] })
+  expect(await store.byId('1 10:1')).toEqual([null, null])
+  expect(await store.has(['1 10:1'])).toEqual([])
+  expect(await store.getLastAdded()).toBe(0)
+  expect(await store.getLastSynced()).toEqual({ received: 0, sent: 0 })
+  expect(selects).toBe(0)
+  db.driver.select = select
+})
+
+it('stops log reading after destroy', async () => {
+  let store = new SqlLogStore(db)
+  await store.getLastAdded()
+  await fill(2500)
+  let log = new Log({ nodeId: '10:1', store })
+  let read = 0
+  await log.each(() => {
+    read += 1
+    if (read === 1) void store.destroy()
+  })
+  expect(read).toBe(1000)
 })
 
 it('does not touch closed database after client destroy', async () => {

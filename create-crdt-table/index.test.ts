@@ -3691,7 +3691,7 @@ it('forgets schema version to re-create tables from the log', async () => {
   })
   await crdt2.ready
 
-  expect(statuses).toEqual(['initializing', 'ready'])
+  expect(statuses).toEqual(['initializing', 'creating', 'ready'])
   expect((await loadList(user2.select())).map(i => i.id)).toEqual(['U1'])
   expect(localStorage.getItem('logux:db')).toBeTypeOf('string')
 
@@ -4819,6 +4819,11 @@ it('resolves checked after schema comparison', async () => {
   expect(await start({ title: string() })).toEqual(['initializing', 'ready'])
   expect(await start({ title: string(), views: optional(number()) })).toEqual([
     'migrating',
+    'ready'
+  ])
+  await db.driver.exec('DROP TABLE "logux_crdt"', [])
+  expect(await start({ title: string(), views: optional(number()) })).toEqual([
+    'creating',
     'ready'
   ])
 })

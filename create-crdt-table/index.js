@@ -1010,7 +1010,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
       })
       let restored = []
       let repeated = []
-      if (stored) status.set('migrating')
+      status.set(stored ? 'migrating' : 'creating')
       compared()
       if (stored) {
         emitter.emit('migrating', ready)

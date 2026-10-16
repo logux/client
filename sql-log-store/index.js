@@ -280,6 +280,7 @@ export class SqlLogStore {
     this.db = db
     this.driver = db.driver
     this.queue = Promise.resolve()
+    this.reading = new Set()
     this.packers = opts.packers ?? {}
   }
 
@@ -290,23 +291,27 @@ export class SqlLogStore {
   }
 
   async byId(id) {
-    await this.init()
-    let [row] = await this.driver.select(
-      `SELECT "added", "action", "meta", "blob" FROM "logux_log"` +
-        ` WHERE "id" = ?`,
-      [id]
-    )
-    return row ? this.toEntry(row) : [null, null]
+    return this.read([null, null], async () => {
+      await this.init()
+      let [row] = await this.driver.select(
+        `SELECT "added", "action", "meta", "blob" FROM "logux_log"` +
+          ` WHERE "id" = ?`,
+        [id]
+      )
+      return row ? this.toEntry(row) : [null, null]
+    })
   }
 
   async has(ids) {
     if (ids.length === 0) return []
-    await this.init()
-    let rows = await this.driver.select(
-      `SELECT "id" FROM "logux_log" WHERE "id" IN (${holders(ids.length)})`,
-      ids
-    )
-    return rows.map(row => row.id)
+    return this.read([], async () => {
+      await this.init()
+      let rows = await this.driver.select(
+        `SELECT "id" FROM "logux_log" WHERE "id" IN (${holders(ids.length)})`,
+        ids
+      )
+      return rows.map(row => row.id)
+    })
   }
 
   async changeMeta(id, diff) {
@@ -353,29 +358,35 @@ export class SqlLogStore {
   }
 
   async get(opts = {}) {
-    await this.init()
-    return this.page(opts)
+    return this.read({ entries: [] }, async () => {
+      await this.init()
+      return this.page(opts)
+    })
   }
 
   async getLastAdded() {
-    await this.init()
-    let [row] = await this.driver.select(
-      `SELECT "value" FROM "logux_extra" WHERE "key" = 'added'`,
-      []
-    )
-    return Number(row.value)
+    return this.read(0, async () => {
+      await this.init()
+      let [row] = await this.driver.select(
+        `SELECT "value" FROM "logux_extra" WHERE "key" = 'added'`,
+        []
+      )
+      return Number(row.value)
+    })
   }
 
   async getLastSynced() {
-    await this.init()
-    let rows = await this.driver.select(
-      `SELECT "key", "value" FROM "logux_extra"` +
-        ` WHERE "key" IN (${holders(SYNCED.length)})`,
-      SYNCED
-    )
-    let synced = { received: 0, sent: 0 }
-    for (let row of rows) synced[row.key] = Number(row.value)
-    return synced
+    return this.read({ received: 0, sent: 0 }, async () => {
+      await this.init()
+      let rows = await this.driver.select(
+        `SELECT "key", "value" FROM "logux_extra"` +
+          ` WHERE "key" IN (${holders(SYNCED.length)})`,
+        SYNCED
+      )
+      let synced = { received: 0, sent: 0 }
+      for (let row of rows) synced[row.key] = Number(row.value)
+      return synced
+    })
   }
 
   init() {
@@ -415,6 +426,10 @@ export class SqlLogStore {
    * pagination, so a big log will not be loaded into the memory at once.
    */
   async page(opts, cursor) {
+    return this.read({ entries: [] }, () => this.loadPage(opts, cursor))
+  }
+
+  async loadPage(opts, cursor) {
     let created = opts.order === 'created'
     let where = []
     let params = []
@@ -574,6 +589,21 @@ export class SqlLogStore {
   async destroy() {
     this.destroyed = true
     await this.queue
+    await Promise.allSettled(this.reading)
+  }
+
+  // Reads after destroy() return nothing, since the app can close
+  // the database right after it. For instance, it stops `log.each()`
+  // of the node’s synchronization on the next page.
+  async read(empty, callback) {
+    if (this.destroyed) return empty
+    let reading = callback()
+    this.reading.add(reading)
+    try {
+      return await reading
+    } finally {
+      this.reading.delete(reading)
+    }
   }
 
   write(callback) {
