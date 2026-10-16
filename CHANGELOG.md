@@ -2,6 +2,37 @@
 
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.27.0
+
+- Added `migrations` option to clients.
+- Added `outdated` status.
+- Added `boolean()` support in SQLite to CRDT Table.
+- Added `deleteWhere()` and `updateWhere()` to CRDT Table.
+- Added `load()`, `get()` and `row()` to CRDT Table.
+- Added `defineCrdtTable()` to define tables and actions without database.
+- Added secret promise `encryptActions()`.
+- Moved `encryptActions()` to batch `0/clean` with `ids`.
+- Moved `crdtTableToActions()` to put all current row fields to `created`.
+- Moved `crdt.destroy()` to return a promise, which waits for current writes.
+- Moved `Client#destroy()` to return a promise, which waits for log writes.
+- Added `LoguxUndoError.is()`.
+- Added `parseRow()` to CRDT Table.
+- Added `crdt.select()`, `crdt.applied()`, `crdt.idle()` and `crdt.checked`.
+- Added `empty` event and `creating` status to CRDT database.
+- Added old tables restoring on CRDT database schema change.
+- Added `mapCrdtFields()` and `schema` option to `crdtTableToActions()`.
+- Added types to `parseCrdtRows()`.
+- Added action creators support to `ignore` of `encryptActions()`.
+- Added `logux/undo` decryption to `encryptActions()`.
+- Added current `meta.subprotocol` to received actions without it.
+- Fixed `Client#waitFor('synchronized')` with just added actions.
+- Fixed false `lost-database` on in-memory CRDT database.
+- Fixed CRDT database migration finishing after `crdt.destroy()`.
+- Fixed CRDT database reads after `crdt.destroy()`.
+- Fixed log reads and writes after `Client#destroy()`.
+- Fixed `null` type of `optional()` items in `json()` list.
+- Fixed page reload on `IndexedStore` version change.
+
 ## 0.26.0
 
 - Moved to Logux Core 0.12.
