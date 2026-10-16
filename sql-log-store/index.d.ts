@@ -53,6 +53,16 @@ export class SqlLogStore<
   constructor(db: Database, opts?: SqlLogStoreOptions<Packers>)
 
   /**
+   * Wait for the current writes and ignore the next ones: the actions
+   * will not be added, so the database can be closed after it.
+   *
+   * {@link Client#destroy} calls it automatically.
+   *
+   * @returns Promise resolved when the current writes were finished.
+   */
+  destroy(): Promise<void>
+
+  /**
    * Set the callback, which will be called inside the transaction writing
    * the action to the log. It allows to apply the action to the tables
    * of the same database atomically: the action and its result will be

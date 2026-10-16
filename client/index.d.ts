@@ -161,6 +161,8 @@ export interface Subscription {
   /**
    * Resolves when the server processed the subscription
    * and rejects with {@link LoguxUndoError} if the server undid it.
+   * It is also resolved on {@link Client#destroy}, after which
+   * the subscription function does nothing.
    *
    * ```js
    * try {
@@ -315,13 +317,19 @@ export class Client<
   /**
    * Disconnect and stop synchronization.
    *
+   * The log store stops writing (actions added after it are not added),
+   * and the promise waits for the current writes, so the database
+   * can be closed after it.
+   *
    * ```js
-   * shutdown.addEventListener('click', () => {
-   *   client.destroy()
-   * })
+   * await crdt.destroy()
+   * await client.destroy()
+   * await db.close()
    * ```
+   *
+   * @returns Promise resolved when the log store finished its writes.
    */
-  destroy(): void
+  destroy(): Promise<void>
 
   on(event: 'user', listener: (userId: string) => void): Unsubscribe
   /**

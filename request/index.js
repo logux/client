@@ -6,12 +6,12 @@ export function request(action, opts) {
   let client = new Client(opts)
   return new Promise((resolve, reject) => {
     client.node.catch(e => {
-      client.destroy()
+      void client.destroy()
       reject(e)
     })
     client.on('add', response => {
       if (response === action) return
-      client.destroy()
+      void client.destroy()
       if (response.type === 'logux/undo') {
         reject(new LoguxUndoError(response))
       } else {

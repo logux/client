@@ -347,7 +347,7 @@ export class Client {
               'Without SSL, old proxies block WebSockets. ' +
                 'Use WSS for Logux or set allowDangerousProtocol option.'
             )
-            this.destroy()
+            void this.destroy()
           }
         }
       })
@@ -365,6 +365,7 @@ export class Client {
     }
 
     this.processing = {}
+    this.cancelSubscriptions = new Set()
   }
 
   changeUser(userId, token) {
@@ -394,11 +395,15 @@ export class Client {
   }
 
   async clean() {
-    this.destroy()
+    // Databases and the log are cleaned through the log store,
+    // so it stops writing only after the cleaning
+    this.cleaningStore = true
+    void this.destroy()
     // Databases are cleaned before the log, since they are filled from it
     let cleaning = this.emitter.events.cleaning ?? []
     await Promise.all(cleaning.map(listener => listener()))
     if (this.log.store.clean) await this.log.store.clean()
+    if (this.log.store.destroy) await this.log.store.destroy()
   }
 
   cleanPrevActions() {
@@ -415,12 +420,17 @@ export class Client {
     }
   }
 
-  destroy() {
+  async destroy() {
+    this.destroyed = true
+    for (let cancel of this.cancelSubscriptions) cancel()
     this.onUnload()
     this.node.destroy()
     clearInterval(this.pinging)
     if (typeof window !== 'undefined' && window.removeEventListener) {
       window.removeEventListener('pagehide', this.onUnload)
+    }
+    if (this.log.store.destroy && !this.cleaningStore) {
+      await this.log.store.destroy()
     }
   }
 
@@ -466,15 +476,28 @@ export class Client {
 
   subscribe(channel, opts = {}) {
     let action = { ...opts, channel, type: 'logux/subscribe' }
-    let processing = this.sync(action)
+    // The destroyed client will never get the answer
+    let cancel
+    let processing = Promise.race([
+      this.sync(action),
+      new Promise(resolve => {
+        cancel = resolve
+      })
+    ])
+    this.cancelSubscriptions.add(cancel)
+    processing.then(
+      () => this.cancelSubscriptions.delete(cancel),
+      () => this.cancelSubscriptions.delete(cancel)
+    )
     let unsubscribed = false
     let subscription = () => {
-      if (unsubscribed) return
+      if (unsubscribed || this.destroyed) return
       unsubscribed = true
       // Wait for the server to not miss subscription, which is already sent.
       // The same keys order as in subscription to find it on processing.
       processing.then(
         () => {
+          if (this.destroyed) return
           this.log.add({ ...action, type: 'logux/unsubscribe' }, { sync: true })
         },
         () => {}

@@ -285,6 +285,7 @@ export class SqlLogStore {
 
   async add(entries) {
     if (entries.length === 0) return []
+    if (this.destroyed) return entries.map(() => false)
     return this.write(tx => addAll(this, tx, entries))
   }
 
@@ -519,7 +520,7 @@ export class SqlLogStore {
       }
       return removed
     })
-    for (let [action, meta] of cleaned) callback(action, meta)
+    for (let [action, meta] of cleaned ?? []) callback(action, meta)
   }
 
   onTransactionAdd(callback) {
@@ -570,7 +571,14 @@ export class SqlLogStore {
   // Actions of a single `sync` message are added one by one, so a transaction
   // per action made the first sync of an old account very slow. Writes, which
   // were queued while the previous transaction was running, share the next one
+  async destroy() {
+    this.destroyed = true
+    await this.queue
+  }
+
   write(callback) {
+    // The app can close the database right after the client was destroyed
+    if (this.destroyed) return Promise.resolve()
     if (!this.batch) {
       let batch = (this.batch = [])
       this.queue = this.queue

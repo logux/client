@@ -11,12 +11,14 @@ import {
 import type { Database } from '@nanostores/sql'
 import { openDb } from '@nanostores/sql'
 import { nodeDriver } from '@nanostores/sql/node'
+import { delay } from 'nanodelay'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, expect, it } from 'vitest'
 
-import { SqlLogStore } from '../db.js'
+import { createCrdtDatabase, SqlLogStore, string } from '../db.js'
+import { CrossTabClient } from '../index.js'
 
 type Entry = [Action, Meta]
 
@@ -403,4 +405,94 @@ it('rolls back the whole batch when one action failed', async () => {
   // The queue is alive and the action before the failed one was not written
   expect(await store.getLastAdded()).toBe(1)
   expect(await all(store.get())).toHaveLength(1)
+})
+
+it('ignores writes after destroy', async () => {
+  let store = new SqlLogStore(db)
+  await add(store, { type: 'A' }, { added: 1, id: '1', reasons: ['test'] })
+  let writing = add(store, { type: 'B' }, { added: 2, id: '2', reasons: ['t'] })
+  await store.destroy()
+  expect(await writing).not.toBe(false)
+  expect(await add(store, { type: 'C' }, { id: '3', reasons: ['test'] })).toBe(
+    false
+  )
+  let cleaned: string[] = []
+  await store.removeReason(['test'], {}, action => {
+    cleaned.push(action.type)
+  })
+  expect(cleaned).toEqual([])
+  expect(await store.remove('1')).toBeUndefined()
+  expect((await all(store.get())).map(i => i[0].type)).toEqual(['A', 'B'])
+})
+
+it('does not touch closed database after client destroy', async () => {
+  let dir = await mkdtemp(join(tmpdir(), 'logux-destroy-'))
+  let driver = nodeDriver(join(dir, 'db.sqlite'))
+  let closed = false
+  let late: string[] = []
+  for (let method of ['exec', 'select', 'transaction'] as const) {
+    let origin = driver[method].bind(driver) as (...args: unknown[]) => unknown
+    ;(driver as Record<string, unknown>)[method] = (...args: unknown[]) => {
+      if (closed) late.push(String(args[0]))
+      return origin(...args)
+    }
+  }
+  let fileDb = openDb(driver)
+  let errors: string[] = []
+  fileDb.on('error', e => {
+    errors.push(e.message)
+  })
+  let client = new CrossTabClient({
+    server: 'ws://localhost',
+    store: new SqlLogStore(fileDb),
+    subprotocol: 1,
+    userId: '10'
+  })
+  let crdt = createCrdtDatabase(client, fileDb, { storage: {} })
+  let feed = crdt.table('feed', { title: string() })
+  await crdt.ready
+
+  await feed.create({ id: 'F1', title: 'A' })
+  void feed.create([
+    { id: 'F2', title: 'B' },
+    { id: 'F3', title: 'C' }
+  ])
+  void client.log.add(
+    { records: [{ id: 'F4', title: 'D' }], type: 'feed/created' },
+    { sync: true }
+  )
+  void feed.update('F1', { title: 'E' }).catch(() => {})
+  await crdt.destroy()
+  await client.destroy()
+  closed = true
+  expect(await client.log.add({ type: 'late' }, { reasons: ['test'] })).toBe(
+    false
+  )
+  await fileDb.close()
+  await rm(dir, { force: true, recursive: true })
+  await delay(50)
+  expect(late).toEqual([])
+  expect(errors).toEqual([])
+})
+
+it('cleans the log and tables before stopping on client clean', async () => {
+  let client = new CrossTabClient({
+    server: 'ws://localhost',
+    store: new SqlLogStore(db),
+    subprotocol: 1,
+    userId: '10'
+  })
+  let crdt = createCrdtDatabase(client, db, { storage: {} })
+  let feed = crdt.table('feed', { title: string() })
+  await crdt.ready
+  await feed.create({ id: 'F1', title: 'A' })
+  await client.log.add({ type: 'A' }, { reasons: ['test'] })
+
+  await client.clean()
+  let tables = await db.select<{ name: string }>`
+    SELECT "name" FROM "sqlite_master" WHERE "type" = 'table'
+  `
+  expect(tables.map(i => i.name)).not.toContain('feed')
+  expect(await all(client.log.store.get())).toEqual([])
+  expect(await client.log.add({ type: 'B' }, { reasons: ['test'] })).toBe(false)
 })

@@ -118,13 +118,14 @@ export class CrossTabClient extends Client {
   }
 
   destroy() {
-    super.destroy()
+    let destroying = super.destroy()
     this.role = 'follower'
     this.emitter.emit('role')
     if (this.unlead) this.unlead()
     if (typeof window !== 'undefined' && window.removeEventListener) {
       window.removeEventListener('storage', this.onStorage)
     }
+    return destroying
   }
 
   forceConnect() {

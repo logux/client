@@ -974,6 +974,24 @@ it('subscribes and unsubscribes', async () => {
   ])
 })
 
+it('cancels subscriptions on destroy', async () => {
+  let client = await createDialog()
+  let first = client.subscribe('users/1')
+  let second = client.subscribe('users/2')
+  await delay(1)
+  first()
+  let added: string[] = []
+  client.on('add', action => {
+    added.push(action.type)
+  })
+  await client.destroy()
+  await first.loading
+  await second.loading
+  second()
+  await delay(10)
+  expect(added).toEqual([])
+})
+
 it('unsubscribes after processing of sent subscription', async () => {
   let client = await createDialog()
   let subscription = client.subscribe('users/1')
