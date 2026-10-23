@@ -252,8 +252,10 @@ async function addAll(store, tx, entries) {
       serializeToJSONWithBinary(meta),
       blob
     ])
-    for (let reason of meta.reasons ?? []) reasons.push([meta.added, reason])
-    for (let index of meta.indexes ?? []) indexes.push([meta.added, index])
+    for (let reason of new Set(meta.reasons)) {
+      reasons.push([meta.added, reason])
+    }
+    for (let index of new Set(meta.indexes)) indexes.push([meta.added, index])
   }
 
   for (let i = 0; i < rows.length; i += INSERT_SIZE) {
@@ -337,7 +339,7 @@ export class SqlLogStore {
           'logux_reason',
           'reason',
           row.added,
-          diff.reasons
+          new Set(diff.reasons)
         )
       }
       return true
@@ -489,7 +491,9 @@ export class SqlLogStore {
       for (let row of rows) {
         // The action is not touched here, so it is not unpacked
         let meta = toMeta(row)
-        let missing = reasons.filter(i => !meta.reasons.includes(i))
+        let missing = [...new Set(reasons)].filter(
+          i => !meta.reasons.includes(i)
+        )
         if (missing.length === 0) continue
         meta.reasons = meta.reasons.concat(missing)
         await tx.driver.exec(

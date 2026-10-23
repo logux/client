@@ -390,6 +390,29 @@ it('returns false for a duplicate inside the batch', async () => {
   ])
 })
 
+it('allows duplicates in reasons and indexes', async () => {
+  let store = new SqlLogStore(db)
+  await add(
+    store,
+    { type: 'A' },
+    { id: '1 n', indexes: ['i', 'i'], reasons: ['a', 'a'], time: 1 }
+  )
+  await add(store, { type: 'B' }, { id: '2 n', reasons: ['b'], time: 2 })
+  await store.changeMeta('2 n', { reasons: ['b', 'b'] })
+  await store.addReason(['c', 'c'], { id: '2 n' })
+
+  expect(
+    (await all(store.get({ index: 'i' }))).map(entry => entry[0].type)
+  ).toEqual(['A'])
+
+  let removed: string[] = []
+  await store.removeReason(['a', 'b', 'c'], {}, action => {
+    removed.push(action.type)
+  })
+  expect(removed).toEqual(['A', 'B'])
+  expect(await all(store.get())).toEqual([])
+})
+
 it('rolls back the whole batch when one action failed', async () => {
   let store = new SqlLogStore(db)
   await add(store, { type: 'init' }, { id: '0 n', time: 0 })
