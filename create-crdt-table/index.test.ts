@@ -4495,6 +4495,96 @@ it('prefers unsent log actions to old tables on rebuild', async () => {
   client.destroy()
 })
 
+it('applies unsent changes of rows from old tables on rebuild', async () => {
+  let db = openSilentDb(nodeDriver(':memory:'))
+  await prepareOldTables(db, { title: string() }, [{ id: 'P1', title: 'A' }])
+
+  let time = Date.now() + 1000
+  let store = new MemoryStore()
+  await store.add([
+    [
+      { fields: { title: 'B' }, id: 'P2', type: 'post/created' },
+      { added: 1, id: `${time} 10:2:2 0`, reasons: ['syncing'], time }
+    ],
+    [
+      { fields: { views: 5 }, id: 'P1', type: 'post/changed' },
+      {
+        added: 2,
+        id: `${time + 1} 10:2:2 0`,
+        reasons: ['syncing'],
+        time: time + 1
+      }
+    ],
+    [
+      { fields: { views: 7 }, ids: ['P1', 'P2'], type: 'post/changed' },
+      {
+        added: 3,
+        id: `${time + 2} 10:2:2 0`,
+        reasons: ['syncing'],
+        time: time + 2
+      }
+    ],
+    // The row never comes, so the cell is lost on the retry
+    [
+      { fields: { views: 1 }, id: 'P3', type: 'post/changed' },
+      {
+        added: 4,
+        id: `${time + 3} 10:2:2 0`,
+        reasons: ['syncing'],
+        time: time + 3
+      }
+    ]
+  ])
+  let client = new Client({
+    server: new TestPair().left,
+    store,
+    subprotocol: 0,
+    userId: '10'
+  })
+  let crdt = createCrdtDatabase(client, db)
+  let post = crdt.table('post', { title: string(), views: optional(number()) })
+  let cells: [string, CrdtCell[], CrdtCell[]][] = []
+  crdt.on('applied', (tx, action, meta, won, touched) => {
+    if (action.type === 'post/changed') cells.push([meta.id, won, touched])
+  })
+  await crdt.ready
+
+  expect(withoutMeta(await loadList(post.select`ORDER BY "id"`))).toEqual([
+    { id: 'P1', title: 'A', views: 7 },
+    { id: 'P2', title: 'B', views: 7 }
+  ])
+  // The missing row is not reported as a lost cell, only as won on retry
+  expect(cells).toEqual([
+    [`${time + 1} 10:2:2 0`, [], []],
+    [
+      `${time + 2} 10:2:2 0`,
+      [['post', 'P2', 'views']],
+      [['post', 'P2', 'views']]
+    ],
+    [`${time + 3} 10:2:2 0`, [], []],
+    [
+      `${time + 1} 10:2:2 0`,
+      [['post', 'P1', 'views']],
+      [['post', 'P1', 'views']]
+    ],
+    [
+      `${time + 2} 10:2:2 0`,
+      [['post', 'P1', 'views']],
+      [['post', 'P1', 'views']]
+    ],
+    [`${time + 3} 10:2:2 0`, [], [['post', 'P3', 'views']]]
+  ])
+  // Reasons were not removed, so the actions will still be sent
+  let entries = await store.get({ order: 'added' })
+  expect(entries.entries.map(([, meta]) => meta.reasons)).toEqual([
+    ['syncing'],
+    ['syncing'],
+    ['syncing'],
+    ['syncing']
+  ])
+  client.destroy()
+})
+
 it('waits for the current write on destroy', async () => {
   let { client, db } = await setup()
   let crdt = createCrdtDatabase(client, db)

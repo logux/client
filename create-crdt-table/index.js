@@ -638,6 +638,13 @@ export function createCrdtDatabase(client, db, opts = {}) {
     return !!actions[type] || !!parseCrdtType(type, crdt)
   }
 
+  /**
+   * Changes of the rows, which were missing during the tables rebuild.
+   * The log is replayed before the rows of the old tables, so the row
+   * could still come and the change is applied again at the end.
+   */
+  let missed
+
   async function applyAction(action, meta, tx) {
     let custom = actions[action.type]
     if (custom) {
@@ -694,11 +701,15 @@ export function createCrdtDatabase(client, db, opts = {}) {
     let won = []
     let inserts = []
     let updates = new Map()
+    let missing = []
     for (let [id, fields] of records) {
       let row = known.get(id)
       let insert = row === undefined
       if (insert) {
-        if (verb === 'changed') continue
+        if (verb === 'changed') {
+          if (missed) missing.push({ ...fields, id })
+          continue
+        }
         row = {}
         known.set(id, row)
       }
@@ -785,6 +796,17 @@ export function createCrdtDatabase(client, db, opts = {}) {
     }
 
     await execAll(target, queries)
+    if (missing.length > 0) {
+      missed.push([
+        missing.length === records.length
+          ? action
+          : { records: missing, type: action.type },
+        meta
+      ])
+      // Cells of the missing rows were not touched yet
+      let ids = new Set(missing.map(record => record.id))
+      touched = touched.filter(cell => !ids.has(cell[1]))
+    }
     return [won, touched]
   }
 
@@ -1049,10 +1071,15 @@ export function createCrdtDatabase(client, db, opts = {}) {
       let added = pending
       pending = []
       pendingIds.clear()
+      missed = []
       // The lists are not merged: a copy of the whole log costs the memory
       for (let list of [entries, restored, repeated, added]) {
         list.forEach(pushToApply)
       }
+      await drain()
+      let retry = missed
+      missed = undefined
+      retry.forEach(pushToApply)
       await drain()
       // The replay was stopped by destroy(), so the database is unfinished
       // like after the tab was closed in the middle of the migration
