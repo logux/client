@@ -2,6 +2,10 @@
 
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.27.2
+
+- Fixed retrying changes of rows restored from old tables on rebuild.
+
 ## 0.27.1
 
 - Fixed SQL index error on adding reasons duplicated to log.
