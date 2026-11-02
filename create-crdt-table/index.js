@@ -295,6 +295,12 @@ function indexSql(plural, schema, index, names) {
 const CHUNK_SIZE = 1000
 
 /**
+ * Max bound parameters in a single query: SQLite limits it to 32766
+ * and Postgres (PGlite) to 65535.
+ */
+const MAX_PARAMS = 32766
+
+/**
  * The last write to every connection: two databases can share a connection,
  * where a transaction can not be started inside another one.
  */
@@ -338,6 +344,14 @@ export function parseCrdtAction(action, crdt) {
 
 function holders(count) {
   return '?, '.repeat(count - 1) + '?'
+}
+
+function splitBy(list, size) {
+  let parts = []
+  for (let i = 0; i < list.length; i += size) {
+    parts.push(list.slice(i, i + size))
+  }
+  return parts
 }
 
 async function execAll(target, queries) {
@@ -663,10 +677,12 @@ export function createCrdtDatabase(client, db, opts = {}) {
     if (verb === 'deleted') {
       let ids = action.ids ?? [action.id]
       if (ids.length === 0) return [[], []]
-      await target.exec(
-        `DELETE FROM "${plural}" WHERE "id" IN (${holders(ids.length)})`,
-        ids
-      )
+      for (let part of splitBy(ids, MAX_PARAMS)) {
+        await target.exec(
+          `DELETE FROM "${plural}" WHERE "id" IN (${holders(part.length)})`,
+          part
+        )
+      }
       return [[], []]
     }
 
@@ -690,13 +706,15 @@ export function createCrdtDatabase(client, db, opts = {}) {
     // Only meta of the fields from the action is necessary to resolve conflicts
     let metaColumns = ['"id"']
     for (let key of columns) metaColumns.push(`"${META}${key}"`)
-    let rows = await target.select(
-      `SELECT ${metaColumns.join(', ')} FROM "${plural}"` +
-        ` WHERE "id" IN (${holders(records.length)})`,
-      records.map(record => record[0])
-    )
     let known = new Map()
-    for (let row of rows) known.set(row.id, row)
+    for (let part of splitBy(records, MAX_PARAMS)) {
+      let rows = await target.select(
+        `SELECT ${metaColumns.join(', ')} FROM "${plural}"` +
+          ` WHERE "id" IN (${holders(part.length)})`,
+        part.map(record => record[0])
+      )
+      for (let row of rows) known.set(row.id, row)
+    }
 
     let won = []
     let inserts = []
@@ -772,27 +790,33 @@ export function createCrdtDatabase(client, db, opts = {}) {
       for (let key of all) names.push(`"${key}"`)
       for (let key of all) names.push(`"${META}${key}"`)
       let row = `(${holders(names.length)})`
-      let params = []
-      for (let [id, record] of inserts) {
-        params.push(id)
-        for (let key of all) params.push(key in record ? record[key] : null)
-        for (let key of all) params.push(key in record ? sorted : null)
+      let size = Math.floor(MAX_PARAMS / names.length)
+      for (let part of splitBy(inserts, size)) {
+        let params = []
+        for (let [id, record] of part) {
+          params.push(id)
+          for (let key of all) params.push(key in record ? record[key] : null)
+          for (let key of all) params.push(key in record ? sorted : null)
+        }
+        queries.push([
+          `INSERT INTO "${plural}" (${names.join(', ')})` +
+            ` VALUES ${Array(part.length).fill(row).join(', ')}`,
+          params
+        ])
       }
-      queries.push([
-        `INSERT INTO "${plural}" (${names.join(', ')})` +
-          ` VALUES ${Array(inserts.length).fill(row).join(', ')}`,
-        params
-      ])
     }
     for (let group of updates.values()) {
       let sets = []
       for (let key of group.keys) sets.push(`"${key}" = ?`)
       for (let key of group.keys) sets.push(`"${META}${key}" = ?`)
-      queries.push([
-        `UPDATE "${plural}" SET ${sets.join(', ')}` +
-          ` WHERE "id" IN (${holders(group.ids.length)})`,
-        [...group.values, ...group.keys.map(() => sorted), ...group.ids]
-      ])
+      let setParams = [...group.values, ...group.keys.map(() => sorted)]
+      for (let ids of splitBy(group.ids, MAX_PARAMS - setParams.length)) {
+        queries.push([
+          `UPDATE "${plural}" SET ${sets.join(', ')}` +
+            ` WHERE "id" IN (${holders(ids.length)})`,
+          [...setParams, ...ids]
+        ])
+      }
     }
 
     await execAll(target, queries)

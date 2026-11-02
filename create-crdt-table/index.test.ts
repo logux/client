@@ -685,6 +685,43 @@ it('resolves conflicts of batch actions with per-field last write wins', async (
   expect(mixed[0]!.age).toBe(30)
 })
 
+it('splits huge batch actions by the limit of query parameters', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await delay(10)
+
+  let ids = Array.from({ length: 40000 }, (_, i) => `U${i}`)
+  await client.log.add(
+    { records: ids.map(id => ({ id, name: id })), type: 'user/created' },
+    { id: '1 10:other', time: 10 }
+  )
+  await delay(10)
+  let count = (await db.driver.select(
+    'SELECT COUNT(*) AS "count" FROM "user"',
+    []
+  )) as { count: number }[]
+  expect(count[0]!.count).toBe(40000)
+
+  await client.log.add(
+    { fields: { name: 'Same' }, ids, type: 'user/changed' },
+    { id: '2 10:other', time: 20 }
+  )
+  await delay(10)
+  let changed = (await db.driver.select(
+    'SELECT COUNT(*) AS "count" FROM "user" WHERE "name" = ?',
+    ['Same']
+  )) as { count: number }[]
+  expect(changed[0]!.count).toBe(40000)
+
+  await client.log.add(
+    { ids, type: 'user/deleted' },
+    { id: '3 10:other', time: 30 }
+  )
+  await delay(10)
+  expect(await loadList(user.select``)).toEqual([])
+})
+
 it('applies batch actions in the smallest number of queries', async () => {
   let { client, db } = await setup()
   let executed: string[] = []
