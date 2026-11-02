@@ -2,6 +2,10 @@
 
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.27.3
+
+- Fixed an error on creating too many elements in one action in DB.
+
 ## 0.27.2
 
 - Fixed retrying changes of rows restored from old tables on rebuild.
