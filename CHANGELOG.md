@@ -2,6 +2,18 @@
 
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.28.0
+
+- Removed `updatedAt_` columns from CRDT Table rows.
+- Changed `crdt.ready` and `crdt.checked` to resolve `true` or `false`.
+- Changed `status()` error details to `{ type: 'error', message }`.
+- Changed CRDT database default `key` to client’s `prefix`.
+- Added `crdt.batch()`.
+- Added `on()` and `meta()` to CRDT Table.
+- Added `rejected` event to CRDT database.
+- Added `autoVacuum` option to `SqlLogStore` and `crdt.freePages()`.
+- Added details to `protocolError`, `outdated` and `wrongCredentials` statuses.
+
 ## 0.27.3
 
 - Fixed an error on creating too many elements in one action in DB.
