@@ -87,6 +87,22 @@ function isConverted(col) {
  */
 const META = 'updatedAt_'
 
+export function withoutMeta(rows) {
+  return rows.map(row => {
+    return Object.fromEntries(
+      Object.entries(row).filter(([key]) => !key.startsWith(META))
+    )
+  })
+}
+
+export function withMeta(row) {
+  let meta = {}
+  for (let key of Object.keys(row)) {
+    if (key !== 'id') meta[`${META}${key}`] = null
+  }
+  return { ...row, ...meta }
+}
+
 export function mapCrdtFields(action, fn) {
   if (action.records) {
     return {

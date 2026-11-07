@@ -48,7 +48,9 @@ import {
   parseCrdtAction,
   parseCrdtRows,
   parseCrdtType,
-  string
+  string,
+  withMeta,
+  withoutMeta
 } from './index.js'
 
 let unloaders: ((event: { returnValue: string }) => string)[] = []
@@ -3162,6 +3164,14 @@ it('returns fields meta without the meta columns in rows', async () => {
 
   await crdt.destroy()
   expect(await user.meta('U1')).toBeUndefined()
+})
+
+it('adds and removes empty fields meta in rows', () => {
+  let row = { id: 'U1', name: 'Ann' }
+  let full = withMeta<{ id: string; name: string; updatedAt_name: null }>(row)
+  expect(full).toEqual({ id: 'U1', name: 'Ann', updatedAt_name: null })
+  expect(withoutMeta([full])).toEqual([row])
+  expect(withoutMeta([])).toEqual([])
 })
 
 it('throws on table() call after initialization', async () => {

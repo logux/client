@@ -25,6 +25,12 @@ type CrdtMigrationStatus =
   | 'ready'
 
 /**
+ * Prefix of columns with Logux Meta ID of the last change of every field
+ * for CRDT LWW.
+ */
+declare const META: 'updatedAt_'
+
+/**
  * JS types of column values. Only JSON types are supported, because
  * all values are stored in Logux actions and passed to the database
  * driver as-is (objects and arrays of {@link json} columns are serialized).
@@ -521,6 +527,47 @@ export type CrdtParsedRow<Schema extends CrdtTableSchema, Row> = {
       : Row[Key]
     : Row[Key]
 }
+
+/**
+ * Row without conflict resolution data of every field.
+ */
+export type WithoutMeta<Value> = {
+  [
+    Key in keyof Value as Key extends `${typeof META}${string}` ? never : Key
+  ]: Value[Key]
+}
+
+/**
+ * Remove conflict resolution data, which is local and should not be
+ * in the backup or in tests expectations.
+ *
+ * ```ts
+ * expect(withoutMeta(await loadList(user.select()))).toEqual([
+ *   { id: 'U1', name: 'Ann' }
+ * ])
+ * ```
+ *
+ * @param rows Rows from {@link CrdtTable#select}.
+ * @returns Rows without `updatedAt_field` columns.
+ */
+export function withoutMeta<Value extends object>(
+  rows: Value[]
+): WithoutMeta<Value>[]
+
+/**
+ * Add empty conflict resolution data to a row built in tests, so it could
+ * be compared with rows from {@link CrdtTable#select}.
+ *
+ * ```ts
+ * expect(await loadList(user.select())).toEqual([
+ *   withMeta<UserValue>({ id: 'U1', name: 'Ann' })
+ * ])
+ * ```
+ *
+ * @param row Row without `updatedAt_field` columns.
+ * @returns Row with `null` in `updatedAt_field` column of every field.
+ */
+export function withMeta<Value>(row: WithoutMeta<Value>): Value
 
 export interface CrdtTableToActionsOptions {
   /**
