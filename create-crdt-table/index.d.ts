@@ -25,12 +25,6 @@ type CrdtMigrationStatus =
   | 'ready'
 
 /**
- * Prefix of columns with Logux Meta ID of the last change of every field
- * for CRDT LWW.
- */
-declare const META: 'updatedAt_'
-
-/**
  * JS types of column values. Only JSON types are supported, because
  * all values are stored in Logux actions and passed to the database
  * driver as-is (objects and arrays of {@link json} columns are serialized).
@@ -490,10 +484,12 @@ export type CrdtSqlParam<Dialect extends Dialects = 'sqlite'> =
  * {@link json} columns, which are parsed. Missing optional columns
  * are `null`.
  *
- * Every field has an extra `updatedAt_field` column with Logux Meta ID
- * of the last action which changed it (`null` if the field was never set).
- * They are used to resolve conflicts with per-field last write wins,
- * and can be used in SQL, for instance, to sort by the last change:
+ * Rows have only `id` and the schema columns. Every field also has
+ * an `updatedAt_field` column with Logux Meta ID of the last action
+ * which changed it. They are used to resolve conflicts with per-field
+ * last write wins and are not in the rows, but can be used in SQL,
+ * for instance, to sort by the last change. {@link CrdtTable#meta}
+ * returns them for a single row.
  *
  * ```ts
  * let $recent = user.select`ORDER BY "updatedAt_name" DESC`
@@ -505,8 +501,14 @@ export type CrdtTableRow<Schema extends CrdtTableSchema> = {
   [Column in keyof Schema]: undefined extends CrdtColumnType<Schema[Column]>
     ? Exclude<CrdtColumnType<Schema[Column]>, undefined> | null
     : CrdtColumnType<Schema[Column]>
-} & {
-  [Column in keyof Schema as `updatedAt_${Column & string}`]: null | string
+}
+
+/**
+ * Logux Meta ID of the last change of every row field from
+ * {@link CrdtTable#meta} (`null` if the field was never set).
+ */
+export type CrdtRowMeta<Schema extends CrdtTableSchema> = {
+  [Column in keyof Schema]: null | string
 }
 
 /**
@@ -519,47 +521,6 @@ export type CrdtParsedRow<Schema extends CrdtTableSchema, Row> = {
       : Row[Key]
     : Row[Key]
 }
-
-/**
- * Row without conflict resolution data of every field.
- */
-export type WithoutMeta<Value> = {
-  [
-    Key in keyof Value as Key extends `${typeof META}${string}` ? never : Key
-  ]: Value[Key]
-}
-
-/**
- * Remove conflict resolution data, which is local and should not be
- * in the backup or in tests expectations.
- *
- * ```ts
- * expect(withoutMeta(await loadList(user.select()))).toEqual([
- *   { id: 'U1', name: 'Ann' }
- * ])
- * ```
- *
- * @param rows Rows from {@link CrdtTable#select}.
- * @returns Rows without `updatedAt_field` columns.
- */
-export function withoutMeta<Value extends object>(
-  rows: Value[]
-): WithoutMeta<Value>[]
-
-/**
- * Add empty conflict resolution data to a row built in tests, so it could
- * be compared with rows from {@link CrdtTable#select}.
- *
- * ```ts
- * expect(await loadList(user.select())).toEqual([
- *   withMeta<UserValue>({ id: 'U1', name: 'Ann' })
- * ])
- * ```
- *
- * @param row Row without `updatedAt_field` columns.
- * @returns Row with `null` in `updatedAt_field` column of every field.
- */
-export function withMeta<Value>(row: WithoutMeta<Value>): Value
 
 export interface CrdtTableToActionsOptions {
   /**
@@ -774,6 +735,44 @@ export function parseCrdtAction(
  * @param touched Every cell addressed by the action: the cells it lost
  *                to a newer change are `touched` without `won`.
  */
+/**
+ * Rows of the action for {@link CrdtTable#on} listener by the action verb.
+ */
+export interface CrdtTableEvents<Schema extends CrdtTableSchema> {
+  changed: {
+    action: CrdtChangedAction<Schema>
+    rows: [id: string, fields: Partial<CrdtRowFields<Schema>>][]
+  }
+  created: {
+    action: CrdtCreatedAction<Schema>
+    rows: [id: string, fields: CrdtCreateFields<Schema>][]
+  }
+  deleted: {
+    action: CrdtDeletedAction
+    rows: string[]
+  }
+}
+
+/**
+ * Listener of {@link CrdtTable#on}.
+ *
+ * @param tx Database of the applying transaction.
+ * @param rows IDs of deleted rows or `[id, fields]` of created
+ *             and changed rows as they are in the action.
+ * @param action Applied action.
+ * @param meta Meta of the action. Actions restored from the tables
+ *             on the migration replay have only `id` and `time`.
+ */
+export type CrdtTableListener<
+  Schema extends CrdtTableSchema,
+  Verb extends CrdtVerb
+> = (
+  tx: Database,
+  rows: CrdtTableEvents<Schema>[Verb]['rows'],
+  action: CrdtTableEvents<Schema>[Verb]['action'],
+  meta: ClientMeta | MetaTime
+) => Promise<void> | void
+
 export type CrdtAppliedListener = (
   tx: Database,
   action: Action,
@@ -888,6 +887,49 @@ export interface CrdtTable<
    * @returns Row or `undefined` if there is no row with this ID.
    */
   get(id: string): Promise<CrdtTableRow<Schema> | undefined>
+
+  /**
+   * Load Logux Meta ID of the last change of every row field from
+   * `updatedAt_field` columns. Use it for debug or for custom
+   * conflict resolution. Waits for {@link CrdtDatabase#ready}.
+   *
+   * ```ts
+   * let meta = await posts.meta(postId)
+   * if (meta && meta.title === null) console.log('Title was never set')
+   * ```
+   *
+   * @param id Row ID.
+   * @returns Meta ID or `null` for every field or `undefined`
+   *          if there is no row with this ID.
+   */
+  meta(id: string): Promise<CrdtRowMeta<Schema> | undefined>
+
+  /**
+   * Add listener for the table actions with the verb, which is called
+   * after the action was applied: inside the applying transaction
+   * and only in the applying browser tab.
+   *
+   * Like {@link CrdtDatabase#on} with `applied`, it is not called
+   * for custom actions of {@link CrdtDatabase#action}.
+   *
+   * ```ts
+   * posts.on('deleted', (tx, ids) => deletePostsMedia(tx, ids))
+   * posts.on('changed', (tx, rows, action, meta) => {
+   *   for (let [id, fields] of rows) {
+   *     if (fields.title) updateTitle(id, fields.title)
+   *   }
+   * })
+   * feeds.on(['created', 'deleted'], tx => updateFeedsCount(tx))
+   * ```
+   *
+   * @param verb Action verb or the list of verbs.
+   * @param listener Callback with rows of the action.
+   * @returns Unbind listener.
+   */
+  on<Verb extends CrdtVerb>(
+    verb: readonly Verb[] | Verb,
+    listener: CrdtTableListener<Schema, Verb>
+  ): Unsubscribe
 
   /**
    * One-time SQL query to the table like {@link CrdtTable#select},
@@ -1064,7 +1106,8 @@ export interface CrdtDatabaseOptions<Dialect extends string = 'sqlite'> {
    * (also used as the prefix of the leader tab lock name).
    * Change it when the database is used in a third-party widget
    * to avoid conflicts with the website’s own Logux database.
-   * Default is `logux:db`.
+   * Default is `${prefix}:db` from {@link ClientOptions#prefix}
+   * (`logux:db` by default).
    */
   key?: string
 
@@ -1252,15 +1295,15 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
    * {@link CrdtDatabase#status} is `creating` for new tables, `migrating`
    * if the existing tables are rebuilding, and `initializing` otherwise.
    *
-   * Like {@link CrdtDatabase#ready}, it is resolved also when the database
-   * became `outdated` or `broken`.
+   * Like {@link CrdtDatabase#ready}, it resolves `false` when the database
+   * was stopped, became `outdated` or `broken` before the check.
    *
    * ```ts
-   * await crdt.checked
+   * if (!(await crdt.checked)) return
    * if (crdt.status.get() === 'migrating') showMigrationLoader()
    * ```
    */
-  readonly checked: Promise<void>
+  readonly checked: Promise<boolean>
 
   /**
    * Drop all tables and stop the database like {@link CrdtDatabase#destroy}.
@@ -1300,6 +1343,23 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
    * ```
    */
   idle(): Promise<void>
+
+  /**
+   * Return free pages of SQLite database file to the file system
+   * by `PRAGMA incremental_vacuum`. It works only with
+   * `autoVacuum: 'incremental'` in {@link SqlLogStore} options and
+   * does nothing in PGlite.
+   *
+   * ```js
+   * const store = new SqlLogStore(db, { autoVacuum: 'incremental' })
+   * …
+   * await crdt.freePages(1000)
+   * ```
+   *
+   * @param pages Maximum number of pages to free.
+   * @returns Promise resolved when pages were freed.
+   */
+  freePages(pages: number): Promise<void>
 
   /**
    * Delete all rows from all tables, but keep the database ready to use.
@@ -1386,7 +1446,10 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
    * @param listener The listener function.
    * @returns Unbind listener from event.
    */
-  on(event: 'migrating', listener: (done: Promise<void>) => void): Unsubscribe
+  on(
+    event: 'migrating',
+    listener: (done: Promise<boolean>) => void
+  ): Unsubscribe
 
   /**
    * `stop` is called when another browser tab has a newer table schema
@@ -1425,19 +1488,44 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
   on(event: 'empty', listener: () => void): Unsubscribe
 
   /**
-   * Promise resolved when the database was prepared and tables can be used.
+   * `rejected` event is called when the server undid a table action
+   * or an action of {@link CrdtDatabase#action}. The local tables
+   * have already applied it, so the device now differs from the server.
    *
-   * It is also resolved when the database became `outdated` or `broken`
-   * or was destroyed by {@link CrdtDatabase#destroy}, so awaiting it will
-   * never hang. Check {@link CrdtDatabase#status} if you need to know
-   * which of them happened. One-time reads (like {@link CrdtTable#load})
-   * return empty results in these cases without touching the database.
+   * It is called in every browser tab.
    *
    * ```js
-   * showLoaderUntil(crdt.ready, 'Loading data')
+   * crdt.on('rejected', (action, meta, reason) => {
+   *   showError(`Server rejected ${action.type}: ${reason}`)
+   * })
+   * ```
+   *
+   * @param event The event name.
+   * @param listener The listener with the undone action, the meta
+   *                 of `logux/undo` action and the undo reason.
+   * @returns Unbind listener from event.
+   */
+  on(
+    event: 'rejected',
+    listener: (action: Action, meta: ClientMeta, reason: string) => void
+  ): Unsubscribe
+
+  /**
+   * Promise resolved with `true` when the database was prepared
+   * and tables can be used.
+   *
+   * It is resolved with `false` when the database became `outdated`
+   * or `broken` or was destroyed by {@link CrdtDatabase#destroy},
+   * so awaiting it will never hang. Check {@link CrdtDatabase#status}
+   * if you need to know which of them happened. One-time reads
+   * (like {@link CrdtTable#load}) return empty results in these cases
+   * without touching the database.
+   *
+   * ```js
+   * if (!(await crdt.ready)) return
    * ```
    */
-  readonly ready: Promise<void>
+  readonly ready: Promise<boolean>
 
   /**
    * One-time raw SQL query for joins and aggregates, which waits
@@ -1722,6 +1810,6 @@ export interface CrdtTasks {
  * @returns Task queue.
  */
 export function createCrdtTasks(
-  crdt: Pick<CrdtDatabase, 'ready'>,
+  crdt: { ready: Promise<unknown> },
   opts?: CrdtTasksOptions
 ): CrdtTasks

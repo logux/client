@@ -277,6 +277,8 @@ async function addAll(store, tx, entries) {
   return results
 }
 
+const AUTO_VACUUM = { full: 'FULL', incremental: 'INCREMENTAL', none: 'NONE' }
+
 export class SqlLogStore {
   constructor(db, opts = {}) {
     this.db = db
@@ -284,6 +286,10 @@ export class SqlLogStore {
     this.queue = Promise.resolve()
     this.reading = new Set()
     this.packers = opts.packers ?? {}
+    this.autoVacuum = opts.autoVacuum
+    if (this.autoVacuum && !AUTO_VACUUM[this.autoVacuum]) {
+      throw new Error(`Unknown autoVacuum mode ${this.autoVacuum}`)
+    }
   }
 
   async add(entries) {
@@ -393,34 +399,47 @@ export class SqlLogStore {
 
   init() {
     if (!this.initing) {
-      this.initing = this.transaction(async tx => {
-        // Format of this table will never change, so we can read it
-        // before we will know the version of other tables
-        await tx.driver.exec(
-          `CREATE TABLE IF NOT EXISTS "logux_version" ("version" BIGINT)`,
-          []
-        )
-        let [row] = await tx.driver.select(
-          `SELECT "version" FROM "logux_version"`,
-          []
-        )
-        let version = row ? Number(row.version) : 0
-        if (version > MIGRATIONS.length) {
-          throw newerDatabaseError('Log')
-        }
-        if (version === MIGRATIONS.length) return
+      this.initing = this.setAutoVacuum().then(() =>
+        this.transaction(async tx => {
+          // Format of this table will never change, so we can read it
+          // before we will know the version of other tables
+          await tx.driver.exec(
+            `CREATE TABLE IF NOT EXISTS "logux_version" ("version" BIGINT)`,
+            []
+          )
+          let [row] = await tx.driver.select(
+            `SELECT "version" FROM "logux_version"`,
+            []
+          )
+          let version = row ? Number(row.version) : 0
+          if (version > MIGRATIONS.length) {
+            throw newerDatabaseError('Log')
+          }
+          if (version === MIGRATIONS.length) return
 
-        for (let migration of MIGRATIONS.slice(version)) {
-          for (let sql of migration) await tx.driver.exec(sql, [])
-        }
-        await tx.driver.exec(`DELETE FROM "logux_version"`, [])
-        await tx.driver.exec(
-          `INSERT INTO "logux_version" ("version") VALUES (?)`,
-          [MIGRATIONS.length]
-        )
-      })
+          for (let migration of MIGRATIONS.slice(version)) {
+            for (let sql of migration) await tx.driver.exec(sql, [])
+          }
+          await tx.driver.exec(`DELETE FROM "logux_version"`, [])
+          await tx.driver.exec(
+            `INSERT INTO "logux_version" ("version") VALUES (?)`,
+            [MIGRATIONS.length]
+          )
+        })
+      )
     }
     return this.initing
+  }
+
+  async setAutoVacuum() {
+    // SQLite can change the mode only before the first table was created
+    // and not inside `BEGIN IMMEDIATE` transaction
+    if (this.autoVacuum) {
+      await this.driver.exec(
+        `PRAGMA auto_vacuum = ${AUTO_VACUUM[this.autoVacuum]}`,
+        []
+      )
+    }
   }
 
   /**

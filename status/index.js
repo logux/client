@@ -1,5 +1,18 @@
 const NO_JIGGLING_TIMEOUT = 500
 
+function errorDetails(error) {
+  return { error, message: error.message ?? error.type, type: 'error' }
+}
+
+function undoDetails(action, meta) {
+  return {
+    action,
+    message: action.action?.type ?? action.reason,
+    meta,
+    type: 'error'
+  }
+}
+
 export function status(client, callback, options = {}) {
   let observable = client.on ? client : client.node
   let disconnected = observable.state === 'disconnected'
@@ -65,23 +78,23 @@ export function status(client, callback, options = {}) {
     client.node.on('error', e => {
       if (e.type === 'wrong-protocol') {
         error = true
-        callback('protocolError')
+        callback('protocolError', errorDetails(e))
       } else if (e.type === 'wrong-subprotocol') {
         error = true
-        callback('outdated')
+        callback('outdated', errorDetails(e))
       } else if (e.type === 'wrong-credentials') {
         error = true
-        callback('wrongCredentials')
+        callback('wrongCredentials', errorDetails(e))
       } else if (e.type !== 'timeout') {
         error = true
-        callback('syncError', { error: e })
+        callback('syncError', errorDetails(e))
       }
     })
   )
 
   unbind.push(
     client.node.on('clientError', e => {
-      callback('syncError', { error: e })
+      callback('syncError', errorDetails(e))
     })
   )
 
@@ -122,11 +135,10 @@ export function status(client, callback, options = {}) {
       }
 
       if (action.type === 'logux/undo' && action.reason) {
-        if (action.reason === 'denied') {
-          callback('denied', { action, meta })
-        } else {
-          callback('error', { action, meta })
-        }
+        callback(
+          action.reason === 'denied' ? 'denied' : 'error',
+          undoDetails(action, meta)
+        )
       } else if (disconnected && meta.sync && meta.added) {
         if (!wait) callback('wait')
         wait = true

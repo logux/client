@@ -36,7 +36,6 @@ import {
   type CrdtCorruption,
   type CrdtDatabase,
   type CrdtTable,
-  type CrdtTableRow,
   createCrdtDatabase,
   createCrdtTasks,
   crdtTableToActions,
@@ -49,9 +48,7 @@ import {
   parseCrdtAction,
   parseCrdtRows,
   parseCrdtType,
-  string,
-  withMeta,
-  withoutMeta
+  string
 } from './index.js'
 
 let unloaders: ((event: { returnValue: string }) => string)[] = []
@@ -180,7 +177,6 @@ const USER_SCHEMA = {
   role: oneOf(['admin', 'guest', 'user'], { default: 'user' })
 }
 
-type UserValue = CrdtTableRow<typeof USER_SCHEMA>
 
 const NOTE_SCHEMA = {
   meta: optional(json({ views: number() })),
@@ -381,8 +377,8 @@ it('creates tables and applies create, update and delete actions', async () => {
   expect(rows[0]!.role).toBe('user')
   expect(rows[0]!.createdAt).toBe(new Date(2026, 0, 1).getTime())
   expect(rows[0]!.publishedAt).toBeNull()
-  expect(rows[0]!.updatedAt_name).toBeTypeOf('string')
-  expect(rows[0]!.updatedAt_age).toBeNull()
+  expect((await user.meta(rows[0]!.id))!.name).toBeTypeOf('string')
+  expect((await user.meta(rows[0]!.id))!.age).toBeNull()
 
   await user.update(id, { age: 30, isAdmin: 1 })
   await delay(10)
@@ -390,7 +386,7 @@ it('creates tables and applies create, update and delete actions', async () => {
   expect(updated[0]!.age).toBe(30)
   expect(updated[0]!.isAdmin).toBe(1)
   expect(updated[0]!.name).toBe('Ann')
-  expect(updated[0]!.updatedAt_age).toBeTypeOf('string')
+  expect((await user.meta(updated[0]!.id))!.age).toBeTypeOf('string')
 
   await user.update(id, { age: null, name: undefined })
   await delay(10)
@@ -426,7 +422,9 @@ it('creates, updates and deletes many rows by batch actions', async () => {
   expect(rows.map(i => i.isAdmin)).toEqual([0, 1, 0])
   expect(rows.map(i => i.age)).toEqual([null, null, 20])
   expect(rows.map(i => i.role)).toEqual(['user', 'user', 'user'])
-  expect(rows[0]!.updatedAt_name).toBe(rows[2]!.updatedAt_name)
+  expect((await user.meta(rows[0]!.id))!.name).toBe(
+    (await user.meta(rows[2]!.id))!.name
+  )
 
   await user.update([ids[0]!, 'U2'], { isAdmin: 1, role: 'admin' })
   await delay(10)
@@ -597,6 +595,216 @@ it('applies batch() in the transaction of SQL log store', async () => {
   await db.close()
 })
 
+it('resolves ready and checked with the result', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  crdt.table('user', USER_SCHEMA)
+  expect(await crdt.checked).toBe(true)
+  expect(await crdt.ready).toBe(true)
+  await crdt.destroy()
+
+  let { client: client2, db: db2 } = await setup()
+  let stopped = createCrdtDatabase(client2, db2)
+  stopped.table('user', USER_SCHEMA)
+  await stopped.destroy()
+  expect(await stopped.checked).toBe(false)
+  expect(await stopped.ready).toBe(false)
+
+  let { client: client3, db: db3 } = await setup()
+  let migrating = createCrdtDatabase(client3, db3)
+  migrating.table('user', USER_SCHEMA)
+  expect(await migrating.checked).toBe(true)
+  await migrating.destroy()
+  expect(await migrating.ready).toBe(false)
+})
+
+it('takes the default key from the client prefix', async () => {
+  let { client, db } = await setup()
+  client.options.prefix = 'app'
+  let crdt = createCrdtDatabase(client, db)
+  crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+  expect(localStorage.getItem('app:db')).toBeTypeOf('string')
+  expect(localStorage.getItem('logux:db')).toBeNull()
+  await crdt.destroy()
+})
+
+it('calls table listeners on applied actions', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  let note = crdt.table('note', NOTE_SCHEMA)
+  let renamed = defineAction<{ id: string; type: 'user/renamed' }>(
+    'user/renamed'
+  )
+  let rename = crdt.action(renamed, async (tx, action, meta) => {
+    await user.change(tx, action.id, { name: 'New' }, meta)
+  })
+  let events: unknown[] = []
+  user.on('created', async (tx, rows, action, meta) => {
+    let [row] = await tx.select<{ count: number }>`
+      SELECT COUNT(*) AS "count" FROM "user"
+    `
+    events.push(['created', rows, action.type, typeof meta.id, row!.count])
+  })
+  user.on('changed', (tx, rows) => {
+    events.push(['changed', rows])
+  })
+  let unbind = user.on(['created', 'deleted'], (tx, rows) => {
+    events.push(['created or deleted', rows])
+  })
+  note.on('deleted', (tx, ids) => {
+    events.push(['note deleted', ids])
+  })
+  expect(() => {
+    // @ts-expect-error
+    user.on('renamed', () => {})
+  }).toThrow('Unknown table event renamed')
+  await crdt.ready
+
+  await user.create({ id: 'U1', name: 'Ann' })
+  await user.create([
+    { id: 'U2', name: 'Ben' },
+    { id: 'U3', name: 'Cat' }
+  ])
+  await user.update(['U1', 'U2'], { age: 20 })
+  await rename({ id: 'U1' })
+  await user.delete([])
+  await user.delete('U3')
+  unbind()
+  await user.delete(['U1', 'U2'])
+  await note.delete('N1')
+
+  let defaults = {
+    createdAt: new Date(2026, 0, 1).getTime(),
+    isAdmin: 0,
+    role: 'user'
+  }
+  expect(events).toEqual([
+    [
+      'created',
+      [['U1', { ...defaults, name: 'Ann' }]],
+      'user/created',
+      'string',
+      1
+    ],
+    ['created or deleted', [['U1', { ...defaults, name: 'Ann' }]]],
+    [
+      'created',
+      [
+        ['U2', { ...defaults, name: 'Ben' }],
+        ['U3', { ...defaults, name: 'Cat' }]
+      ],
+      'user/created',
+      'string',
+      3
+    ],
+    [
+      'created or deleted',
+      [
+        ['U2', { ...defaults, name: 'Ben' }],
+        ['U3', { ...defaults, name: 'Cat' }]
+      ]
+    ],
+    [
+      'changed',
+      [
+        ['U1', { age: 20 }],
+        ['U2', { age: 20 }]
+      ]
+    ],
+    ['created or deleted', ['U3']],
+    ['note deleted', ['N1']]
+  ])
+})
+
+it('reports actions rejected by the server', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  let renamed = defineAction<{ id: string; type: 'user/renamed' }>(
+    'user/renamed'
+  )
+  let rename = crdt.action(renamed, () => {})
+  let rejected: unknown[] = []
+  crdt.on('rejected', (action, meta, reason) => {
+    rejected.push([action.type, typeof meta.id, reason])
+  })
+  await crdt.ready
+
+  client.server.undoNext('denied')
+  await user.create({ id: 'U1', name: 'Ann' })
+  client.server.undoNext()
+  await rename({ id: 'U1' })
+  client.server.undoNext()
+  await client.log.add({ type: 'other' }, { sync: true })
+  await delay(10)
+
+  expect(rejected).toEqual([
+    ['user/created', 'string', 'denied'],
+    ['user/renamed', 'string', 'error']
+  ])
+  // The row stays in the local table
+  expect(await user.get('U1')).toMatchObject({ name: 'Ann' })
+})
+
+it('frees database pages', async () => {
+  let db = openSilentDb(nodeDriver(':memory:'))
+  let store = new SqlLogStore(db, { autoVacuum: 'incremental' })
+  let client = new Client({
+    server: 'ws://localhost',
+    store,
+    subprotocol: 1,
+    userId: '10'
+  })
+  let crdt = createCrdtDatabase(client, db)
+  let note = crdt.table('note', NOTE_SCHEMA)
+  await crdt.ready
+  expect(await db.driver.select('PRAGMA auto_vacuum', [])).toEqual([
+    { auto_vacuum: 2 }
+  ])
+
+  await note.create(
+    Array.from({ length: 50 }, (_, i) => ({
+      id: `N${i}`,
+      tags: [],
+      title: 'x'.repeat(10000)
+    }))
+  )
+  await client.log.removeReason('syncing')
+  await note.deleteWhere()
+  async function freeList(): Promise<number> {
+    let [row] = (await db.driver.select('PRAGMA freelist_count', [])) as {
+      freelist_count: number
+    }[]
+    return row!.freelist_count
+  }
+  let before = await freeList()
+  expect(before).toBeGreaterThan(20)
+
+  await crdt.freePages(10)
+  expect(await freeList()).toBe(before - 10)
+  await crdt.freePages(0)
+  expect(await freeList()).toBe(0)
+
+  await expect(crdt.freePages(-1)).rejects.toThrow(
+    'Pages must be a positive integer'
+  )
+  await expect(crdt.freePages(1.5)).rejects.toThrow(
+    'Pages must be a positive integer'
+  )
+
+  await crdt.destroy()
+  await crdt.freePages(10)
+  await db.close()
+
+  // PostgreSQL has no pages to free
+  let other = await setup()
+  let pg = createCrdtDatabase(other.client, other.db, { dialect: 'pglite' })
+  await pg.freePages(10)
+  await pg.destroy()
+})
+
 it('takes null in create() as a missing field', async () => {
   let { client, db } = await setup()
   let crdt = createCrdtDatabase(client, db)
@@ -626,8 +834,8 @@ it('takes null in create() as a missing field', async () => {
   let rows = await loadList($all)
   expect(rows[0]!.age).toBeNull()
   expect(rows[0]!.publishedAt).toBeNull()
-  expect(rows[0]!.updatedAt_age).toBeNull()
-  expect(rows[0]!.updatedAt_publishedAt).toBeNull()
+  expect((await user.meta(rows[0]!.id))!.age).toBeNull()
+  expect((await user.meta(rows[0]!.id))!.publishedAt).toBeNull()
   expect(rows[0]!.createdAt).toBe(new Date(2026, 0, 1).getTime())
   expect(rows[0]!.isAdmin).toBe(0)
   expect(rows[0]!.role).toBe('user')
@@ -660,7 +868,7 @@ it('takes defaults for missing columns of created actions', async () => {
 
   let $all = user.select`ORDER BY "id"`
   let rows = await loadList($all)
-  expect(withoutMeta(rows)).toEqual([
+  expect(rows).toEqual([
     {
       age: null,
       createdAt: new Date(2026, 0, 1).getTime(),
@@ -691,9 +899,9 @@ it('takes defaults for missing columns of created actions', async () => {
   ])
   // Columns with the default get the meta of the create action, so only
   // newer changes can replace them. Columns without the default stay NULL
-  expect(rows[0]!.updatedAt_role).toBe(toSorted(createdMeta))
-  expect(rows[0]!.updatedAt_createdAt).toBe(toSorted(createdMeta))
-  expect(rows[0]!.updatedAt_age).toBeNull()
+  expect((await user.meta(rows[0]!.id))!.role).toBe(toSorted(createdMeta))
+  expect((await user.meta(rows[0]!.id))!.createdAt).toBe(toSorted(createdMeta))
+  expect((await user.meta(rows[0]!.id))!.age).toBeNull()
 
   let $u1 = user.select`WHERE "id" = ${'U1'}`
   await client.log.add(
@@ -730,7 +938,7 @@ it('keeps null cells of created actions instead of the default', async () => {
   let $u1 = user.select`WHERE "id" = ${'U1'}`
   let rows = await loadList($u1)
   expect(rows[0]!.isAdmin).toBeNull()
-  expect(rows[0]!.updatedAt_isAdmin).toBe(
+  expect((await user.meta(rows[0]!.id))!.isAdmin).toBe(
     toSorted({ id: '1 10:other', time: 1 })
   )
   expect(rows[0]!.role).toBe('user')
@@ -751,14 +959,14 @@ it('creates rows again from selected rows', async () => {
   await delay(10)
 
   let $all = user.select`ORDER BY "name"`
-  let backup = withoutMeta(await loadList($all))
+  let backup = await loadList($all)
   await user.delete(['U1', 'U2'])
   await delay(10)
   expect(await loadList($all)).toEqual([])
 
   await user.create(backup)
   await delay(10)
-  expect(withoutMeta(await loadList($all))).toEqual(backup)
+  expect(await loadList($all)).toEqual(backup)
 
   let copies = await user.create(backup.map(row => ({ ...row, id: undefined })))
   await delay(10)
@@ -773,11 +981,11 @@ it('creates rows again from selected rows', async () => {
     WHERE "id" IN (${copies[0]!}, ${copies[1]!}) ORDER BY "name"
   `
   let rows = await loadList($copies)
-  expect(withoutMeta(rows).map(row => ({ ...row, id: 'ID' }))).toEqual(
+  expect(rows.map(row => ({ ...row, id: 'ID' }))).toEqual(
     backup.map(row => ({ ...row, id: 'ID' }))
   )
-  expect(rows[0]!.updatedAt_age).toBeNull()
-  expect(rows[1]!.updatedAt_age).toBeTypeOf('string')
+  expect((await user.meta(rows[0]!.id))!.age).toBeNull()
+  expect((await user.meta(rows[1]!.id))!.age).toBeTypeOf('string')
 
   cleanStores($all, $copies)
 })
@@ -819,7 +1027,7 @@ it('resolves conflicts of batch actions with per-field last write wins', async (
   expect(rows.map(i => i.name)).toEqual(['Newer', 'Newer'])
   expect(rows.map(i => i.age)).toEqual([30, 30])
   expect(rows.map(i => i.role)).toEqual(['user', 'admin'])
-  expect(rows[0]!.updatedAt_name).toBe(
+  expect((await user.meta(rows[0]!.id))!.name).toBe(
     toSorted({ id: '0Z 10:other', time: 100 })
   )
 
@@ -1009,7 +1217,7 @@ it('stores JSON columns', async () => {
   expect($all.get()).toEqual({ status: 'loading' })
   let rows = await loadList($all)
   await $all.loading
-  expect(withoutMeta(rows)).toEqual([
+  expect(rows).toEqual([
     {
       id: 'N1',
       meta: null,
@@ -1025,7 +1233,9 @@ it('stores JSON columns', async () => {
       title: 'B'
     }
   ])
-  expect(rows[0]!.updatedAt_settings).toBe(rows[0]!.updatedAt_title)
+  expect((await note.meta(rows[0]!.id))!.settings).toBe(
+    (await note.meta(rows[0]!.id))!.title
+  )
 
   // The database keeps JSON as text, so raw queries see the strings
   expect(
@@ -1062,7 +1272,7 @@ it('stores JSON columns', async () => {
 
   // Rows from select() can be inserted back with parsed values
   let copies = await note.create(
-    withoutMeta(rows).map(row => ({ ...row, id: `copy-${row.id}` }))
+    rows.map(row => ({ ...row, id: `copy-${row.id}` }))
   )
   await delay(10)
   expect(copies).toEqual(['copy-N1', 'copy-N2'])
@@ -1118,9 +1328,7 @@ it('stores JSON columns', async () => {
   })
   let note2 = crdt2.table('note', NOTE_SCHEMA)
   await delay(10)
-  expect(withoutMeta(await loadList(note2.select`ORDER BY "id"`))).toEqual(
-    withoutMeta(rows)
-  )
+  expect(await loadList(note2.select`ORDER BY "id"`)).toEqual(rows)
 })
 
 it('rebuilds database on change inside json() shape', async () => {
@@ -1272,10 +1480,12 @@ it('resolves conflicts with per-field last write wins', async () => {
   expect(rows[0]!.name).toBe('New')
   expect(rows[0]!.age).toBe(20)
   expect(rows[0]!.role).toBe('admin')
-  expect(rows[0]!.updatedAt_name).toBe(
+  expect((await user.meta(rows[0]!.id))!.name).toBe(
     toSorted({ id: '0Z 10:other', time: 100 })
   )
-  expect(rows[0]!.updatedAt_age).toBe(toSorted({ id: 'm 10:other', time: 50 }))
+  expect((await user.meta(rows[0]!.id))!.age).toBe(
+    toSorted({ id: 'm 10:other', time: 50 })
+  )
 
   await client.log.add(
     { fields: { name: 'New' }, id: 'U1', type: 'user/changed' },
@@ -1284,7 +1494,7 @@ it('resolves conflicts with per-field last write wins', async () => {
   await delay(10)
   let same = await loadList(user.select())
   expect(same[0]!.name).toBe('New')
-  expect(same[0]!.updatedAt_name).toBe(
+  expect((await user.meta(same[0]!.id))!.name).toBe(
     toSorted({ id: '0Z 10:other', time: 100 })
   )
 })
@@ -1361,7 +1571,7 @@ it('rebuilds database on schema change and replays repeat() entries', async () =
     ]
   ]
 
-  let migratings: Promise<void>[] = []
+  let migratings: Promise<boolean>[] = []
   let oldRows: unknown
   let crdt = createCrdtDatabase(client, db, {
     async repeat() {
@@ -1626,7 +1836,7 @@ it('reports won cells to applied listeners', async () => {
     ['user/deleted', metas[3]!.id, []],
     ['user/changed', '0 10:other', []]
   ])
-  expect(withoutMeta(await loadList(user.select()))[0]).toMatchObject({
+  expect((await loadList(user.select()))[0]).toMatchObject({
     createdAt,
     name: 'Ann'
   })
@@ -2318,7 +2528,7 @@ it('rejects pending changes on broken database', async () => {
   await delay(1)
   expect(crdt.status.get()).toBe('initializing')
 
-  await crdt.ready
+  expect(await crdt.ready).toBe(false)
   expect(crdt.status.get()).toBe('broken')
   await expect(creating).rejects.toThrow('The database is broken')
 })
@@ -2838,7 +3048,7 @@ it('filters rows by JOIN with another table in select()', async () => {
   expect(rows.map(i => i.id)).toEqual(['U1'])
   expect(rows[0]!.name).toBe('Ann')
   expect(rows[0]!.isAdmin).toBe(0)
-  expect(rows[0]!.updatedAt_name).toBeTypeOf('string')
+  expect((await user.meta(rows[0]!.id))!.name).toBeTypeOf('string')
 })
 
 it('supports manual SQL with joined columns and aggregations', async () => {
@@ -2888,8 +3098,8 @@ it('removes fields meta from rows', async () => {
   await delay(10)
 
   let rows = await loadList(user.select`ORDER BY "id"`)
-  expect(rows[0]!.updatedAt_name).toBeTypeOf('string')
-  expect(withoutMeta(rows)).toEqual([
+  expect((await user.meta(rows[0]!.id))!.name).toBeTypeOf('string')
+  expect(rows).toEqual([
     {
       age: null,
       createdAt: new Date(2026, 0, 1).getTime(),
@@ -2909,39 +3119,49 @@ it('removes fields meta from rows', async () => {
       role: 'user'
     }
   ])
-  expect(withoutMeta([])).toEqual([])
-
-  expect(
-    Object.keys(withMeta<UserValue>(withoutMeta(rows)[0]!)).sort()
-  ).toEqual(Object.keys(rows[0]!).sort())
 })
 
-it('adds empty fields meta to rows', () => {
-  expect(
-    withMeta<UserValue>({
-      age: null,
-      createdAt: 1000,
-      id: 'U1',
-      isAdmin: 0,
-      name: 'Ann',
-      publishedAt: null,
-      role: 'user'
-    })
-  ).toEqual({
+it('returns fields meta without the meta columns in rows', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  let empty = crdt.table('empty', {})
+  await crdt.ready
+
+  let meta = await client.log.add(
+    { fields: { name: 'Ann' }, id: 'U1', type: 'user/created' },
+    { sync: true }
+  )
+  await crdt.idle()
+  let sorted = toSorted(meta as ClientMeta)
+
+  let row = await user.get('U1')
+  expect(Object.keys(row!).sort()).toEqual([
+    'age',
+    'createdAt',
+    'id',
+    'isAdmin',
+    'name',
+    'publishedAt',
+    'role'
+  ])
+  expect(await user.meta('U1')).toEqual({
     age: null,
-    createdAt: 1000,
-    id: 'U1',
-    isAdmin: 0,
-    name: 'Ann',
+    createdAt: sorted,
+    isAdmin: sorted,
+    name: sorted,
     publishedAt: null,
-    role: 'user',
-    updatedAt_age: null,
-    updatedAt_createdAt: null,
-    updatedAt_isAdmin: null,
-    updatedAt_name: null,
-    updatedAt_publishedAt: null,
-    updatedAt_role: null
+    role: sorted
   })
+  expect(await user.meta('U2')).toBeUndefined()
+  expect(await empty.meta('U1')).toBeUndefined()
+
+  // Meta columns can still be used in SQL
+  let ordered = await user.load`ORDER BY "updatedAt_name" DESC`
+  expect(ordered.map(i => i.id)).toEqual(['U1'])
+
+  await crdt.destroy()
+  expect(await user.meta('U1')).toBeUndefined()
 })
 
 it('throws on table() call after initialization', async () => {
@@ -2991,7 +3211,7 @@ it('stores booleans in SQLite as numbers', async () => {
   await user.create({ id: 'U2', isAdmin: true, pinned: false })
   await user.update('U1', { pinned: true })
 
-  expect(withoutMeta(await loadList(user.select`ORDER BY "id"`))).toEqual([
+  expect(await loadList(user.select`ORDER BY "id"`)).toEqual([
     { id: 'U1', isAdmin: false, pinned: true },
     { id: 'U2', isAdmin: true, pinned: false }
   ])
@@ -3048,7 +3268,7 @@ it('applies custom actions to the database', async () => {
   let rows = await loadList(user.select())
   expect(rows[0]!.name).toBe('New')
   expect(rows[0]!.isAdmin).toBe(1)
-  expect(rows[0]!.updatedAt_name).toBeTypeOf('string')
+  expect((await user.meta(rows[0]!.id))!.name).toBeTypeOf('string')
 
   let sent = await client.sent(async () => {
     await renameUser({ id: 'U1', name: 'Sent' })
@@ -4528,7 +4748,7 @@ it('converts old tables by migrations on schema change', async () => {
   })
   await crdt.ready
   expect(statuses).toEqual(['initializing', 'migrating', 'ready'])
-  expect(withoutMeta(await loadList(post.select()))).toEqual([
+  expect(await loadList(post.select())).toEqual([
     { id: 'P1', media: ['a', 'b'], title: 'First' }
   ])
   expect(await readService(db, 'subprotocol')).toBe('1')
@@ -4542,7 +4762,7 @@ it('restores old tables on schema change without migrations', async () => {
   let crdt = createCrdtDatabase(client, db)
   let post = crdt.table('post', { title: string(), views: optional(number()) })
   await crdt.ready
-  expect(withoutMeta(await loadList(post.select()))).toEqual([
+  expect(await loadList(post.select())).toEqual([
     { id: 'P1', title: 'A', views: null }
   ])
 })
@@ -4620,7 +4840,7 @@ it('converts unsent old actions from the log on rebuild', async () => {
   let crdt = createCrdtDatabase(client, db)
   let post = crdt.table('post', { media: json([string()]), title: string() })
   await crdt.ready
-  expect(withoutMeta(await loadList(post.select()))).toEqual([
+  expect(await loadList(post.select())).toEqual([
     { id: 'P1', media: ['a'], title: 'Offline' }
   ])
   client.destroy()
@@ -4681,7 +4901,7 @@ it('prefers unsent log actions to old tables on rebuild', async () => {
   let crdt = createCrdtDatabase(client, db)
   let post = crdt.table('post', { media: json([string()]), title: string() })
   await crdt.ready
-  expect(withoutMeta(await loadList(post.select()))).toEqual([
+  expect(await loadList(post.select())).toEqual([
     { id: 'P1', media: ['a'], title: 'Log' }
   ])
   client.destroy()
@@ -4741,7 +4961,7 @@ it('applies unsent changes of rows from old tables on rebuild', async () => {
   })
   await crdt.ready
 
-  expect(withoutMeta(await loadList(post.select`ORDER BY "id"`))).toEqual([
+  expect(await loadList(post.select`ORDER BY "id"`)).toEqual([
     { id: 'P1', title: 'A', views: 7 },
     { id: 'P2', title: 'B', views: 7 }
   ])
@@ -4889,7 +5109,7 @@ it('defines tables without the database', async () => {
     { sync: true }
   )
   await delay(10)
-  expect(withoutMeta(await loadList(feed.select()))).toEqual([
+  expect(await loadList(feed.select())).toEqual([
     { categoryId: 'A', id: 'F1', title: 'T' }
   ])
 })
@@ -4926,7 +5146,7 @@ it('deletes and changes rows by condition', async () => {
     "categoryId" = ${'C1'}
   `
   expect(moved.sort()).toEqual(['F1', 'F2'])
-  expect(withoutMeta(await loadList(feed.select`ORDER BY "id"`))).toEqual([
+  expect(await loadList(feed.select`ORDER BY "id"`)).toEqual([
     { categoryId: 'general', id: 'F1' },
     { categoryId: 'general', id: 'F2' },
     { categoryId: 'C2', id: 'F3' }
@@ -4961,15 +5181,15 @@ it('loads rows once', async () => {
     { id: 'P2', media: [], read: true, title: 'B' }
   ])
 
-  expect(withoutMeta(await post.load`ORDER BY "id" DESC`)).toEqual([
+  expect(await post.load`ORDER BY "id" DESC`).toEqual([
     { id: 'P2', media: [], read: true, title: 'B' },
     { id: 'P1', media: ['a'], read: false, title: 'A' }
   ])
-  expect(withoutMeta(await post.load`WHERE "read" = ${1}`)).toEqual([
+  expect(await post.load`WHERE "read" = ${1}`).toEqual([
     { id: 'P2', media: [], read: true, title: 'B' }
   ])
   expect((await post.load()).map(i => i.id).sort()).toEqual(['P1', 'P2'])
-  expect(withoutMeta([(await post.get('P1'))!])[0]).toEqual({
+  expect([(await post.get('P1'))!][0]).toEqual({
     id: 'P1',
     media: ['a'],
     read: false,
@@ -5002,9 +5222,7 @@ it('waits for migration in one-time reads', async () => {
   let counting = crdt.select`SELECT COUNT(*) AS "count" FROM "post"`
   while (crdt.status.get() !== 'migrating') await delay(1)
   finishRepeat()
-  expect(withoutMeta(await loading)).toEqual([
-    { id: 'P1', title: 'A', views: null }
-  ])
+  expect(await loading).toEqual([{ id: 'P1', title: 'A', views: null }])
   expect((await getting)?.title).toBe('A')
   expect(await counting).toEqual([{ count: 1 }])
 })
@@ -5021,9 +5239,7 @@ it('has reactive row', async () => {
   let values: unknown[] = []
   $post.subscribe(value => {
     values.push(
-      value.status === 'ready' && value.value
-        ? withoutMeta([value.value])[0]
-        : value
+      value.status === 'ready' && value.value ? [value.value][0] : value
     )
   })
   expect(values).toEqual([{ status: 'loading' }])

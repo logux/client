@@ -18,7 +18,6 @@ export { confirm } from './confirm/index.js'
 
 export { AuthStore, createAuth } from './create-auth/index.js'
 export { createClientStore } from './create-client-store/index.js'
-export { WithoutMeta, withoutMeta } from './create-crdt-table/index.js'
 export {
   createFilter,
   Filter,
@@ -53,7 +52,15 @@ export { emptyInTest, prepareForTest } from './prepare-for-test/index.js'
 export { replaceWithShadow } from './replace-with-shadow/index.js'
 export { request, RequestOptions } from './request/index.js'
 export { SqlLogStore } from './sql-log-store/index.js'
-export { status, StatusValue } from './status/index.js'
+export {
+  status,
+  StatusError,
+  StatusErrorValue,
+  StatusReceiving,
+  StatusSyncError,
+  StatusUndoError,
+  StatusValue
+} from './status/index.js'
 export {
   buildNewSyncMap,
   changeSyncMap,

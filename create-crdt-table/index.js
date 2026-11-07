@@ -87,22 +87,6 @@ function isConverted(col) {
  */
 const META = 'updatedAt_'
 
-export function withoutMeta(rows) {
-  return rows.map(row => {
-    return Object.fromEntries(
-      Object.entries(row).filter(([key]) => !key.startsWith(META))
-    )
-  })
-}
-
-export function withMeta(row) {
-  let meta = {}
-  for (let key of Object.keys(row)) {
-    if (key !== 'id') meta[`${META}${key}`] = null
-  }
-  return { ...row, ...meta }
-}
-
 export function mapCrdtFields(action, fn) {
   if (action.records) {
     return {
@@ -393,7 +377,7 @@ function shapeColumnHash(col) {
 
 export function createCrdtDatabase(client, db, opts = {}) {
   let dialect = opts.dialect ?? 'sqlite'
-  let storageKey = opts.key ?? 'logux:db'
+  let storageKey = opts.key ?? `${client.options.prefix}:db`
   let sync = opts.sync ?? true
   let emitter = createNanoEvents()
   // Without localStorage (SSR, React Native) the schema is kept in memory
@@ -444,10 +428,20 @@ export function createCrdtDatabase(client, db, opts = {}) {
     }, opts.timeout)
   }
 
+  /**
+   * `checked` and `ready` resolve `false`, when the database was stopped
+   * before them, became `outdated` or `broken`
+   */
+  function isWorking() {
+    return (
+      !destroyed && status.value !== 'outdated' && status.value !== 'broken'
+    )
+  }
+
   function setReady() {
     clearTimeout(timeout)
-    compared()
-    prepared()
+    compared(isWorking())
+    prepared(isWorking() && status.value === 'ready')
   }
 
   let started = false
@@ -492,8 +486,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
    * can be missing or the app can close the database
    */
   async function readable() {
-    await ready
-    return !destroyed && status.value === 'ready'
+    return (await ready) && !destroyed && status.value === 'ready'
   }
 
   function newMeta() {
@@ -870,6 +863,23 @@ export function createCrdtDatabase(client, db, opts = {}) {
         await listener(tx, action, meta, cells[0], cells[1])
       }
     }
+    let tableListeners = emitter.events[action.type]
+    if (tableListeners) {
+      let rows
+      if (action.type.endsWith('/deleted')) {
+        rows = action.ids ?? [action.id]
+      } else {
+        rows = parseCrdtRows(action).map(([id, fields]) => {
+          if (!action.records) return [id, fields]
+          let { id: recordId, ...rest } = fields
+          return [recordId, rest]
+        })
+      }
+      if (rows.length === 0) return
+      for (let listener of tableListeners) {
+        await listener(tx, rows, action, meta)
+      }
+    }
   }
 
   async function applyInline(tx, action, meta) {
@@ -994,6 +1004,11 @@ export function createCrdtDatabase(client, db, opts = {}) {
       }
     }
 
+    // The log store in the same database must create its tables first,
+    // since SQLite can change `auto_vacuum` only in the empty file
+    let store = client.log.store
+    if (store.init && store.driver === driver) await store.init()
+
     // In-memory database is empty on every start, so the marks
     // in the storage would report every start as a lost database
     let persistent = driver.persistent ? await driver.persistent() : true
@@ -1043,7 +1058,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
     }
 
     if (stored === hash && !oldData) {
-      compared()
+      compared(isWorking())
       // The database survived the cleaned storage, so only the copy
       // of the hash has to be restored
       if (persistent && old !== hash) storage[storageKey] = hash
@@ -1083,7 +1098,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
       let restored = []
       let repeated = []
       status.set(stored ? 'migrating' : 'creating')
-      compared()
+      compared(isWorking())
       if (stored) {
         emitter.emit('migrating', ready)
         let restoring = restoreTables(JSON.parse(stored), oldSubprotocol)
@@ -1169,6 +1184,14 @@ export function createCrdtDatabase(client, db, opts = {}) {
   })
 
   let unbindAdd = client.on('add', (action, meta) => {
+    if (
+      action.type === 'logux/undo' &&
+      action.action &&
+      isKnown(action.action.type)
+    ) {
+      emitter.emit('rejected', action.action, meta, action.reason)
+      return
+    }
     // Actions were already applied in the log store transaction
     if (inlined.delete(meta.id)) return
     if (!isKnown(action.type)) return
@@ -1274,6 +1297,18 @@ export function createCrdtDatabase(client, db, opts = {}) {
       await preparing.catch(() => {})
       if (draining) await draining.catch(() => {})
     },
+    async freePages(pages) {
+      if (!Number.isInteger(pages) || pages < 0) {
+        throw new Error('Pages must be a positive integer')
+      }
+      // PostgreSQL has no free pages list in the database file
+      if (dialect === 'pglite' || !(await readable())) return
+      // Every freed page is a row of the result, so the statement must be
+      // read to the end instead of a single step of exec()
+      await inTransaction(tx =>
+        tx.driver.select(`PRAGMA incremental_vacuum(${pages})`, [])
+      )
+    },
     async idle() {
       await ready
       await drain()
@@ -1323,8 +1358,16 @@ export function createCrdtDatabase(client, db, opts = {}) {
         return parsed
       }
 
+      // Rows have only schema columns: `updatedAt_` columns are internal
+      // and are available only by meta()
+      let fieldNames = Object.keys(schema)
+      let rowColumns = ['id', ...fieldNames]
+        .map(name => `"${plural}"."${name}"`)
+        .join(', ')
+      let metaColumns = fieldNames.map(name => `"${META}${name}"`).join(', ')
+
       function selectParts(template) {
-        let prefix = `SELECT "${plural}".* FROM "${plural}"`
+        let prefix = `SELECT ${rowColumns} FROM "${plural}"`
         return template
           ? [`${prefix} ${template[0]}`, ...template.slice(1)]
           : [prefix]
@@ -1413,6 +1456,27 @@ export function createCrdtDatabase(client, db, opts = {}) {
           return ids
         },
         driver,
+        async meta(id) {
+          if (!(await readable()) || fieldNames.length === 0) return undefined
+          let [row] = await db.select(
+            [`SELECT ${metaColumns} FROM "${plural}" WHERE "id" = `, ''],
+            id
+          )
+          if (!row) return undefined
+          let result = {}
+          for (let name of fieldNames) result[name] = row[`${META}${name}`]
+          return result
+        },
+        on(verb, listener) {
+          let verbs = Array.isArray(verb) ? verb : [verb]
+          let unbinds = verbs.map(i => {
+            if (!VERBS.has(i)) throw new Error(`Unknown table event ${i}`)
+            return emitter.on(`${plural}/${i}`, listener)
+          })
+          return () => {
+            for (let unbind of unbinds) unbind()
+          }
+        },
         parseRow,
         plural,
         schema,

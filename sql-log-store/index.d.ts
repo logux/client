@@ -14,6 +14,20 @@ export interface SqlLogStoreOptions<Packers = Record<string, never>> {
    * ```
    */
   packers?: Packers
+
+  /**
+   * SQLite `auto_vacuum` mode, which the store sets before creating
+   * its own tables. Use `incremental` to free pages later
+   * by {@link CrdtDatabase#freePages}.
+   *
+   * SQLite can change the mode only in the empty database file,
+   * so create the store before any other tables.
+   *
+   * ```js
+   * const store = new SqlLogStore(db, { autoVacuum: 'incremental' })
+   * ```
+   */
+  autoVacuum?: 'full' | 'incremental' | 'none'
 }
 
 /**

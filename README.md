@@ -77,8 +77,6 @@ npm install @nanostores/sql
 ```
 
 ```js
-import { openDb } from '@nanostores/sql'
-import { sqlocalDriver } from '@nanostores/sql/sqlocal'
 import {
   bigint,
   createCrdtDatabase,
@@ -86,6 +84,8 @@ import {
   optional,
   string
 } from '@logux/client/db'
+import { openDb } from '@nanostores/sql'
+import { sqlocalDriver } from '@nanostores/sql/sqlocal'
 
 let db = openDb(sqlocalDriver('app.sqlite'))
 let crdt = createCrdtDatabase(client, db, {
@@ -110,7 +110,7 @@ let user = crdt.table(
   ['name', ['age', 'createdAt DESC']]
 )
 
-await crdt.ready
+if (!(await crdt.ready)) return
 
 let id = await user.create({ name: 'Ann' })
 await user.update(id, { age: 30 })

@@ -2,7 +2,7 @@ import { defineAction, defineCrdtTableActions } from '@logux/actions'
 import type { Action, MetaTime } from '@logux/core'
 import type { Database } from '@nanostores/sql'
 
-import { Client, type WithoutMeta, withoutMeta } from '../index.js'
+import { Client } from '../index.js'
 import {
   bigint,
   boolean,
@@ -174,7 +174,8 @@ async function test(): Promise<void> {
     let role: 'admin' | 'guest' | 'user' = row.role
     let theme: 'dark' | 'light' = row.theme
     let rowId: string = row.id
-    let changed: null | string = row.updatedAt_name
+    let meta = await user.meta(row.id)
+    let changed: null | string | undefined = meta?.name
     let settings: {
       fontSize: number
       notifications?: null | { email: boolean; push: boolean }
@@ -185,7 +186,7 @@ async function test(): Promise<void> {
     let tags: string[] = row.tags
     let address: null | { city: string; zip?: null | string } = row.address
     let city: string | undefined = row.address?.city
-    let settingsChanged: null | string = row.updatedAt_settings
+    let settingsChanged: null | string | undefined = meta?.settings
     console.log(
       name,
       age,
@@ -205,9 +206,7 @@ async function test(): Promise<void> {
       settingsChanged
     )
 
-    let clean: WithoutMeta<(typeof value.value)[number]>[] = withoutMeta(
-      value.value
-    )
+    let clean = value.value
     let cleanId: string = clean[0]!.id
     let cleanName: string = clean[0]!.name
     let cleanAge: null | number = clean[0]!.age
@@ -435,8 +434,36 @@ let counts = await crdt.select<{ count: number }>`SELECT COUNT(*) AS "count"`
 let count: number = counts[0]!.count
 console.log(count)
 
-await crdt.checked
+let checked: boolean = await crdt.checked
+let isReady: boolean = await crdt.ready
+console.log(checked, isReady)
 await crdt.idle()
+await crdt.freePages(100)
+await crdt.batch(() => {
+  void feedTable.create({ categoryId: 'A', title: 'T' })
+})
+crdt.on('rejected', (action, meta, reason) => {
+  let rejectedType: string = action.type
+  let rejectedId: string = meta.id
+  let rejectedReason: string = reason
+  console.log(rejectedType, rejectedId, rejectedReason)
+})
+feedTable.on('deleted', (tx, ids, action) => {
+  let listenerIds: string[] = ids
+  let listenerType: string = action.type
+  console.log(tx, listenerIds, listenerType)
+})
+feedTable.on('changed', (tx, rows) => {
+  for (let [id, fields] of rows) {
+    let changedId: string = id
+    let changedTitle: string | undefined = fields.title
+    console.log(changedId, changedTitle)
+  }
+})
+let unbindFeeds = feedTable.on(['created', 'deleted'], async (tx, rows) => {
+  await tx.exec`SELECT ${rows.length}`
+})
+unbindFeeds()
 let addedMeta = await client.log.add(
   feeds.created({ fields: { categoryId: 'A', title: 'T' }, id: 'F2' })
 )

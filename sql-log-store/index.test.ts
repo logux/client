@@ -115,6 +115,28 @@ it('creates tables only once', async () => {
   ])
 })
 
+it('sets auto vacuum mode before creating tables', async () => {
+  let vacuumed = openDb(nodeDriver(':memory:'))
+  let store = new SqlLogStore(vacuumed, { autoVacuum: 'incremental' })
+  await store.getLastSynced()
+  expect(await vacuumed.driver.select('PRAGMA auto_vacuum', [])).toEqual([
+    { auto_vacuum: 2 }
+  ])
+  await vacuumed.close()
+
+  let other = openDb(nodeDriver(':memory:'))
+  await new SqlLogStore(other).getLastSynced()
+  expect(await other.driver.select('PRAGMA auto_vacuum', [])).toEqual([
+    { auto_vacuum: 0 }
+  ])
+  await other.close()
+
+  expect(() => {
+    // @ts-expect-error
+    new SqlLogStore(other, { autoVacuum: 'unknown' })
+  }).toThrow('Unknown autoVacuum mode unknown')
+})
+
 it('keeps the log on the same tables version', async () => {
   let store = new SqlLogStore(db)
   await add(store, { type: 'A' }, { id: '0 n', time: 1 })

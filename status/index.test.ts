@@ -154,7 +154,11 @@ it('notifies about synchronization error', async () => {
   setState(test.client.node, 'disconnected')
 
   expect(test.calls).toEqual(['disconnected', 'syncError', 'syncError'])
-  expect(test.args).toEqual([undefined, { error: error1 }, { error: error2 }])
+  expect(test.args).toEqual([
+    undefined,
+    { error: error1, message: 'any error', type: 'error' },
+    { error: error2, message: error2.message, type: 'error' }
+  ])
 })
 
 it('ignores timeout error', async () => {
@@ -171,6 +175,10 @@ it('notifies about wrong credentials', async () => {
   emit(test.client.node, 'error', { type: 'wrong-credentials' })
   setState(test.client.node, 'disconnected')
   expect(test.calls).toEqual(['disconnected', 'wrongCredentials'])
+  expect(test.args[1]).toMatchObject({
+    message: 'wrong-credentials',
+    type: 'error'
+  })
 })
 
 it('notifies about old client', async () => {
@@ -191,15 +199,30 @@ it('notifies about old client', async () => {
   setState(test.client.node, 'disconnected')
 
   expect(test.calls).toEqual(['disconnected', 'protocolError', 'outdated'])
+  expect(test.args.slice(1)).toEqual([
+    { error: protocol, message: protocol.message, type: 'error' },
+    { error: subprotocol, message: subprotocol.message, type: 'error' }
+  ])
 })
 
 it('notifies about server error', async () => {
   let test = await createTest()
   await test.client.node.connection.connect()
   test.client.node.log.add({ reason: 'error', type: 'logux/undo' })
-  expect(test.calls).toEqual(['disconnected', 'error'])
+  test.client.node.log.add({
+    action: { type: 'user/rename' },
+    id: '1 10:1:1 0',
+    reason: 'error',
+    type: 'logux/undo'
+  })
+  expect(test.calls).toEqual(['disconnected', 'error', 'error'])
   expect(test.args[1].action.type).toBe('logux/undo')
   expect(test.args[1].meta.time).toBe(1)
+  expect(test.args[1]).toMatchObject({ message: 'error', type: 'error' })
+  expect(test.args[2]).toMatchObject({
+    message: 'user/rename',
+    type: 'error'
+  })
 })
 
 it('notifies about problem with access', async () => {

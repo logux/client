@@ -150,14 +150,14 @@
       "import": {
         "./create-crdt-table/index.js": "{ createCrdtDatabase }"
       },
-      "limit": "6 KB"
+      "limit": "6.2 KB"
     },
     {
       "name": "Log Store",
       "import": {
         "./sql-log-store/index.js": "{ SqlLogStore }"
       },
-      "limit": "3 KB"
+      "limit": "3.1 KB"
     },
     {
       "name": "React",

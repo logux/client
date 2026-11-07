@@ -21,3 +21,13 @@ status(client, (current, details) => {
     document.title = current
   }
 })
+
+status(client, (current, details) => {
+  if (details?.type === 'error') {
+    let message: string = details.message
+    document.title = message
+  } else if (details) {
+    let done: number = details.done
+    document.title = `${done}`
+  }
+})

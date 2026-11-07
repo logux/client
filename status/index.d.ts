@@ -22,20 +22,64 @@ export type StatusValue =
 export interface StatusReceiving {
   done: number
   total: number
+  type?: never
 }
+
+interface StatusErrorBase {
+  /**
+   * Error message or the type of the undone action.
+   */
+  message: string
+  type: 'error'
+}
+
+/**
+ * Details of `denied` and `error` statuses.
+ */
+export interface StatusUndoError extends StatusErrorBase {
+  /**
+   * `logux/undo` action from the server.
+   */
+  action: LoguxUndoAction
+  /**
+   * Meta of `logux/undo` action.
+   */
+  meta: ClientMeta
+}
+
+/**
+ * Details of `syncError`, `protocolError`, `outdated`
+ * and `wrongCredentials` statuses.
+ */
+export interface StatusSyncError extends StatusErrorBase {
+  error: Error
+}
+
+/**
+ * Details of every error status.
+ */
+export type StatusError = StatusSyncError | StatusUndoError
+
+export type StatusErrorValue =
+  | 'denied'
+  | 'error'
+  | 'outdated'
+  | 'protocolError'
+  | 'syncError'
+  | 'wrongCredentials'
 
 type StatusWithoutDetails = Exclude<
   StatusValue,
-  'denied' | 'error' | 'receiving' | 'syncError'
+  'receiving' | StatusErrorValue
 >
 
 type StatusEvent =
-  | [
-      current: 'denied' | 'error',
-      details: { action: LoguxUndoAction; meta: ClientMeta }
-    ]
   | [current: 'receiving', details: StatusReceiving]
-  | [current: 'syncError', details: { error: Error }]
+  | [current: 'denied' | 'error', details: StatusUndoError]
+  | [
+      current: Exclude<StatusErrorValue, 'denied' | 'error'>,
+      details: StatusSyncError
+    ]
   | [current: StatusWithoutDetails, details: undefined]
 
 interface StatusListener {
@@ -57,7 +101,9 @@ interface StatusOptions {
  * support the client’s one. The user needs to reload the page
  * to get the new client. `protocolError` is the same for Logux protocol.
  *
- * On `receiving` the details have the download progress:
+ * On `receiving` the details have the download progress. Every error
+ * status has details with the same shape: `type: 'error'` and `message`
+ * with the error message or the type of the undone action.
  *
  * ```js
  * import { status } from '@logux/client'
@@ -66,6 +112,7 @@ interface StatusOptions {
  *   if (current === 'receiving') {
  *     setProgress(details.done / details.total)
  *   }
+ *   if (details?.type === 'error') showError(details.message)
  * })
  * ```
  *
