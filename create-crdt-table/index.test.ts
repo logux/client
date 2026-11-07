@@ -442,6 +442,161 @@ it('creates, updates and deletes many rows by batch actions', async () => {
   cleanStores($all)
 })
 
+it('adds changes of many tables by a single log add in batch()', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  let note = crdt.table('note', NOTE_SCHEMA)
+  let noteTagged = defineAction<{
+    id: string
+    tag: string
+    type: 'note/tagged'
+  }>('note/tagged')
+  let tagNote = crdt.action(noteTagged, async (tx, action, meta) => {
+    await note.change(tx, action.id, { tags: [action.tag] }, meta)
+  })
+  await crdt.ready
+  await user.create({ id: 'U1', name: 'Ann' })
+
+  let add = vi.spyOn(client.log, 'add')
+  let created: Promise<string[]> | undefined
+  let noteId: Promise<string> | undefined
+  let sent = await client.sent(async () => {
+    await crdt.batch(() => {
+      created = user.create([{ name: 'Ben' }, { name: 'Cat' }])
+      noteId = note.create({ id: 'N1', tags: [], title: 'A' })
+      void user.update('U1', { age: 30 })
+      void tagNote({ id: 'N1', tag: 'a' })
+      void user.delete([])
+    })
+    expect(add).toHaveBeenCalledTimes(1)
+    expect(add.mock.calls[0]![0]).toHaveLength(4)
+    expect(await loadList(user.select`ORDER BY "name"`)).toMatchObject([
+      { age: 30, name: 'Ann' },
+      { name: 'Ben' },
+      { name: 'Cat' }
+    ])
+    expect(await note.get('N1')).toMatchObject({ tags: ['a'] })
+    await delay(10)
+  })
+
+  let ids = await created!
+  expect(ids).toHaveLength(2)
+  expect(await noteId!).toBe('N1')
+  expect(sent.map(i => i.type)).toEqual([
+    'user/created',
+    'note/created',
+    'user/changed',
+    'note/tagged'
+  ])
+
+  add.mockClear()
+  await crdt.batch(() => {})
+  expect(add).not.toHaveBeenCalled()
+})
+
+it('adds nested batch() by the outer one', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+
+  let add = vi.spyOn(client.log, 'add')
+  let inner: Promise<void> | undefined
+  await crdt.batch(() => {
+    void user.create({ id: 'U1', name: 'Ann' })
+    inner = crdt.batch(() => {
+      void user.create({ id: 'U2', name: 'Ben' })
+    })
+  })
+  await inner
+  expect(add).toHaveBeenCalledTimes(1)
+  expect(add.mock.calls[0]![0]).toHaveLength(2)
+  expect((await user.load()).map(i => i.id).sort()).toEqual(['U1', 'U2'])
+})
+
+it('drops collected actions if batch() callback throws', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+
+  let add = vi.spyOn(client.log, 'add')
+  let error = new Error('test')
+  let created: Promise<string> | undefined
+  let inner: Promise<void> | undefined
+  await crdt.batch(() => {
+    void user.create({ id: 'U1', name: 'Ann' })
+    inner = crdt.batch(() => {
+      created = user.create({ id: 'U2', name: 'Ben' })
+      throw error
+    })
+  })
+  await expect(inner).rejects.toBe(error)
+  await expect(created).rejects.toBe(error)
+  expect(add.mock.calls[0]![0]).toHaveLength(1)
+  expect((await user.load()).map(i => i.id)).toEqual(['U1'])
+
+  add.mockClear()
+  await expect(
+    crdt.batch(() => {
+      void user.create({ id: 'U3', name: 'Cat' })
+      throw error
+    })
+  ).rejects.toBe(error)
+  expect(add).not.toHaveBeenCalled()
+
+  // Changes after batch() are added as usual
+  await user.create({ id: 'U4', name: 'Dan' })
+  expect(add).toHaveBeenCalledTimes(1)
+})
+
+it('rejects batch() on log error', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+
+  let error = new Error('test')
+  vi.spyOn(client.log, 'add').mockRejectedValueOnce(error)
+  let created: Promise<string> | undefined
+  await expect(
+    crdt.batch(() => {
+      created = user.create({ name: 'Ann' })
+    })
+  ).rejects.toBe(error)
+  await expect(created).rejects.toBe(error)
+})
+
+it('applies batch() in the transaction of SQL log store', async () => {
+  let db = openDb(persistentDriver(nodeDriver(':memory:')))
+  let store = new SqlLogStore(db)
+  let client = new Client({
+    server: 'ws://localhost',
+    store,
+    subprotocol: 1,
+    userId: '10'
+  })
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', USER_SCHEMA)
+  let note = crdt.table('note', NOTE_SCHEMA)
+  await crdt.ready
+
+  await crdt.batch(() => {
+    void user.create({ id: 'U1', name: 'Ann' })
+    void note.create({ id: 'N1', tags: [], title: 'A' })
+  })
+  expect(await db.driver.select('SELECT "id" FROM "user"', [])).toEqual([
+    { id: 'U1' }
+  ])
+  expect(await db.driver.select('SELECT "id" FROM "note"', [])).toEqual([
+    { id: 'N1' }
+  ])
+
+  await crdt.destroy()
+  await db.close()
+})
+
 it('takes null in create() as a missing field', async () => {
   let { client, db } = await setup()
   let crdt = createCrdtDatabase(client, db)

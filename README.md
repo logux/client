@@ -121,6 +121,12 @@ let $adults = user.select`WHERE "age" >= ${18} ORDER BY "name"`
 let ids = await user.create([{ name: 'Ben' }, { name: 'Cat' }])
 await user.update(ids, { age: 20 })
 await user.delete(ids)
+
+// Changes of many tables can be added to the log by a single call
+await crdt.batch(() => {
+  post.create(posts)
+  user.update(id, { lastPostAt: Date.now() })
+})
 ```
 
 Custom actions are applied to the database by your callback. Action types

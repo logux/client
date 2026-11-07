@@ -1223,6 +1223,30 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
   applied(meta: Pick<ClientMeta, 'id'>): Promise<void>
 
   /**
+   * Add actions of several table changes by a single {@link Log#add} call,
+   * so a SQL log store writes and applies them in one transaction.
+   *
+   * Inside the callback, {@link CrdtTable#create}, {@link CrdtTable#update},
+   * {@link CrdtTable#delete} and functions from {@link CrdtDatabase#action}
+   * only collect actions. Their promises are resolved together with
+   * the promise of `batch()`, so do not await them inside the callback.
+   *
+   * `deleteWhere()` and `updateWhere()` select rows before adding the action,
+   * so they are not collected.
+   *
+   * ```js
+   * await crdt.batch(() => {
+   *   post.create(rows)
+   *   account.update(id, { lastPublishedAt, refreshedAt })
+   * })
+   * ```
+   *
+   * @param callback Synchronous callback, which changes the tables.
+   * @returns Promise resolved when all actions were applied.
+   */
+  batch(callback: () => void): Promise<void>
+
+  /**
    * Promise resolved when the database compared the schema with the stored
    * one and chose to use the tables or to build them. After it
    * {@link CrdtDatabase#status} is `creating` for new tables, `migrating`

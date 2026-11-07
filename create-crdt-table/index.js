@@ -517,6 +517,32 @@ export function createCrdtDatabase(client, db, opts = {}) {
     })
   }
 
+  /**
+   * Actions collected by `crdt.batch()` to add them by a single `Log#add()`
+   */
+  let collecting
+
+  /**
+   * Add the action to the log and wait until it will be applied.
+   * Inside `crdt.batch()` the action is only collected.
+   */
+  function addAndApply(action) {
+    if (!collecting) {
+      return client.log.add(action, newMeta()).then(applied)
+    }
+    let entry = { action, meta: newMeta() }
+    let promise = new Promise((resolve, reject) => {
+      entry.resolve = resolve
+      entry.reject = reject
+    })
+    collecting.push(entry)
+    // The callback of batch() is synchronous, so it can’t await the promise.
+    // Errors are reported by the promise of batch().
+    promise.catch(() => {})
+    entry.promise = promise
+    return promise
+  }
+
   function stopWaiting(ids, error) {
     for (let id of ids) {
       let list = waiting.get(id)
@@ -1198,12 +1224,42 @@ export function createCrdtDatabase(client, db, opts = {}) {
       checkDefine()
       actions[creator.type] = apply
       actionVersions[creator.type] = actionOpts.version ?? null
-      return async (...args) => {
-        await applied(await client.log.add(creator(...args), newMeta()))
-      }
+      return (...args) => addAndApply(creator(...args))
     },
     applied(meta) {
       return applied(meta) ?? Promise.resolve()
+    },
+    async batch(callback) {
+      let outer = collecting
+      let list = outer ?? []
+      let start = list.length
+      collecting = list
+      try {
+        callback()
+      } catch (error) {
+        for (let entry of list.splice(start)) entry.reject(error)
+        throw error
+      } finally {
+        collecting = outer
+      }
+      let entries = list.slice(start)
+      // Nested batch() is added by the outer one
+      if (outer) {
+        await Promise.all(entries.map(entry => entry.promise))
+        return
+      }
+      if (entries.length === 0) return
+      try {
+        let metas = await client.log.add(
+          entries.map(entry => [entry.action, entry.meta])
+        )
+        for (let i = 0; i < entries.length; i++) {
+          entries[i].resolve(applied(metas[i]))
+        }
+      } catch (error) {
+        for (let entry of entries) entry.reject(error)
+      }
+      await Promise.all(entries.map(entry => entry.promise))
     },
     checked,
     clean: cleanTables,
@@ -1312,11 +1368,11 @@ export function createCrdtDatabase(client, db, opts = {}) {
           )
           return cells[0]
         },
-        async create(fields) {
+        create(fields) {
           let action
           let created
           if (Array.isArray(fields)) {
-            if (fields.length === 0) return []
+            if (fields.length === 0) return Promise.resolve([])
             created = []
             let records = fields.map(i => {
               let [id, values] = withDefaults(i)
@@ -1329,19 +1385,17 @@ export function createCrdtDatabase(client, db, opts = {}) {
             created = id
             action = { fields: values, id, type: `${plural}/created` }
           }
-          await applied(await client.log.add(action, newMeta()))
-          return created
+          let adding = addAndApply(action).then(() => created)
+          if (collecting) adding.catch(() => {})
+          return adding
         },
-        async delete(id) {
+        delete(id) {
           let batch = Array.isArray(id)
-          if (batch && id.length === 0) return
-          await applied(
-            await client.log.add(
-              batch
-                ? { ids: id, type: `${plural}/deleted` }
-                : { id, type: `${plural}/deleted` },
-              newMeta()
-            )
+          if (batch && id.length === 0) return Promise.resolve()
+          return addAndApply(
+            batch
+              ? { ids: id, type: `${plural}/deleted` }
+              : { id, type: `${plural}/deleted` }
           )
         },
         async get(id) {
@@ -1375,16 +1429,13 @@ export function createCrdtDatabase(client, db, opts = {}) {
           // so the rows are parsed on the way to the app
           return mapStore(store, rows => rows.map(parseRow))
         },
-        async update(id, diff) {
+        update(id, diff) {
           let batch = Array.isArray(id)
-          if (batch && id.length === 0) return
-          await applied(
-            await client.log.add(
-              batch
-                ? { fields: diff, ids: id, type: `${plural}/changed` }
-                : { fields: diff, id, type: `${plural}/changed` },
-              newMeta()
-            )
+          if (batch && id.length === 0) return Promise.resolve()
+          return addAndApply(
+            batch
+              ? { fields: diff, ids: id, type: `${plural}/changed` }
+              : { fields: diff, id, type: `${plural}/changed` }
           )
         },
         updateWhere(diff) {
