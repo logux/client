@@ -50,10 +50,37 @@ function sendToTabs(client, event, data) {
   }
 }
 
+function changeState(client, state) {
+  if (client.leaderState !== state) {
+    client.leaderState = state
+    client.emitter.emit('state')
+    return true
+  }
+  return false
+}
+
 function setState(client, state) {
-  client.state = state
-  client.emitter.emit('state')
+  if (changeState(client, state)) sendToTabs(client, 'state', state)
+}
+
+function lead(client) {
+  client.role = 'leader'
+  client.emitter.emit('role')
+  let node = client.node
+  let connect = client.autoconnect && node.state === 'disconnected'
+  changeState(client, connect ? 'connecting' : node.state)
+  // Other followers can still keep the state of the dead leader
   sendToTabs(client, 'state', client.state)
+  if (connect) {
+    void Promise.resolve(node.connection.connect()).then(() => {
+      // Connection can return without connecting (like `encryptActions()`
+      // with a rejected secret), so `connecting` must not stay forever
+      if (client.role === 'leader') setState(client, node.state)
+    })
+  }
+  return new Promise(resolve => {
+    client.unlead = resolve
+  })
 }
 
 function isMemory(store) {
@@ -221,19 +248,17 @@ export class CrossTabClient extends Client {
       return
     }
 
-    let json = localStorage.getItem(storageKey(this, 'state'))
-    if (json && json !== null && json !== '"disconnected"') {
-      this.state = parse(json)
-      this.emitter.emit('state')
-    }
+    // Saved state can be from a closed tab, so it is used only when we know
+    // that the leader is alive. Until then we are connecting, like `Client`.
+    if (connect) changeState(this, 'connecting')
 
-    void navigator.locks.request('logux_leader', () => {
-      this.role = 'leader'
-      this.emitter.emit('role')
-      if (connect) void this.node.connection.connect()
-      return new Promise(resolve => {
-        this.unlead = resolve
-      })
+    // `ifAvailable` checks the leader and takes the lock in the same step
+    let lockOpts = { ifAvailable: true }
+    void navigator.locks.request('logux_leader', lockOpts, lock => {
+      if (lock) return lead(this)
+      let json = localStorage.getItem(storageKey(this, 'state'))
+      changeState(this, (json && parse(json)) || 'disconnected')
+      void navigator.locks.request('logux_leader', () => lead(this))
     })
   }
 

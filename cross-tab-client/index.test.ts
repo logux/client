@@ -4,7 +4,7 @@ import { delay } from 'nanodelay'
 import { restoreAll, spyOn } from 'nanospy'
 import { afterEach, beforeEach, expect, it } from 'vitest'
 
-import { type ClientOptions, CrossTabClient } from '../index.js'
+import { type ClientOptions, CrossTabClient, encryptActions } from '../index.js'
 import {
   breakLocalStorage,
   emitStorage,
@@ -15,14 +15,27 @@ class WebSocket {
   close(): void {}
 }
 
-let lockRequest: (() => Promise<void>) | undefined
+type LockCallback = (lock: null | object) => Promise<void> | void
+
+// Browsers call lock callback only in a later task, so tests answer manually
+let lockRequests: { fn: LockCallback; ifAvailable: boolean }[] = []
 
 beforeEach(() => {
+  lockRequests = []
   Object.defineProperty(navigator, 'locks', {
     configurable: true,
     value: {
-      request(name: string, fn: () => Promise<void>) {
-        lockRequest = fn
+      request(
+        name: string,
+        opts: LockCallback | { ifAvailable?: boolean },
+        fn?: LockCallback
+      ) {
+        if (typeof opts === 'function') {
+          lockRequests.push({ fn: opts, ifAvailable: false })
+        } else {
+          lockRequests.push({ fn: fn!, ifAvailable: !!opts.ifAvailable })
+        }
+        return Promise.resolve()
       }
     }
   })
@@ -41,14 +54,30 @@ afterEach(() => {
 let lockReturned = false
 
 function giveLock(): void {
+  let request = lockRequests.shift()
+  if (!request) throw new Error('Lock was not requested')
   lockReturned = false
-  if (lockRequest) {
-    lockRequest().then(() => {
+  let holding = request.fn({ name: 'logux_leader' })
+  if (holding) {
+    holding.then(() => {
       lockReturned = true
     })
-  } else {
-    throw new Error('Lock was not requested')
   }
+}
+
+// Another tab holds the lock
+function denyLock(): void {
+  let request = lockRequests.shift()
+  if (!request?.ifAvailable) throw new Error('Lock was not checked')
+  request.fn(null)
+}
+
+function trackStates(c: CrossTabClient<object, TestLog>): string[] {
+  let states: string[] = []
+  c.on('state', () => {
+    states.push(c.state)
+  })
+  return states
 }
 
 function privateMethods(obj: object): any {
@@ -391,8 +420,143 @@ it('becomes follower on taken lock', () => {
   let connect = spyOn(client.node.connection, 'connect')
 
   client.start()
+  denyLock()
   expect(roles).toEqual([])
   expect(connect.called).toBe(false)
+  expect(lockRequests).toHaveLength(1)
+  expect(lockRequests[0]?.ifAvailable).toBe(false)
+})
+
+it('ignores saved state of closed leader', async () => {
+  localStorage.setItem('logux:10:state', '"synchronized"')
+  client = createClient()
+  let states = trackStates(client)
+  let synchronized = false
+  void client.waitFor('synchronized').then(() => {
+    synchronized = true
+  })
+
+  client.start()
+  expect(client.state).toBe('connecting')
+  expect(client.connected).toBe(false)
+  expect(localStorage.getItem('logux:10:state')).toBe('"synchronized"')
+  await delay(1)
+  expect(synchronized).toBe(false)
+
+  giveLock()
+  expect(client.role).toBe('leader')
+  expect(client.state).toBe('connecting')
+  expect(client.node.state).toBe('connecting')
+  expect(localStorage.getItem('logux:10:state')).toBe('"connecting"')
+  await delay(1)
+  expect(synchronized).toBe(false)
+  expect(states).toEqual(['connecting'])
+
+  client.node.state = 'synchronized'
+  emit(client.node, 'state')
+  await delay(1)
+  expect(synchronized).toBe(true)
+  expect(states).toEqual(['connecting', 'synchronized'])
+  expect(localStorage.getItem('logux:10:state')).toBe('"synchronized"')
+})
+
+it('ignores saved state of closed leader without connection', () => {
+  localStorage.setItem('logux:10:state', '"synchronized"')
+  client = createClient()
+  let states = trackStates(client)
+  let connect = spyOn(client.node.connection, 'connect')
+
+  client.start(false)
+  expect(client.state).toBe('disconnected')
+
+  giveLock()
+  expect(client.role).toBe('leader')
+  expect(client.state).toBe('disconnected')
+  expect(localStorage.getItem('logux:10:state')).toBe('"disconnected"')
+  expect(connect.called).toBe(false)
+  expect(states).toEqual([])
+})
+
+it('uses saved state of living leader', () => {
+  localStorage.setItem('logux:10:state', '"synchronized"')
+  client = createClient()
+  let states = trackStates(client)
+  let setItem = spyOn(localStorage, 'setItem')
+
+  client.start()
+  expect(client.state).toBe('connecting')
+  denyLock()
+  expect(client.role).toBe('follower')
+  expect(client.state).toBe('synchronized')
+  expect(states).toEqual(['connecting', 'synchronized'])
+  expect(setItem.calls.filter(i => i[0] === 'logux:10:state')).toEqual([])
+})
+
+it('uses disconnected state of living leader', () => {
+  localStorage.setItem('logux:10:state', '"disconnected"')
+  client = createClient()
+  let states = trackStates(client)
+  client.start()
+  denyLock()
+  expect(client.state).toBe('disconnected')
+  expect(states).toEqual(['connecting', 'disconnected'])
+  expect(localStorage.getItem('logux:10:state')).toBe('"disconnected"')
+})
+
+it('uses disconnected state without saved state', () => {
+  client = createClient()
+  let states = trackStates(client)
+  client.start()
+  denyLock()
+  expect(client.state).toBe('disconnected')
+  expect(states).toEqual(['connecting', 'disconnected'])
+  expect(localStorage.getItem('logux:10:state')).toBeNull()
+})
+
+it('drops state of dead leader on taking the lock', () => {
+  localStorage.setItem('logux:10:state', '"synchronized"')
+  client = createClient()
+  let states = trackStates(client)
+  client.start()
+  denyLock()
+  expect(client.state).toBe('synchronized')
+
+  giveLock()
+  expect(client.role).toBe('leader')
+  expect(client.state).toBe('connecting')
+  expect(localStorage.getItem('logux:10:state')).toBe('"connecting"')
+  expect(states).toEqual(['connecting', 'synchronized', 'connecting'])
+
+  client.node.state = 'disconnected'
+  emit(client.node, 'state')
+  expect(client.state).toBe('disconnected')
+  expect(states).toEqual([
+    'connecting',
+    'synchronized',
+    'connecting',
+    'disconnected'
+  ])
+})
+
+it('does not stay connecting on rejected secret', async () => {
+  localStorage.setItem('logux:10:state', '"synchronized"')
+  client = createClient()
+  let error = new Error('No key')
+  encryptActions(client, () => Promise.reject(error))
+  let errors: Error[] = []
+  client.node.on('error', e => {
+    errors.push(e)
+  })
+  let states = trackStates(client)
+
+  client.start()
+  giveLock()
+  expect(client.state).toBe('connecting')
+  await delay(1)
+  expect(errors).toEqual([error])
+  expect(client.state).toBe('disconnected')
+  expect(states).toEqual(['connecting', 'disconnected'])
+  expect(localStorage.getItem('logux:10:state')).toBe('"disconnected"')
 })
 
 it('updates state if tab is a leader', () => {
