@@ -2,6 +2,10 @@
 
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.28.1
+
+- Fixed `CrossTabClient` state from a closed leader tab.
+
 ## 0.28.0
 
 - Removed `updatedAt_` columns from CRDT Table rows.
