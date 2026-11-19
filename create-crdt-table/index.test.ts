@@ -4031,6 +4031,30 @@ it('does not fill tables back by actions applied during clean()', async () => {
   expect(await tableNames(db)).toEqual([])
 })
 
+it('releases the lock right after clean()', async () => {
+  queuedLocks()
+
+  let { client, db } = await setup()
+  let crdt1 = createCrdtDatabase(client, db)
+  crdt1.table('user', USER_SCHEMA)
+  await crdt1.ready
+  await client.clean()
+
+  // Dropping the tables was the last write, so the next client must not
+  // wait until the idle timer will release the lock
+  let client2 = new TestClient('10')
+  await client2.connect()
+  let crdt2 = createCrdtDatabase(client2, db)
+  let user2 = crdt2.table('user', USER_SCHEMA)
+  await crdt2.ready
+
+  void user2.create({ id: 'U1', name: 'Ann' })
+  await delay(10)
+  expect((await loadList(user2.select())).map(i => i.id)).toEqual(['U1'])
+
+  crdt2.destroy()
+})
+
 it('does not fill tables back by actions of SQL log store', async () => {
   let db = openDb(persistentDriver(nodeDriver(':memory:')))
   let store = new SqlLogStore(db)

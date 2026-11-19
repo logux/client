@@ -1234,6 +1234,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
           }
           await tx.driver.exec(`DROP TABLE IF EXISTS "${SERVICE}"`, [])
         })
+        releaseApplyLock()
       }
     }
     lockRequest.abort()
