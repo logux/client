@@ -2,6 +2,10 @@
 
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.28.2
+
+- Fixed CRDT database delay after `client.clean()`.
+
 ## 0.28.1
 
 - Fixed `CrossTabClient` state from a closed leader tab.
