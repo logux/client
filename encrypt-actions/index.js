@@ -141,6 +141,7 @@ export function encryptActions(client, secret, opts = {}) {
         client.node.emitter.emit('error', e)
         return
       }
+      if (client.destroyed) return
       return originConnect()
     }
   }

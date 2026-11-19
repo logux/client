@@ -420,6 +420,7 @@ export class Client {
   }
 
   async destroy() {
+    this.destroyed = true
     this.onUnload()
     this.node.destroy()
     clearInterval(this.pinging)
