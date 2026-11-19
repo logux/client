@@ -2,6 +2,10 @@
 
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.28.3
+
+- Fixed connecting of destroyed client in `encryptActions()`.
+
 ## 0.28.2
 
 - Fixed CRDT database delay after `client.clean()`.
