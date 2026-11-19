@@ -44,7 +44,7 @@
   },
   "dependencies": {
     "@logux/actions": "^0.8.1",
-    "@logux/core": "^0.12.1",
+    "@logux/core": "^0.12.2",
     "nanoevents": "^10.0.0",
     "nanoid": "^6.0.2"
   },
@@ -63,7 +63,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/ws": "^8.18.2",
-    "@vitest/coverage-v8": "^5.1.0",
+    "@vitest/coverage-v8": "^5.1.1",
     "@vue/compiler-sfc": "^3.5.45",
     "check-dts": "^2.0.1",
     "eslint-plugin-prefer-let": "^4.2.2",
@@ -74,7 +74,7 @@
     "nanodelay": "^2.0.2",
     "nanospy": "^2.0.2",
     "nanostores": "^1.5.5",
-    "oxlint": "^1.93.0",
+    "oxlint": "^1.94.0",
     "oxlint-tsgolint": "^7.0.2007",
     "postcss": "^8.5.33",
     "preact": "^11.2.0",
@@ -84,7 +84,7 @@
     "svgo": "^4.1.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.8",
-    "vitest": "^5.1.0",
+    "vitest": "^5.1.1",
     "vue": "^3.5.45"
   },
   "peerDependencies": {
