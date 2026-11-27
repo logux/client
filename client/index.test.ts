@@ -35,7 +35,7 @@ beforeEach(() => {
   global.WebSocket = WebSocket as any
 })
 
-let created: Client<object, TestLog>[] = []
+let created: Client[] = []
 let originIndexedDB = global.indexedDB
 afterEach(() => {
   // The tab ping interval keeps running until the client is destroyed
@@ -1102,7 +1102,7 @@ it('converts received actions without subprotocol after upgrade', async () => {
     subprotocol: 10,
     userId: '10'
   })
-  created.push(client as Client<object, TestLog>)
+  created.push(client)
   expect(await client.log.byId('1 server:x')).toEqual([
     { type: 'a', version: 10 },
     expect.objectContaining({ subprotocol: 10 })
@@ -1133,7 +1133,7 @@ it('converts old actions on reading from the log', async () => {
     subprotocol: 10,
     userId: '10'
   })
-  created.push(client as Client<object, TestLog>)
+  created.push(client)
 
   let read: [Action, number | undefined][] = []
   await client.log.each((action, meta) => {
@@ -1190,7 +1190,7 @@ it('converts old actions on every page of the log', async () => {
     subprotocol: 10,
     userId: '10'
   })
-  created.push(client as Client<object, TestLog>)
+  created.push(client)
   let read: Action[] = []
   await client.log.each(action => {
     read.push(action)

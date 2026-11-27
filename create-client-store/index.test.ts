@@ -2,7 +2,7 @@ import { delay } from 'nanodelay'
 import { map, STORE_UNMOUNT_DELAY } from 'nanostores'
 import { expect, it } from 'vitest'
 
-import { type Client, createClientStore } from '../index.js'
+import { createClientStore, TestClient } from '../index.js'
 
 it('creates client from user ID', async () => {
   let user = map<{ enabled: boolean; userId?: string }>({
@@ -12,26 +12,27 @@ it('creates client from user ID', async () => {
 
   let events: string[] = []
   let clientStore = createClientStore(user, ({ enabled, userId }) => {
-    if (!enabled) return undefined
-    return {
-      destroy() {
-        events.push(`${userId} destroy`)
-      },
-      nodeId: userId,
-      start() {
-        events.push(`${userId} start`)
-      }
-    } as Client
+    if (!enabled || !userId) return undefined
+    let client = new TestClient(userId)
+    let destroy = client.destroy.bind(client)
+    client.destroy = () => {
+      events.push(`${userId} destroy`)
+      return destroy()
+    }
+    client.start = () => {
+      events.push(`${userId} start`)
+    }
+    return client
   })
 
   let unbind = clientStore.listen(() => {})
 
   expect(events).toEqual(['1 start'])
-  expect(clientStore.get()?.nodeId).toBe('1')
+  expect(clientStore.get()?.options.userId).toBe('1')
 
   user.setKey('userId', '2')
   expect(events).toEqual(['1 start', '1 destroy', '2 start'])
-  expect(clientStore.get()?.nodeId).toBe('2')
+  expect(clientStore.get()?.options.userId).toBe('2')
 
   user.setKey('enabled', false)
   expect(events).toEqual(['1 start', '1 destroy', '2 start'])
@@ -48,7 +49,7 @@ it('creates client from user ID', async () => {
     '2 destroy',
     '4 start'
   ])
-  expect(clientStore.get()?.nodeId).toBe('4')
+  expect(clientStore.get()?.options.userId).toBe('4')
 
   user.setKey('userId', undefined)
   expect(events).toEqual([
