@@ -1,5 +1,5 @@
 import { defineAction } from '@logux/actions'
-import { sortedToMeta, toSorted } from '@logux/core'
+import { fromCompat, sortedToMeta, toCompat, toSorted } from '@logux/core'
 import { createNanoEvents } from 'nanoevents'
 import { nanoid } from 'nanoid'
 import { atom, computed } from 'nanostores'
@@ -199,7 +199,18 @@ export async function crdtTableToActions(tables, opts = {}) {
     if (a[0] > b[0]) return 1
     return 0
   })
-  return all.map(([sorted, action]) => [action, sortedToMeta(sorted)])
+  if (!opts.nodeId) {
+    return all.map(([sorted, action]) => [action, sortedToMeta(sorted)])
+  }
+  let used = new Set()
+  return all.map(([sorted, action]) => {
+    let meta = sortedToMeta(sorted)
+    let time = fromCompat(meta.id.split(' ')[0])
+    // Rows could be changed by different nodes at the same millisecond
+    while (used.has(time)) time += 1
+    used.add(time)
+    return [action, { id: `${toCompat(time)} ${opts.nodeId}`, time: meta.time }]
+  })
 }
 
 /**
@@ -466,6 +477,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
   let pendingIds = new Set()
   let waiting = new Map()
   let inlined = new Set()
+  let alreadyApplied = new WeakSet()
   let blocking = false
   let draining
   let sqlStore
@@ -900,6 +912,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
 
   async function applyInline(tx, action, meta) {
     if (destroyed || status.value === 'outdated') return
+    if (alreadyApplied.has(meta)) return
     // Actions with the reason are applied by batches, which remove
     // the reasons of the whole batch by a single call
     if (meta.reasons.includes('applying-to-db')) return
@@ -1191,7 +1204,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
   // Reason keeps the action in the log until it will be applied,
   // so any tab can find and finish the work of the crashed tab
   let unbindPreadd = client.on('preadd', (action, meta) => {
-    if (!isKnown(action.type)) return
+    if (!isKnown(action.type) || alreadyApplied.has(meta)) return
     // Actions with another reason are applied in the same transaction,
     // which writes them to the log. Actions without any reason are not
     // written to the log at all and are applied by batches.
@@ -1199,18 +1212,21 @@ export function createCrdtDatabase(client, db, opts = {}) {
     meta.reasons.push('applying-to-db')
   })
 
-  let unbindAdd = client.on('add', (action, meta) => {
+  let unbindRejected = client.on('add', (action, meta) => {
     if (
       action.type === 'logux/undo' &&
       action.action &&
       isKnown(action.action.type)
     ) {
       emitter.emit('rejected', action.action, meta, action.reason)
-      return
     }
+  })
+
+  let ownActions = client.log.store.driver === driver ? client.log : client
+  let unbindAdd = ownActions.on('add', (action, meta) => {
     // Actions were already applied in the log store transaction
     if (inlined.delete(meta.id)) return
-    if (!isKnown(action.type)) return
+    if (!isKnown(action.type) || alreadyApplied.has(meta)) return
     pushToApply([action, meta])
     if (status.value === 'ready') void drain()
   })
@@ -1247,6 +1263,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
     destroyed = true
     releaseApplyLock()
     unbindPreadd()
+    unbindRejected()
     unbindAdd()
     unbindStorage()
     unbindCleaning()
@@ -1265,6 +1282,15 @@ export function createCrdtDatabase(client, db, opts = {}) {
       actions[creator.type] = apply
       actionVersions[creator.type] = actionOpts.version ?? null
       return (...args) => addAndApply(creator(...args))
+    },
+    addApplied(entries) {
+      return client.log.add(
+        entries.map(([action, meta]) => {
+          let full = { ...newMeta(), ...meta }
+          alreadyApplied.add(full)
+          return [action, full]
+        })
+      )
     },
     applied(meta) {
       return applied(meta) ?? Promise.resolve()

@@ -24,6 +24,7 @@ import {
   type ActionMigrations,
   Client,
   type ClientMeta,
+  CrossTabClient,
   loadValue,
   SqlLogStore,
   TestClient
@@ -1685,6 +1686,35 @@ it('restores actions from tables', async () => {
     [
       { fields: { title: 'Hello' }, id: 'P1', type: 'post/created' },
       restored(metas[4]!)
+    ]
+  ])
+})
+
+it('restores actions with IDs of another node', async () => {
+  let { client, db } = await setup()
+  let crdt = createCrdtDatabase(client, db)
+  let user = crdt.table('user', { name: string() })
+  await crdt.ready
+
+  let ann = await client.log.add(
+    { fields: { name: 'Ann' }, id: 'U1', type: 'user/created' },
+    { id: '5 10:a', time: 1 }
+  )
+  let ben = await client.log.add(
+    { fields: { name: 'Ben' }, id: 'U2', type: 'user/created' },
+    { id: '5 10:b', time: 2 }
+  )
+  await crdt.applied(ann as ClientMeta)
+  await crdt.applied(ben as ClientMeta)
+
+  expect(await crdtTableToActions([user], { nodeId: '10:c' })).toEqual([
+    [
+      { fields: { name: 'Ann' }, id: 'U1', type: 'user/created' },
+      { id: '5 10:c', time: 1 }
+    ],
+    [
+      { fields: { name: 'Ben' }, id: 'U2', type: 'user/created' },
+      { id: '6 10:c', time: 2 }
     ]
   ])
 })
@@ -3534,6 +3564,80 @@ it('applies actions in the transaction of SQL log store', async () => {
   expect(applied).toEqual(['user/created', 'user/changed', 'user/deleted'])
 
   crdt.destroy()
+  await db.close()
+})
+
+it('does not apply copies of actions from other tabs', async () => {
+  let db = openDb(persistentDriver(nodeDriver(':memory:')))
+  let client = new CrossTabClient({
+    server: 'ws://localhost',
+    store: new SqlLogStore(db),
+    subprotocol: 1,
+    userId: '10'
+  })
+  let applied: string[] = []
+  let crdt = createCrdtDatabase(client, db)
+  crdt.on('applied', (tx, action) => {
+    applied.push(action.type)
+  })
+  let user = crdt.table('user', USER_SCHEMA)
+  await crdt.ready
+
+  let id = await user.create({ name: 'Ann' })
+  // The other tab has already written its action to the shared tables
+  emitStorage(
+    'logux:10:add',
+    JSON.stringify([
+      'other',
+      { fields: { name: 'Copy' }, id, type: 'user/changed' },
+      { added: 2, id: '1 10:other', reasons: [], time: Date.now() + 1000 }
+    ])
+  )
+  await delay(10)
+  expect(applied).toEqual(['user/created'])
+  expect(await user.get(id)).toMatchObject({ name: 'Ann' })
+
+  crdt.destroy()
+  client.destroy()
+  await db.close()
+})
+
+it('adds actions, which the tables have, without applying', async () => {
+  let db = openDb(persistentDriver(nodeDriver(':memory:')))
+  let sqlClient = new Client({
+    server: 'ws://localhost',
+    store: new SqlLogStore(db),
+    subprotocol: 1,
+    userId: '10'
+  })
+  let memory = await setup()
+  for (let [client, database] of [
+    [sqlClient, db],
+    [memory.client, memory.db]
+  ] as const) {
+    let applied: string[] = []
+    let crdt = createCrdtDatabase(client, database)
+    crdt.on('applied', (tx, action) => {
+      applied.push(action.type)
+    })
+    let user = crdt.table('user', { name: string() })
+    await crdt.ready
+
+    let id = await user.create({ name: 'Ann' })
+    let stamps = await user.meta(id)
+    let entries = await crdtTableToActions([user], {
+      nodeId: client.clientId
+    })
+    let added = await crdt.addApplied(entries)
+    await delay(10)
+
+    expect(added).toMatchObject([
+      { id: entries[0]![1].id, reasons: ['syncing'], sync: true }
+    ])
+    expect(applied).toEqual(['user/created'])
+    expect(await user.meta(id)).toEqual(stamps)
+    crdt.destroy()
+  }
   await db.close()
 })
 

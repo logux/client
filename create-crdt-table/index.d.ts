@@ -571,6 +571,13 @@ export function withMeta<Value>(row: WithoutMeta<Value>): Value
 
 export interface CrdtTableToActionsOptions {
   /**
+   * Node ID of the actions instead of the nodes, which changed the rows.
+   * The actions keep the time of the changes. Use `client.clientId`
+   * to send the actions from this client: the same rows get the same IDs.
+   */
+  nodeId?: string
+
+  /**
    * Schemas to read the tables by their plural instead of the schema
    * of the table object (for instance, the old schema of the tables).
    */
@@ -1294,6 +1301,24 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
     ) => Promise<void> | void,
     opts?: CrdtActionOptions
   ): (...args: Parameters<Creator>) => Promise<void>
+
+  /**
+   * Add actions, which the tables already have, to the log without applying
+   * them. For instance, to send the data of the local user after the sign-up:
+   *
+   * ```ts
+   * let entries = await crdtTableToActions([user, post], {
+   *   nodeId: client.clientId
+   * })
+   * await crdt.addApplied(entries)
+   * ```
+   *
+   * @param entries Actions with their meta.
+   * @returns Meta of the added actions or `false` for the known ones.
+   */
+  addApplied(
+    entries: [Action, Partial<ClientMeta>][]
+  ): Promise<(ClientMeta | false)[]>
 
   /**
    * Wait until the action was applied to the tables in this tab.
