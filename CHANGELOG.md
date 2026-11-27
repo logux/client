@@ -2,6 +2,12 @@
 
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.29.0
+
+- Added `crdt.addApplied()`.
+- Added `nodeId` option to `crdtTableToActions()`.
+- Fixed re-applying actions from other tabs in CRDT database.
+
 ## 0.28.3
 
 - Fixed connecting of destroyed client in `encryptActions()`.
