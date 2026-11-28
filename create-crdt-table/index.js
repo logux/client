@@ -1113,11 +1113,14 @@ export function createCrdtDatabase(client, db, opts = {}) {
       })
       // Actions, which were not applied before the last tab was closed
       let unapplied = []
-      await client.log.each({ order: 'added' }, (action, meta) => {
-        if (meta.reasons.includes('applying-to-db')) {
-          unapplied.push([action, meta])
+      await client.log.each(
+        { order: 'added', reason: 'applying-to-db' },
+        (action, meta) => {
+          if (meta.reasons.includes('applying-to-db')) {
+            unapplied.push([action, meta])
+          }
         }
-      })
+      )
       // The log is read from the newest action to the oldest
       unapplied.reverse()
       unapplied.forEach(pushToApply)
