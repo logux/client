@@ -434,6 +434,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
   })
 
   let reported = false
+  let rebuilding
 
   function corrupted(reason, error) {
     if (reported) return
@@ -507,6 +508,7 @@ export function createCrdtDatabase(client, db, opts = {}) {
     }
     pendingIds.add(id)
     pending.push(entry)
+    if (rebuilding) rebuilding.total += 1
   }
 
   /**
@@ -678,6 +680,10 @@ export function createCrdtDatabase(client, db, opts = {}) {
       }
       for (let id of ids) pendingIds.delete(id)
       stopWaiting(ids)
+      if (rebuilding) {
+        rebuilding.applied += chunk.length
+        emitter.emit('migratingProgress', rebuilding.applied, rebuilding.total)
+      }
       // Reasons are removed by a single call after the commit: applying
       // the action twice is safe, but losing it will keep the database
       // incomplete forever. Actions, which were never written to the log,
@@ -1166,11 +1172,13 @@ export function createCrdtDatabase(client, db, opts = {}) {
       pending = []
       pendingIds.clear()
       missed = []
+      rebuilding = { applied: 0, total: 0 }
       // The lists are not merged: a copy of the whole log costs the memory
       for (let list of [entries, restored, repeated, added]) {
         list.forEach(pushToApply)
       }
       await drain()
+      rebuilding = undefined
       let retry = missed
       missed = undefined
       retry.forEach(pushToApply)

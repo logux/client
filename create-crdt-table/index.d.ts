@@ -1524,6 +1524,26 @@ export interface CrdtDatabase<Dialect extends string = 'sqlite'> {
   ): Unsubscribe
 
   /**
+   * `migratingProgress` is called after every applied chunk of actions,
+   * while the tables are being created or migrated. Total can grow during
+   * the replay, when new actions are added.
+   *
+   * ```js
+   * crdt.on('migratingProgress', (applied, total) => {
+   *   loader.setProgress(applied / total)
+   * })
+   * ```
+   *
+   * @param event The event name.
+   * @param listener Callback with applied and total numbers of actions.
+   * @returns Unbind listener from event.
+   */
+  on(
+    event: 'migratingProgress',
+    listener: (applied: number, total: number) => void
+  ): Unsubscribe
+
+  /**
    * `stop` is called when another browser tab has a newer table schema
    * and this tab must stop touching the database (good place to show
    * “reload the page” warning).
