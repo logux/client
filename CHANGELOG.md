@@ -2,6 +2,11 @@
 
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.30.0
+
+- Added `migratingProgress` event to CRDT database.
+- Improved performance of CRDT database start.
+
 ## 0.29.0
 
 - Added `crdt.addApplied()`.
